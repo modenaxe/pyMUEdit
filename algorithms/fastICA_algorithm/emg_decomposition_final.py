@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 import tarfile as tf
 import numpy as np
 import matplotlib.pyplot as plt
-from processing_tools import *
+from fastICA_algorithm.processing_tools import *
 import tkinter as tk
 from tkinter import simpledialog
 from scipy import signal
