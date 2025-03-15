@@ -5,6 +5,9 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
 from PyQt5.QtGui import QIcon, QFont, QPixmap, QColor
 from PyQt5.QtCore import Qt, QSize
 
+# Import the ImportDataWindow class
+from import_data_window import ImportDataWindow
+
 class HDEMGDashboard(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -239,6 +242,7 @@ class HDEMGDashboard(QMainWindow):
         
         # Action buttons with Qt standard icons
         import_dataset_btn = self.create_action_button("Import New Dataset", self.style().standardIcon(QStyle.SP_DialogOpenButton))
+        import_dataset_btn.clicked.connect(self.open_import_data_window)
         create_chart_btn = self.create_action_button("Create Chart", self.style().standardIcon(QStyle.SP_DialogHelpButton))
         view_data_btn = self.create_action_button("View Data Table", self.style().standardIcon(QStyle.SP_FileDialogListView))
         
@@ -665,6 +669,12 @@ class HDEMGDashboard(QMainWindow):
         # In a real app, you would load the visualization based on its title or ID
         # For example:
         # self.load_visualization_by_title(title)
+    
+    def open_import_data_window(self):
+        """Open the import data window when import button is clicked"""
+        print("Opening import data window")
+        self.import_window = ImportDataWindow(parent=self)
+        self.import_window.show()
     
 
 if __name__ == "__main__":
