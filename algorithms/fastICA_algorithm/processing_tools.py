@@ -12,61 +12,61 @@ from numba import jit
 
 ##################################### FILTERING TOOLS #######################################################
 
-def notch_filter(signal,fsamp,to_han = False):
-
-    """ Implementation of a notch filter, where the frequencies of the line interferences are unknown. Therefore, interference is defined
-    as frequency components with magnitudes greater than 5 stds away from the median frequency component magnitude in a window of the signal
-    - assuming you will iterate this function over each electrode
+def notch_filter(signal, fsamp, to_han=False):
+    """
+    Implementation of a notch filter, where the frequencies of the line interferences are unknown.
+    Interference is defined as frequency components with magnitudes greater than 5 stds away
+    from the median frequency component magnitude in a window of the signal.
     
-    IMPORTANT!!! There is a small difference in the output of this function and that in MATLAB, best guess currently is differences in inbuilt FFT implementation."""
-
-    bandwidth_as_index = int(round(4*(np.shape(signal)[1]/fsamp)))
-    # width of the notch filter's effect, when you intend for it to span 4Hz, but converting to indices using the frequency resolution of FT
-    filtered_signal = np.zeros([np.shape(signal)[0],np.shape(signal)[1]])
-
-
+    IMPORTANT: There is a small difference in the output of this function and that in MATLAB,
+    likely due to differences in the built-in FFT implementation.
+    """
+    bandwidth_as_index = int(round(4 * (np.shape(signal)[1] / fsamp)))
+    # width of the notch filter's effect, converting 4Hz into indices using the frequency resolution of the FFT
+    filtered_signal = np.zeros([np.shape(signal)[0], np.shape(signal)[1]])
+    
     for chan in range(np.shape(signal)[0]):
-
         if to_han:
-            hwindow = scipy.signal.hann(np.shape(signal[chan,:])[0])
-            final_signal = signal[chan,:]* hwindow
+            hwindow = scipy.signal.hann(np.shape(signal[chan, :])[0])
+            final_signal = signal[chan, :] * hwindow
         else:
-            final_signal = signal[chan,:]
-
+            final_signal = signal[chan, :]
+            
         fourier_signal = np.fft.fft(final_signal)
-        fourier_interf = np.zeros(len(fourier_signal),dtype = 'complex_')
-        interf2remove = np.zeros(len(fourier_signal),dtype=np.int)
+        fourier_interf = np.zeros(len(fourier_signal), dtype=np.complex128)
+        interf2remove = np.zeros(len(fourier_signal), dtype=int)
         window = fsamp
         tracker = 0
+        
+        for interval in range(0, len(fourier_signal) - window + 1, window):
+            # Examine a window of the Fourier transform
+            median_freq = np.median(np.abs(fourier_signal[interval+1:interval+window+1]))
+            std_freq = np.std(np.abs(fourier_signal[interval+1:interval+window+1]))
+            # Identify interference frequencies: components more than 5 stds above the median
+            label_interf = list(np.where(np.abs(fourier_signal[interval+1:interval+window+1]) > median_freq + 5 * std_freq)[0])
+            # Adjust labels to be relative to the whole signal
+            label_interf = [x + interval + 1 for x in label_interf]
     
-        for interval in range(0,len(fourier_signal)-window+ 1,window): # so the last interval will start at len(fourier_emg) - window
-            
-            # range(start, stop, step)
-            median_freq = np.median(abs(fourier_signal[interval+1:interval+window+1])) # so interval + 1: interval + window + 1
-            std_freq = np.std(abs(fourier_signal[interval+1:interval+window+1]))
-            # interference is defined as when the magnitude of a given frequency component in the fourier spectrum
-            # is greater than 5 times the std, relative to the median magnitude
-            label_interf = list(np.where(abs(fourier_signal[interval+1:interval+window+1]) > median_freq+5*std_freq)[0]) # np.where gives tuple, element access to the array
-            # need to shift these labels to make sure they are not relative to the window only, but to the whole signal
-            label_interf = [x + interval + 1 for x in label_interf] # + 1 since we are already related to a +1 shifted array?
-    
-            if label_interf: # if a list exists
-                for i in range(int(-np.floor(bandwidth_as_index/2)),int(np.floor(bandwidth_as_index/2)+1)): # so as to include np.floor(bandwidth_as_index/2)
-                    
+            if label_interf:
+                for i in range(int(-np.floor(bandwidth_as_index / 2)), int(np.floor(bandwidth_as_index / 2) + 1)):
                     temp_shifted_list = [x + i for x in label_interf]
                     interf2remove[tracker: tracker + len(label_interf)] = temp_shifted_list
-                    tracker = tracker + len(label_interf)
+                    tracker += len(label_interf)
         
-        # we only take the first half of the signal, we need a compensatory step for the second half given we haven't wrapped the FT yet
-        indexf2remove = np.where(np.logical_and(interf2remove >= 0 , interf2remove <= len(fourier_signal)/2))[0]
+        # Only take the first half of the signal; prepare to wrap the FT for symmetry
+        indexf2remove = np.where(np.logical_and(interf2remove >= 0, interf2remove <= len(fourier_signal) / 2))[0]
         fourier_interf[interf2remove[indexf2remove]] = fourier_signal[interf2remove[indexf2remove]]
-        corrector = int(len(fourier_signal) - np.floor(len(fourier_signal)/2)*2)  # will either be 0 or 1 (0 if signal length is even, 1 if signal length is odd)
-        # wrapping FT
-        fourier_interf[int(np.ceil(len(fourier_signal)/2)):] = np.flip(np.conj(fourier_interf[1: int(np.ceil(len(fourier_signal)/2)+1- corrector)])) # not indexing first because this is 0Hz, not to be repeated
-        filtered_signal[chan,:] = signal[chan,:] - np.fft.ifft(fourier_interf).real
+        corrector = int(len(fourier_signal) - np.floor(len(fourier_signal) / 2) * 2)  # 0 if even, 1 if odd length
+        
+        # Wrap the Fourier transform for the negative frequencies
+        fourier_interf[int(np.ceil(len(fourier_signal) / 2)):] = np.flip(
+            np.conj(fourier_interf[1:int(np.ceil(len(fourier_signal) / 2) + 1 - corrector)])
+        )
+        
+        filtered_signal[chan, :] = signal[chan, :] - np.fft.ifft(fourier_interf).real
       
-
     return filtered_signal
+
 
 
    
@@ -626,127 +626,109 @@ def batch_process_filters(whit_sig, mu_filters,plateau,extender,diff,orig_sig_si
 
 
 def remove_duplicates(pulse_trains, discharge_times, discharge_times2, mu_filters, maxlag, jitter_val, tol, fsamp):
-
-    jitter_thr = int(np.round(jitter_val*fsamp))
-    spike_trains = np.zeros([np.shape(pulse_trains)[0],np.shape(pulse_trains)[1]])
-    # generating binary spike trains for each MU extracted so far
+    jitter_thr = int(np.round(jitter_val * fsamp))
+    spike_trains = np.zeros([np.shape(pulse_trains)[0], np.shape(pulse_trains)[1]])
+    # Generate binary spike trains for each MU extracted so far
 
     discharge_jits = []
-    discharge_times_new = [] # do not know yet how many non-duplicates MUs there will be
-    pulse_trains_new = [] # do not know yet how many non-duplicates MUs there will be
+    discharge_times_new = []  # List to store non-duplicate discharge times
+    pulse_trains_new = []     # List to store non-duplicate pulse trains
+
+    # Use len() since discharge_times is a list of sequences (which may have variable lengths)
+    mu_count = len(discharge_times)  
 
     for i in range(np.shape(pulse_trains)[0]):
-
-        spike_trains[i,discharge_times[i]] = 1
-        discharge_jits.append([]) # append an empty list to be extended with jitters
-        # adding jitter
+        spike_trains[i, discharge_times[i]] = 1
+        discharge_jits.append([])  # Initialize empty jitter list for each MU
+        # Add jitter: extend the list by subtracting and adding j to discharge_times2[i]
         for j in range(jitter_thr):
-            discharge_jits[i].extend(discharge_times2[i]-j)
-            discharge_jits[i].extend(discharge_times2[i]+j) # adding varying extents of jitter, based on computed jitter threshold
-
+            discharge_jits[i].extend((np.array(discharge_times2[i]) - j).tolist())
+            discharge_jits[i].extend((np.array(discharge_times2[i]) + j).tolist())
         discharge_jits[i].extend(discharge_times2[i])
 
-    mu_count = np.shape(discharge_times)[0] # the total number of MUs extracted so far
-
     i = 1
-    # With the binary trains generated above, you can readily identify duplicate MUs
+    # Loop until no elements remain in discharge_jits
     while discharge_jits:
-        
         discharge_temp = []
-        for mu_candidate in range(np.shape(discharge_jits)[0]):
-
-            # in matlab: [c, lags] = xcorr(firings(1,:), firings(j,:), maxlag*2,'normalized')
-            # calculating the cross correlation between the firings of two cnadidate MUs, within a limited range of maxlag*2
-            # then, normalise the resulting correlation values between 0 and 1
-
-            corr, lags = xcorr(spike_trains[0,:], spike_trains[mu_candidate,:],int(maxlag))
+        for mu_candidate in range(len(discharge_jits)):
+            # Calculate cross-correlation between the first spike train and the candidate
+            corr, lags = xcorr(spike_trains[0, :], spike_trains[mu_candidate, :], int(maxlag))
             ind_max = np.argmax(corr)
             corr_max = np.real(corr[ind_max])
-
             if corr_max > 0.2:
-                discharge_temp.append(discharge_jits[mu_candidate] + lags[ind_max])
+                discharge_temp.append(discharge_jits[mu_candidate] + [lags[ind_max]])
             else:
                 discharge_temp.append(discharge_jits[mu_candidate])
-
-
-        # discharge_temp is the lag-shifted version of discharge_jits if the correlation is sufficiently large
-        # so if they are quite misaligned in time, we shift them to be aligned, ready to maximise the count of the common discharges
-        # otherwise, we assume their temporal alignment is okay enough to just go ahead and count common discharges below
         
-        # Now, we count the common discharge times
+        # Count common discharges across MUs
         comdis = np.zeros(np.shape(pulse_trains)[0])
-        
-        for j in range(1, np.shape(pulse_trains)[0]): # skip the first since it is used for the baseline comparison   
+        for j in range(1, np.shape(pulse_trains)[0]):
             com = np.intersect1d(discharge_jits[0], discharge_temp[j])
-            com = com[np.insert(np.diff(com) != 1, 0, False)] # shouldn't this be based on the jitter threshold
+            # Only apply the filtering if com is non-empty
+            if com.size > 0:
+                mask = np.insert(np.diff(com) != 1, 0, False)
+                com = com[mask]
             comdis[j] = len(com) / max(len(discharge_times[0]), len(discharge_times[j]))
-            com = None
-
-        # now left with an array of common discharges
-        # use this establish the duplicate MUs, and keep only the MU that has the most stable, regular firing behaviour i.e. low ISI
         
+        # Identify duplicates based on a threshold
         duplicates = np.where(comdis >= tol)[0]
-        duplicates = np.insert(duplicates, 0, 0) # insert 
+        duplicates = np.insert(duplicates, 0, 0)  # Include the first element
         CoV = np.zeros(len(duplicates))
-        
         for j in range(len(duplicates)):
             ISI = np.diff(discharge_times[duplicates[j]])
             CoV[j] = np.std(ISI) / np.mean(ISI)
+        survivor = np.argmin(CoV)  # The MU with the lowest CoV survives
 
-        survivor = np.argmin(CoV) # the surviving MU has the lowest CoV
-
-        # delete all duplicates, but save the surviving MU
+        # Save the surviving MU’s discharge times and pulse train
         discharge_times_new.append(discharge_times[duplicates[survivor]])
         pulse_trains_new.append(pulse_trains[duplicates[survivor]])
 
-        # update firings and discharge times
-
+        # Remove the duplicates from discharge_times, discharge_times2, and discharge_jits
         for j in range(len(duplicates)):
-
             discharge_times[duplicates[-(j+1)]] = []
             discharge_times2[duplicates[-(j+1)]] = []
             discharge_jits[duplicates[-(j+1)]] = []
 
-        # if it is not empty, assign it back to the list, otherwise remove the empty element i.e. only keep the non duplicate MUs that were not emptied in previous loop
-        discharge_times = [mu for mu in discharge_times if len(mu) > 0] 
+        # Keep only non-empty entries
+        discharge_times = [mu for mu in discharge_times if len(mu) > 0]
         discharge_times2 = [mu for mu in discharge_times2 if len(mu) > 0]
         discharge_jits = [mu for mu in discharge_jits if len(mu) > 0]
 
-        # Clean the spike and pulse train arrays based on identificed duplicates
-        # all duplicates removed so we identify different duplicate groups on the next iteration of the while loop
+        # Remove the duplicate rows from spike_trains, pulse_trains, and mu_filters
         spike_trains = np.delete(spike_trains, duplicates, axis=0)
         pulse_trains = np.delete(pulse_trains, duplicates, axis=0)
-        mu_filters = np.delete(mu_filters,duplicates,axis=0)
-
+        mu_filters = np.delete(mu_filters, duplicates, axis=0)
         i += 1
 
     print('Duplicates removed')
     return discharge_times_new, pulse_trains_new, mu_filters
+
+
   
 
-def remove_outliers(pulse_trains, discharge_times, fsamp, threshold = 0.4, max_its = 30):
-
-    for mu in range(np.shape(discharge_times)[0]):
-
-        discharge_rates = 1/(np.diff(discharge_times[mu]) / fsamp)
+def remove_outliers(pulse_trains, discharge_times, fsamp, threshold=0.4, max_its=30):
+    # Iterate over the list using len() because discharge_times is inhomogeneous
+    for mu in range(len(discharge_times)):
+        # Compute inter-spike intervals (ISI) rates from discharge_times for the current MU
+        discharge_rates = 1 / (np.diff(discharge_times[mu]) / fsamp)
         it = 1
-        while (np.std(discharge_rates)/np.mean(discharge_rates)) > threshold and it < max_its:
-
-            artifact_limit = np.mean(discharge_rates) + 3*np.std(discharge_rates)
-            # identify the indices for which this limit is exceeded
+        while (np.std(discharge_rates) / np.mean(discharge_rates)) > threshold and it < max_its:
+            artifact_limit = np.mean(discharge_rates) + 3 * np.std(discharge_rates)
+            # Find indices where the discharge rate exceeds the artifact limit
             artifact_inds = np.squeeze(np.argwhere(discharge_rates > artifact_limit))
             if len(artifact_inds) > 0:
-
-                # vectorising the comparisons between the numerator terms used to calculate the rate, for indices at rate artifacts
+                # Compare the pulse train values at artifact indices to decide which spike to remove
                 diff_artifact_comp = pulse_trains[mu][discharge_times[mu][artifact_inds]] < pulse_trains[mu][discharge_times[mu][artifact_inds + 1]]
-                # 0 means discharge_times[mu][artifact_inds]] was less, 1 means discharge_times[mu][artifact_inds]] was more
+                # less_or_more: 0 means remove the earlier spike, 1 means remove the later spike
                 less_or_more = np.argmax([diff_artifact_comp, ~diff_artifact_comp], axis=0)
                 discharge_times[mu] = np.delete(discharge_times[mu], artifact_inds + less_or_more)
-            
-            discharge_rates = 1/(np.diff(discharge_times[mu]) / fsamp)
+            # Recalculate the discharge rates after removal
+            discharge_rates = 1 / (np.diff(discharge_times[mu]) / fsamp)
             it += 1
- 
     return discharge_times
+
+
+
 
 
 def remove_duplicates_between_arrays(pulse_trains, discharge_times, muscle, maxlag, jitter_val, tol, fsamp):
