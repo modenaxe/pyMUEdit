@@ -707,25 +707,30 @@ def remove_duplicates(pulse_trains, discharge_times, discharge_times2, mu_filter
   
 
 def remove_outliers(pulse_trains, discharge_times, fsamp, threshold=0.4, max_its=30):
-    # Iterate over the list using len() because discharge_times is inhomogeneous
     for mu in range(len(discharge_times)):
-        # Compute inter-spike intervals (ISI) rates from discharge_times for the current MU
+        # Compute inter-spike interval (ISI) rates for the current MU.
         discharge_rates = 1 / (np.diff(discharge_times[mu]) / fsamp)
         it = 1
         while (np.std(discharge_rates) / np.mean(discharge_rates)) > threshold and it < max_its:
             artifact_limit = np.mean(discharge_rates) + 3 * np.std(discharge_rates)
-            # Find indices where the discharge rate exceeds the artifact limit
-            artifact_inds = np.squeeze(np.argwhere(discharge_rates > artifact_limit))
-            if len(artifact_inds) > 0:
-                # Compare the pulse train values at artifact indices to decide which spike to remove
-                diff_artifact_comp = pulse_trains[mu][discharge_times[mu][artifact_inds]] < pulse_trains[mu][discharge_times[mu][artifact_inds + 1]]
-                # less_or_more: 0 means remove the earlier spike, 1 means remove the later spike
-                less_or_more = np.argmax([diff_artifact_comp, ~diff_artifact_comp], axis=0)
+            # Get artifact indices as a flattened numpy array.
+            artifact_inds = np.array(np.argwhere(discharge_rates > artifact_limit)).flatten()
+            # Check if any artifact indices were found.
+            if artifact_inds.size > 0:
+                # Compare pulse train values at the artifact indices.
+                diff_artifact_comp = (pulse_trains[mu][discharge_times[mu][artifact_inds]] <
+                                      pulse_trains[mu][discharge_times[mu][artifact_inds + 1]])
+                # Determine which spike to remove: 0 means remove the earlier spike, 1 the later.
+                less_or_more = np.argmax(np.vstack([diff_artifact_comp, np.logical_not(diff_artifact_comp)]), axis=0)
                 discharge_times[mu] = np.delete(discharge_times[mu], artifact_inds + less_or_more)
-            # Recalculate the discharge rates after removal
+            # Recalculate the discharge rates after removal.
             discharge_rates = 1 / (np.diff(discharge_times[mu]) / fsamp)
             it += 1
     return discharge_times
+
+
+
+
 
 
 
@@ -831,29 +836,28 @@ def remove_duplicates_between_arrays(pulse_trains, discharge_times, muscle, maxl
     return discharge_times_new, pulse_trains_new, muscle_new
   
 
-def remove_outliers(pulse_trains, discharge_times, fsamp, threshold = 0.4, max_its = 30):
-
-    for mu in range(np.shape(discharge_times)[0]):
-
-        discharge_rates = 1/(np.diff(discharge_times[mu]) / fsamp)
+def remove_outliers(pulse_trains, discharge_times, fsamp, threshold=0.4, max_its=30):
+    for mu in range(len(discharge_times)):
+        # Compute inter-spike interval (ISI) rates for the current MU.
+        discharge_rates = 1 / (np.diff(discharge_times[mu]) / fsamp)
         it = 1
-        while (np.std(discharge_rates)/np.mean(discharge_rates)) > threshold and it < max_its:
-
-            artifact_limit = np.mean(discharge_rates) + 3*np.std(discharge_rates)
-            # identify the indices for which this limit is exceeded
-            artifact_inds = np.squeeze(np.argwhere(discharge_rates > artifact_limit))
-            if len(artifact_inds) > 0:
-
-                # vectorising the comparisons between the numerator terms used to calculate the rate, for indices at rate artifacts
-                diff_artifact_comp = pulse_trains[mu][discharge_times[mu][artifact_inds]] < pulse_trains[mu][discharge_times[mu][artifact_inds + 1]]
-                # 0 means discharge_times[mu][artifact_inds]] was less, 1 means discharge_times[mu][artifact_inds]] was more
-                less_or_more = np.argmax([diff_artifact_comp, ~diff_artifact_comp], axis=0)
+        while (np.std(discharge_rates) / np.mean(discharge_rates)) > threshold and it < max_its:
+            artifact_limit = np.mean(discharge_rates) + 3 * np.std(discharge_rates)
+            # Get artifact indices as a flattened numpy array.
+            artifact_inds = np.array(np.argwhere(discharge_rates > artifact_limit)).flatten()
+            # Check if any artifact indices were found.
+            if artifact_inds.size > 0:
+                # Compare pulse train values at the artifact indices.
+                diff_artifact_comp = (pulse_trains[mu][discharge_times[mu][artifact_inds]] <
+                                      pulse_trains[mu][discharge_times[mu][artifact_inds + 1]])
+                # Determine which spike to remove: 0 means remove the earlier spike, 1 the later.
+                less_or_more = np.argmax(np.vstack([diff_artifact_comp, np.logical_not(diff_artifact_comp)]), axis=0)
                 discharge_times[mu] = np.delete(discharge_times[mu], artifact_inds + less_or_more)
-            
-            discharge_rates = 1/(np.diff(discharge_times[mu]) / fsamp)
+            # Recalculate the discharge rates after removal.
+            discharge_rates = 1 / (np.diff(discharge_times[mu]) / fsamp)
             it += 1
- 
     return discharge_times
+
 
 
 

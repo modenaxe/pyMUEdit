@@ -5,31 +5,25 @@ import pickle
 import pandas as pd
 import json
 
-def fastICA(otb_filepath, save_dir, output_filename, to_filter=True):
-    """
-    Processes a given .otb EMG file using the offline_EMG module and saves the resulting
-    motor unit data to a file.
-    
-    Parameters:
-      otb_filepath (str): Directory containing the .otb files.
-      save_dir (str): Directory where final discharges will be saved.
-      output_filename (str): Output file name.
-      to_filter (bool): Whether or not to notch and butter filter the data.
-    """
+def fastICA():
+    input_dir = "../data/io/input_decomposition"
+    param_dir = "../data/io/parameters"
+    output_dir = "../output_decomposition"
+
     # Ensure the input path is absolute
-    otb_filepath = os.path.abspath(otb_filepath)
+    input_dir = os.path.abspath(input_dir)
     
-    # Initialize the EMG object with the given directory and a parameter (here 1)
-    emg_obj = offline_EMG(otb_filepath, 1)
+    # Initialize the EMG object with the given directory and to_paramter = 1
+    emg_obj = offline_EMG(input_dir, 1)
     
     # List the .otb+ files before changing the working directory
-    all_files = sorted(glob.glob(os.path.join(otb_filepath, '*.otb+')))
+    all_files = sorted(glob.glob(os.path.join(input_dir, '*.otb+')))
     if not all_files:
-        print(f"No .otb files found in directory: {otb_filepath}")
+        print(f"No .otb files found in directory: {input_dir}")
         return
     
     # Change working directory to the save directory (if needed)
-    os.chdir(save_dir)
+    os.chdir(param_dir)
 
     all_dicts = []
     
@@ -39,6 +33,7 @@ def fastICA(otb_filepath, save_dir, output_filename, to_filter=True):
     # Process each file found
     for file in all_files:
         ################## FILE ORGANISATION ################################
+        file_name = file.split('/')[-1]
         if file_type == 'otb':
             emg_obj.open_otb(file) 
         elif file_type == 'csv':
@@ -125,9 +120,17 @@ def fastICA(otb_filepath, save_dir, output_filename, to_filter=True):
                 'clusters': 1 
             }
             all_dicts.append(decomposition_dict)
+        
+        # Ensure the output directory exists
+        output_dir = os.path.dirname(output_dir)
+        if not os.path.exists(output_dir):
+          os.makedirs(output_dir)
 
         # Save the output decomposition data to a pickle file
-        with open(output_filename, 'wb') as file:
+        # add file_name to output_dir
+        # remove the .otb+ extension
+        file_name = file_name[:-5]
+        with open(output_dir + '/' + file_name + '.pkl', 'wb') as file:
             pickle.dump(all_dicts, file)
             
         if emg_obj.dup_bgrids and sum(emg_obj.mus_in_array) > 0:    
@@ -155,12 +158,13 @@ def fastICA(otb_filepath, save_dir, output_filename, to_filter=True):
             'dup_thr': emg_obj.dup_thr,
             'cov_filter': emg_obj.cov_filter,
             'cov_thr': emg_obj.cov_thr,
-            'original_data': emg_obj.data,
+            'original_data': emg_obj.signal_dict['data'],
             'path': emg_obj.signal_dict['path'],
             'target': emg_obj.signal_dict['target']
         }
-    
-        with open('decomposition_parameters.pkl', 'wb') as file:
+
+        # Save the parameters data to a pickle file
+        with open(file_name + '.pkl', 'wb') as file:
             pickle.dump(parameters_dict, file)
     
         print('Decomposed data saved.')
