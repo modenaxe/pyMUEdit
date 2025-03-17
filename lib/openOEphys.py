@@ -6,8 +6,6 @@ from lib.readNPY import readNPY
 
 
 def openOEphys(path, file, dialog):
-    """Load EMG signals recorded with the Open Ephys GUI"""
-
     # Create a session (loads all data from the most recent recording)
     with open(os.path.join(path, file), "r") as f:
         info = json.load(f)
@@ -35,7 +33,7 @@ def openOEphys(path, file, dialog):
     # Memory map the continuous data file
     data_file = os.path.join(directory, "continuous.dat")
     file_size = os.path.getsize(data_file)
-    num_data_points = file_size // 2  # int16 = 2 bytes
+    num_data_points = file_size // 2
 
     with open(data_file, "rb") as f:
         raw_data = np.fromfile(f, dtype=np.int16)

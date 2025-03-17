@@ -52,15 +52,12 @@ class ColoredCircle(QWidget):
 
 
 class Quattrodlg(QMainWindow):
-    """Python equivalent of MATLAB's Quattrodlg class"""
-
     def __init__(self):
         super().__init__()
         self.file = None  # File to update with the configuration
         self.initUI()
 
     def initUI(self):
-        """Initialize the UI components"""
         self.setWindowTitle("Python App")
         self.setGeometry(100, 100, 550, 400)
         self.setStyleSheet("background-color: #262626;")
@@ -191,7 +188,6 @@ class Quattrodlg(QMainWindow):
         self.mi4_panel.setEnabled(False)
 
     def create_panel(self, title, code):
-        """Create a panel for a port with dropdown and text field"""
         panel = QGroupBox(title)
         panel.setStyleSheet("QGroupBox { color: #f0f0f0; font-family: 'Poppins'; font-size: 14pt; font-weight: bold; }")
         layout = QVBoxLayout(panel)

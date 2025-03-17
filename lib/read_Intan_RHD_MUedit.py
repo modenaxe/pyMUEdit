@@ -202,11 +202,6 @@ def read_Intan_RHD_MUedit(path, file):
 
 
 def read_QString(fid):
-    """
-    Read Qt style QString from file.
-    The first 32-bit unsigned number indicates the length of the string (in bytes).
-    If this number equals 0xFFFFFFFF, the string is null.
-    """
     length = struct.unpack("<I", fid.read(4))[0]
     if length == 0xFFFFFFFF:
         return ""

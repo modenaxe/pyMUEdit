@@ -133,32 +133,11 @@ class SegmentSession(QMainWindow):
                 self.reference_dropdown.clear()
                 self.reference_dropdown.addItem("EMG amplitude")
 
-                # Extract the signal data from the structured array
-                if "signal" in self.file:
-                    signal_struct = self.file["signal"]
-
-                    if "auxiliaryname" in signal_struct.dtype.names:
-                        auxnames = signal_struct["auxiliaryname"][0, 0]
-
-                        name_list = []
-
-                        if isinstance(auxnames, np.ndarray):
-                            for name_obj in auxnames.flatten():
-                                # For NumPy arrays with a single value
-                                if isinstance(name_obj, np.ndarray) and name_obj.size == 1:
-                                    name_str = str(name_obj.item())
-                                # For regular strings or other objects
-                                else:
-                                    name_str = str(name_obj)
-                                name_list.append(name_str.strip())
-
-                        for name in name_list:
-                            self.reference_dropdown.addItem(name)
+                if "signal" in self.file and "auxiliaryname" in self.file["signal"]:
+                    for name in self.file["signal"]["auxiliaryname"][0][0][0]:
+                        self.reference_dropdown.addItem(name)
             except Exception as e:
                 print(f"Error loading file: {e}")
-                import traceback
-
-                traceback.print_exc()
 
     def reference_dropdown_value_changed(self):
         if not self.pathname.text() or not hasattr(self, "file") or self.file is None:
@@ -166,113 +145,89 @@ class SegmentSession(QMainWindow):
 
         self.canvas.axes.clear()
 
-        try:
-            # Extract the signal structure
-            signal = self.file["signal"][0, 0]
+        # Extract the signal data
+        signal = self.file["signal"]
 
-            if "EMG amplitude" in self.reference_dropdown.currentText():
-                # Calculate EMG amplitude
-                print("Calculating EMG amplitude")
+        # Check if signal is structured array (from MATLAB)
+        # is_structured = isinstance(signal, np.ndarray) and signal.dtype.names is not None
 
-                # Safely extract data
-                data = signal["data"]
-                if isinstance(data, np.ndarray) and data.ndim > 0:
-                    if data.dtype == np.dtype("O") and data.size > 0:
-                        data = data[0, 0]
+        if "EMG amplitude" in self.reference_dropdown.currentText():
+            # Calculate EMG amplitude
+            data = signal["data"][0, 0] if signal.size > 0 else np.array([])
+            fsamp = float(signal["fsamp"][0, 0]) if signal.size > 0 else 1000.0
 
-                fsamp = float(signal["fsamp"][0, 0]) if signal["fsamp"].ndim > 1 else float(signal["fsamp"])
-
-                # Create convolution window
-                window_size = int(fsamp)
-                window = np.ones(window_size) / window_size
-
-                # Process channels
-                channels = data.shape[0]
+            # Process channels
+            if data.size > 0:
+                channels = min(data.shape[0], int(data.shape[0] / 2))  # Use half the channels like MATLAB
                 tmp = np.zeros((channels, data.shape[1]))
 
                 for i in range(channels):
-                    abs_emg = np.abs(data[i, :])
-                    tmp[i, :] = np.convolve(abs_emg, window, mode="same")
+                    # Simple moving average filter like MATLAB's movmean
+                    window_size = int(fsamp)
+                    tmp[i, :] = np.convolve(np.abs(data[i, :]), np.ones(window_size) / window_size, mode="same")
 
-                # Calculate mean across channels for plotting
+                # Calculate mean across channels
                 emg_mean = np.mean(tmp, axis=0)
 
-                # Downsample for better visualization performance
-                downsample_factor = max(1, len(emg_mean) // 5000)
-                x = np.arange(0, len(emg_mean), downsample_factor)
-                y_mean = emg_mean[::downsample_factor]
+                # For structured arrays, we can't modify them directly
+                self.target_data = emg_mean  # Store locally for later use
 
-                # Plot only a few representative channels
-                for i in range(min(8, channels)):
-                    y_channel = tmp[i, ::downsample_factor]
-                    self.canvas.axes.plot(x, y_channel, color="gray", linewidth=0.2, alpha=0.3)
+                # Plot individual channels in gray
+                for i in range(min(8, channels)):  # Limit to 8 channels for performance
+                    self.canvas.axes.plot(tmp[i, :], color=(0.5, 0.5, 0.5), linewidth=0.25)
 
-                # Plot mean with higher visibility
-                self.canvas.axes.plot(x, y_mean, color="orangered", linewidth=1.5)
+                # Plot mean in orange-red
+                self.canvas.axes.plot(emg_mean, color=(0.85, 0.33, 0.10), linewidth=2)
 
-                y_min = float(np.min(emg_mean) * 0.9)
-                y_max = float(np.max(emg_mean) * 1.1)
-                self.canvas.axes.set_ylim(y_min, y_max)
+                self.canvas.axes.set_ylim(float(np.min(emg_mean)), float(np.max(emg_mean)))
 
-                self.threshold_field.setEnabled(False)
-            else:
-                # Handle auxiliary signals
-                selected_name = self.reference_dropdown.currentText().strip()
+            self.threshold_field.setEnabled(False)
+        else:
+            # Handle auxiliary signals
+            idx = None
+            selected_name = self.reference_dropdown.currentText().strip()
 
-                # Get auxiliary data
-                aux_data = signal["auxiliary"]
-                if isinstance(aux_data, np.ndarray) and aux_data.ndim > 0:
-                    if aux_data.dtype == np.dtype("O") and aux_data.size > 0:
-                        aux_data = aux_data[0, 0]
+            # Access auxiliary names properly for structured arrays
+            if "auxiliaryname" in signal.dtype.names:
+                aux_names_obj = signal["auxiliaryname"][0, 0]
 
-                # Get auxiliary names
-                aux_names = signal["auxiliaryname"]
-                if isinstance(aux_names, np.ndarray) and aux_names.ndim > 0:
-                    if aux_names.dtype == np.dtype("O") and aux_names.size > 0:
-                        aux_names = aux_names[0, 0]
+                # Convert to a list of strings we can search
+                aux_names = []
+                if isinstance(aux_names_obj, np.ndarray):
+                    for i in range(aux_names_obj.size):
+                        if aux_names_obj.dtype.kind == "O":
+                            name = str(aux_names_obj[i])
+                        else:
+                            name = str(aux_names_obj.item(i) if aux_names_obj.size == 1 else aux_names_obj[i])
+                        aux_names.append(name)
+                        if selected_name in name:
+                            idx = i
+                            break
 
-                # Find the signal index
-                idx = None
-                for i, name in enumerate(aux_names):
-                    name_str = str(name).strip()
-                    if selected_name in name_str:
-                        idx = i
-                        break
+            # Access auxiliary data properly
+            if idx is not None and "auxiliary" in signal.dtype.names:
+                aux_data = signal["auxiliary"][0, 0]
 
-                if idx is not None:
-                    # Extract the data
+                if aux_data.ndim > 1 and idx < aux_data.shape[0]:
                     signal_data = aux_data[idx, :]
 
-                    downsample_factor = max(1, len(signal_data) // 1000)
-                    x = np.arange(0, len(signal_data), downsample_factor)
-                    y = signal_data[::downsample_factor]
+                    # Store as target
+                    self.target_data = signal_data  # Store locally
 
-                    # Plot downsampled data as a line
-                    self.canvas.axes.plot(x, y, color="orangered", linewidth=1.0)
-
-                    # Set appropriate y-limits with padding
-                    data_range = np.max(signal_data) - np.min(signal_data)
-                    y_min = float(np.min(signal_data) - 0.05 * data_range)
-                    y_max = float(np.max(signal_data) + 0.05 * data_range)
-                    self.canvas.axes.set_ylim(y_min, y_max)
+                    # Plot directly
+                    self.canvas.axes.plot(signal_data, color=(0.95, 0.95, 0.95), linewidth=2)
+                    self.canvas.axes.set_ylim(float(np.min(signal_data)), float(np.max(signal_data)))
 
                     self.threshold_field.setEnabled(True)
-                else:
-                    print(f"Could not find matching auxiliary signal for: {selected_name}")
-        except Exception as e:
-            print(f"Error in reference_dropdown_value_changed: {e}")
-            import traceback
-
-            traceback.print_exc()
 
         # Add grid and style the plot
         self.canvas.axes.grid(True, alpha=0.5, color="dimgray")
         self.canvas.axes.set_facecolor("#262626")
         self.canvas.fig.set_facecolor("#262626")
-        self.canvas.axes.set_xlabel("Time (samples)", color="white")
         self.canvas.axes.set_ylabel("Amplitude", color="white")
         self.canvas.axes.tick_params(axis="x", colors="white")
         self.canvas.axes.tick_params(axis="y", colors="white")
+
         self.canvas.draw()
 
     def threshold_field_value_changed(self):

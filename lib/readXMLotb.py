@@ -3,9 +3,6 @@ import re
 
 
 def readXMLotb(file):
-    """
-    Convert xml file into a Python dictionary.
-    """
     if isinstance(file, (minidom.Document, minidom.Element)):
         # Input is already a DOM object
         xDoc = file
@@ -29,7 +26,6 @@ def readXMLotb(file):
 
 
 def parse_child_nodes(node):
-    """Recurse over node children and build dictionary structure."""
     children = {}
     text = {}
     text_flag = "Text"
@@ -89,7 +85,6 @@ def parse_child_nodes(node):
 
 
 def get_node_data(node):
-    """Create structure of node info."""
     # Check node type and get node name
     if node.nodeType == minidom.Node.TEXT_NODE:
         name = "#text"
@@ -122,7 +117,6 @@ def get_node_data(node):
 
 
 def parse_attributes(node):
-    """Create attributes dictionary."""
     attributes = {}
 
     # Check if node is an element and has attributes

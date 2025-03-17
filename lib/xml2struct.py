@@ -4,15 +4,11 @@ import re
 
 def xml2struct(file):
     if isinstance(file, (minidom.Document, minidom.Element)):
-        # Input is already a DOM object
         xDoc = file
     else:
-        # Check if file exists
         try:
-            # Try to read the XML file
             xDoc = minidom.parse(file)
         except FileNotFoundError:
-            # Try adding .xml extension
             if ".xml" not in file:
                 try:
                     xDoc = minidom.parse(file + ".xml")
@@ -26,7 +22,6 @@ def xml2struct(file):
 
 
 def parse_child_nodes(node):
-    """Recurse over node children and build dictionary structure."""
     children = {}
     ptext = {}
     text_flag = "Text"
@@ -86,7 +81,6 @@ def parse_child_nodes(node):
 
 
 def get_node_data(node):
-    """Create structure of node info."""
     # Get node name
     name = node.nodeName
     name = name.replace("-", "_dash_")
@@ -107,7 +101,6 @@ def get_node_data(node):
 
 
 def parse_attributes(node):
-    """Create attributes dictionary."""
     attributes = {}
 
     if node.hasAttributes():
