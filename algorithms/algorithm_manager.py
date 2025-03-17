@@ -8,7 +8,6 @@ import json
 def fastICA():
     # Convert all directories to absolute paths before any chdir
     input_dir = os.path.abspath("../data/io/input_decomposition")
-    param_dir = os.path.abspath("../data/io/parameters")
     output_dir = os.path.abspath("../data/io/output_decomposition")
     
     # Initialize the EMG object with the given directory and to_paramter = 1
@@ -19,9 +18,6 @@ def fastICA():
     if not all_files:
         print(f"No .otb files found in directory: {input_dir}")
         return
-    
-    # Change working directory to the parameter directory
-    os.chdir(param_dir)
     
     all_dicts = []
     
