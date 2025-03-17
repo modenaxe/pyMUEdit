@@ -6,12 +6,10 @@ import pandas as pd
 import json
 
 def fastICA():
-    input_dir = "../data/io/input_decomposition"
-    param_dir = "../data/io/parameters"
-    output_dir = "../output_decomposition"
-
-    # Ensure the input path is absolute
-    input_dir = os.path.abspath(input_dir)
+    # Convert all directories to absolute paths before any chdir
+    input_dir = os.path.abspath("../data/io/input_decomposition")
+    param_dir = os.path.abspath("../data/io/parameters")
+    output_dir = os.path.abspath("../data/io/output_decomposition")
     
     # Initialize the EMG object with the given directory and to_paramter = 1
     emg_obj = offline_EMG(input_dir, 1)
@@ -22,13 +20,13 @@ def fastICA():
         print(f"No .otb files found in directory: {input_dir}")
         return
     
-    # Change working directory to the save directory (if needed)
+    # Change working directory to the parameter directory
     os.chdir(param_dir)
-
+    
     all_dicts = []
     
-    # Update: adding different file options for opening...
-    file_type = 'otb'  # options: 'otb', 'csv', 'ephys', etc.
+    # File type options: 'otb', 'csv', 'ephys', etc.
+    file_type = 'otb'
     
     # Process each file found
     for file in all_files:
@@ -37,15 +35,13 @@ def fastICA():
         if file_type == 'otb':
             emg_obj.open_otb(file) 
         elif file_type == 'csv':
-            # To be implemented if CSV support is needed
             print('CSV file processing to be completed')
         elif file_type == 'ephys':
-            # To be implemented if ephys file support is needed
             print('Ephys file processing to be completed')
 
         emg_obj.electrode_formatter()  # adds spatial context and additional filtering
         
-        if emg_obj.check_emg:  # if you want to check signal quality, perform channel rejection
+        if emg_obj.check_emg:
             emg_obj.manual_rejection()
 
         #################### BATCHING #######################################
@@ -78,7 +74,7 @@ def fastICA():
             ])
             emg_obj.signal_dict['inv_extend_obvs'] = emg_obj.signal_dict['sq_extend_obvs'].copy()
             
-            # Dewhitening and whitening matrices (dimensions unchanged by edge removal)
+            # Dewhitening and whitening matrices
             emg_obj.decomp_dict['dewhiten_mat'] = emg_obj.signal_dict['sq_extend_obvs'].copy()
             emg_obj.decomp_dict['whiten_mat'] = emg_obj.signal_dict['sq_extend_obvs'].copy()
             
@@ -89,7 +85,6 @@ def fastICA():
             emg_obj.decomp_dict['whitened_obvs'] = emg_obj.signal_dict['extend_obvs'].copy()
 
             for interval in range(nwins): 
-                # Initialise zero arrays for separation matrix B and separation vectors w
                 current_shape = np.shape(emg_obj.decomp_dict['whitened_obvs'][interval])[0]
                 emg_obj.decomp_dict['B_sep_mat'] = np.zeros([current_shape, emg_obj.its])
                 emg_obj.decomp_dict['w_sep_vect'] = np.zeros([current_shape, 1])
@@ -122,15 +117,12 @@ def fastICA():
             all_dicts.append(decomposition_dict)
         
         # Ensure the output directory exists
-        output_dir = os.path.dirname(output_dir)
         if not os.path.exists(output_dir):
-          os.makedirs(output_dir)
+            os.makedirs(output_dir)
 
-        # Save the output decomposition data to a pickle file
-        # add file_name to output_dir
-        # remove the .otb+ extension
+        # Remove the .otb+ extension from the file name
         file_name = file_name[:-5]
-        with open(output_dir + '/' + file_name + '.pkl', 'wb') as file:
+        with open(os.path.join(output_dir, file_name + '.pkl'), 'wb') as file:
             pickle.dump(all_dicts, file)
             
         if emg_obj.dup_bgrids and sum(emg_obj.mus_in_array) > 0:    
@@ -139,7 +131,7 @@ def fastICA():
         print('Completed processing of the recorded EMG signal')
         print('Reformatting file for saving...')
     
-        # Save processing parameters to a file
+        # Save processing parameters to a pickle file in the output directory
         parameters_dict = {
             'file_path': all_files[0],
             'n_its': emg_obj.its,
@@ -163,8 +155,8 @@ def fastICA():
             'target': emg_obj.signal_dict['target']
         }
 
-        # Save the parameters data to a pickle file
-        with open(file_name + '.pkl', 'wb') as file:
+        with open(os.path.join(output_dir, file_name + '_params.pkl'), 'wb') as file:
             pickle.dump(parameters_dict, file)
     
         print('Decomposed data saved.')
+
