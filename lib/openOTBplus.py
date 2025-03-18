@@ -30,6 +30,7 @@ def openOTBplus(path, file, dialog):
     Grid = [""] * nChannel
     Muscle = [""] * nChannel
 
+    # Parse channel information
     for nChild in range(len(abs["Device"]["Channels"]["Adapter"])):
         localGain = float(abs["Device"]["Channels"]["Adapter"][nChild]["Attributes"]["Gain"])
         startIndex = int(abs["Device"]["Channels"]["Adapter"][nChild]["Attributes"]["ChannelStartIndex"])
@@ -37,77 +38,87 @@ def openOTBplus(path, file, dialog):
         Channel = abs["Device"]["Channels"]["Adapter"][nChild]["Channel"]
 
         for nChan in range(len(Channel) if isinstance(Channel, list) else 1):
-            # Check if Channel is a list or dictionary and handle accordingly
             if isinstance(Channel, list):
                 current_channel = Channel[nChan]
             else:
-                # If it's a single channel (dict), just use it directly
                 current_channel = Channel
 
             ChannelAtt = current_channel["Attributes"]
             Description = ChannelAtt["Description"]
             idx = int(ChannelAtt["Index"])
 
-            # Calculate position with bounds check
-            position = startIndex + idx
-            if position >= nChannel:
+            # Calculate position - adjust to match MATLAB indexing
+            position = startIndex + idx + 1
+            if position > nChannel:
                 print(f"Warning: Index {position} out of bounds, skipping channel")
                 continue
 
+            # Determine adapter type based on description
             if "General" in Description or "iEMG" in Description:
-                Adapter[position] = 1
+                Adapter[position - 1] = 1
             elif "16" in Description:
-                Adapter[position] = 2
+                Adapter[position - 1] = 2
             elif "32" in Description:
-                Adapter[position] = 3
+                Adapter[position - 1] = 3
             elif "64" in Description:
-                Adapter[position] = 4
+                Adapter[position - 1] = 4
             elif "Splitter" in Description:
-                Adapter[position] = 4
+                Adapter[position - 1] = 4
             else:
-                Adapter[position] = 5
+                Adapter[position - 1] = 5
 
+            # Determine device position
             if "QUATTROCENTO" in abs["Device"]["Attributes"]["Name"]:
                 Adpatidx = ChannelAtt["Prefix"]
                 if "MULTIPLE IN" in Adpatidx:
-                    Posdev[position] = int(Adpatidx[12]) + 2
+                    Posdev[position - 1] = int(Adpatidx[12]) + 2
                 elif "IN" in Adpatidx:
-                    Posdev[position] = int(Adpatidx[3])
-                    if Posdev[position] < 5:
-                        Posdev[position] = 1
+                    Posdev[position - 1] = int(Adpatidx[3])
+                    if Posdev[position - 1] < 5:
+                        Posdev[position - 1] = 1
                     else:
-                        Posdev[position] = 2
+                        Posdev[position - 1] = 2
             else:
-                Posdev[position] = int(abs["Device"]["Channels"]["Adapter"][nChild]["Attributes"]["AdapterIndex"])
+                Posdev[position - 1] = int(abs["Device"]["Channels"]["Adapter"][nChild]["Attributes"]["AdapterIndex"])
 
-            Gains[position] = localGain
-            Grid[position] = ChannelAtt["ID"]
-            Muscle[position] = ChannelAtt["Muscle"]
+            Gains[position - 1] = localGain
+            Grid[position - 1] = ChannelAtt["ID"]
+            Muscle[position - 1] = ChannelAtt["Muscle"]
 
-            # If it's not a list but a single channel, we processed it, so break the loop
             if not isinstance(Channel, list):
                 break
 
-    with open(os.path.join("tmpopen", signals[0]), "rb") as h:
-        data = np.fromfile(h, dtype=np.int16).reshape((nChannel, -1))
+    # Read the actual signal data
+    try:
+        with open(os.path.join("tmpopen", signals[0]), "rb") as h:
+            raw_data = np.fromfile(h, dtype=np.int16)
 
+            # Reshape using Fortran order to match MATLAB's fread(h,[nChannel Inf], 'short')
+            data = raw_data.reshape((nChannel, -1), order="F")
+    except Exception as e:
+        print(f"Error reading signal file: {e}")
+        data = np.zeros((nChannel, 1000))
+
+    data_converted = np.zeros_like(data, dtype=np.float64)  # Use float64 to match MATLAB
     for nCh in range(nChannel):
         if Gains[nCh] > 0:  # Avoid division by zero
-            data[nCh, :] = data[nCh, :] * PowerSupply / (2**nADBit) * 1000 / Gains[nCh]
+            data_converted[nCh, :] = data[nCh, :] * PowerSupply / (2**nADBit) * 1000 / Gains[nCh]
 
     signal = {}
+
     # Create mask for data selection
     mask_data = (Adapter == 3) | (Adapter == 4)
-    signal["data"] = data[mask_data, :]
+    signal["data"] = data_converted[mask_data, :]
 
     # Create mask for auxiliary data
     mask_aux = Adapter == 5
     if np.any(mask_aux):
-        signal["auxiliary"] = data[mask_aux, :]
+        signal["auxiliary"] = data_converted[mask_aux, :]
 
     if np.any(Adapter < 3):
-        signal["emgnotgrid"] = data[Adapter < 3, :]
+        signal["emgnotgrid"] = data_converted[Adapter < 3, :]
 
+    # Process grid and muscle names
     nch = 1
     nch2 = 1
     Grid2 = []
@@ -127,14 +138,16 @@ def openOTBplus(path, file, dialog):
     Grid = Grid2
     Muscle = Muscle2
 
+    # Store sampling rate and channel count
     signal["fsamp"] = Fsample
     signal["nChan"] = nChannel
 
     # Extract Posdev values for grid data using the same mask as data extraction
     grid_posdev = Posdev[mask_data]
 
-    idxa = np.unique(grid_posdev[grid_posdev > 0])  # Filter out zero values
-    idxb = np.unique([m for m in Muscle if m])  # Filter out empty strings
+    # Process grid information
+    idxa = np.unique(grid_posdev[grid_posdev > 0])
+    idxb = np.unique([m for m in Muscle if m])
 
     if len(idxa) >= len(idxb) and len(idxa) > 0:
         signal["ngrid"] = len(idxa)
@@ -163,7 +176,6 @@ def openOTBplus(path, file, dialog):
                 signal["gridname"][i] = Grid[idx[0]]
                 signal["muscle"][i] = Muscle[idx[0]]
     else:
-        # No valid grid or muscle names found
         signal["ngrid"] = 1
         signal["gridname"] = ["Unknown"]
         signal["muscle"] = ["Unknown"]
@@ -175,26 +187,21 @@ def openOTBplus(path, file, dialog):
         try:
             with open(os.path.join("tmpopen", target_files[1]), "rb") as h:
                 data1 = np.fromfile(h, dtype=np.float64)
-                # Ensure data1 is the same length as the EMG data
-                if len(data1) >= data.shape[1]:
-                    data1 = data1[: data.shape[1]]
+                if len(data1) >= data_converted.shape[1]:
+                    data1 = data1[: data_converted.shape[1]]
                 else:
-                    # Pad with zeros if necessary
-                    data1 = np.pad(data1, (0, data.shape[1] - len(data1)))
+                    data1 = np.pad(data1, (0, data_converted.shape[1] - len(data1)))
                 signal["path"] = data1
 
             with open(os.path.join("tmpopen", target_files[2]), "rb") as h:
                 data2 = np.fromfile(h, dtype=np.float64)
-                # Ensure data2 is the same length as the EMG data
-                if len(data2) >= data.shape[1]:
-                    data2 = data2[: data.shape[1]]
+                if len(data2) >= data_converted.shape[1]:
+                    data2 = data2[: data_converted.shape[1]]
                 else:
-                    # Pad with zeros if necessary
-                    data2 = np.pad(data2, (0, data.shape[1] - len(data2)))
+                    data2 = np.pad(data2, (0, data_converted.shape[1] - len(data2)))
                 signal["target"] = data2
 
             if "auxiliary" in signal and signal["auxiliary"].size > 0:
-                # Ensure auxiliary data has at least one row
                 if len(signal["auxiliary"].shape) == 1:
                     signal["auxiliary"] = signal["auxiliary"].reshape(1, -1)
 
@@ -218,8 +225,13 @@ def openOTBplus(path, file, dialog):
         print(f"Error removing temporary directory: {e}")
 
     if dialog == 1:
-        # Set the configuration
+        savename = os.path.join(path, f"{file}_decomp.mat")
+        sio.savemat(savename, {"signal": signal}, do_compression=True)
+
         dlgbox = Quattrodlg()
+        dlgbox.pathname.setText(savename)
+
+        # Set channel count
         if signal["data"].size > 0:
             dlgbox.edit_field_nchan.setValue(signal["data"].shape[0])
 
@@ -240,21 +252,14 @@ def openOTBplus(path, file, dialog):
                     panel.setEnabled(True)
                     lamp.set_color("green")
 
-                    # Find the index for this port in the signal arrays
+                    # Find the correct index for this port
                     port_index = np.where(idxa == port_num)[0]
                     if len(port_index) > 0 and port_index[0] < len(signal["gridname"]):
-                        dropdown.setCurrentText(signal["gridname"][port_index[0]])
-                        edit_field.setText(signal["muscle"][port_index[0]])
+                        idx = port_index[0]
+                        dropdown.setCurrentText(signal["gridname"][idx])
+                        edit_field.setText(signal["muscle"][idx])
             except Exception as e:
                 print(f"Error setting up port {port_num}: {e}")
-
-        # Create and save a temporary .mat file for the dialog
-        savename = os.path.join(path, f"{file}_decomp.mat")
-        dlgbox.pathname.setText(savename)
-        try:
-            sio.savemat(savename, {"signal": signal})
-        except Exception as e:
-            print(f"Error saving .mat file: {e}")
 
         return dlgbox, signal
     else:
