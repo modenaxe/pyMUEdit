@@ -78,7 +78,7 @@ class offline_EMG(EMG):
 
     def open_otb(self, inputfile):
         print(inputfile)
-        file_name = inputfile.split('/')[1]
+        file_name = os.path.basename(inputfile)
         temp_dir = os.path.join(self.save_dir, 'temp_tarholder')
 
         # Make a temporary directory to store the data of the otb file if it doesn't exist yet

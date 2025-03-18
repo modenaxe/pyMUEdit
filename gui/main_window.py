@@ -46,7 +46,7 @@ class HDEMGDashboard(QMainWindow):
         
         self.setWindowTitle("HDEMG App")
         self.setWindowIcon(QIcon("icons/app_icon.png"))
-        self.resize(900, 600)
+        self.resize(1400, 600)
         
         # Enable resizing
         self.setMinimumSize(600, 400)  # Set minimum size
