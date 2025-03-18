@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from PyQt5.QtWidgets import (
-    QApplication,
     QMainWindow,
     QWidget,
     QVBoxLayout,
@@ -13,6 +12,7 @@ from PyQt5.QtWidgets import (
     QComboBox,
     QLineEdit,
     QSpinBox,
+    QDoubleSpinBox,
 )
 from matplotlib.widgets import RectangleSelector
 from matplotlib.backend_bases import MouseButton
@@ -37,7 +37,8 @@ class SegmentSession(QMainWindow):
         super().__init__()
         self.file = None
         self.coordinates = []
-        self.data = {}
+        self.data = {"data": [], "auxiliary": [], "target": [], "path": []}
+        self.emg_amplitude_cache = None
         self.initUI()
 
     def initUI(self):
@@ -65,7 +66,9 @@ class SegmentSession(QMainWindow):
         # Threshold field
         threshold_label = QLabel("Threshold")
         threshold_label.setStyleSheet("color: #f0f0f0; font-family: 'Poppins';")
-        self.threshold_field = QSpinBox()
+        self.threshold_field = QDoubleSpinBox()
+        self.threshold_field.setRange(0, 1)
+        self.threshold_field.setSingleStep(0.1)
         self.threshold_field.setStyleSheet("color: #f0f0f0; background-color: #262626; font-family: 'Poppins';")
         self.threshold_field.valueChanged.connect(self.threshold_field_value_changed)
         self.threshold_field.setEnabled(False)
@@ -74,6 +77,7 @@ class SegmentSession(QMainWindow):
         windows_label = QLabel("Windows")
         windows_label.setStyleSheet("color: #f0f0f0; font-family: 'Poppins';")
         self.windows_field = QSpinBox()
+        self.windows_field.setRange(1, 10)
         self.windows_field.setStyleSheet("color: #f0f0f0; background-color: #262626; font-family: 'Poppins';")
         self.windows_field.valueChanged.connect(self.windows_field_value_changed)
 
@@ -111,7 +115,6 @@ class SegmentSession(QMainWindow):
         top_layout.addWidget(self.concatenate_button)
         top_layout.addWidget(self.split_button)
         top_layout.addWidget(self.ok_button)
-        top_layout.addStretch()
 
         # Canvas for plotting
         self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
@@ -123,20 +126,68 @@ class SegmentSession(QMainWindow):
         main_layout.addWidget(self.canvas)
         main_layout.addWidget(self.pathname)
 
-        self.rect_selector = None
-
-    def reference_dropdown_opening(self):
+    def initialize_with_file(self):
         if self.pathname.text():
             try:
                 self.file = sio.loadmat(self.pathname.text())
                 self.reference_dropdown.clear()
                 self.reference_dropdown.addItem("EMG amplitude")
 
-                if "signal" in self.file and "auxiliaryname" in self.file["signal"]:
-                    for name in self.file["signal"]["auxiliaryname"][0][0][0]:
-                        self.reference_dropdown.addItem(name)
+                if "signal" in self.file and "auxiliaryname" in self.file["signal"][0, 0].dtype.names:
+                    aux_names = self.file["signal"][0, 0]["auxiliaryname"]
+                    # Handle various formats of auxiliaryname
+                    if isinstance(aux_names, np.ndarray) and aux_names.ndim > 1:
+                        try:
+                            for name in aux_names[0, 0][0]:
+                                self.reference_dropdown.addItem(str(name))
+                        except:
+                            # Fall back if structure is different
+                            for name in np.array(aux_names).flatten():
+                                self.reference_dropdown.addItem(str(name))
+                    else:
+                        for name in aux_names:
+                            self.reference_dropdown.addItem(str(name))
+
+                self.reference_dropdown_value_changed()
             except Exception as e:
                 print(f"Error loading file: {e}")
+
+    def calculate_emg_amplitude(self, signal_data, fsamp):
+        if self.emg_amplitude_cache is not None:
+            return self.emg_amplitude_cache
+
+        channels = min(signal_data.shape[0], signal_data.shape[0] // 2)
+        if channels <= 0:
+            raise ValueError("Not enough channels to calculate EMG amplitude")
+
+        window_size = int(fsamp)
+        window = np.ones(window_size) / window_size
+
+        channel_envelopes = np.zeros((channels, signal_data.shape[1]))
+
+        for i in range(channels):
+            rectified = np.abs(signal_data[i, :])
+            channel_envelopes[i, :] = np.convolve(rectified, window, mode="same")
+
+        # Calculate mean across channels
+        mean_envelope = np.mean(channel_envelopes, axis=0)
+
+        # Cache the results
+        self.emg_amplitude_cache = {
+            "channel_envelopes": channel_envelopes[:16],
+            "mean_envelope": mean_envelope,
+            "y_min": np.min(channel_envelopes),
+            "y_max": np.max(channel_envelopes),
+        }
+
+        return self.emg_amplitude_cache
+
+    def set_safe_ylim(self, y_min, y_max):
+        if y_min == y_max:
+            y_margin = abs(y_min) * 0.1 if y_min != 0 else 0.1
+            self.canvas.axes.set_ylim(y_min - y_margin, y_max + y_margin)
+        else:
+            self.canvas.axes.set_ylim(y_min, y_max)
 
     def reference_dropdown_value_changed(self):
         if not self.pathname.text() or not hasattr(self, "file") or self.file is None:
@@ -144,78 +195,62 @@ class SegmentSession(QMainWindow):
 
         self.canvas.axes.clear()
 
-        signal = self.file["signal"]
-
         if "EMG amplitude" in self.reference_dropdown.currentText():
-            # Calculate EMG amplitude
-            data = signal["data"][0, 0] if signal.size > 0 else np.array([])
-            fsamp = float(signal["fsamp"][0, 0]) if signal.size > 0 else 1000.0
+            try:
+                signal_data = self.file["signal"][0, 0]["data"]
+                fsamp = self.file["signal"][0, 0]["fsamp"][0, 0]
 
-            # Process channels
-            if data.size > 0:
-                channels = min(data.shape[0], int(data.shape[0] / 2))  # Use half the channels like MATLAB
-                tmp = np.zeros((channels, data.shape[1]))
+                emg_data = self.calculate_emg_amplitude(signal_data, fsamp)
 
-                for i in range(channels):
-                    # Simple moving average filter like MATLAB's movmean
-                    window_size = int(fsamp)
-                    tmp[i, :] = np.convolve(np.abs(data[i, :]), np.ones(window_size) / window_size, mode="same")
+                # Store in the signal structure
+                self.file["signal"][0, 0]["target"] = emg_data["mean_envelope"]
+                self.file["signal"][0, 0]["path"] = emg_data["mean_envelope"]
 
-                emg_mean = np.mean(tmp, axis=0)
-                self.target_data = emg_mean
+                # Plot data - plot only a subset of channels to improve performance
+                for i in range(emg_data["channel_envelopes"].shape[0]):
+                    self.canvas.axes.plot(emg_data["channel_envelopes"][i, :], color=(0.5, 0.5, 0.5), linewidth=0.25)
 
-                # Plot individual channels in gray
-                for i in range(min(8, channels)):  # Limit to 8 channels for performance
-                    self.canvas.axes.plot(tmp[i, :], color=(0.5, 0.5, 0.5), linewidth=0.25)
+                # Plot the mean envelope
+                self.canvas.axes.plot(emg_data["mean_envelope"], color=(0.85, 0.33, 0.10), linewidth=2)
 
-                # Plot mean in orange-red
-                self.canvas.axes.plot(emg_mean, color=(0.85, 0.33, 0.10), linewidth=2)
+                self.set_safe_ylim(emg_data["y_min"], emg_data["y_max"])
+                self.threshold_field.setEnabled(False)
 
-                self.canvas.axes.set_ylim(float(np.min(emg_mean)), float(np.max(emg_mean)))
-
-            self.threshold_field.setEnabled(False)
+            except Exception as e:
+                print(f"Error calculating EMG amplitude: {e}")
+                self.canvas.axes.text(0.5, 0.5, f"Error: {str(e)}", ha="center", va="center", color="red")
         else:
-            # Handle auxiliary signals
-            idx = None
-            selected_name = self.reference_dropdown.currentText().strip()
+            try:
+                signal = self.file["signal"][0, 0]
+                aux_names = signal["auxiliaryname"]
 
-            # Access auxiliary names properly for structured arrays
-            if "auxiliaryname" in signal.dtype.names:
-                aux_names_obj = signal["auxiliaryname"][0, 0]
+                if isinstance(aux_names, np.ndarray) and aux_names.ndim > 1:
+                    try:
+                        aux_names = aux_names[0, 0][0]
+                    except:
+                        aux_names = np.array(aux_names).flatten()
 
-                # Convert to a list of strings we can search
-                aux_names = []
-                if isinstance(aux_names_obj, np.ndarray):
-                    for i in range(aux_names_obj.size):
-                        if aux_names_obj.dtype.kind == "O":
-                            name = str(aux_names_obj[i])
-                        else:
-                            name = str(aux_names_obj.item(i) if aux_names_obj.size == 1 else aux_names_obj[i])
-                        aux_names.append(name)
-                        if selected_name in name:
-                            idx = i
-                            break
+                idx = None
+                for i, name in enumerate(aux_names):
+                    if self.reference_dropdown.currentText() in str(name):
+                        idx = i
+                        break
 
-            if idx is not None and "auxiliary" in signal.dtype.names:
-                aux_data = signal["auxiliary"][0, 0]
+                if idx is None:
+                    raise ValueError(f"Auxiliary signal '{self.reference_dropdown.currentText()}' not found")
 
-                if aux_data.ndim > 1 and idx < aux_data.shape[0]:
-                    signal_data = aux_data[idx, :]
-                    self.target_data = signal_data
+                signal["target"] = signal["auxiliary"][idx, :]
+                self.canvas.axes.plot(signal["target"], color=(0.95, 0.95, 0.95), linewidth=2)
 
-                    # Plot directly
-                    self.canvas.axes.plot(signal_data, color=(0.95, 0.95, 0.95), linewidth=2)
-                    self.canvas.axes.set_ylim(float(np.min(signal_data)), float(np.max(signal_data)))
+                if not np.any(np.isnan(signal["target"])):
+                    self.set_safe_ylim(np.min(signal["target"]), np.max(signal["target"]))
 
-                    self.threshold_field.setEnabled(True)
-
-        # Add grid and style the plot
-        self.canvas.axes.grid(True, alpha=0.5, color="dimgray")
-        self.canvas.axes.set_facecolor("#262626")
-        self.canvas.fig.set_facecolor("#262626")
-        self.canvas.axes.set_ylabel("Amplitude", color="white")
-        self.canvas.axes.tick_params(axis="x", colors="white")
-        self.canvas.axes.tick_params(axis="y", colors="white")
+                self.threshold_field.setEnabled(True)
+            except Exception as e:
+                print(f"Error accessing auxiliary signal: {e}")
+                self.canvas.axes.text(
+                    0.5, 0.5, "Error accessing auxiliary signal", ha="center", va="center", color="red"
+                )
 
         self.canvas.draw()
 
@@ -223,173 +258,171 @@ class SegmentSession(QMainWindow):
         if not self.file or "signal" not in self.file or "EMG amplitude" in self.reference_dropdown.currentText():
             return
 
-        self.coordinates = segmenttargets(self.file["signal"]["target"], 1, self.threshold_field.value())
+        try:
+            signal = self.file["signal"][0, 0]
+            self.coordinates = segmenttargets(signal["target"], 1, self.threshold_field.value())
 
-        # Adjust coordinates
-        for i in range(len(self.coordinates) // 2):
-            self.coordinates[i * 2] = self.coordinates[i * 2] - self.file["signal"]["fsamp"]
-            self.coordinates[i * 2 + 1] = self.coordinates[i * 2 + 1] + self.file["signal"]["fsamp"]
+            fsamp = signal["fsamp"][0, 0]
+            for i in range(len(self.coordinates) // 2):
+                self.coordinates[i * 2] = self.coordinates[i * 2] - fsamp
+                self.coordinates[i * 2 + 1] = self.coordinates[i * 2 + 1] + fsamp
 
-        # Clamp coordinates to valid range
-        self.coordinates = np.clip(self.coordinates, 1, len(self.file["signal"]["target"]))
+            # Clamp coordinates to valid range
+            self.coordinates = np.clip(self.coordinates, 1, len(signal["target"]))
 
-        # Update plot
-        self.canvas.axes.clear()
-        self.canvas.axes.plot(self.file["signal"]["target"], color=(0.95, 0.95, 0.95), linewidth=2)
+            # Update plot
+            self.canvas.axes.clear()
+            self.canvas.axes.plot(signal["target"], color=(0.95, 0.95, 0.95), linewidth=2)
 
-        # Add vertical lines for segments
-        for i in range(len(self.coordinates) // 2):
-            ymin, ymax = float(np.min(self.file["signal"]["target"])), float(np.max(self.file["signal"]["target"]))
-            cmap = plt.get_cmap("winter")
-            color = cmap(i / float(len(self.coordinates) // 2))
-            self.canvas.axes.axvline(x=self.coordinates[i * 2], color=color, linewidth=2)
-            self.canvas.axes.axvline(x=self.coordinates[i * 2 + 1], color=color, linewidth=2)
+            # Add vertical lines for segments
+            for i in range(len(self.coordinates) // 2):
+                cmap = plt.get_cmap("winter")
+                color = cmap(i / float(len(self.coordinates) // 2))
+                self.canvas.axes.axvline(x=self.coordinates[i * 2], color=color, linewidth=2)
+                self.canvas.axes.axvline(x=self.coordinates[i * 2 + 1], color=color, linewidth=2)
 
-        self.canvas.axes.set_ylim(
-            float(np.min(self.file["signal"]["target"])), float(np.max(self.file["signal"]["target"]))
-        )
-        self.canvas.draw()
+            self.set_safe_ylim(np.min(signal["target"]), np.max(signal["target"]))
+
+            self.canvas.draw()
+        except Exception as e:
+            print(f"Error in threshold_field_value_changed: {e}")
 
     def windows_field_value_changed(self):
         if not self.file or "signal" not in self.file:
             return
 
-        self.coordinates = np.zeros(self.windows_field.value() * 2)
+        try:
+            windows = self.windows_field.value()
+            self.coordinates = np.zeros(windows * 2, dtype=int)
+            signal = self.file["signal"][0, 0]
 
-        # Update plot
-        self.canvas.axes.clear()
-        self.canvas.axes.plot(self.file["signal"]["target"], color=(0.95, 0.95, 0.95), linewidth=2)
-        self.canvas.draw()
+            # Update plot
+            self.canvas.axes.clear()
+            self.canvas.axes.plot(signal["target"], color=(0.95, 0.95, 0.95), linewidth=2)
+            self.canvas.draw()
 
-        for nwin in range(self.windows_field.value()):
-            win_idx = nwin
+            # Set up the rectangle selector for each window
+            for nwin in range(windows):
 
-            def onselect(eclick, erelease):
-                if not hasattr(eclick, "xdata") or not hasattr(erelease, "xdata"):
-                    return
+                def on_select(eclick, erelease, nwin=nwin):
+                    if not hasattr(eclick, "xdata") or not hasattr(erelease, "xdata"):
+                        return
 
-                if self.file is None or "signal" not in self.file:
-                    return
+                    x1, x2 = int(eclick.xdata), int(erelease.xdata)
+                    x1, x2 = sorted([x1, x2])
+                    x1 = max(1, x1)
+                    x2 = min(len(signal["target"]), x2)
 
-                x1, x2 = int(eclick.xdata), int(erelease.xdata)
-                x1, x2 = sorted([x1, x2])
-                x1 = max(1, x1)
-                x2 = min(len(self.file["signal"]["target"]), x2)
-                self.coordinates[win_idx * 2] = x1
-                self.coordinates[win_idx * 2 + 1] = x2
+                    self.coordinates[nwin * 2] = x1
+                    self.coordinates[nwin * 2 + 1] = x2
 
-                # Draw vertical lines
-                ymin, ymax = float(np.min(self.file["signal"]["target"])), float(np.max(self.file["signal"]["target"]))
-                cmap = plt.get_cmap("winter")
-                color = cmap(win_idx / float(self.windows_field.value()))
-                self.canvas.axes.axvline(x=x1, color=color, linewidth=2)
-                self.canvas.axes.axvline(x=x2, color=color, linewidth=2)
-                self.canvas.draw()
+                    # Draw vertical lines
+                    cmap = plt.get_cmap("winter")
+                    color = cmap(nwin / float(windows))
+                    self.canvas.axes.axvline(x=x1, color=color, linewidth=2)
+                    self.canvas.axes.axvline(x=x2, color=color, linewidth=2)
+                    self.canvas.draw()
 
-                # Remove the selector after use
-                if self.rect_selector is not None:
-                    self.rect_selector.disconnect_events()
+                rect_selector = RectangleSelector(
+                    self.canvas.axes,
+                    on_select,
+                    useblit=True,
+                    button=MouseButton(MouseButton.LEFT),
+                    minspanx=5,
+                    minspany=5,
+                    spancoords="pixels",
+                    interactive=True,
+                )
 
-            self.rect_selector = RectangleSelector(
-                self.canvas.axes,
-                onselect,
-                useblit=True,
-                button=MouseButton(MouseButton.LEFT),
-                minspanx=5,
-                minspany=5,
-                spancoords="pixels",
-                interactive=True,
-            )
-
-            # Wait for selection
-            while not (self.coordinates[nwin * 2] != 0 and self.coordinates[nwin * 2 + 1] != 0):
-                plt.pause(0.1)
+                print(f"Please select region {nwin+1} of {windows}")
+                plt.waitforbuttonpress()
+        except Exception as e:
+            print(f"Error in windows_field_value_changed: {e}")
 
     def split_button_pushed(self):
         if not self.file or "signal" not in self.file or len(self.coordinates) == 0:
             return
 
-        self.data = {"data": [], "auxiliary": [], "target": [], "path": []}
+        try:
+            signal = self.file["signal"][0, 0]
+            num_segments = len(self.coordinates) // 2
+            data_segments = []
+            aux_segments = []
+            target_segments = []
 
-        # Split data into segments
-        for i in range(len(self.coordinates) // 2):
-            start, end = int(self.coordinates[i * 2]), int(self.coordinates[i * 2 + 1])
-            self.data["data"].append(self.file["signal"]["data"][:, start:end])
-            self.data["auxiliary"].append(self.file["signal"]["auxiliary"][:, start:end])
-            self.data["target"].append(self.file["signal"]["target"][start:end])
-            self.data["path"].append(self.file["signal"]["target"][start:end])
+            # Extract segments
+            for i in range(num_segments):
+                start, end = int(self.coordinates[i * 2]), int(self.coordinates[i * 2 + 1])
+                data_segments.append(signal["data"][:, start:end])
+                aux_segments.append(signal["auxiliary"][:, start:end])
+                target_segments.append(signal["target"][start:end])
 
-        # Save each segment as a separate file
-        for i in range(len(self.coordinates) // 2):
-            self.file["signal"]["data"] = self.data["data"][i]
-            self.file["signal"]["auxiliary"] = self.data["auxiliary"][i]
-            self.file["signal"]["target"] = self.data["target"][i]
-            self.file["signal"]["path"] = self.data["target"][i]
+            # Save each segment
+            pathname_base = self.pathname.text().replace(".mat", "")
+            for i in range(num_segments):
+                signal["data"] = data_segments[i]
+                signal["auxiliary"] = aux_segments[i]
+                signal["target"] = target_segments[i]
+                signal["path"] = target_segments[i]
 
-            signal = self.file["signal"]
-            sio.savemat(f"{self.pathname.text()}_{ i + 1 }", {"signal": signal}, do_compression=True)
+                savename = f"{pathname_base}_{i+1}.mat"
+                sio.savemat(savename, {"signal": signal}, do_compression=True)
 
-        # Update pathname and plot with first segment
-        self.pathname.setText(f"{self.pathname.text()}_1")
+            # Update pathname and plot with first segment
+            self.pathname.setText(f"{pathname_base}_1.mat")
+            self.canvas.axes.clear()
+            self.canvas.axes.plot(target_segments[0], color=(0.95, 0.95, 0.95), linewidth=2)
+            if not np.any(np.isnan(target_segments[0])):
+                self.set_safe_ylim(np.min(target_segments[0]), np.max(target_segments[0]))
+            self.canvas.draw()
 
-        self.canvas.axes.clear()
-        self.canvas.axes.plot(self.data["target"][0], color=(0.95, 0.95, 0.95), linewidth=2)
-        self.canvas.axes.set_ylim(np.min(self.data["target"][0]), np.max(self.data["target"][0]))
-        self.canvas.draw()
+            self.concatenate_button.setEnabled(False)
+            self.split_button.setEnabled(False)
+            self.emg_amplitude_cache = None
 
-        self.concatenate_button.setEnabled(False)
-        self.split_button.setEnabled(False)
+        except Exception as e:
+            print(f"Error in split_button_pushed: {e}")
 
     def concatenate_button_pushed(self):
         if not self.file or "signal" not in self.file or len(self.coordinates) == 0:
             return
 
-        # Initialize data containers
-        data_segments = []
-        aux_segments = []
-        target_segments = []
+        try:
+            signal = self.file["signal"][0, 0]
+            num_segments = len(self.coordinates) // 2
+            data_segments = []
+            aux_segments = []
+            target_segments = []
 
-        # Collect segments
-        for i in range(len(self.coordinates) // 2):
-            start, end = int(self.coordinates[i * 2]), int(self.coordinates[i * 2 + 1])
-            data_segments.append(self.file["signal"]["data"][:, start:end])
-            aux_segments.append(self.file["signal"]["auxiliary"][:, start:end])
-            target_segments.append(self.file["signal"]["target"][start:end])
+            # Collect segments
+            for i in range(num_segments):
+                start, end = int(self.coordinates[i * 2]), int(self.coordinates[i * 2 + 1])
+                data_segments.append(signal["data"][:, start:end])
+                aux_segments.append(signal["auxiliary"][:, start:end])
+                target_segments.append(signal["target"][start:end])
 
-        # Concatenate along appropriate axis
-        concatenated_data = np.hstack(data_segments)
-        concatenated_auxiliary = np.hstack(aux_segments)
-        concatenated_target = np.concatenate(target_segments)
+            # Concatenate data
+            signal["data"] = np.hstack(data_segments)
+            signal["auxiliary"] = np.hstack(aux_segments)
+            signal["target"] = np.concatenate(target_segments)
+            signal["path"] = signal["target"]
 
-        # Update the file with concatenated data
-        self.file["signal"]["data"] = concatenated_data
-        self.file["signal"]["auxiliary"] = concatenated_auxiliary
-        self.file["signal"]["target"] = concatenated_target
-        self.file["signal"]["path"] = concatenated_target
+            # Update plot
+            self.canvas.axes.clear()
+            self.canvas.axes.plot(signal["target"], color=(0.95, 0.95, 0.95), linewidth=2)
+            if not np.any(np.isnan(signal["target"])):
+                self.set_safe_ylim(np.min(signal["target"]), np.max(signal["target"]))
+            self.canvas.draw()
 
-        # Update plot
-        self.canvas.axes.clear()
-        self.canvas.axes.plot(self.file["signal"]["target"], color=(0.95, 0.95, 0.95), linewidth=2)
-        self.canvas.axes.set_ylim(
-            float(np.min(self.file["signal"]["target"])), float(np.max(self.file["signal"]["target"]))
-        )
-        self.canvas.draw()
+            # Save the concatenated file
+            sio.savemat(self.pathname.text(), {"signal": signal}, do_compression=True)
 
-        # Save the updated file
-        signal = self.file["signal"]
-        sio.savemat(self.pathname.text(), {"signal": signal}, do_compression=True)
+            self.concatenate_button.setEnabled(False)
+            self.split_button.setEnabled(False)
+            self.emg_amplitude_cache = None
 
-        self.concatenate_button.setEnabled(False)
-        self.split_button.setEnabled(False)
+        except Exception as e:
+            print(f"Error in concatenate_button_pushed: {e}")
 
     def ok_button_pushed(self):
         self.close()
-
-
-if __name__ == "__main__":
-    import sys
-
-    app = QApplication(sys.argv)
-    window = SegmentSession()
-    window.show()
-    sys.exit(app.exec_())

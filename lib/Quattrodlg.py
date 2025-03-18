@@ -1,11 +1,10 @@
 import os
-import sys
+import traceback
 import numpy as np
 import scipy.io as sio
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QPixmap
 from PyQt5.QtWidgets import (
-    QApplication,
     QMainWindow,
     QWidget,
     QVBoxLayout,
@@ -17,7 +16,6 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QGroupBox,
     QSpinBox,
-    QFrame,
 )
 
 
@@ -29,7 +27,6 @@ class ColoredCircle(QWidget):
         self.setMaximumSize(20, 20)
 
     def paintEvent(self, event):
-        import math
         from PyQt5.QtGui import QPainter, QBrush
 
         painter = QPainter(self)
@@ -54,7 +51,7 @@ class ColoredCircle(QWidget):
 class Quattrodlg(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.file = None  # File to update with the configuration
+        self.file = None
         self.initUI()
 
     def initUI(self):
@@ -95,6 +92,10 @@ class Quattrodlg(QMainWindow):
         channels_label = QLabel("Channels")
         channels_label.setStyleSheet("color: #f0f0f0; font-family: 'Poppins'; font-size: 10pt;")
         self.edit_field_nchan = QSpinBox()
+
+        self.edit_field_nchan.setValue(128)
+        self.edit_field_nchan.setRange(1, 1000)
+
         self.edit_field_nchan.setStyleSheet(
             "color: #f0f0f0; background-color: #262626; font-family: 'Poppins'; font-size: 10pt; font-weight: bold;"
         )
@@ -149,30 +150,30 @@ class Quattrodlg(QMainWindow):
 
         # Create checkboxes
         self.checkbox_S1 = QCheckBox("")
-        self.checkbox_S1.stateChanged.connect(lambda state: self.checkbox_S1_value_changed(state))
+        self.checkbox_S1.stateChanged.connect(self.checkbox_S1_value_changed)
 
         self.checkbox_S2 = QCheckBox("")
-        self.checkbox_S2.stateChanged.connect(lambda state: self.checkbox_S2_value_changed(state))
+        self.checkbox_S2.stateChanged.connect(self.checkbox_S2_value_changed)
 
         self.checkbox_M1 = QCheckBox("")
-        self.checkbox_M1.stateChanged.connect(lambda state: self.checkbox_M1_value_changed(state))
+        self.checkbox_M1.stateChanged.connect(self.checkbox_M1_value_changed)
 
         self.checkbox_M2 = QCheckBox("")
-        self.checkbox_M2.stateChanged.connect(lambda state: self.checkbox_M2_value_changed(state))
+        self.checkbox_M2.stateChanged.connect(self.checkbox_M2_value_changed)
 
         self.checkbox_M3 = QCheckBox("")
-        self.checkbox_M3.stateChanged.connect(lambda state: self.checkbox_M3_value_changed(state))
+        self.checkbox_M3.stateChanged.connect(self.checkbox_M3_value_changed)
 
         self.checkbox_M4 = QCheckBox("")
-        self.checkbox_M4.stateChanged.connect(lambda state: self.checkbox_M4_value_changed(state))
+        self.checkbox_M4.stateChanged.connect(self.checkbox_M4_value_changed)
 
         # Add checkboxes to panels
-        self.splitter1_panel.layout().addWidget(self.checkbox_S1)  # type: ignore
-        self.splitter2_panel.layout().addWidget(self.checkbox_S2)  # type: ignore
-        self.mi1_panel.layout().addWidget(self.checkbox_M1)  # type: ignore
-        self.mi2_panel.layout().addWidget(self.checkbox_M2)  # type: ignore
-        self.mi3_panel.layout().addWidget(self.checkbox_M3)  # type: ignore
-        self.mi4_panel.layout().addWidget(self.checkbox_M4)  # type: ignore
+        self.splitter1_panel.layout().addWidget(self.checkbox_S1)  # type:ignore
+        self.splitter2_panel.layout().addWidget(self.checkbox_S2)  # type:ignore
+        self.mi1_panel.layout().addWidget(self.checkbox_M1)  # type:ignore
+        self.mi2_panel.layout().addWidget(self.checkbox_M2)  # type:ignore
+        self.mi3_panel.layout().addWidget(self.checkbox_M3)  # type:ignore
+        self.mi4_panel.layout().addWidget(self.checkbox_M4)  # type:ignore
 
         # Pathname field (hidden)
         self.pathname = QLineEdit()
@@ -238,53 +239,64 @@ class Quattrodlg(QMainWindow):
         if state == Qt.CheckState.Checked:
             self.lamp_S1.set_color("green")
             self.splitter1_panel.setEnabled(True)
+            print("S1 checkbox checked, enabled splitter1_panel")
         else:
             self.lamp_S1.set_color("red")
             self.splitter1_panel.setEnabled(False)
+            print("S1 checkbox unchecked, disabled splitter1_panel")
 
     def checkbox_S2_value_changed(self, state):
         if state == Qt.CheckState.Checked:
             self.lamp_S2.set_color("green")
             self.splitter2_panel.setEnabled(True)
+            print("S2 checkbox checked, enabled splitter2_panel")
         else:
             self.lamp_S2.set_color("red")
             self.splitter2_panel.setEnabled(False)
+            print("S2 checkbox unchecked, disabled splitter2_panel")
 
     def checkbox_M1_value_changed(self, state):
         if state == Qt.CheckState.Checked:
             self.lamp_M1.set_color("green")
             self.mi1_panel.setEnabled(True)
+            print("M1 checkbox checked, enabled mi1_panel")
         else:
             self.lamp_M1.set_color("red")
             self.mi1_panel.setEnabled(False)
+            print("M1 checkbox unchecked, disabled mi1_panel")
 
     def checkbox_M2_value_changed(self, state):
         if state == Qt.CheckState.Checked:
             self.lamp_M2.set_color("green")
             self.mi2_panel.setEnabled(True)
+            print("M2 checkbox checked, enabled mi2_panel")
         else:
             self.lamp_M2.set_color("red")
             self.mi2_panel.setEnabled(False)
+            print("M2 checkbox unchecked, disabled mi2_panel")
 
     def checkbox_M3_value_changed(self, state):
         if state == Qt.CheckState.Checked:
             self.lamp_M3.set_color("green")
             self.mi3_panel.setEnabled(True)
+            print("M3 checkbox checked, enabled mi3_panel")
         else:
             self.lamp_M3.set_color("red")
             self.mi3_panel.setEnabled(False)
+            print("M3 checkbox unchecked, disabled mi3_panel")
 
     def checkbox_M4_value_changed(self, state):
         if state == Qt.CheckState.Checked:
             self.lamp_M4.set_color("green")
             self.mi4_panel.setEnabled(True)
+            print("M4 checkbox checked, enabled mi4_panel")
         else:
             self.lamp_M4.set_color("red")
             self.mi4_panel.setEnabled(False)
+            print("M4 checkbox unchecked, disabled mi4_panel")
 
     def ok_button_pushed(self):
         try:
-            # Load the file
             self.file = sio.loadmat(self.pathname.text())
 
             # Get the checkbox values
@@ -296,8 +308,17 @@ class Quattrodlg(QMainWindow):
             ports[4] = 1 if self.checkbox_M3.isChecked() else 0
             ports[5] = 1 if self.checkbox_M4.isChecked() else 0
 
+            print(f"Port states: {ports}")
+
             # Set the number of grids
-            self.file["signal"]["ngrid"] = np.sum(ports)
+            if "signal" not in self.file:
+                print("Error: No signal data in file")
+                return
+
+            # Update the number of active grids
+            num_active_grids = int(np.sum(ports))
+            self.file["signal"]["ngrid"] = num_active_grids
+            print(f"Number of active grids: {num_active_grids}")
 
             # Get the grid and muscle values
             grid = [""] * 6
@@ -319,17 +340,50 @@ class Quattrodlg(QMainWindow):
             # Find the indices of the selected ports
             idxports = np.where(ports == 1)[0]
 
-            # Update the gridname and muscle for each selected port
-            for i in range(int(self.file["signal"]["ngrid"][0, 0])):
-                self.file["signal"]["gridname"][0, 0][0, i] = grid[idxports[i]]
-                self.file["signal"]["muscle"][0, 0][0, i] = muscle[idxports[i]]
+            # Debug print statements
+            print(f"Grid names: {grid}")
+            print(f"Muscle names: {muscle}")
+            print(f"Active port indices: {idxports}")
+
+            # Create new arrays for gridname and muscle
+            gridname_array = np.array([grid[i] for i in idxports], dtype=object)
+            muscle_array = np.array([muscle[i] for i in idxports], dtype=object)
+
+            try:
+                # Create a new object array
+                gridname_obj = np.zeros((1, len(gridname_array)), dtype=object)
+                muscle_obj = np.zeros((1, len(muscle_array)), dtype=object)
+
+                # Fill the arrays with our values
+                for i in range(len(gridname_array)):
+                    gridname_obj[0, i] = gridname_array[i]
+                    muscle_obj[0, i] = muscle_array[i]
+
+                # Update the nested arrays
+                self.file["signal"]["gridname"][0, 0] = gridname_obj
+                self.file["signal"]["muscle"][0, 0] = muscle_obj
+
+                print("Updated nested arrays with compatible structure")
+            except Exception as e:
+                print(f"Error with specific case, trying general solution: {e}")
+
+                # Fallback to simpler direct assignment
+                try:
+                    # Just replace the entire field
+                    self.file["signal"]["gridname"] = np.array([gridname_array])
+                    self.file["signal"]["muscle"] = np.array([muscle_array])
+                    print("Updated fields with direct assignment")
+                except Exception as e:
+                    print(f"All update attempts failed: {e}")
+                    raise
 
             # Save the updated file
             signal = self.file["signal"]
-            sio.savemat(self.pathname.text(), {"signal": signal}, appendmat=False, do_compression=True, format="7.3")
+            sio.savemat(self.pathname.text(), {"signal": signal}, appendmat=False, do_compression=True, format="5")
 
-            # Close the window
+            print("Configuration saved successfully")
             self.close()
 
         except Exception as e:
             print(f"Error in OK button handler: {e}")
+            traceback.print_exc()
