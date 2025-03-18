@@ -2,7 +2,7 @@ import glob, os, scipy
 import xml.etree.ElementTree as ET
 import tarfile as tf
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt   # Plotting is commented out
 from fastICA_algorithm.processing_tools import *
 import tkinter as tk
 from tkinter import simpledialog
@@ -374,13 +374,14 @@ class offline_EMG(EMG):
                 for r in range(self.r_maps[i]):
                     num_chans2reject = []
                     if (c+r) > 0:  # TO-DO: remove assumption of the left corner channel being invalid
-                        plt.ion()
-                        plt.plot(sig2inspect[(c*self.r_maps[i])+r-1, :] / max(sig2inspect[(c*self.r_maps[i])+r-1, :]) + r + 1)
-                plt.show()
+                        # plt.ion()
+                        # plt.plot(sig2inspect[(c*self.r_maps[i])+r-1, :] / max(sig2inspect[(c*self.r_maps[i])+r-1, :]) + r + 1)
+                        pass
+                # plt.show()
                 inputchannels = simpledialog.askstring(title="Channel Rejection",
                                                        prompt="Please enter channel numbers to be rejected (1-13), input with spaces between numbers:")
-                plt.clf()
-                plt.ioff()
+                # plt.clf()
+                # plt.ioff()
                 print("The selected channels for rejection are:", inputchannels)
                 if inputchannels:
                     str_chans2reject = inputchannels.split(" ")
@@ -446,19 +447,20 @@ class offline_EMG(EMG):
             
     def batch_wo_target(self):
         fake_ref = np.zeros(self.signal_dict['data'].shape[1])
-        plt.figure(figsize=(10,8))
-        plt.plot(self.signal_dict['data'][0, :])
-        plt.grid()
-        plt.show()
-        window_clicks = plt.ginput(2 * self.windows, show_clicks=True)
+        # plt.figure(figsize=(10,8))
+        # plt.plot(self.signal_dict['data'][0, :])
+        # plt.grid()
+        # plt.show()
+        # window_clicks = plt.ginput(2 * self.windows, show_clicks=True)
+        window_clicks = []  # Placeholder since plotting is disabled
         self.plateau_coords = np.zeros((1, self.windows * 2))
         tracker = 0
         n_intervals = int(len(self.plateau_coords) / 2)
         batched_data = [None] * (self.signal_dict['nelectrodes'] * n_intervals) 
 
         for interval in range(self.windows):
-            self.plateau_coords[0, interval*2] = np.floor(window_clicks[interval*2][0])
-            self.plateau_coords[0, (interval+1)*2-1] = np.floor(window_clicks[(interval+1)*2-1][0])
+            self.plateau_coords[0, interval*2] = 0  # Default value since ginput is disabled
+            self.plateau_coords[0, (interval+1)*2-1] = 0  # Default value since ginput is disabled
         
         for i in range(self.signal_dict['nelectrodes']):
             electrode = i + 1
@@ -565,22 +567,23 @@ class offline_EMG(EMG):
                     Z = peel_off(Z, spikes, self.signal_dict['fsamp'])
                 print(self.decomp_dict['SILs'][interval, i])
                 if self.drawing_mode == 1:
-                    plt.clf()
-                    plt.ion()
-                    plt.show()
-                    plt.subplot(2, 1, 1)
-                    plt.plot(self.signal_dict['target'], 'k--', linewidth=2)
-                    plt.plot([self.plateau_coords[interval*2], self.plateau_coords[interval*2]],
-                             [0, max(self.signal_dict['target'])], color='r', linewidth=2)
-                    plt.plot([self.plateau_coords[(interval+1)*2 - 1], self.plateau_coords[(interval+1)*2 - 1]],
-                             [0, max(self.signal_dict['target'])], color='r', linewidth=2)
-                    plt.title('Electrode #{} - Iteration #{} - Sil = {}'.format(g, i+1, self.decomp_dict['SILs'][interval, i]))
-                    plt.subplot(2, 1, 2)
-                    plt.plot(time_axis, fICA_source, linewidth=0.5)
-                    plt.plot(time_axis[spikes], fICA_source[spikes], 'o')
-                    plt.grid()
-                    plt.draw()
-                    plt.pause(1e-6)
+                    # plt.clf()
+                    # plt.ion()
+                    # plt.show()
+                    # plt.subplot(2, 1, 1)
+                    # plt.plot(self.signal_dict['target'], 'k--', linewidth=2)
+                    # plt.plot([self.plateau_coords[interval*2], self.plateau_coords[interval*2]],
+                    #          [0, max(self.signal_dict['target'])], color='r', linewidth=2)
+                    # plt.plot([self.plateau_coords[(interval+1)*2 - 1], self.plateau_coords[(interval+1)*2 - 1]],
+                    #          [0, max(self.signal_dict['target'])], color='r', linewidth=2)
+                    # plt.title('Electrode #{} - Iteration #{} - Sil = {}'.format(g, i+1, self.decomp_dict['SILs'][interval, i]))
+                    # plt.subplot(2, 1, 2)
+                    # plt.plot(time_axis, fICA_source, linewidth=0.5)
+                    # plt.plot(time_axis[spikes], fICA_source[spikes], 'o')
+                    # plt.grid()
+                    # plt.draw()
+                    # plt.pause(1e-6)
+                    pass
                 else:
                     print('Electrode #{} - Iteration #{} - Sil = {} - CoV = {}'.format(g+1, i,
                                                                                         self.decomp_dict['SILs'][interval, i],
@@ -602,7 +605,7 @@ class offline_EMG(EMG):
                                                                     np.sum(mask, axis=1)[0])
         )
     
-        plt.close()  # Closes the fixed point algorithm plots
+        # plt.close()  # Closes the fixed point algorithm plots
         
 ################################################## POST PROCESSING #######################################################
     def post_process_EMG(self, electrode):
@@ -739,7 +742,6 @@ class offline_EMG(EMG):
 
         self.mu_dict["muscle"] = muscle_new
         print('Processing across electrodes complete')
-
 
         
 
