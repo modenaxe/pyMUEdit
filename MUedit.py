@@ -1,5 +1,6 @@
 import os
 import sys
+import traceback
 import numpy as np
 import scipy.io as sio
 from PyQt5.QtCore import Qt
@@ -17,13 +18,11 @@ from PyQt5.QtWidgets import (
     QFileDialog,
     QDoubleSpinBox,
     QGridLayout,
-    QProgressDialog,
 )
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.widgets import RectangleSelector
 from matplotlib.backend_bases import MouseButton
-from typing import Dict, Any
 
 # Import the implemented modules
 from lib.bandpassingals import bandpassingals
@@ -428,25 +427,6 @@ class MUedit(QMainWindow):
                 if self.MUdecomp["config"]:
                     self.MUdecomp["config"].hide()
                     self.set_configuration_button.setEnabled(True)
-            # elif ext == ".mat":
-            #     file_data = sio.loadmat(os.path.join(self.pathname, self.filename))
-            #     signal = file_data["signal"]
-            #     self.set_configuration_button.setEnabled(False)
-            # elif ext == ".otb4":  # OT Biolab24
-            #     self.MUdecomp["config"], signal = openOTB4(self.pathname, self.filename, 0)
-            #     if self.MUdecomp["config"]:
-            #         self.MUdecomp["config"].hide()
-            #         self.set_configuration_button.setEnabled(True)
-            # elif ext == ".rhd":  # RHD Intan Tech
-            #     self.MUdecomp["config"], signal = openIntan(self.pathname, self.filename, 1)
-            #     if self.MUdecomp["config"]:
-            #         self.MUdecomp["config"].hide()
-            #         self.set_configuration_button.setEnabled(True)
-            # elif ext == ".oebin":  # Open Ephys GUI
-            #     self.MUdecomp["config"], signal = openOEphys(self.pathname, self.filename, 1)
-            #     if self.MUdecomp["config"]:
-            #         self.MUdecomp["config"].hide()
-            #         self.set_configuration_button.setEnabled(True)
 
             self.reference_dropdown.clear()
 
@@ -480,13 +460,22 @@ class MUedit(QMainWindow):
             self.edit_field.setText("Data loaded")
 
     def set_configuration_button_pushed(self):
-        if self.MUdecomp["config"]:
-            if self.pathname is not None and self.filename is not None:
-                self.MUdecomp["config"].pathname.setText(self.pathname + self.filename + "_decomp.mat")
-            self.MUdecomp["config"].show()
-            self.set_configuration_button.setStyleSheet(
-                "color: #cf80ff; background-color: #7f7f7f; font-family: 'Poppins'; font-size: 18pt;"
-            )
+        if "config" in self.MUdecomp and self.MUdecomp["config"]:
+            try:
+                if self.pathname is not None and self.filename is not None:
+                    savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
+                    self.MUdecomp["config"].pathname.setText(savename)
+
+                # Show the dialog
+                self.MUdecomp["config"].show()
+                self.set_configuration_button.setStyleSheet(
+                    "color: #cf80ff; background-color: #7f7f7f; font-family: 'Poppins'; font-size: 18pt;"
+                )
+            except Exception as e:
+                print(f"Error showing configuration dialog: {e}")
+                traceback.print_exc()
+        else:
+            print("No configuration dialog available")
 
     def segment_session_button_pushed(self):
         self.segment_session = SegmentSession()
@@ -507,11 +496,8 @@ class MUedit(QMainWindow):
 
         # Set current text after file is loaded
         self.segment_session.reference_dropdown.setCurrentText(self.reference_dropdown.currentText())
-
-        # Show the window
+        self.segment_session.initialize_with_file()
         self.segment_session.show()
-
-        # Update button appearance
         self.segment_session_button.setStyleSheet(
             "color: #cf80ff; background-color: #7f7f7f; font-family: 'Poppins'; font-size: 18pt;"
         )
@@ -530,71 +516,7 @@ class MUedit(QMainWindow):
             ax.spines["left"].set_color(color)
 
     def start_button_pushed(self):
-        # NOT WORKING RN
-        self.set_axis_colors(self.ui_axes_decomp_2.axes, color="#f0f0f0")
-
-        if self.check_emg_dropdown.currentText() == "Yes":
-            parameters: Dict[str, Any] = {"checkEMG": 1}
-        else:
-            parameters: Dict[str, Any] = {"checkEMG": 0}
-
-        # update the residual EMG by removing the motor units with the highest SIL value
-        if self.peeloff_dropdown.currentText() == "Yes":
-            parameters["peeloff"] = 1
-        else:
-            parameters["peeloff"] = 0
-
-        # filter out the motor units with a coefficient of variation of their ISI > than parameters.covthr
-        if self.cov_filter_dropdown.currentText() == "Yes":
-            parameters["covfilter"] = 1
-        else:
-            parameters["covfilter"] = 0
-
-        # realign the discharge time with the peak of the MUAP (channel with the MUAP with the highest p2p amplitude from double diff EMG signal
-        if self.initialisation_dropdown.currentText() == "EMG max":
-            parameters["initialization"] = 1
-        else:
-            parameters["initialization"] = 0
-
-        # refine the MU spike train over the entire signal 1-remove the discharge times that generate outliers in the discharge rate and 2- reevaluate the MU pulse train
-        if self.refine_mus_dropdown.currentText() == "Yes":
-            parameters["refineMU"] = 1
-        else:
-            parameters["refineMU"] = 0
-
-        parameters["NITER"] = self.number_iterations_field.value()  # number of iteration for each grid
-        parameters["nwindows"] = self.number_windows_field.value()  # number of segmented windows over each contraction
-        parameters["thresholdtarget"] = self.threshold_target_field.value()
-        parameters["nbextchan"] = self.nb_extended_channels_field.value()
-        parameters["duplicatesthresh"] = self.duplicate_threshold_field.value()
-        parameters["silthr"] = self.sil_threshold_field.value()
-        parameters["covthr"] = self.cov_threshold_field.value()
-        parameters["CoVDR"] = 0.3
-        parameters["edges"] = 0.5
-        parameters["contrastfunc"] = self.contrast_function_dropdown.currentText()
-        parameters["peeloffwin"] = 0.025
-
-        # self.edit_field.setText("Saving data")
-        # # Save file
-        # if self.pathname is not None and self.filename is not None:
-        #     savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
-        # sio.savemat(savename, {"signal": signal, "parameters": parameters}, do_compression=True)
-        # self.edit_field.setText("Data saved")
-        # self.start_button.setStyleSheet(
-        #     "color: #f0f0f0; background-color: #7f7f7f; font-family: 'Poppins'; font-size: 18pt; font-weight: bold;"
-        # )
-
-    def roi_callback(self, eclick, erelease):
-        x = [eclick.xdata, erelease.xdata]
-        x = sorted(x)
-        x[0] = max(0, x[0])
-        x[1] = min(len(self.ref_signal), x[1])
-
-        if not hasattr(self, "coordinatesplateau"):
-            self.coordinatesplateau = []
-
-        self.coordinatesplateau.extend([int(x[0]), int(x[1])])
-        self.roi = None
+        print("WORK IN PROGRESS")
 
 
 if __name__ == "__main__":
