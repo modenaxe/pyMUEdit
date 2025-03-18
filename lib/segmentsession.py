@@ -12,7 +12,6 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QComboBox,
     QLineEdit,
-    QGroupBox,
     QSpinBox,
 )
 from matplotlib.widgets import RectangleSelector
@@ -145,11 +144,7 @@ class SegmentSession(QMainWindow):
 
         self.canvas.axes.clear()
 
-        # Extract the signal data
         signal = self.file["signal"]
-
-        # Check if signal is structured array (from MATLAB)
-        # is_structured = isinstance(signal, np.ndarray) and signal.dtype.names is not None
 
         if "EMG amplitude" in self.reference_dropdown.currentText():
             # Calculate EMG amplitude
@@ -166,11 +161,8 @@ class SegmentSession(QMainWindow):
                     window_size = int(fsamp)
                     tmp[i, :] = np.convolve(np.abs(data[i, :]), np.ones(window_size) / window_size, mode="same")
 
-                # Calculate mean across channels
                 emg_mean = np.mean(tmp, axis=0)
-
-                # For structured arrays, we can't modify them directly
-                self.target_data = emg_mean  # Store locally for later use
+                self.target_data = emg_mean
 
                 # Plot individual channels in gray
                 for i in range(min(8, channels)):  # Limit to 8 channels for performance
@@ -204,15 +196,12 @@ class SegmentSession(QMainWindow):
                             idx = i
                             break
 
-            # Access auxiliary data properly
             if idx is not None and "auxiliary" in signal.dtype.names:
                 aux_data = signal["auxiliary"][0, 0]
 
                 if aux_data.ndim > 1 and idx < aux_data.shape[0]:
                     signal_data = aux_data[idx, :]
-
-                    # Store as target
-                    self.target_data = signal_data  # Store locally
+                    self.target_data = signal_data
 
                     # Plot directly
                     self.canvas.axes.plot(signal_data, color=(0.95, 0.95, 0.95), linewidth=2)
@@ -272,9 +261,8 @@ class SegmentSession(QMainWindow):
         self.canvas.axes.plot(self.file["signal"]["target"], color=(0.95, 0.95, 0.95), linewidth=2)
         self.canvas.draw()
 
-        # Let user select rectangles for windows
         for nwin in range(self.windows_field.value()):
-            win_idx = nwin  # Create a local variable for the closure
+            win_idx = nwin
 
             def onselect(eclick, erelease):
                 if not hasattr(eclick, "xdata") or not hasattr(erelease, "xdata"):
@@ -302,12 +290,11 @@ class SegmentSession(QMainWindow):
                 if self.rect_selector is not None:
                     self.rect_selector.disconnect_events()
 
-            # Create rectangle selector
             self.rect_selector = RectangleSelector(
                 self.canvas.axes,
                 onselect,
                 useblit=True,
-                button=MouseButton.LEFT,
+                button=MouseButton(MouseButton.LEFT),
                 minspanx=5,
                 minspany=5,
                 spancoords="pixels",
