@@ -1,4 +1,5 @@
 import sys
+import os
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QPushButton, QLabel, QFrame, QScrollArea,
                              QSizePolicy, QGridLayout, QStyle, QGraphicsDropShadowEffect)
@@ -7,6 +8,10 @@ from PyQt5.QtCore import Qt, QSize
 
 # Import the ImportDataWindow class
 from import_data_window import ImportDataWindow
+
+# Import MUedit class from the root directory
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from MUedit import MUedit
 
 class HDEMGDashboard(QMainWindow):
     def __init__(self):
@@ -132,6 +137,9 @@ class HDEMGDashboard(QMainWindow):
                 background-color: #333333;
             }
         """)
+
+        # Connect the button to the open_muedit_window method
+        new_viz_btn.clicked.connect(self.open_muedit_window)
         
         header_layout.addWidget(dashboard_title)
         header_layout.addStretch()
@@ -675,6 +683,12 @@ class HDEMGDashboard(QMainWindow):
         print("Opening import data window")
         self.import_window = ImportDataWindow(parent=self)
         self.import_window.show()
+
+    def open_muedit_window(self):
+      """Open the MUedit window when New Visualization button is clicked"""
+      print("Opening MUedit window")
+      self.muedit_window = MUedit()
+      self.muedit_window.show()
     
 
 if __name__ == "__main__":
