@@ -5,7 +5,7 @@ from sklearn.cluster import KMeans
 
 def refinesil(PulseT, distime, fsamp):
     # Peak detection
-    peaks, spikes = find_peaks(PulseT, distance=round(fsamp * 0.005))
+    spikes, _ = find_peaks(PulseT, distance=round(fsamp * 0.005))
 
     # Normalization
     if len(spikes) >= 10:

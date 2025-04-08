@@ -131,16 +131,13 @@ class DecompositionWorker(QThread):
     def convert_to_dict(self, signal):
         """Convert signal data to a Python dictionary"""
         try:
-            # Check if it's already a dict
             if isinstance(signal, dict):
                 return signal
 
-            # If it's a structured array or recarray
             if isinstance(signal, np.ndarray) and hasattr(signal, "dtype") and signal.dtype.names is not None:
-                # Convert to dictionary
                 signal_dict = {}
 
-                # For MATLAB imports (usually 1x1 structured array)
+                # For MATLAB imports
                 if signal.shape == (1, 1):
                     for field in signal.dtype.names:
                         try:
@@ -157,7 +154,6 @@ class DecompositionWorker(QThread):
                         except Exception as e:
                             print(f"DEBUG: Error processing field '{field}': {str(e)}")
                 else:
-                    # For regular structured arrays
                     for field in signal.dtype.names:
                         try:
                             signal_dict[field] = signal[field]
@@ -165,12 +161,6 @@ class DecompositionWorker(QThread):
                             print(f"DEBUG: Error processing field '{field}': {str(e)}")
 
                 return signal_dict
-
-            # If it's another object type with attributes
-            if hasattr(signal, "__dict__"):
-                return signal.__dict__
-
-            # Last resort - try to convert to dict directly
             return dict(signal)
         except Exception as e:
             print(f"DEBUG: Error in convert_to_dict: {str(e)}")

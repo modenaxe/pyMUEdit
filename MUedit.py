@@ -37,7 +37,7 @@ class MUedit(QMainWindow):
         self.graphend = None
         self.roi = None
         self.threads = []
-        self.iteration_counter = 0  # Counter for tracking iterations
+        self.iteration_counter = 0
 
         # Initialize UI using the imported setup function
         setup_ui(self)
@@ -241,40 +241,134 @@ class MUedit(QMainWindow):
         if self.pathname and self.filename:
             savename = os.path.join(self.pathname, self.filename + "_output_decomp.mat")
 
-            # Format the result structure properly for MATLAB compatibility
-            formatted_result = result
+            formatted_result = result.copy() if isinstance(result, dict) else result
 
-            # Ensure Pulsetrain and Dischargetimes are properly formatted as cell arrays
-            # This will make them appear as NxM cell in MATLAB instead of struct
-            if "Pulsetrain" in formatted_result and isinstance(formatted_result["Pulsetrain"], dict):
+            # Format Pulsetrain as a MATLAB-compatible cell array
+            if "Pulsetrain" in formatted_result:
                 max_electrode = max(formatted_result["Pulsetrain"].keys()) if formatted_result["Pulsetrain"] else 0
 
-                pulse_list = [[] for _ in range(max_electrode + 1)]
-                for electrode, pulse in formatted_result["Pulsetrain"].items():
-                    pulse_list[electrode] = pulse
+                pulsetrain_obj = np.empty((1, max_electrode + 1), dtype=object)
 
-                formatted_result["Pulsetrain"] = pulse_list
+                # Fill the array with pulse trains
+                for i in range(max_electrode + 1):
+                    if i in formatted_result["Pulsetrain"]:
+                        pulsetrain_obj[0, i] = formatted_result["Pulsetrain"][i]
+                    else:
+                        signal_width = formatted_result["data"].shape[1] if "data" in formatted_result else 0
+                        pulsetrain_obj[0, i] = np.zeros((0, signal_width))
 
-            # Do the same for Dischargetimes
-            if "Dischargetimes" in formatted_result and isinstance(formatted_result["Dischargetimes"], dict):
+                # Replace dictionary with object array
+                formatted_result["Pulsetrain"] = pulsetrain_obj
+
+            # Format Dischargetimes as a MATLAB-compatible cell array
+            if "Dischargetimes" in formatted_result:
                 max_electrode = 0
                 max_mu = 0
+
                 for key in formatted_result["Dischargetimes"].keys():
                     if isinstance(key, tuple) and len(key) == 2:
                         electrode, mu = key
                         max_electrode = max(max_electrode, electrode)
                         max_mu = max(max_mu, mu)
 
-                # Create properly sized cell array (2D list)
-                discharge_list = [[[] for _ in range(max_mu + 1)] for _ in range(max_electrode + 1)]
+                dischargetimes_obj = np.empty((max_electrode + 1, max_mu + 1), dtype=object)
 
-                # Fill with data
+                # Initialize all cells with empty arrays
+                for i in range(max_electrode + 1):
+                    for j in range(max_mu + 1):
+                        dischargetimes_obj[i, j] = np.array([], dtype=int)
+
+                # Fill with actual discharge times
                 for key, value in formatted_result["Dischargetimes"].items():
                     if isinstance(key, tuple) and len(key) == 2:
                         electrode, mu = key
-                        discharge_list[electrode][mu] = value
+                        dischargetimes_obj[electrode, mu] = value
 
-                formatted_result["Dischargetimes"] = discharge_list
+                formatted_result["Dischargetimes"] = dischargetimes_obj
+
+            if "gridname" in formatted_result:
+                gridname = formatted_result["gridname"]
+                gridname_obj = np.empty((1, len(gridname)), dtype=object)
+
+                # Fill the array with grid names
+                for i, name in enumerate(gridname):
+                    gridname_obj[0, i] = str(name)
+
+                formatted_result["gridname"] = gridname_obj
+
+            if "muscle" in formatted_result:
+                muscle = formatted_result["muscle"]
+                muscle_obj = np.empty((1, len(muscle)), dtype=object)
+
+                # Fill the array with grid names
+                for i, name in enumerate(muscle):
+                    muscle_obj[0, i] = str(name)
+
+                formatted_result["muscle"] = muscle_obj
+
+            if "auxiliaryname" in formatted_result:
+                auxname = formatted_result["auxiliaryname"]
+                auxname_obj = np.empty((1, len(auxname)), dtype=object)
+
+                # Fill the array with grid names
+                for i, name in enumerate(auxname):
+                    auxname_obj[0, i] = str(name)
+
+                formatted_result["auxiliaryname"] = auxname_obj
+
+            if "coordinates" in formatted_result:
+                coordinates = formatted_result["coordinates"]
+                ngrid = formatted_result.get("ngrid", 1)
+
+                coord_obj = np.empty((1, ngrid), dtype=object)
+
+                # Process list of coordinates arrays
+                for i, coord in enumerate(coordinates):
+                    if i < ngrid:
+                        if isinstance(coord, np.ndarray):
+                            if coord.ndim == 2 and coord.shape[1] == 2:
+                                coord_obj[0, i] = coord
+                            else:
+                                coord_obj[0, i] = np.reshape(coord, (-1, 2))
+                        else:
+                            coord_obj[0, i] = np.array(coord).reshape(-1, 2)
+
+                # Fill any empty cells with default
+                for i in range(ngrid):
+                    if coord_obj[0, i] is None:
+                        coord_obj[0, i] = np.zeros((0, 2))
+
+                formatted_result["coordinates"] = coord_obj
+
+            if "EMGmask" in formatted_result:
+                emgmask = formatted_result["EMGmask"]
+                ngrid = formatted_result.get("ngrid", 1)
+
+                mask_obj = np.empty((1, ngrid), dtype=object)
+
+                # Process list of mask arrays
+                for i, mask in enumerate(emgmask):
+                    if i < ngrid:
+                        if isinstance(mask, np.ndarray):
+                            if mask.ndim == 1:
+                                mask_obj[0, i] = mask.reshape(-1, 1)
+                            elif mask.ndim == 2 and mask.shape[1] == 1:
+                                mask_obj[0, i] = mask
+                            else:
+                                mask_obj[0, i] = mask.flatten().reshape(-1, 1)
+                        else:
+                            mask_obj[0, i] = np.array(mask).flatten().reshape(-1, 1)
+
+                # Fill any empty cells with default (empty) mask arrays
+                for i in range(ngrid):
+                    if mask_obj[0, i] is None:
+                        if "coordinates" in formatted_result and formatted_result["coordinates"][0, i] is not None:
+                            coord_len = formatted_result["coordinates"][0, i].shape[0]
+                            mask_obj[0, i] = np.zeros((coord_len, 1), dtype=int)
+                        else:
+                            mask_obj[0, i] = np.zeros((0, 1), dtype=int)
+
+            formatted_result["EMGmask"] = mask_obj
 
             parameters = prepare_parameters(self.ui_params) if hasattr(self, "ui_params") else {}
             self.save_mat_in_background(savename, {"signal": formatted_result, "parameters": parameters}, True)
@@ -309,7 +403,6 @@ class MUedit(QMainWindow):
             if self.iteration_counter % 5 != 0 and self.iteration_counter > 1:
                 return
 
-            # Check for valid input data to avoid errors
             if target is None:
                 return
 
