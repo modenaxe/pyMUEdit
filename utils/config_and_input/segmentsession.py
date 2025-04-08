@@ -1,7 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
+import pyqtgraph as pg
 from PyQt5.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -14,22 +12,8 @@ from PyQt5.QtWidgets import (
     QSpinBox,
     QDoubleSpinBox,
 )
-from matplotlib.widgets import RectangleSelector
-from matplotlib.backend_bases import MouseButton
 import scipy.io as sio
 from utils.config_and_input.segmenttargets import segmenttargets
-
-
-class MplCanvas(FigureCanvas):
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        self.fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = self.fig.add_subplot(111)
-        self.fig.patch.set_facecolor("#262626")
-        self.axes.set_facecolor("#262626")
-        self.axes.xaxis.label.set_color("#f0f0f0")
-        self.axes.yaxis.label.set_color("#f0f0f0")
-        self.axes.tick_params(colors="#f0f0f0", which="both")
-        super(MplCanvas, self).__init__(self.fig)
 
 
 class SegmentSession(QMainWindow):
@@ -39,6 +23,8 @@ class SegmentSession(QMainWindow):
         self.coordinates = []
         self.data = {"data": [], "auxiliary": [], "target": [], "path": []}
         self.emg_amplitude_cache = None
+        self.roi = None
+        self.current_window = 0
         self.initUI()
 
     def initUI(self):
@@ -116,14 +102,28 @@ class SegmentSession(QMainWindow):
         top_layout.addWidget(self.split_button)
         top_layout.addWidget(self.ok_button)
 
-        # Canvas for plotting
-        self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
-        self.canvas.axes.set_xlabel("Time (s)")
-        self.canvas.axes.set_ylabel("Reference")
+        # Canvas for plotting - use PyQtGraph instead of matplotlib
+        self.plot_widget = pg.PlotWidget()
+        self.plot_widget.setBackground("#262626")
+        self.plot_widget.setLabel("left", "Reference")
+        self.plot_widget.setLabel("bottom", "Time (s)")
+        self.plot_widget.getAxis("left").setPen(pg.mkPen(color="#f0f0f0"))
+        self.plot_widget.getAxis("bottom").setPen(pg.mkPen(color="#f0f0f0"))
+        self.plot_widget.getAxis("left").setTextPen(pg.mkPen(color="#f0f0f0"))
+        self.plot_widget.getAxis("bottom").setTextPen(pg.mkPen(color="#f0f0f0"))
+
+        # Create select button for manual ROI selection
+        self.select_button = QPushButton("Select Region")
+        self.select_button.setStyleSheet(
+            "color: #f0f0f0; background-color: #262626; font-family: 'Poppins'; font-weight: bold;"
+        )
+        self.select_button.clicked.connect(self.create_roi)
+        self.select_button.setVisible(False)
 
         # Add widgets to main layout
         main_layout.addWidget(top_panel)
-        main_layout.addWidget(self.canvas)
+        main_layout.addWidget(self.plot_widget)
+        main_layout.addWidget(self.select_button)
         main_layout.addWidget(self.pathname)
 
     def initialize_with_file(self):
@@ -185,15 +185,15 @@ class SegmentSession(QMainWindow):
     def set_safe_ylim(self, y_min, y_max):
         if y_min == y_max:
             y_margin = abs(y_min) * 0.1 if y_min != 0 else 0.1
-            self.canvas.axes.set_ylim(y_min - y_margin, y_max + y_margin)
+            self.plot_widget.setYRange(y_min - y_margin, y_max + y_margin)
         else:
-            self.canvas.axes.set_ylim(y_min, y_max)
+            self.plot_widget.setYRange(y_min, y_max)
 
     def reference_dropdown_value_changed(self):
         if not self.pathname.text() or not hasattr(self, "file") or self.file is None:
             return
 
-        self.canvas.axes.clear()
+        self.plot_widget.clear()
 
         if "EMG amplitude" in self.reference_dropdown.currentText():
             try:
@@ -208,17 +208,21 @@ class SegmentSession(QMainWindow):
 
                 # Plot data - plot only a subset of channels to improve performance
                 for i in range(emg_data["channel_envelopes"].shape[0]):
-                    self.canvas.axes.plot(emg_data["channel_envelopes"][i, :], color=(0.5, 0.5, 0.5), linewidth=0.25)
+                    self.plot_widget.plot(
+                        emg_data["channel_envelopes"][i, :], pen=pg.mkPen(color=(128, 128, 128, 128), width=0.25)
+                    )
 
                 # Plot the mean envelope
-                self.canvas.axes.plot(emg_data["mean_envelope"], color=(0.85, 0.33, 0.10), linewidth=2)
+                self.plot_widget.plot(emg_data["mean_envelope"], pen=pg.mkPen(color=(217, 84, 26), width=2))
 
                 self.set_safe_ylim(emg_data["y_min"], emg_data["y_max"])
                 self.threshold_field.setEnabled(False)
 
             except Exception as e:
                 print(f"Error calculating EMG amplitude: {e}")
-                self.canvas.axes.text(0.5, 0.5, f"Error: {str(e)}", ha="center", va="center", color="red")
+                text_item = pg.TextItem(text=f"Error: {str(e)}", color=(255, 0, 0))
+                text_item.setPos(50, 50)
+                self.plot_widget.addItem(text_item)
         else:
             try:
                 signal = self.file["signal"][0, 0]
@@ -240,7 +244,7 @@ class SegmentSession(QMainWindow):
                     raise ValueError(f"Auxiliary signal '{self.reference_dropdown.currentText()}' not found")
 
                 signal["target"] = signal["auxiliary"][idx, :]
-                self.canvas.axes.plot(signal["target"], color=(0.95, 0.95, 0.95), linewidth=2)
+                self.plot_widget.plot(signal["target"], pen=pg.mkPen(color=(242, 242, 242), width=2))
 
                 if not np.any(np.isnan(signal["target"])):
                     self.set_safe_ylim(np.min(signal["target"]), np.max(signal["target"]))
@@ -248,11 +252,9 @@ class SegmentSession(QMainWindow):
                 self.threshold_field.setEnabled(True)
             except Exception as e:
                 print(f"Error accessing auxiliary signal: {e}")
-                self.canvas.axes.text(
-                    0.5, 0.5, "Error accessing auxiliary signal", ha="center", va="center", color="red"
-                )
-
-        self.canvas.draw()
+                text_item = pg.TextItem(text="Error accessing auxiliary signal", color=(255, 0, 0))
+                text_item.setPos(50, 50)
+                self.plot_widget.addItem(text_item)
 
     def threshold_field_value_changed(self):
         if not self.file or "signal" not in self.file or "EMG amplitude" in self.reference_dropdown.currentText():
@@ -271,21 +273,99 @@ class SegmentSession(QMainWindow):
             self.coordinates = np.clip(self.coordinates, 1, len(signal["target"]))
 
             # Update plot
-            self.canvas.axes.clear()
-            self.canvas.axes.plot(signal["target"], color=(0.95, 0.95, 0.95), linewidth=2)
+            self.plot_widget.clear()
+            self.plot_widget.plot(signal["target"], pen=pg.mkPen(color=(242, 242, 242), width=2))
 
             # Add vertical lines for segments
             for i in range(len(self.coordinates) // 2):
-                cmap = plt.get_cmap("winter")
-                color = cmap(i / float(len(self.coordinates) // 2))
-                self.canvas.axes.axvline(x=self.coordinates[i * 2], color=color, linewidth=2)
-                self.canvas.axes.axvline(x=self.coordinates[i * 2 + 1], color=color, linewidth=2)
+                # Create a gradient of colors for different segments
+                hue = 0.6 - (i / (len(self.coordinates) // 2) * 0.3)  # Blue-ish hues
+                color = pg.hsvColor(hue, 0.8, 0.9)
+
+                # Add vertical lines using PyQtGraph's InfiniteLine
+                line1 = pg.InfiniteLine(pos=self.coordinates[i * 2], angle=90, pen=pg.mkPen(color=color, width=2))
+                line2 = pg.InfiniteLine(pos=self.coordinates[i * 2 + 1], angle=90, pen=pg.mkPen(color=color, width=2))
+                self.plot_widget.addItem(line1)
+                self.plot_widget.addItem(line2)
 
             self.set_safe_ylim(np.min(signal["target"]), np.max(signal["target"]))
 
-            self.canvas.draw()
         except Exception as e:
             print(f"Error in threshold_field_value_changed: {e}")
+
+    def create_roi(self):
+        """Create a PyQtGraph region of interest for selection"""
+        if not self.file or "signal" not in self.file:
+            return
+
+        signal = self.file["signal"][0, 0]
+
+        # Create a new ROI for selection using PyQtGraph's LinearRegionItem
+        roi = pg.LinearRegionItem(orientation="vertical")
+        roi.setBounds([0, len(signal["target"])])
+
+        # Store reference to ROI
+        self.roi = roi
+        self.plot_widget.addItem(roi)
+
+        # Connect signal for ROI change
+        roi.sigRegionChangeFinished.connect(self.on_roi_change)
+
+    def on_roi_change(self):
+        """Handle changes to the region of interest"""
+        if self.roi is None or not self.file or "signal" not in self.file:
+            return
+
+        # Get selected region
+        region = self.roi.getRegion()
+        x1, x2 = int(region[0]), int(region[1])  # type:ignore
+        x1, x2 = sorted([x1, x2])
+
+        signal = self.file["signal"][0, 0]
+        x1 = max(1, x1)
+        x2 = min(len(signal["target"]), x2)
+
+        # Update coordinates for the current window
+        nwin = self.current_window
+        if len(self.coordinates) < (nwin + 1) * 2:
+            # Expand coordinates array if needed
+            self.coordinates = np.pad(self.coordinates, (0, (nwin + 1) * 2 - len(self.coordinates)))
+
+        self.coordinates[nwin * 2] = x1
+        self.coordinates[nwin * 2 + 1] = x2
+
+        # Draw vertical lines to mark the selection
+        hue = 0.6 - (nwin / self.windows_field.value() * 0.3)
+        color = pg.hsvColor(hue, 0.8, 0.9)
+
+        # We'll use a tag in the name to identify lines for each window
+        line_tag = f"window_{nwin}_line"
+
+        # Find and remove any existing lines for this window
+        for item in self.plot_widget.items():
+            if isinstance(item, pg.InfiniteLine) and hasattr(item, "name") and item.name() == line_tag:
+                self.plot_widget.removeItem(item)
+
+        # Add new lines with PyQtGraph's InfiniteLine
+        line1 = pg.InfiniteLine(pos=x1, angle=90, pen=pg.mkPen(color=color, width=2), name=line_tag)
+        line2 = pg.InfiniteLine(pos=x2, angle=90, pen=pg.mkPen(color=color, width=2), name=line_tag)
+
+        self.plot_widget.addItem(line1)
+        self.plot_widget.addItem(line2)
+
+        # Remove the ROI after selection is done
+        self.plot_widget.removeItem(self.roi)
+        self.roi = None
+
+        # Move to next window if we're not done
+        self.current_window += 1
+        if self.current_window < self.windows_field.value():
+            # Create another ROI for the next selection
+            self.create_roi()
+        else:
+            # Reset for future selections
+            self.current_window = 0
+            self.select_button.setVisible(False)
 
     def windows_field_value_changed(self):
         if not self.file or "signal" not in self.file:
@@ -297,45 +377,16 @@ class SegmentSession(QMainWindow):
             signal = self.file["signal"][0, 0]
 
             # Update plot
-            self.canvas.axes.clear()
-            self.canvas.axes.plot(signal["target"], color=(0.95, 0.95, 0.95), linewidth=2)
-            self.canvas.draw()
+            self.plot_widget.clear()
+            self.plot_widget.plot(signal["target"], pen=pg.mkPen(color=(242, 242, 242), width=2))
 
-            # Set up the rectangle selector for each window
-            for nwin in range(windows):
+            # Reset current window counter and show select button
+            self.current_window = 0
+            self.select_button.setVisible(True)
 
-                def on_select(eclick, erelease, nwin=nwin):
-                    if not hasattr(eclick, "xdata") or not hasattr(erelease, "xdata"):
-                        return
+            # Start the selection process with PyQtGraph ROI
+            self.create_roi()
 
-                    x1, x2 = int(eclick.xdata), int(erelease.xdata)
-                    x1, x2 = sorted([x1, x2])
-                    x1 = max(1, x1)
-                    x2 = min(len(signal["target"]), x2)
-
-                    self.coordinates[nwin * 2] = x1
-                    self.coordinates[nwin * 2 + 1] = x2
-
-                    # Draw vertical lines
-                    cmap = plt.get_cmap("winter")
-                    color = cmap(nwin / float(windows))
-                    self.canvas.axes.axvline(x=x1, color=color, linewidth=2)
-                    self.canvas.axes.axvline(x=x2, color=color, linewidth=2)
-                    self.canvas.draw()
-
-                rect_selector = RectangleSelector(
-                    self.canvas.axes,
-                    on_select,
-                    useblit=True,
-                    button=MouseButton(MouseButton.LEFT),
-                    minspanx=5,
-                    minspany=5,
-                    spancoords="pixels",
-                    interactive=True,
-                )
-
-                print(f"Please select region {nwin+1} of {windows}")
-                plt.waitforbuttonpress()
         except Exception as e:
             print(f"Error in windows_field_value_changed: {e}")
 
@@ -370,11 +421,10 @@ class SegmentSession(QMainWindow):
 
             # Update pathname and plot with first segment
             self.pathname.setText(f"{pathname_base}_1.mat")
-            self.canvas.axes.clear()
-            self.canvas.axes.plot(target_segments[0], color=(0.95, 0.95, 0.95), linewidth=2)
+            self.plot_widget.clear()
+            self.plot_widget.plot(target_segments[0], pen=pg.mkPen(color=(242, 242, 242), width=2))
             if not np.any(np.isnan(target_segments[0])):
                 self.set_safe_ylim(np.min(target_segments[0]), np.max(target_segments[0]))
-            self.canvas.draw()
 
             self.concatenate_button.setEnabled(False)
             self.split_button.setEnabled(False)
@@ -407,12 +457,11 @@ class SegmentSession(QMainWindow):
             signal["target"] = np.concatenate(target_segments)
             signal["path"] = signal["target"]
 
-            # Update plot
-            self.canvas.axes.clear()
-            self.canvas.axes.plot(signal["target"], color=(0.95, 0.95, 0.95), linewidth=2)
+            # Update plot with PyQtGraph
+            self.plot_widget.clear()
+            self.plot_widget.plot(signal["target"], pen=pg.mkPen(color=(242, 242, 242), width=2))
             if not np.any(np.isnan(signal["target"])):
                 self.set_safe_ylim(np.min(signal["target"]), np.max(signal["target"]))
-            self.canvas.draw()
 
             # Save the concatenated file
             sio.savemat(self.pathname.text(), {"signal": signal}, do_compression=True)
