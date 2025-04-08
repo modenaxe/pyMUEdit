@@ -18,11 +18,16 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QIcon, QFont, QPixmap, QColor
 from PyQt5.QtCore import Qt, QSize
 
-# Import the ImportDataWindow class
+# Add necessary paths to the system path
+current_dir = os.path.dirname(os.path.abspath(__file__))  # gui folder
+project_root = os.path.dirname(current_dir)  # project root
+sys.path.append(project_root)
+sys.path.append(current_dir)
+
+# Import the ImportDataWindow class from the same directory
 from import_data_window import ImportDataWindow
 
 # Import MUedit class from the root directory
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from MUedit import MUedit
 
 
@@ -122,6 +127,7 @@ class HDEMGDashboard(QMainWindow):
         # Sidebar buttons with Qt standard icons
         dashboard_btn = self.create_sidebar_button("Dashboard", self.style().standardIcon(QStyle.SP_DesktopIcon), True)
         import_btn = self.create_sidebar_button("Import Data", self.style().standardIcon(QStyle.SP_DialogOpenButton))
+        import_btn.clicked.connect(self.open_import_data_window)  # Connect button to open import window
         dataview_btn = self.create_sidebar_button(
             "Data View", self.style().standardIcon(QStyle.SP_FileDialogDetailedView)
         )
@@ -179,8 +185,8 @@ class HDEMGDashboard(QMainWindow):
         """
         )
 
-        # Connect the button to the open_muedit_window method
-        new_viz_btn.clicked.connect(self.open_muedit_window)
+        # Connect the button to the open_import_data_window method instead of MUedit
+        new_viz_btn.clicked.connect(self.open_import_data_window)
 
         header_layout.addWidget(dashboard_title)
         header_layout.addStretch()
@@ -301,7 +307,7 @@ class HDEMGDashboard(QMainWindow):
         import_dataset_btn = self.create_action_button(
             "Import New Dataset", self.style().standardIcon(QStyle.SP_DialogOpenButton)
         )
-        import_dataset_btn.clicked.connect(self.open_import_data_window)
+        import_dataset_btn.clicked.connect(self.open_import_data_window)  # Connect to open import window
         create_chart_btn = self.create_action_button(
             "Create Chart", self.style().standardIcon(QStyle.SP_DialogHelpButton)
         )
@@ -758,8 +764,6 @@ class HDEMGDashboard(QMainWindow):
         """Handle card click events - would open the specific visualization"""
         print(f"Opening visualization: {title}")
         # In a real app, you would load the visualization based on its title or ID
-        # For example:
-        # self.load_visualization_by_title(title)
 
     def open_import_data_window(self):
         """Open the import data window when import button is clicked"""
@@ -768,7 +772,7 @@ class HDEMGDashboard(QMainWindow):
         self.import_window.show()
 
     def open_muedit_window(self):
-        """Open the MUedit window when New Visualization button is clicked"""
+        """Open the MUedit window (kept for reference but no longer used)"""
         print("Opening MUedit window")
         self.muedit_window = MUedit()
         self.muedit_window.show()
