@@ -308,6 +308,7 @@ class DecompositionApp(QMainWindow):
         # Save Output button
         self.save_output_button = QPushButton("💾 Save Output")
         self.save_output_button.setEnabled(False)
+        self.save_output_button.clicked.connect(self.save_output_to_location)
         
         # Navigation section
         nav_label = QLabel("Navigation")
@@ -523,6 +524,9 @@ class DecompositionApp(QMainWindow):
 
     def on_decomposition_complete(self, result):
         """Handle successful completion of decomposition"""
+        # Store the result for later saving
+        self.decomposition_result = result
+
         if self.pathname and self.filename:
             savename = os.path.join(self.pathname, self.filename + "_output_decomp.mat")
 
@@ -706,6 +710,37 @@ class DecompositionApp(QMainWindow):
         except Exception as e:
             print(f"Error in update_plots: {e}")
             traceback.print_exc()
+
+    def save_output_to_location(self):
+      """Save decomposition results to a user-specified location"""
+      if not hasattr(self, 'decomposition_result') or self.decomposition_result is None:
+          self.edit_field.setText("No decomposition results available to save")
+          return
+      
+      # Open file dialog to select save location
+      save_path, _ = QFileDialog.getSaveFileName(
+          self, 
+          "Save Decomposition Results", 
+          os.path.join(self.pathname if self.pathname else "", "decomposition_results.mat"),
+          "MAT Files (*.mat);;All Files (*.*)"
+      )
+      
+      if not save_path:  # User cancelled
+          return
+      
+      # Ensure the path has a .mat extension
+      if not save_path.lower().endswith('.mat'):
+          save_path += '.mat'
+      
+      # Format the result properly (same as in on_decomposition_complete)
+      formatted_result = self.decomposition_result
+      
+      # Get the parameters that were used
+      parameters = prepare_parameters(self.ui_params) if hasattr(self, 'ui_params') else {}
+      
+      # Save in background
+      self.save_mat_in_background(save_path, {"signal": formatted_result, "parameters": parameters}, True)
+      self.edit_field.setText(f"Saving results to {save_path}")
 
 
 if __name__ == "__main__":
