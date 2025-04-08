@@ -20,15 +20,14 @@ sys.path.append(current_dir)
 from utils.config_and_input.openOTBplus import openOTBplus
 from SaveMatWorker import SaveMatWorker
 
-# Add views directory to path
-views_path = os.path.join(current_dir, 'views')
-sys.path.append(views_path)
-algos_path = os.path.join(views_path, 'Algorithm_Selection_Decomposition')
-# Import the algorithm selection screen
-from views.Algorithm_Selection_Decomposition.algo_select_screen import DecompositionApp
-
-# Import the algorithm selection screen that we'll navigate to
-from DecompositionWorker import DecompositionWorker
+# Import our navigator module (create an empty file first if it doesn't exist)
+try:
+    import navigator
+except ImportError:
+    # If navigator.py doesn't exist yet, create it
+    with open(os.path.join(current_dir, 'navigator.py'), 'w') as f:
+        f.write('"""Navigator module placeholder"""')
+    import navigator
 
 class ImportDataWindow(QMainWindow):
     # Signal to notify other windows when a file is imported
@@ -582,65 +581,79 @@ class ImportDataWindow(QMainWindow):
         self.close()  # Close this window
     
     def go_to_algorithm_screen(self):
-      """Navigate to algorithm selection screen"""
-      if not self.filename or not self.imported_signal:
-          return  # Shouldn't happen since the button is disabled
-      
-      try:
-          # Import the DecompositionApp from the proper location
-          from views.Algorithm_Selection_Decomposition.algo_select_screen import DecompositionApp
-          
-          # Create and show the algorithm selection window
-          self.algo_window = DecompositionApp()
-          
-          # Load the data into the algorithm selection window
-          if self.imported_signal:
-              # Save file for the algorithm window to load
-              savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
-              self.save_mat_in_background(savename, {"signal": self.imported_signal}, True)
-              
-              # Set the filename and pathname in the algorithm window
-              self.algo_window.filename = self.filename
-              self.algo_window.pathname = self.pathname
-              
-              # Update UI in the algorithm window
-              self.algo_window.edit_field_saving_3.setText(self.filename)
-              
-              # Apply some of the functionality from select_file_button_pushed
-              # but without re-loading the file
-              self.algo_window.reference_dropdown.blockSignals(True)
-              self.algo_window.reference_dropdown.clear()
-              
-              # Update the list of signals for reference
-              if "auxiliaryname" in self.imported_signal:
-                  self.algo_window.reference_dropdown.addItem("EMG amplitude")
-                  for name in self.imported_signal["auxiliaryname"]:
-                      self.algo_window.reference_dropdown.addItem(str(name))
-              elif "target" in self.imported_signal:
-                  path_data = self.imported_signal["path"]
-                  target_data = self.imported_signal["target"]
-                  self.algo_window.reference_dropdown.addItem("EMG amplitude")
-                  self.algo_window.reference_dropdown.addItem("Path")
-                  self.algo_window.reference_dropdown.addItem("Target")
-              else:
-                  self.algo_window.reference_dropdown.addItem("EMG amplitude")
-              
-              self.algo_window.reference_dropdown.blockSignals(False)
-              
-              # Enable configuration button if needed
-              if hasattr(self.algo_window, 'set_configuration_button'):
-                  self.algo_window.set_configuration_button.setEnabled(True)
-          
-          # Show the algorithm window
-          self.algo_window.show()
-          
-          # Close this window
-          self.close()
-          
-      except Exception as e:
-          print(f"Error opening algorithm screen: {e}")
-          import traceback
-          traceback.print_exc()
+        """Navigate to algorithm selection screen"""
+        if not self.filename or not self.imported_signal:
+            return  # Shouldn't happen since the button is disabled
+        
+        try:
+            # Save the signal data for the algorithm window to load
+            savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
+            self.save_mat_in_background(savename, {"signal": self.imported_signal}, True)
+            
+            # Import from the file with hyphens, which is the real implementation
+            import importlib.util
+            file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
+                                    'views', 'Algorithm_Selection_Decomposition', 'algo-select-screen.py')
+            
+            if not os.path.exists(file_path):
+                print(f"File not found: {file_path}")
+                return
+                
+            print(f"Loading algorithm screen from: {file_path}")
+            spec = importlib.util.spec_from_file_location("decomp_app", file_path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            DecompositionApp = module.DecompositionApp
+            
+            # Create the algorithm window
+            self.algo_window = DecompositionApp()
+            
+            # Add the missing method to allow initializing properly
+            def select_file_button_pushed(self_inner):
+                file, _ = QFileDialog.getOpenFileName(self_inner, "Select file", "", "All Files (*.*)")
+                if not file:
+                    return
+                self_inner.filename = os.path.basename(file)
+                self_inner.pathname = os.path.dirname(file) + "/"
+                self_inner.edit_field_saving_3.setText(self_inner.filename)
+            
+            # Attach the method to the instance
+            from types import MethodType
+            self.algo_window.select_file_button_pushed = MethodType(select_file_button_pushed, self.algo_window)
+            
+            # Now handle the rest of the setup...
+            self.algo_window.filename = self.filename
+            self.algo_window.pathname = self.pathname
+            self.algo_window.edit_field_saving_3.setText(self.filename)
+            
+            # Update reference dropdown
+            self.algo_window.reference_dropdown.blockSignals(True)
+            self.algo_window.reference_dropdown.clear()
+            
+            if "auxiliaryname" in self.imported_signal:
+                self.algo_window.reference_dropdown.addItem("EMG amplitude")
+                for name in self.imported_signal["auxiliaryname"]:
+                    self.algo_window.reference_dropdown.addItem(str(name))
+            elif "target" in self.imported_signal:
+                self.algo_window.reference_dropdown.addItem("EMG amplitude")
+                self.algo_window.reference_dropdown.addItem("Path")
+                self.algo_window.reference_dropdown.addItem("Target")
+            else:
+                self.algo_window.reference_dropdown.addItem("EMG amplitude")
+            
+            self.algo_window.reference_dropdown.blockSignals(False)
+            
+            if hasattr(self.algo_window, 'set_configuration_button'):
+                self.algo_window.set_configuration_button.setEnabled(True)
+            
+            # Show the window and close this one
+            self.algo_window.show()
+            self.close()
+            
+        except Exception as e:
+            print(f"Error opening algorithm screen: {e}")
+            import traceback
+            traceback.print_exc()
     
     # Event handling for drag and drop
     def dragEnterEvent(self, event):
