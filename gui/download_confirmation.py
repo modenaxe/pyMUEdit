@@ -93,7 +93,7 @@ class ExportCompleteWidget(QWidget):
         icon_label.setStyleSheet(f""" QLabel {{ background-color: {self.colors['text_success']}; border-radius: {icon_size // 2}px; border: 2px solid {self.colors['bg_card']}; padding: 5px; }} """)
         confirm_layout.addWidget(icon_label, alignment=Qt.AlignCenter); confirm_layout.addSpacerItem(QSpacerItem(10, 5, QSizePolicy.Minimum, QSizePolicy.Fixed))
         title_label = QLabel("Export Complete!"); title_label.setFont(QFont("Arial", 16, QFont.Bold)); title_label.setAlignment(Qt.AlignCenter); title_label.setStyleSheet(f"color: {self.colors['text_primary']}; border: none;"); confirm_layout.addWidget(title_label, alignment=Qt.AlignCenter)
-        subtitle_label = QLabel("Your file has been successfully exported."); subtitle_label.setFont(QFont("Arial", 10)); subtitle_label.setAlignment(Qt.AlignCenter); subtitle_label.setStyleSheet(f"color: {self.colors['text_secondary']}; border: none;"); subtitle_label.setWordWrap(True); confirm_layout.addWidget(subtitle_label, alignment=Qt.AlignCenter)
+        subtitle_label = QLabel("File has been exported."); subtitle_label.setFont(QFont("Arial", 9)); subtitle_label.setAlignment(Qt.AlignCenter); subtitle_label.setStyleSheet(f"color: {self.colors['text_secondary']}; border: none;"); subtitle_label.setWordWrap(True); confirm_layout.addWidget(subtitle_label, alignment=Qt.AlignCenter)
         confirm_layout.addSpacerItem(QSpacerItem(20, 10, QSizePolicy.Minimum, QSizePolicy.Fixed)) # Reduced space
         confirm_layout.addWidget(self._create_download_row("Initializing...", "...")) # Placeholder text
         return confirm_card
