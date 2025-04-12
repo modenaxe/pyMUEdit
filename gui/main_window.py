@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QIcon, QFont, QPixmap, QColor
 from PyQt5.QtCore import Qt, QSize
+import traceback # Added for error handling
 
 # --- Imports ---
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -56,10 +57,6 @@ class HDEMGDashboard(QMainWindow):
             self.mu_analysis_page = MotorUnitAnalysisWidget()
             self.mu_analysis_page.return_to_dashboard_requested.connect(self.show_dashboard_view)
             # --- Connect the MU Analysis widget's request to the new main window method ---
-            # We need a way for the MU Analysis widget to trigger the export window.
-            # Option 1: Pass a reference of the main window method (simpler here)
-            # Option 2: Define a new signal in MU Analysis and connect it here (more decoupled)
-            # Going with Option 1 for simplicity:
             if hasattr(self.mu_analysis_page, 'set_export_window_opener'):
                  self.mu_analysis_page.set_export_window_opener(self.open_export_results_window)
             else:
@@ -71,66 +68,44 @@ class HDEMGDashboard(QMainWindow):
         self.show_dashboard_view()
         # --- End __init__ changes ---
 
-    def open_export_results_window(self):
-        """Opens the Export Results window, ensuring the instance persists."""
-        if ExportResultsWindow is None:
-            print("ExportResultsWindow is not available (export_results.py missing or failed import?).")
-            return
-
-        print(">>> Reached open_export_results_window in main_window (Persistent Ref Attempt + ProcessEvents)")
-
-        # Check if the window exists and hasn't been closed/deleted
-        window_valid_and_visible = False
-        if self.export_results_window:
-            try:
-                self.export_results_window.isActiveWindow()
-                window_valid_and_visible = self.export_results_window.isVisible()
-                print(f">>> Existing window valid. Visible: {window_valid_and_visible}")
-            except RuntimeError:
-                print(">>> Existing window reference found, but C++ object deleted.")
-                self.export_results_window = None
-
-        if self.export_results_window is None:
-            print(">>> Attempting to create NEW ExportResultsWindow instance.")
-            try:
-                self.export_results_window = ExportResultsWindow(parent=self)
-                print(f">>> Created and stored NEW instance: {self.export_results_window}")
-            except Exception as e:
-                print(f"!!!!! ERROR during ExportResultsWindow creation: {e}")
-                import traceback
-                traceback.print_exc()
-                self.export_results_window = None
-                return
-
-        if self.export_results_window:
-            try:
-                print(f">>> Showing/Activating instance: {self.export_results_window}")
-                self.export_results_window.show()
-                self.export_results_window.raise_()
-                self.export_results_window.activateWindow()
-                # --- ADD THIS LINE ---
-                QApplication.processEvents()
-                # --- END ADD ---
-                print(">>> Called show(), raise_(), activateWindow(), processEvents()")
-            except Exception as e:
-                 print(f"!!!!! ERROR during ExportResultsWindow show/raise/activate: {e}")
-                 import traceback
-                 traceback.print_exc()
-        else:
-             print(">>> ERROR: self.export_results_window is unexpectedly None after creation attempt.")
+    # --- MODIFIED: Removed Actions Panel from Dashboard ---
     def _create_dashboard_page(self):
         dashboard_scroll_area = QScrollArea(); dashboard_scroll_area.setWidgetResizable(True); dashboard_scroll_area.setFrameShape(QFrame.NoFrame); dashboard_scroll_area.setStyleSheet("background-color: transparent; border: none;")
         content_area = QWidget(); content_area.setObjectName("dashboardContentArea"); content_area.setStyleSheet("background-color: transparent;")
         content_layout = QVBoxLayout(content_area); content_layout.setContentsMargins(25, 25, 25, 25); content_layout.setSpacing(20); dashboard_scroll_area.setWidget(content_area)
+
+        # Header
         header_layout = QHBoxLayout(); dashboard_title = QLabel("Dashboard"); dashboard_title.setFont(QFont("Arial", 18, QFont.Bold)); dashboard_title.setStyleSheet(f"color: {self.colors['text_primary']};")
         new_viz_btn = QPushButton("+ New Visualization"); new_viz_btn.setFont(QFont("Arial", 9, QFont.Bold)); new_viz_btn.setIcon(self.style().standardIcon(QStyle.SP_FileDialogNewFolder)); new_viz_btn.setIconSize(QSize(14,14)); new_viz_btn.setStyleSheet(f"""QPushButton {{ background-color: {self.colors['accent']}; color: white; border-radius: 4px; padding: 8px 15px; }} QPushButton:hover {{ background-color: #333333; }}""")
         if ImportDataWindow: new_viz_btn.clicked.connect(self.open_import_data_window)
         else: new_viz_btn.setEnabled(False)
         header_layout.addWidget(dashboard_title); header_layout.addStretch(); header_layout.addWidget(new_viz_btn); content_layout.addLayout(header_layout)
+
+        # Content Grid (Now just Viz and Datasets)
         content_grid = QVBoxLayout(); content_grid.setSpacing(20)
-        top_row = QHBoxLayout(); top_row.setSpacing(20); viz_section_frame = self._create_viz_section_frame(); actions_frame = self._create_actions_frame(); top_row.addWidget(viz_section_frame, 3); top_row.addWidget(actions_frame, 1); content_grid.addLayout(top_row)
-        bottom_row = QHBoxLayout(); bottom_row.setSpacing(20); datasets_frame = self._create_datasets_frame(); empty_spacer = QFrame(); empty_spacer.setStyleSheet("background: transparent; border: none;"); bottom_row.addWidget(datasets_frame, 3); bottom_row.addWidget(empty_spacer, 1); content_grid.addLayout(bottom_row)
-        content_layout.addLayout(content_grid); return dashboard_scroll_area
+
+        # Top Row: Only Visualizations Frame
+        top_row = QHBoxLayout(); top_row.setSpacing(20)
+        viz_section_frame = self._create_viz_section_frame()
+        # actions_frame = self._create_actions_frame() # <-- REMOVED
+        top_row.addWidget(viz_section_frame) # <-- REMOVED stretch factor 3
+        # top_row.addWidget(actions_frame, 1) # <-- REMOVED
+        content_grid.addLayout(top_row)
+
+        # Bottom Row: Only Datasets Frame
+        bottom_row = QHBoxLayout(); bottom_row.setSpacing(20)
+        datasets_frame = self._create_datasets_frame()
+        # empty_spacer = QFrame() # <-- REMOVED
+        # empty_spacer.setStyleSheet("background: transparent; border: none;") # <-- REMOVED
+        bottom_row.addWidget(datasets_frame) # <-- REMOVED stretch factor 3
+        # bottom_row.addWidget(empty_spacer, 1) # <-- REMOVED
+        content_grid.addLayout(bottom_row)
+
+        content_layout.addLayout(content_grid)
+        content_layout.addStretch(1) # Add stretch at the end if needed
+        return dashboard_scroll_area
+    # --- END MODIFICATION ---
+
     def _create_viz_section_frame(self):
         viz_section_frame = QFrame(); viz_section_frame.setObjectName("vizSectionFrame_Original"); viz_section_frame.setFrameShape(QFrame.StyledPanel); viz_section_frame.setStyleSheet("""#vizSectionFrame_Original { background-color: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; } #vizSectionFrame_Original > QScrollArea, #vizSectionFrame_Original > QLabel { border: none; background-color: transparent; }""")
         viz_layout = QVBoxLayout(viz_section_frame); viz_layout.setSpacing(10); viz_title = QLabel("Recent Visualizations"); viz_title.setFont(QFont("Arial", 12, QFont.Bold)); viz_title.setStyleSheet("background: transparent; border: none;")
@@ -141,14 +116,18 @@ class HDEMGDashboard(QMainWindow):
         else:
             for idx, viz_data in enumerate(self.recent_visualizations): viz_card = self.create_viz_card(viz_data["title"], viz_data["date"], viz_data["type"], viz_data["icon"], idx); viz_container_layout.addWidget(viz_card)
         viz_scroll_area.setWidget(viz_container); viz_layout.addWidget(viz_title); viz_layout.addWidget(viz_scroll_area); return viz_section_frame
-    def _create_actions_frame(self):
-        actions_frame = QFrame(); actions_frame.setObjectName("actionsFrame_Original"); actions_frame.setFrameShape(QFrame.StyledPanel); actions_frame.setStyleSheet("""#actionsFrame_Original { background-color: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; } #actionsFrame_Original > QPushButton, #actionsFrame_Original > QLabel { border: none; background-color: transparent; }""")
-        actions_layout = QVBoxLayout(actions_frame); actions_layout.setSpacing(10); actions_title = QLabel("Quick Actions"); actions_title.setFont(QFont("Arial", 12, QFont.Bold)); actions_title.setStyleSheet("background: transparent; border: none;")
-        import_dataset_btn = self.create_action_button("Import New Dataset", self.style().standardIcon(QStyle.SP_DialogOpenButton));
-        if ImportDataWindow: import_dataset_btn.clicked.connect(self.open_import_data_window)
-        else: import_dataset_btn.setEnabled(False)
-        create_chart_btn = self.create_action_button("Create Chart", self.style().standardIcon(QStyle.SP_DialogHelpButton)); view_data_btn = self.create_action_button("View Data Table", self.style().standardIcon(QStyle.SP_FileDialogListView))
-        actions_layout.addWidget(actions_title); actions_layout.addWidget(import_dataset_btn); actions_layout.addWidget(create_chart_btn); actions_layout.addWidget(view_data_btn); actions_layout.addStretch(); return actions_frame
+
+    # --- REMOVED: _create_actions_frame method is no longer needed ---
+    # def _create_actions_frame(self):
+    #     actions_frame = QFrame(); actions_frame.setObjectName("actionsFrame_Original"); actions_frame.setFrameShape(QFrame.StyledPanel); actions_frame.setStyleSheet("""#actionsFrame_Original { background-color: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; } #actionsFrame_Original > QPushButton, #actionsFrame_Original > QLabel { border: none; background-color: transparent; }""")
+    #     actions_layout = QVBoxLayout(actions_frame); actions_layout.setSpacing(10); actions_title = QLabel("Quick Actions"); actions_title.setFont(QFont("Arial", 12, QFont.Bold)); actions_title.setStyleSheet("background: transparent; border: none;")
+    #     import_dataset_btn = self.create_action_button("Import New Dataset", self.style().standardIcon(QStyle.SP_DialogOpenButton));
+    #     if ImportDataWindow: import_dataset_btn.clicked.connect(self.open_import_data_window)
+    #     else: import_dataset_btn.setEnabled(False)
+    #     create_chart_btn = self.create_action_button("Create Chart", self.style().standardIcon(QStyle.SP_DialogHelpButton)); view_data_btn = self.create_action_button("View Data Table", self.style().standardIcon(QStyle.SP_FileDialogListView))
+    #     actions_layout.addWidget(actions_title); actions_layout.addWidget(import_dataset_btn); actions_layout.addWidget(create_chart_btn); actions_layout.addWidget(view_data_btn); actions_layout.addStretch(); return actions_frame
+    # --- END REMOVAL ---
+
     def _create_datasets_frame(self):
         datasets_frame = QFrame(); datasets_frame.setObjectName("datasetsFrame_Original"); datasets_frame.setFrameShape(QFrame.NoFrame); datasets_frame.setStyleSheet("""#datasetsFrame_Original { background-color: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; } #datasetsFrame_Original > QLabel { background-color: transparent; border: none; } #datasetsFrame_Original QFrame {}""")
         datasets_layout = QVBoxLayout(datasets_frame); datasets_layout.setSpacing(10); datasets_title = QLabel("Recent Datasets"); datasets_title.setFont(QFont("Arial", 12, QFont.Bold)); datasets_title.setStyleSheet("background: transparent; border: none;")
@@ -191,7 +170,7 @@ class HDEMGDashboard(QMainWindow):
 
 
     # --- Widget Creation Methods (Original versions for dashboard content) ---
-    # (create_viz_card, create_action_button, create_dataset_entry - unchanged)
+    # (create_viz_card, create_dataset_entry - unchanged)
     def create_viz_card(self, title, date, card_type="default", icon_style=None, idx=0):
         card = QFrame(); sanitized_title = title.replace(" ", "_").replace(":", "").lower(); card.setObjectName(f"vizCard_{sanitized_title}_{idx}"); card.setFrameShape(QFrame.StyledPanel); card.setFixedSize(250, 180); card.setProperty("title", title)
         if card_type in self.colors: bg_color = self.colors.get(f"bg_card_{card_type}", self.colors["bg_card_default"])
@@ -209,15 +188,20 @@ class HDEMGDashboard(QMainWindow):
         card.setCursor(Qt.PointingHandCursor); card.mousePressEvent = lambda event, t=title: self.open_visualization(t)
         shadow = QGraphicsDropShadowEffect(); shadow.setBlurRadius(10); shadow.setColor(QColor(0, 0, 0, 60)); shadow.setOffset(2, 2); card.setGraphicsEffect(shadow)
         return card
-    def create_action_button(self, text, icon):
-        btn = QPushButton(text); btn.setObjectName(f"actionBtn_{text.replace(' ', '_')}"); btn.setIcon(icon); btn.setIconSize(QSize(16, 16)); btn.setMinimumHeight(40); btn.setCursor(Qt.PointingHandCursor); btn.setStyleSheet(f"""#{btn.objectName()} {{ text-align: left; padding-left: 15px; background-color: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 4px; }} #{btn.objectName()}:hover {{ background-color: #e6e6e6; }}""")
-        return btn
+
+    # --- REMOVED: create_action_button method is no longer needed ---
+    # def create_action_button(self, text, icon):
+    #     btn = QPushButton(text); btn.setObjectName(f"actionBtn_{text.replace(' ', '_')}"); btn.setIcon(icon); btn.setIconSize(QSize(16, 16)); btn.setMinimumHeight(40); btn.setCursor(Qt.PointingHandCursor); btn.setStyleSheet(f"""#{btn.objectName()} {{ text-align: left; padding-left: 15px; background-color: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 4px; }} #{btn.objectName()}:hover {{ background-color: #e6e6e6; }}""")
+    #     return btn
+    # --- END REMOVAL ---
+
     def create_dataset_entry(self, filename, metadata, idx=0):
         sanitized_name = filename.replace(" ", "_").replace(".", "_").lower(); entry = QFrame(); entry.setObjectName(f"datasetEntry_{sanitized_name}_{idx}"); entry.setStyleSheet(f"""#{entry.objectName()} {{ background-color: #f2f2f2; border-radius: 4px; margin-bottom: 5px; }} #{entry.objectName()} QLabel, #{entry.objectName()} QPushButton {{ background-color: transparent; border: none; }}""")
         entry_layout = QHBoxLayout(entry); entry_layout.setContentsMargins(12, 12, 12, 12); file_icon = QLabel(); file_icon.setObjectName(f"fileIcon_{sanitized_name}_{idx}"); file_icon.setPixmap(self.style().standardIcon(QStyle.SP_FileIcon).pixmap(QSize(16, 16)))
         file_info = QVBoxLayout(); name_label = QLabel(filename); name_label.setObjectName(f"nameLabel_{sanitized_name}_{idx}"); name_label.setFont(QFont("Arial", 10)); meta_label = QLabel(metadata); meta_label.setObjectName(f"metaLabel_{sanitized_name}_{idx}"); meta_label.setStyleSheet(f"#{meta_label.objectName()} {{ color: #777777; font-size: 10px; background-color: transparent; border: none; }}"); file_info.addWidget(name_label); file_info.addWidget(meta_label)
         options_btn = QPushButton("⋮"); options_btn.setObjectName(f"optionsBtn_{sanitized_name}_{idx}"); options_btn.setFixedSize(40, 40); options_btn.setFont(QFont("Arial", 30)); options_btn.setCursor(Qt.PointingHandCursor); options_btn.setStyleSheet(f"""#{options_btn.objectName()} {{ background: transparent; border: none; }} #{options_btn.objectName()}:hover {{ background-color: #e0e0e0; border-radius: 20px; }}""")
         entry_layout.addWidget(file_icon); entry_layout.addLayout(file_info, 1); entry_layout.addWidget(options_btn); return entry
+
     def darken_color(self, hex_color, amount=20):
         try: hex_color = hex_color.lstrip("#"); r = int(hex_color[0:2], 16); g = int(hex_color[2:4], 16); b = int(hex_color[4:6], 16); r = max(0, r - amount); g = max(0, g - amount); b = max(0, b - amount); return f"#{r:02x}{g:02x}{b:02x}"
         except: return "#aaaaaa"
@@ -251,11 +235,31 @@ class HDEMGDashboard(QMainWindow):
         if ImportDataWindow is None: print("ImportDataWindow not available."); return
         print("Opening import data window")
         # Use self.import_window to track instance
-        if self.import_window is None or not self.import_window.isVisible():
-            self.import_window = ImportDataWindow(parent=self)
-            self.import_window.show()
-        else:
-            self.import_window.raise_(); self.import_window.activateWindow()
+        window_exists = False
+        if self.import_window:
+            try:
+                self.import_window.isActiveWindow() # Check validity
+                window_exists = True
+            except RuntimeError:
+                print(">>> Main Window: Existing import window reference found, but C++ object was deleted. Will create new.")
+                self.import_window = None
+                window_exists = False
+
+        if not window_exists:
+            self.import_window = ImportDataWindow(parent=self) # Create as child of main window
+
+        if self.import_window:
+             try:
+                if not self.import_window.isVisible():
+                    self.import_window.show()
+                self.import_window.raise_()
+                self.import_window.activateWindow()
+                QApplication.processEvents()
+             except Exception as e:
+                 print(f"Error showing/activating ImportDataWindow: {e}")
+                 traceback.print_exc()
+                 self.import_window = None # Reset if error occurs
+
 
     def open_export_results_window(self):
         """Opens the Export Results window, creating it if necessary."""
@@ -278,26 +282,21 @@ class HDEMGDashboard(QMainWindow):
         if not window_exists:
             try:
                 print(">>> Main Window: Creating NEW ExportResultsWindow instance.")
-                # --- CHANGE THIS LINE ---
-                self.export_results_window = ExportResultsWindow(parent=None) # Create with NO parent
-                # --- END CHANGE ---
+                # Create with NO parent to ensure it's a separate top-level window
+                self.export_results_window = ExportResultsWindow(parent=None)
                 print(f">>> Main Window: NEW instance created: {self.export_results_window}")
 
-                # Keep the geometry setting (important now it has no parent reference)
+                # Position the new window relative to the main window
                 try:
-                    # Get main window geometry to position relative to it
                     main_geo = self.geometry()
                     new_x = main_geo.x() + 100
                     new_y = main_geo.y() + 100
-
-                    # Use a default size or the window's preferred size
-                    # Using fixed size initially might be safer
-                    width = 600
-                    height = 550
+                    width = 600 # Or use self.export_results_window.sizeHint().width()
+                    height = 550 # Or use self.export_results_window.sizeHint().height()
                     self.export_results_window.setGeometry(new_x, new_y, width, height)
                     print(f">>> Main Window: Set geometry for new window to ({new_x}, {new_y}, {width}, {height})")
                 except Exception as e_geo:
-                    print(f"!!!!! WARNING: Could not set geometry: {e_geo}")
+                    print(f"!!!!! WARNING: Could not set geometry for new export window: {e_geo}")
 
             except Exception as e:
                 print(f"!!!!! FATAL ERROR during ExportResultsWindow creation: {e}")
@@ -309,25 +308,25 @@ class HDEMGDashboard(QMainWindow):
             try:
                 print(f">>> Main Window: Showing/Activating instance: {self.export_results_window}")
 
-                # --- Optional: Ensure geometry is set even for existing windows ---
-                if not self.export_results_window.isVisible(): # Only reposition if hidden
+                # Reposition if hidden and potentially off-screen
+                if not self.export_results_window.isVisible():
                     try:
                         main_geo = self.geometry()
-                        new_x = main_geo.x() + 100
-                        new_y = main_geo.y() + 100
-                        # Check if the stored window's geometry seems unreasonable (e.g., off-screen)
                         current_geo = self.export_results_window.geometry()
-                        if current_geo.x() < -100 or current_geo.y() < -100: # Simple check for off-screen
-                            print(f">>> Main Window: Repositioning existing hidden window from {current_geo}")
-                            self.export_results_window.setGeometry(new_x, new_y, 600, 550)
-                        else:
-                            # If geometry looks okay, maybe just move it slightly to ensure visibility
-                            self.export_results_window.move(new_x, new_y)
+                        # Simple check if it's way off screen
+                        if current_geo.x() < -500 or current_geo.y() < -500:
+                             print(f">>> Main Window: Repositioning existing hidden window from {current_geo}")
+                             new_x = main_geo.x() + 100
+                             new_y = main_geo.y() + 100
+                             self.export_results_window.move(new_x, new_y)
+                        elif current_geo.width() < 50 or current_geo.height() < 50: # Check size
+                             print(f">>> Main Window: Resizing existing hidden window from {current_geo}")
+                             self.export_results_window.resize(600, 550)
 
                     except Exception as e_geo_existing:
-                        print(f"!!!!! WARNING: Could not set geometry for existing window: {e_geo_existing}")
-                # --- End Optional ---
+                        print(f"!!!!! WARNING: Could not reposition/resize existing export window: {e_geo_existing}")
 
+                # Ensure it's visible and brought to front
                 if not self.export_results_window.isVisible():
                     self.export_results_window.show()
                 self.export_results_window.raise_()
@@ -337,8 +336,11 @@ class HDEMGDashboard(QMainWindow):
             except Exception as e:
                 print(f"!!!!! ERROR during ExportResultsWindow show/raise/activate: {e}")
                 traceback.print_exc()
+                # If showing fails, nullify the reference so a new one can be created next time
+                self.export_results_window = None
         else:
             print(">>> Main Window: ERROR - self.export_results_window is None even after creation attempt.")
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
