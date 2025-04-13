@@ -1,469 +1,259 @@
+# export_results.py (Modified)
+
 import sys
 import os
+import traceback # Make sure traceback is imported
 from PyQt5.QtWidgets import (
-    QApplication,
-    QWidget,  # Changed from QMainWindow as it's likely a secondary window
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QLabel,
-    QFrame,
-    QComboBox,
-    QSpacerItem,
-    QSizePolicy,
-    QStyle,
-    QGraphicsDropShadowEffect,
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout,
+    QPushButton, QLabel, QFrame, QComboBox, QSpacerItem,
+    QSizePolicy, QStyle, QStackedWidget, QFileDialog, QMessageBox # Import needed dialogs
 )
 from PyQt5.QtGui import QIcon, QFont, QColor, QPixmap
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, pyqtSignal
 
-# Helper function to get standard icons - can be kept here or moved to a utility module
+# --- Import Widgets ---
+try:
+    from export_confirmation import ExportConfirmWidget
+except ImportError: ExportConfirmWidget = None; print("Warning: ExportConfirmWidget not found.")
+try:
+    from download_confirmation import ExportCompleteWidget
+except ImportError: ExportCompleteWidget = None; print("Warning: ExportCompleteWidget not found.")
+# ---
+
+# --- ADD THIS FUNCTION BACK ---
+# Helper function to get standard icons
 def get_icon(standard_icon):
-    """Gets a standard Qt icon."""
     return QApplication.style().standardIcon(standard_icon)
+# --- END ADD ---
 
-class ExportResultsWindow(QWidget):
-    """
-    A QWidget window for configuring and viewing data exports.
-    Provides options for file format selection and lists recent exports.
-    """
+# (Keep ExportSetupWidget class definition here as before - it might also use get_icon)
+class ExportSetupWidget(QWidget):
+    # ... (rest of ExportSetupWidget code remains exactly the same as previous version) ...
+    export_requested = pyqtSignal(str)
     def __init__(self, parent=None):
-        """
-        Initializes the ExportResultsWindow.
-
-        Args:
-            parent (QWidget, optional): The parent widget. Defaults to None.
-        """
         super().__init__(parent)
+        self.colors = { "bg_main": "#fdfdfd", "bg_card": "#ffffff", "border_light": "#e0e0e0", "text_primary": "#333333", "text_secondary": "#777777", "button_dark_bg": "#212529", "button_dark_text": "#ffffff", "button_dark_hover": "#343a40", "item_bg_hover": "#f0f0f0", }
+        setup_layout = QVBoxLayout(self); setup_layout.setContentsMargins(0, 0, 0, 0); setup_layout.setSpacing(20)
+        setup_layout.addWidget(self._create_export_setup_section()); setup_layout.addWidget(self._create_recent_exports_section()); setup_layout.addStretch(1)
+    def _create_export_setup_section(self):
+        setup_card = QFrame(); setup_card.setObjectName("setupCard"); setup_card.setFrameShape(QFrame.StyledPanel)
+        setup_card.setStyleSheet(f""" #setupCard {{ background-color: {self.colors['bg_card']}; border: 1px solid {self.colors['border_light']}; border-radius: 8px; padding: 15px; }} QLabel {{ border: none; background: transparent; }} QComboBox {{ border: 1px solid {self.colors['border_light']}; border-radius: 4px; padding: 6px 10px; background-color: {self.colors['bg_card']}; color: {self.colors['text_primary']}; font-size: 9pt; min-height: 20px; }} QComboBox::drop-down {{ subcontrol-origin: padding; subcontrol-position: top right; width: 20px; border-left: 1px solid {self.colors['border_light']}; }} QComboBox::down-arrow {{ image: url(:/qt-project.org/styles/commonstyle/images/down_arrow-16.png); width: 12px; height: 12px; }} """)
+        card_layout = QVBoxLayout(setup_card); card_layout.setContentsMargins(0, 0, 0, 0); card_layout.setSpacing(15)
+        format_label = QLabel("Select File Format"); format_label.setFont(QFont("Arial", 9, QFont.Bold)); format_label.setStyleSheet(f"color: {self.colors['text_primary']}; margin-bottom: -5px;"); card_layout.addWidget(format_label)
+        self.format_combo = QComboBox(); self.format_combo.addItems([".csv (Comma Separated Values)", ".mat (MATLAB)", ".xlsx (Excel Spreadsheet)", ".txt (Text File)"]); self.format_combo.setPlaceholderText("Choose an export format..."); self.format_combo.setCurrentIndex(-1)
+        card_layout.addWidget(self.format_combo)
+        data_details_frame = QFrame(); data_details_layout = QVBoxLayout(data_details_frame); data_details_layout.setContentsMargins(0, 5, 0, 5); data_details_layout.setSpacing(8)
+        data_title_label = QLabel("Selected Data"); data_title_label.setFont(QFont("Arial", 9, QFont.Bold)); data_title_label.setStyleSheet(f"color: {self.colors['text_primary']};"); data_details_layout.addWidget(data_title_label)
+        data_details_layout.addWidget(self._create_info_item(get_icon(QStyle.SP_FileIcon), "Motor Unit Firing Patterns")) # Uses get_icon
+        data_details_layout.addWidget(self._create_info_item(get_icon(QStyle.SP_DialogApplyButton), "Recording Duration: 120s")) # Uses get_icon
+        data_details_layout.addWidget(self._create_info_item(get_icon(QStyle.SP_ComputerIcon), "Units Detected: 12")) # Uses get_icon
+        card_layout.addWidget(data_details_frame)
+        export_button = QPushButton("Export Data"); export_button.setFont(QFont("Arial", 10, QFont.Bold)); export_button.setIcon(get_icon(QStyle.SP_ArrowDown)); export_button.setIconSize(QSize(16, 16)); export_button.setMinimumHeight(40); export_button.setCursor(Qt.PointingHandCursor) # Uses get_icon
+        export_button.setStyleSheet(f""" QPushButton {{ background-color: {self.colors['button_dark_bg']}; color: {self.colors['button_dark_text']}; border: none; border-radius: 4px; padding: 8px 15px; }} QPushButton:hover {{ background-color: {self.colors['button_dark_hover']}; }} """)
+        export_button.clicked.connect(self._handle_export_request)
+        card_layout.addWidget(export_button)
+        return setup_card
+    def _create_info_item(self, icon, text):
+        item_widget = QWidget(); item_layout = QHBoxLayout(item_widget); item_layout.setContentsMargins(0, 0, 0, 0); item_layout.setSpacing(8)
+        icon_label = QLabel(); icon_label.setPixmap(icon.pixmap(QSize(16, 16))); icon_label.setFixedSize(QSize(18, 18)); icon_label.setAlignment(Qt.AlignCenter)
+        text_label = QLabel(text); text_label.setFont(QFont("Arial", 9)); text_label.setStyleSheet(f"color: {self.colors['text_secondary']};")
+        item_layout.addWidget(icon_label); item_layout.addWidget(text_label); item_layout.addStretch(1)
+        return item_widget
+    def _create_recent_exports_section(self):
+        recent_card = QFrame(); recent_card.setObjectName("recentCardSetup"); recent_card.setFrameShape(QFrame.StyledPanel)
+        recent_card.setStyleSheet(f""" #recentCardSetup {{ background-color: {self.colors['bg_card']}; border: 1px solid {self.colors['border_light']}; border-radius: 8px; padding: 15px; }} #recentCardSetup > QLabel {{ color: {self.colors['text_primary']}; font-size: 11pt; font-weight: bold; border: none; background: transparent; margin-bottom: 5px; }} """)
+        card_layout = QVBoxLayout(recent_card); card_layout.setContentsMargins(0, 0, 0, 0); card_layout.setSpacing(5)
+        title_label = QLabel("Recent Exports"); card_layout.addWidget(title_label)
+        recent_exports_data = [ {"icon": get_icon(QStyle.SP_DialogHelpButton), "filename": "firing_patterns_2025.01.15.csv", "metadata": "2.4 MB • Completed"}, {"icon": get_icon(QStyle.SP_DriveHDIcon), "filename": "firing_patterns_2025.01.14.mat", "metadata": "3.1 MB • Completed"}, ] # Uses get_icon
+        if not recent_exports_data: no_exports_label = QLabel("No recent exports found."); no_exports_label.setStyleSheet(f"color: {self.colors['text_secondary']}; font-style: italic; padding: 10px;"); no_exports_label.setAlignment(Qt.AlignCenter); card_layout.addWidget(no_exports_label)
+        else:
+            for export_data in recent_exports_data: card_layout.addWidget(self._create_recent_export_item(export_data["icon"], export_data["filename"], export_data["metadata"]))
+        return recent_card
+    def _create_recent_export_item(self, icon, filename, metadata):
+        item_frame = QFrame(); item_frame.setObjectName("recentItemSetup"); item_frame.setMinimumHeight(50); item_frame.setCursor(Qt.PointingHandCursor)
+        item_frame.setStyleSheet(f""" QFrame#recentItemSetup {{ background-color: transparent; border-radius: 4px; border: 1px solid transparent; padding: 5px 0px; }} QFrame#recentItemSetup:hover {{ background-color: {self.colors['item_bg_hover']}; border: 1px solid {self.colors['border_light']}; }} QLabel {{ background-color: transparent; border: none; }} QPushButton#downloadBtnSetup {{ background-color: transparent; border: none; padding: 5px; border-radius: 15px; qproperty-iconSize: 18px 18px; }} QPushButton#downloadBtnSetup:hover {{ background-color: {self.colors['border_light']}; }} """)
+        item_layout = QHBoxLayout(item_frame); item_layout.setContentsMargins(10, 5, 10, 5); item_layout.setSpacing(10)
+        icon_label = QLabel(); icon_label.setPixmap(icon.pixmap(QSize(20, 20))); icon_label.setFixedSize(QSize(24, 24)); icon_label.setAlignment(Qt.AlignCenter); item_layout.addWidget(icon_label)
+        text_layout = QVBoxLayout(); text_layout.setContentsMargins(0,0,0,0); text_layout.setSpacing(1)
+        filename_label = QLabel(filename); filename_label.setFont(QFont("Arial", 9, QFont.Bold)); filename_label.setStyleSheet(f"color: {self.colors['text_primary']};")
+        metadata_label = QLabel(metadata); metadata_label.setFont(QFont("Arial", 8)); metadata_label.setStyleSheet(f"color: {self.colors['text_secondary']};")
+        text_layout.addWidget(filename_label); text_layout.addWidget(metadata_label); item_layout.addLayout(text_layout, 1)
+        download_button = QPushButton(); download_button.setObjectName("downloadBtnSetup"); download_button.setIcon(get_icon(QStyle.SP_ArrowDown)); download_button.setFixedSize(QSize(30, 30)); download_button.setCursor(Qt.PointingHandCursor); download_button.setProperty("filename", filename); download_button.clicked.connect(self._handle_download_recent) # Uses get_icon
+        item_layout.addWidget(download_button)
+        return item_frame
+    def _handle_export_request(self):
+        selected_format = self.format_combo.currentText()
+        if self.format_combo.currentIndex() < 0:
+            QMessageBox.warning(self, "Format Required", "Please select a file format before exporting.")
+            return
+        print(f"Setup Widget: Emitting export_requested signal with format: {selected_format}")
+        self.export_requested.emit(selected_format)
+    def _handle_download_recent(self):
+        sender_button = self.sender()
+        if sender_button: filename = sender_button.property("filename"); print(f"Setup Widget: Download requested for recent file: {filename}") # Add logic here
+        else: print("Setup Widget: Could not determine which download button was clicked.")
+    # Removed duplicate get_icon from here
+
+# --- Main Window Class ---
+class ExportResultsWindow(QWidget):
+    # ... (rest of ExportResultsWindow class remains exactly the same as previous version) ...
+    """ Main window for the export process, using QStackedWidget. """
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAttribute(Qt.WA_DeleteOnClose, False)
         self.setWindowTitle("Export Results")
-        # Adjust size as needed, or let the layout manage it
-        # self.setGeometry(100, 100, 650, 600)
-        self.setMinimumWidth(600) # Set a minimum width
-
-        # Define color scheme (simplified for this example)
-        self.colors = {
-            "bg_main": "#f8f9fa", # Slightly off-white background
-            "bg_card": "#ffffff",
-            "border": "#e0e0e0",
-            "text_primary": "#212529",
-            "text_secondary": "#6c757d",
-            "button_dark_bg": "#212529", # Dark button background
-            "button_dark_text": "#ffffff", # Dark button text
-            "button_dark_hover": "#343a40", # Dark button hover
-            "icon_box_bg": "#e9ecef",
-            "icon_box_border": "#ced4da",
-            "icon_box_text": "#495057",
-            "item_row_bg": "#f8f9fa",
-            "item_row_hover": "#f1f3f5",
-            "download_btn_hover": "#dee2e6",
-            "download_btn_pressed": "#ced4da",
-            "selected_data_bg": "#fdfdfd",
-            "selected_data_border": "#eeeeee",
-        }
-
+        self.setMinimumSize(600, 550) # Adjusted size
+        # Use the globally defined get_icon function
+        self.setWindowIcon(get_icon(QStyle.SP_DialogSaveButton))
+        self.colors = { "bg_main": "#fdfdfd", "text_secondary": "#777777", }
         self.setStyleSheet(f"background-color: {self.colors['bg_main']};")
 
-        # Main layout
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(30, 30, 30, 30) # Add padding around the window
-        main_layout.setSpacing(25) # Space between main sections
+        main_layout = QVBoxLayout(self); main_layout.setContentsMargins(20, 20, 20, 20); main_layout.setSpacing(15)
+        title_layout = QVBoxLayout(); title_layout.setSpacing(4)
+        self.main_title_label = QLabel("Export Results"); self.main_title_label.setFont(QFont("Arial", 16, QFont.Bold)); self.main_title_label.setStyleSheet("color: #333333; border: none;")
+        self.main_subtitle_label = QLabel("Export your motor unit firing patterns data"); self.main_subtitle_label.setFont(QFont("Arial", 10)); self.main_subtitle_label.setStyleSheet("color: #777777; border: none; margin-bottom: 5px;")
+        title_layout.addWidget(self.main_title_label); title_layout.addWidget(self.main_subtitle_label); main_layout.addLayout(title_layout)
 
-        # --- Header ---
-        header_layout = QVBoxLayout()
-        header_layout.setSpacing(5)
-        title_label = QLabel("Export Results")
-        title_label.setFont(QFont("Arial", 20, QFont.Bold))
-        title_label.setStyleSheet(f"color: {self.colors['text_primary']}; border: none;") # Ensure no border
+        self.stacked_widget = QStackedWidget(self); main_layout.addWidget(self.stacked_widget, 1)
 
-        subtitle_label = QLabel("Export your motor unit firing patterns data")
-        subtitle_label.setFont(QFont("Arial", 10))
-        subtitle_label.setStyleSheet(f"color: {self.colors['text_secondary']}; border: none;") # Ensure no border
+        # --- Create Views ---
+        self.setup_view = ExportSetupWidget()
+        self.confirmation_view = ExportConfirmWidget() if ExportConfirmWidget else None
+        self.complete_view = ExportCompleteWidget() if ExportCompleteWidget else None # Instantiate complete view
 
-        header_layout.addWidget(title_label)
-        header_layout.addWidget(subtitle_label)
-        main_layout.addLayout(header_layout)
+        # --- Add Views to Stack ---
+        self.stacked_widget.addWidget(self.setup_view)
+        if self.confirmation_view: self.stacked_widget.addWidget(self.confirmation_view)
+        else: self.stacked_widget.addWidget(QLabel("Error: Confirmation view failed."))
 
-        # --- Export Configuration Section ---
-        main_layout.addWidget(self._create_export_config_section())
-
-        # --- Recent Exports Section ---
-        main_layout.addWidget(self._create_recent_exports_section())
+        # Add complete view to stack
+        if self.complete_view: self.stacked_widget.addWidget(self.complete_view)
+        else: self.stacked_widget.addWidget(QLabel("Error: Complete view failed."))
 
         # --- Footer ---
-        footer_label = QLabel("Last export: January 15, 2025 at 14:30")
-        footer_label.setAlignment(Qt.AlignCenter)
-        footer_label.setFont(QFont("Arial", 9))
-        footer_label.setStyleSheet(f"color: {self.colors['text_secondary']}; margin-top: 10px; border: none;") # Ensure no border
-        main_layout.addWidget(footer_label)
+        self.footer_label = QLabel("Last export: January 15, 2025 at 14:30"); self.footer_label.setFont(QFont("Arial", 9)); self.footer_label.setStyleSheet(f"color: {self.colors['text_secondary']}; border: none; padding-top: 10px;"); self.footer_label.setAlignment(Qt.AlignCenter); main_layout.addWidget(self.footer_label)
 
-        main_layout.addStretch(1) # Push content upwards
+        # --- Connect Signals ---
+        self.setup_view.export_requested.connect(self.show_confirmation_view)
+        if self.confirmation_view:
+            self.confirmation_view.cancel_requested.connect(self.show_setup_view)
+            self.confirmation_view.export_confirmed.connect(self.execute_final_export)
+        # Connect signals for the complete view
+        if self.complete_view:
+            self.complete_view.return_requested.connect(self.show_setup_view) # Or self.close or specific handler
+            self.complete_view.download_requested.connect(self.handle_complete_download)
+            self.complete_view.recent_download_requested.connect(self.handle_complete_recent_download)
+
+        # --- Initial View ---
+        self.show_setup_view()
+
+    def show_setup_view(self):
+        print("Switching to Setup View")
+        self.stacked_widget.setCurrentWidget(self.setup_view)
+        self.setWindowTitle("Export Results")
+        self.main_title_label.setText("Export Results")
+        self.main_subtitle_label.setText("Export your motor unit firing patterns data")
+        self.main_subtitle_label.show()
+        self.footer_label.show() # Make sure footer is visible
+        self.resize(600, 550) # Reset size
+
+    def show_confirmation_view(self, selected_format):
+        if not self.confirmation_view: print("Error: Confirmation view not loaded."); return
+        print(f"Switching to Confirmation View. Format: {selected_format}")
+        base_filename = "firing_patterns_export"; ext = ".dat" # Default
+        if "CSV" in selected_format: ext = ".csv"
+        elif "MAT" in selected_format: ext = ".mat"
+        elif "XLSX" in selected_format: ext = ".xlsx"
+        elif "TXT" in selected_format: ext = ".txt"
+        filename = f"{base_filename}{ext}"
+        self.confirmation_view.set_export_details(selected_format, filename)
+        self.stacked_widget.setCurrentWidget(self.confirmation_view)
+        self.setWindowTitle("Confirm Export")
+        self.main_title_label.setText("Confirm Export")
+        self.main_subtitle_label.setText("Review the details before exporting.")
+        self.main_subtitle_label.show()
+        self.footer_label.show()
+        # Adjust size dynamically based on confirmation view's hint + padding
+        conf_hint = self.confirmation_view.sizeHint()
+        self.resize(conf_hint.width() + 40, conf_hint.height() + 120 )
 
 
-    def _create_styled_card(self):
-        """Creates a basic styled QFrame card."""
-        card = QFrame()
-        card.setFrameShape(QFrame.StyledPanel) # Use StyledPanel for the border effect from stylesheet
-        card.setObjectName("cardFrame") # Set object name for specific styling
-        card.setStyleSheet(f"""
-            #cardFrame {{
-                background-color: {self.colors['bg_card']};
-                border: 1px solid {self.colors['border']};
-                border-radius: 8px;
-            }}
-            /* Prevent style inheritance to direct children unless specifically targeted */
-            #cardFrame > QWidget, #cardFrame > QLayout::item {{
-                background-color: transparent;
-                border: none;
-            }}
-        """)
-        # Add subtle shadow
-        shadow = QGraphicsDropShadowEffect(self) # Parent shadow to card
-        shadow.setBlurRadius(15)
-        shadow.setColor(QColor(0, 0, 0, 30)) # Black shadow with low opacity
-        shadow.setOffset(0, 2)
-        card.setGraphicsEffect(shadow)
+    def show_complete_view(self, saved_filepath, saved_filesize_bytes):
+        """Switches view to the Export Complete screen."""
+        if not self.complete_view:
+            print("Error: Cannot switch to complete view, it was not loaded.")
+            self.show_setup_view() # Fallback?
+            return
 
-        card_layout = QVBoxLayout(card)
-        card_layout.setContentsMargins(20, 20, 20, 20) # Padding inside the card
-        card_layout.setSpacing(15) # Spacing between elements inside the card
-        return card, card_layout
+        print(f"Switching to Complete View for file: {saved_filepath}")
+        self.complete_view.set_export_details(saved_filepath, saved_filesize_bytes)
+        self.stacked_widget.setCurrentWidget(self.complete_view)
+        self.setWindowTitle("Export Complete")
+        self.main_title_label.setText("Export Complete!")
+        self.main_subtitle_label.hide() # Hide subtitle on complete screen
+        self.footer_label.hide() # Hide footer on complete screen
+        self.resize(700, 550) # Set size for complete view
 
-    def _create_export_config_section(self):
-        """Creates the top section for export configuration."""
-        config_card, config_layout = self._create_styled_card()
 
-        # Select File Format
-        format_label = QLabel("Select File Format")
-        format_label.setFont(QFont("Arial", 10))
-        format_label.setStyleSheet(f"color: {self.colors['text_secondary']}; background: transparent; border: none;")
-        config_layout.addWidget(format_label)
+    def execute_final_export(self, file_format, filename):
+        """Handles file dialog and saving, then switches to complete view on success."""
+        print(f"--- FINAL EXPORT TRIGGERED --- Format: {file_format}, Suggested Filename: {filename}")
+        options = QFileDialog.Options()
+        suggested_path = os.path.join(os.path.expanduser("~"), filename)
+        if "CSV" in file_format: file_filter = "CSV Files (*.csv);;All Files (*)"
+        elif "MAT" in file_format: file_filter = "MATLAB Files (*.mat);;All Files (*)"
+        elif "XLSX" in file_format: file_filter = "Excel Files (*.xlsx);;All Files (*)"
+        elif "TXT" in file_format: file_filter = "Text Files (*.txt);;All Files (*)"
+        else: file_filter = "All Files (*)"
 
-        self.format_combo = QComboBox()
-        self.format_combo.setFont(QFont("Arial", 10))
-        # Add placeholder or actual formats
-        self.format_combo.addItem("Select format...") # Placeholder item
-        self.format_combo.addItem(".csv (Comma Separated Values)")
-        self.format_combo.addItem(".mat (MATLAB Data File)")
-        self.format_combo.addItem(".xlsx (Excel Spreadsheet)")
-        self.format_combo.setMinimumHeight(35)
-        self.format_combo.setStyleSheet(f"""
-            QComboBox {{
-                border: 1px solid {self.colors['border']};
-                border-radius: 4px;
-                padding: 5px 10px;
-                background-color: {self.colors['bg_card']}; /* Match card bg */
-                color: {self.colors['text_primary']};
-                min-height: 25px; /* Ensure height consistency */
-            }}
-            QComboBox:focus {{
-                 border: 1px solid {self.colors['button_dark_bg']}; /* Highlight on focus */
-            }}
-            QComboBox::drop-down {{
-                /* Styling the dropdown button */
-                subcontrol-origin: padding;
-                subcontrol-position: top right;
-                width: 20px;
-                border-left-width: 1px;
-                border-left-color: {self.colors['border']};
-                border-left-style: solid;
-                border-top-right-radius: 3px;
-                border-bottom-right-radius: 3px;
-                background-color: transparent;
-            }}
-            QComboBox::down-arrow {{
-                /* Using a standard icon for the arrow */
-                 image: url(:/qt-project.org/styles/commonstyle/images/down_arrow-16.png);
-                 width: 12px;
-                 height: 12px;
-            }}
-             QComboBox QAbstractItemView {{ /* Style the dropdown list items */
-                border: 1px solid {self.colors['border']};
-                background-color: {self.colors['bg_card']};
-                selection-background-color: {self.colors['button_dark_hover']};
-                selection-color: {self.colors['button_dark_text']};
-                color: {self.colors['text_primary']};
-                padding: 2px;
-            }}
-        """)
-        # Apply delegate for potentially better cross-platform styling consistency
-        # self.format_combo.setItemDelegate(QStyledItemDelegate(self.format_combo))
+        filePath, _ = QFileDialog.getSaveFileName(self, "Save Exported File", suggested_path, file_filter, options=options)
 
-        config_layout.addWidget(self.format_combo)
+        if filePath:
+            print(f"   User chose path: {filePath}")
+            try:
+                # --- !!! Replace with your ACTUAL data saving logic !!! ---
+                print("   (Simulating file save...)")
+                file_size = 0
+                with open(filePath, 'w') as f:
+                     f.write(f"Exported Data\nFormat: {file_format}\nSuggested Name: {filename}\n")
+                     # Simulate some content size
+                     dummy_content = "Dummy content " * 5000
+                     f.write(dummy_content)
+                     file_size = f.tell() # Get approximate size after writing
+                print(f"   (Simulated save complete)")
+                # --- !!! End of saving logic placeholder !!! ---
 
-        # Spacer
-        config_layout.addSpacerItem(QSpacerItem(20, 15, QSizePolicy.Minimum, QSizePolicy.Fixed))
+                # Get actual file size if simulation wasn't accurate
+                if file_size == 0: # Fallback if tell() didn't work as expected
+                    file_size = os.path.getsize(filePath)
 
-        # Selected Data Details Area
-        selected_data_frame = QFrame()
-        selected_data_frame.setObjectName("selectedDataFrame")
-        selected_data_frame.setStyleSheet(f"""
-            #selectedDataFrame {{
-                background-color: {self.colors['selected_data_bg']};
-                border: 1px solid {self.colors['selected_data_border']};
-                border-radius: 5px;
-                padding: 15px;
-            }}
-            #selectedDataFrame > QLabel, #selectedDataFrame > QLayout::item {{
-                background-color: transparent;
-                border: none;
-            }}
-        """)
-        selected_data_layout = QVBoxLayout(selected_data_frame)
-        selected_data_layout.setContentsMargins(10, 10, 10, 10)
-        selected_data_layout.setSpacing(10)
+                print(f"--- Successfully saved data to {filePath} (Size: {file_size} bytes) ---")
+                self.show_complete_view(filePath, file_size)
 
-        data_title_label = QLabel("Selected Data")
-        data_title_label.setFont(QFont("Arial", 10, QFont.Bold))
-        data_title_label.setStyleSheet(f"color: {self.colors['text_primary']}; margin-bottom: 5px; background: transparent; border: none;")
-        selected_data_layout.addWidget(data_title_label)
-
-        # Add data detail rows using helper
-        selected_data_layout.addLayout(self._create_data_detail_row(
-            QStyle.SP_FileIcon, # Standard icon for document/file
-            "Motor Unit Firing Patterns"
-        ))
-        selected_data_layout.addLayout(self._create_data_detail_row(
-            QStyle.SP_MediaSeekForward, # Standard icon suggesting time/duration
-            "Recording Duration: 120s"
-        ))
-        selected_data_layout.addLayout(self._create_data_detail_row(
-            QStyle.SP_ComputerIcon, # Standard icon for system/units
-            "Units Detected: 12"
-        ))
-
-        config_layout.addWidget(selected_data_frame)
-
-        # Spacer
-        config_layout.addSpacerItem(QSpacerItem(20, 15, QSizePolicy.Minimum, QSizePolicy.Fixed))
-
-        # Export Button
-        export_button = QPushButton("Export Data")
-        export_button.setFont(QFont("Arial", 10, QFont.Bold))
-        export_button.setIcon(get_icon(QStyle.SP_DialogSaveButton)) # Save/Export icon
-        # export_button.setIcon(get_icon(QStyle.SP_ArrowDown)) # Alternative: Download icon
-        export_button.setIconSize(QSize(16, 16))
-        export_button.setMinimumHeight(40)
-        export_button.setCursor(Qt.PointingHandCursor)
-        export_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {self.colors['button_dark_bg']};
-                color: {self.colors['button_dark_text']};
-                border: none;
-                border-radius: 5px;
-                padding: 10px 15px;
-            }}
-            QPushButton:hover {{
-                background-color: {self.colors['button_dark_hover']};
-            }}
-            QPushButton:pressed {{
-                background-color: {self.colors['button_dark_bg']};
-            }}
-        """)
-        export_button.clicked.connect(self.handle_export) # Connect to export function placeholder
-        config_layout.addWidget(export_button)
-
-        return config_card
-
-    def _create_data_detail_row(self, icon_enum, text):
-        """Helper to create a row with an icon and text for the details section."""
-        row_layout = QHBoxLayout()
-        row_layout.setSpacing(10)
-        row_layout.setContentsMargins(0,0,0,0) # No extra margins for the row itself
-
-        icon_label = QLabel()
-        icon_pixmap = get_icon(icon_enum).pixmap(QSize(16, 16))
-        # Optional: Color the icon - requires QPainter or SVG manipulation
-        icon_label.setPixmap(icon_pixmap)
-        icon_label.setFixedSize(QSize(16, 16))
-        icon_label.setAlignment(Qt.AlignCenter)
-        icon_label.setStyleSheet("margin-top: 2px; background: transparent; border: none;") # Align icon slightly better
-
-        text_label = QLabel(text)
-        text_label.setFont(QFont("Arial", 10))
-        text_label.setStyleSheet(f"color: {self.colors['text_secondary']}; background: transparent; border: none;")
-
-        row_layout.addWidget(icon_label)
-        row_layout.addWidget(text_label)
-        row_layout.addStretch(1) # Push content to the left
-
-        return row_layout
-
-    def _create_recent_exports_section(self):
-        """Creates the bottom section listing recent exports."""
-        recent_card, recent_layout = self._create_styled_card()
-
-        title_label = QLabel("Recent Exports")
-        title_label.setFont(QFont("Arial", 14, QFont.Bold))
-        title_label.setStyleSheet(f"color: {self.colors['text_primary']}; margin-bottom: 10px; background: transparent; border: none;")
-        recent_layout.addWidget(title_label)
-
-        # Add recent export items using helper
-        recent_layout.addWidget(self._create_recent_export_item(
-            "csv", # Icon type hint
-            "firing_patterns_2025.01.15.csv",
-            "2.4 MB • Completed"
-        ))
-        recent_layout.addWidget(self._create_recent_export_item(
-            "mat", # Icon type hint
-            "firing_patterns_2025.01.14.mat",
-            "3.1 MB • Completed"
-        ))
-        # Add more items here if needed:
-        # recent_layout.addWidget(self._create_recent_export_item(
-        #     "xlsx",
-        #     "analysis_summary_2025.01.10.xlsx",
-        #     "0.8 MB • Completed"
-        # ))
-
-        recent_layout.addStretch(1) # Push items to the top if the card is taller
-
-        return recent_card
-
-    def _create_recent_export_item(self, icon_type, filename, metadata):
-        """Creates a widget representing a single recent export item."""
-        item_widget = QFrame()
-        item_widget.setObjectName("recentItem")
-        item_widget.setCursor(Qt.PointingHandCursor) # Indicate the row is interactive (optional)
-        item_widget.setStyleSheet(f"""
-            #recentItem {{
-                background-color: {self.colors['item_row_bg']};
-                border: 1px solid {self.colors['item_row_bg']}; /* Use bg color for seamless look */
-                border-radius: 4px;
-                padding: 10px 15px; /* Padding within the item row */
-            }}
-            #recentItem:hover {{
-                 background-color: {self.colors['item_row_hover']}; /* Lighter hover */
-                 border: 1px solid {self.colors['border']}; /* Show border on hover */
-            }}
-            /* Ensure children don't inherit the background inappropriately */
-             #recentItem > QLabel, #recentItem > QLayoutWidget {{
-                 background-color: transparent;
-                 border: none;
-             }}
-        """)
-        # Add a tooltip to the whole item
-        item_widget.setToolTip(f"Click to interact with {filename}")
-
-        item_layout = QHBoxLayout(item_widget)
-        item_layout.setContentsMargins(0, 0, 0, 0) # Margins handled by padding in stylesheet
-        item_layout.setSpacing(12)
-
-        # File Type Icon
-        icon_label = QLabel()
-        icon_label.setFixedSize(24, 24) # Icon size
-        icon_label.setAlignment(Qt.AlignCenter)
-        icon_label.setFont(QFont("Arial", 7, QFont.Bold)) # Smaller font for text icon
-        icon_label.setStyleSheet(f"""
-            QLabel {{
-                border: 1px solid {self.colors['icon_box_border']};
-                border-radius: 4px;
-                background-color: {self.colors['icon_box_bg']};
-                color: {self.colors['icon_box_text']};
-            }}
-        """)
-        if icon_type.lower() == "csv":
-            icon_label.setText("CSV")
-        elif icon_type.lower() == "mat":
-             icon_label.setText("MAT")
-        elif icon_type.lower() == "xlsx":
-             icon_label.setText("XLSX")
+            except Exception as e:
+                print(f"!!!!! ERROR during file save: {e}")
+                traceback.print_exc()
+                QMessageBox.critical(self, "Export Error", f"Could not save file to:\n{filePath}\n\nError: {e}")
         else:
-             # Fallback to a generic document icon
-             icon_label.setPixmap(get_icon(QStyle.SP_FileIcon).pixmap(QSize(18,18)))
-             icon_label.setText("") # Clear text if using pixmap
-             icon_label.setStyleSheet("border: none; background: transparent;") # Remove box style for pixmap
+            print("   File save cancelled by user.")
 
-        item_layout.addWidget(icon_label)
+    def handle_complete_download(self, filename):
+        """Handles request to download the primary exported file again."""
+        print(f"Handling main download request for: {filename}")
+        QMessageBox.information(self, "Download", f"Download requested for:\n{filename}\n\n(Add actual download/copy logic here)")
 
-        # File Info (Filename and Metadata) - Use a layout container
-        info_widget = QWidget() # Container prevents stretch issues
-        info_layout = QVBoxLayout(info_widget)
-        info_layout.setContentsMargins(0,0,0,0)
-        info_layout.setSpacing(2)
+    def handle_complete_recent_download(self, filename):
+        """Handles request to download a file from the recent list shown on complete screen."""
+        print(f"Handling recent download request for: {filename}")
+        QMessageBox.information(self, "Download Recent", f"Download requested for recent file:\n{filename}\n\n(Add actual download/copy logic here)")
 
-        filename_label = QLabel(filename)
-        filename_label.setFont(QFont("Arial", 10, QFont.Normal))
-        filename_label.setStyleSheet(f"color: {self.colors['text_primary']}; background: transparent; border: none;")
-        filename_label.setToolTip(filename) # Show full name if truncated
+    def closeEvent(self, event):
+        print("ExportResultsWindow: Hiding instead of closing.")
+        self.hide(); event.ignore()
 
-        metadata_label = QLabel(metadata)
-        metadata_label.setFont(QFont("Arial", 9))
-        metadata_label.setStyleSheet(f"color: {self.colors['text_secondary']}; background: transparent; border: none;")
-
-        info_layout.addWidget(filename_label)
-        info_layout.addWidget(metadata_label)
-        item_layout.addWidget(info_widget) # Add the container widget
-
-        item_layout.addStretch(1) # Push download button to the right
-
-        # Download Button
-        download_button = QPushButton()
-        download_button.setIcon(get_icon(QStyle.SP_ArrowDown))
-        download_button.setIconSize(QSize(18, 18))
-        download_button.setFixedSize(32, 32) # Make it square-ish and slightly larger
-        download_button.setCursor(Qt.PointingHandCursor)
-        download_button.setToolTip(f"Download {filename}")
-        download_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: transparent;
-                border: none;
-                border-radius: 4px; /* Rounded corners on hover */
-                padding: 0px;
-            }}
-            QPushButton:hover {{
-                background-color: {self.colors['download_btn_hover']};
-            }}
-             QPushButton:pressed {{
-                background-color: {self.colors['download_btn_pressed']};
-            }}
-        """)
-        # Use lambda to pass the filename to the handler
-        download_button.clicked.connect(lambda checked=False, fn=filename: self.handle_download(fn))
-        item_layout.addWidget(download_button)
-
-        return item_widget
-
-    # --- Placeholder Slots for Button Clicks ---
-
-    def handle_export(self):
-        """Placeholder slot for the 'Export Data' button click."""
-        selected_index = self.format_combo.currentIndex()
-        selected_format_text = self.format_combo.currentText()
-
-        if selected_index == 0: # Check if the placeholder "Select format..." is selected
-             print("Please select a file format.")
-             # Optionally show a message box to the user
-             # from PyQt5.QtWidgets import QMessageBox
-             # QMessageBox.warning(self, "No Format Selected", "Please select a file format before exporting.")
-             return
-
-        print(f"Exporting data in format: {selected_format_text}")
-        # ----> Add your actual data export logic here <----
-        # Example: export_data_function(format=selected_format_text.split(' ')[0])
-        print("Export process initiated (placeholder).")
-
-
-    def handle_download(self, filename):
-        """Placeholder slot for the download button click on a recent export item."""
-        print(f"Downloading file: {filename}")
-        # ----> Add your actual file download/retrieval logic here <----
-        # Example: download_file(filename)
-        print(f"Download requested for {filename} (placeholder).")
-
-
-# --- Main execution block (for testing the window independently) ---
+# --- Main execution block ---
 if __name__ == "__main__":
-    # Create application instance
     app = QApplication(sys.argv)
-
-    # Set a style that might provide better standard icons/widgets
-    # Available styles depend on the OS and PyQt installation
-    # Common options: "Fusion", "Windows", "WindowsVista" (Windows), "macOS" (Mac)
-    # app.setStyle("Fusion")
-
-    # Create and show the window
     export_window = ExportResultsWindow()
     export_window.show()
-
-    # Start the application event loop
     sys.exit(app.exec_())
