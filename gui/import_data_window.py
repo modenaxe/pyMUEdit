@@ -218,23 +218,23 @@ class ImportDataWindow(QMainWindow):
         
         sidebar_layout.addStretch(1)
         
-        # Add expand/collapse button at bottom
-        expand_btn = QToolButton()
-        expand_btn.setIcon(self.style().standardIcon(self.style().SP_ArrowLeft))
-        expand_btn.setIconSize(QSize(16, 16))
-        expand_btn.setFixedSize(32, 32)
-        expand_btn.setStyleSheet("""
-            QToolButton {
-                background-color: #e0e0e0;
-                border: none;
-                border-radius: 16px;
-            }
-            QToolButton:hover {
-                background-color: #d0d0d0;
-            }
-        """)
+        # Add expand/collapse button at bottom - REMOVED
+        #expand_btn = QToolButton()
+        #expand_btn.setIcon(self.style().standardIcon(self.style().SP_ArrowLeft))
+        #expand_btn.setIconSize(QSize(16, 16))
+        #expand_btn.setFixedSize(32, 32)
+        #expand_btn.setStyleSheet("""
+        #    QToolButton {
+        #        background-color: #e0e0e0;
+        #        border: none;
+        #        border-radius: 16px;
+        #    }
+        #    QToolButton:hover {
+        #        background-color: #d0d0d0;
+        #    }
+        #""")
         
-        sidebar_layout.addWidget(expand_btn, 0, Qt.AlignHCenter)
+        #sidebar_layout.addWidget(expand_btn, 0, Qt.AlignHCenter)
         
         parent_layout.addWidget(sidebar)
     
