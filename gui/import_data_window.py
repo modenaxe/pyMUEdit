@@ -108,37 +108,37 @@ class ImportDataWindow(QMainWindow):
         title_layout.addWidget(title_label)
         title_layout.addStretch()
         
-        # Menu buttons
-        file_btn = QPushButton("File")
-        file_btn.setObjectName("menuButton")
-        edit_btn = QPushButton("Edit")
-        edit_btn.setObjectName("menuButton")
-        view_btn = QPushButton("View")
-        view_btn.setObjectName("menuButton")
-        help_btn = QPushButton("Help")
-        help_btn.setObjectName("menuButton")
+        # Menu buttons - REMOVED FROM IMPORT DATA
+        #file_btn = QPushButton("File")
+        #file_btn.setObjectName("menuButton")
+        #edit_btn = QPushButton("Edit")
+        #edit_btn.setObjectName("menuButton")
+        #view_btn = QPushButton("View")
+        #view_btn.setObjectName("menuButton")
+        #help_btn = QPushButton("Help")
+        #help_btn.setObjectName("menuButton")
         
         # Apply styling to menu buttons
-        for btn in [file_btn, edit_btn, view_btn, help_btn]:
-            btn.setStyleSheet("""
-                #menuButton {
-                    background: transparent;
-                    border: none;
-                    padding: 8px 12px;
-                    font-size: 14px;
-                }
-                #menuButton:hover {
-                    background-color: #f0f0f0;
-                }
-            """)
+        #for btn in [file_btn, edit_btn, view_btn, help_btn]:
+        #    btn.setStyleSheet("""
+        #        #menuButton {
+        #            background: transparent;
+        #            border: none;
+        #            padding: 8px 12px;
+        #            font-size: 14px;
+        #        }
+        #        #menuButton:hover {
+        #            background-color: #f0f0f0;
+        #        }
+        #    """)
         
-        header_layout.addLayout(title_layout)
-        header_layout.addStretch(1)
-        header_layout.addWidget(file_btn)
-        header_layout.addWidget(edit_btn)
-        header_layout.addWidget(view_btn)
-        header_layout.addWidget(help_btn)
-        
+        #header_layout.addLayout(title_layout)
+        #header_layout.addStretch(1)
+        #header_layout.addWidget(file_btn)
+        #header_layout.addWidget(edit_btn)
+        #header_layout.addWidget(view_btn)
+        #header_layout.addWidget(help_btn)
+
         self.main_layout.addWidget(header)
     
     def create_content_area(self):
