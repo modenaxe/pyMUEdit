@@ -1,3 +1,10 @@
+'''
+To run a test 
+1. makesure you have the correct output files from matlab in the tests folder (to make folder for it, but git wont take big files)
+2. scroll to bottom and uncomment the desired test
+3. make sure your current directory is tests 
+'''
+
 import unittest
 import numpy as np
 import numpy.testing as npt
@@ -20,6 +27,8 @@ from utils.manual_editing import pcaesig
 expOutOpenOTBPlus = os.path.join(os.getcwd(), "ExpOut20OpentOTBplus.mat")
 expOutNotchSig = os.path.join(os.getcwd(), "ExpOut20NotchSignals.mat")
 expOutBandpass = os.path.join(os.getcwd(), "ExpOut20BandpassingAlsSurface.mat")
+expOutExt3 = os.path.join(os.getcwd(), "ExpOut20Extend3.mat")
+expOutExt10 = os.path.join(os.getcwd(), "ExpOut20Extend10.mat")
 
 
 INPUT20MVCFILE = "trial1_20MVC.otb+"
@@ -41,6 +50,8 @@ input = loadmat(expOutOpenOTBPlus)
 # minimizeCOVISI.m
 # accuracy assessments: calcSIL.m, peeloff.m
 
+
+# Tests uses unmodified data from original openOTBplus file where possible, which came from the provided data files trial1_20MVC.otb+ and trial1_40MVC.otb+
 class Test20MVCfile(unittest.TestCase): 
 
     def testOpenOTBPlus(self):
@@ -129,8 +140,9 @@ class Test20MVCfile(unittest.TestCase):
     # apparently the difference between our and the original output is tiny, and has something to do with our floating point precision rounding
     # to double check if acceptable or needs to be strict
     def testBandpassingals(self):
+        if not os.path.exists(expOutBandpass):
+            print("expected bandpassingals output file not found!")
         expected = loadmat(expOutBandpass).get('filteredsignal')
-        input = loadmat(expOutOpenOTBPlus)
         output = bandpassingals.bandpassingals(input.get('signal')[0][0][0], input.get('signal')[0][0][3], 1)
 
         try:
@@ -138,12 +150,24 @@ class Test20MVCfile(unittest.TestCase):
         except AssertionError as e:
             raise AssertionError(f"bandpassingals failed to return the expected signal:\n{e}")
 
+
     def testExtend(self):
-        signal = 'from above'
-        extFactor = 1
-        output = extend.extend(signal, extFactor)
-        expected = 42
-        self.assertEqual(output, expected, "extend failed to return the expected output")
+        if not os.path.exists(expOutExt3):
+            print("expected notchsignals output file for ext factor 3 not found!")
+        if not os.path.exists(expOutExt10):
+            print("expected notchsignals output file for ext factor 10 not found!")
+
+        expected3 = loadmat(expOutExt3).get('esample')
+        expected10 = loadmat(expOutExt10).get('esample')
+        extFactorsToTest = [(expected3, 3),(expected10, 10)]
+
+        for expected, factor in extFactorsToTest:
+            out = extend.extend(input.get('signal')[0][0][0], factor)
+            try:
+                npt.assert_array_equal(out, expected)
+            except AssertionError as e:
+                raise AssertionError(f"extend failed to return the expected signal for extension factor: {factor}\n{e}")
+
 
     def testDemean(self):
         signal = 'from above'
@@ -253,5 +277,6 @@ if __name__ == '__main__':
     suite = unittest.TestSuite()
     #suite.addTest(Test20MVCfile('testOpenOTBPlus')) 
     #suite.addTest(Test20MVCfile('testNotchSignals'))
-    suite.addTest(Test20MVCfile('testBandpassingals'))
+    #suite.addTest(Test20MVCfile('testBandpassingals'))
+    suite.addTest(Test20MVCfile('testExtend'))
     unittest.TextTestRunner().run(suite)
