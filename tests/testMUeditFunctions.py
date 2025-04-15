@@ -1,6 +1,6 @@
 '''
 To run a test 
-1. makesure you have the correct output files from matlab in the tests folder (to make folder for it, but git wont take big files)
+1. makesure you have the correct output files from matlab in the tests folder, see  below for how the files should be named (to make folder for it, but git wont take big files)
 2. scroll to bottom and uncomment the desired test
 3. make sure your current directory is tests 
 '''
@@ -20,15 +20,17 @@ from utils.manual_editing import pcaesig
 # save each output  
 # compare each MUedit output to outputs by our functions
 
-
 # expected outputs (to update such that it doesnt have to be ran in test folder)
 # loadmat(expOutOpenOTBPlus).get("signal")[0][0][x] returns data, auxiliary, auxiliaryname, fsamp, nChan, ngrid, gridname, muscle, path, target
 # for x = 0, 1, 2... respectively  
+####################### the expected file names must match the following #########################
 expOutOpenOTBPlus = os.path.join(os.getcwd(), "ExpOut20OpentOTBplus.mat")
 expOutNotchSig = os.path.join(os.getcwd(), "ExpOut20NotchSignals.mat")
 expOutBandpass = os.path.join(os.getcwd(), "ExpOut20BandpassingAlsSurface.mat")
 expOutExt3 = os.path.join(os.getcwd(), "ExpOut20Extend3.mat")
 expOutExt10 = os.path.join(os.getcwd(), "ExpOut20Extend10.mat")
+expOutDemean = os.path.join(os.getcwd(), "ExpOut20Demean.mat")
+expOutPcaesig = os.path.join(os.getcwd(), "ExpOut20Pcaesig.mat")
 
 
 INPUT20MVCFILE = "trial1_20MVC.otb+"
@@ -168,28 +170,43 @@ class Test20MVCfile(unittest.TestCase):
             except AssertionError as e:
                 raise AssertionError(f"extend failed to return the expected signal for extension factor: {factor}\n{e}")
 
-
+    # failing but basically identical, floating point precision. To check if acceptable
     def testDemean(self):
-        signal = 'from above'
-        output = demean.demean(signal)
-        expected = 42
-        self.assertEqual(output, expected, "demean failed to return the expected output")
-    
+        if not os.path.exists(expOutDemean):
+            print("expected output file for demean not found!")
+        output = demean.demean(input.get("signal")[0][0][0])
+        expected = loadmat(expOutDemean).get('demsignals')
+        try:
+            npt.assert_array_equal(output, expected)
+        except AssertionError as e:
+            raise AssertionError(f"demean failed to return the expected demsignals:\n{e}")
+
+
+    # failing, output matrix sizes diff and values diff, possible bug
+    # seems a few of them are in the wrong order, or is the opposite sign (neg pos), also missing two rows of data each
     def testpcaesig(self):
-        signal = 'from above'
-        outputE, outputD = pcaesig.pcaesig(signal)
+        if not os.path.exists(expOutPcaesig):
+            print("expected output file for pcaesig not found!")
+        outputE, outputD = pcaesig.pcaesig(input.get("signal")[0][0][0])
+        expected = loadmat(expOutPcaesig)
+        expectedE = expected.get('E')
+        expectedD = expected.get('D')
 
-        expectedE = 42
-        expectedD = 42
-
-        self.assertEqual(outputE, expectedE, "pcaesig failed to return the expected output for matrix E")
-        self.assertEqual(outputD, expectedD, "pcaesig failed to return the expected output for matrix D")
+        try:
+            npt.assert_array_equal(outputE, expectedE)
+        except AssertionError as e:
+            raise AssertionError(f"pcaesig failed to return the expected E matrix:\n{e}")
+        try:
+            npt.assert_array_equal(outputD, expectedD)
+        except AssertionError as e:
+            raise AssertionError(f"pcaesig failed to return the expected D matrix:\n{e}")
+        
 
     def testWhiteesig(self):
         signal = 'from above'
         matrixE = 'from above'
         matrixD = 'from above'
-        outputWhitenedEMG, outputWhiteningMatrix, outputDewhiteningMatrix = whiteesig.whiteesig(signal, matrixE, matrixD)
+        outputWhitenedEMG, outputWhiteningMatrix, outputDewhiteningMatrix = whiteesig.whiteesig(input.get("signal")[0][0][0], matrixE, matrixD)
        
         expectedWhitenedEMG = 42
         expectedWhiteningMatrix = 42
@@ -278,5 +295,8 @@ if __name__ == '__main__':
     #suite.addTest(Test20MVCfile('testOpenOTBPlus')) 
     #suite.addTest(Test20MVCfile('testNotchSignals'))
     #suite.addTest(Test20MVCfile('testBandpassingals'))
-    suite.addTest(Test20MVCfile('testExtend'))
+    #suite.addTest(Test20MVCfile('testExtend'))
+    #suite.addTest(Test20MVCfile('testDemean'))
+    suite.addTest(Test20MVCfile('testpcaesig'))
+    
     unittest.TextTestRunner().run(suite)
