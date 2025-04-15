@@ -31,7 +31,7 @@ expOutExt3 = os.path.join(os.getcwd(), "ExpOut20Extend3.mat")
 expOutExt10 = os.path.join(os.getcwd(), "ExpOut20Extend10.mat")
 expOutDemean = os.path.join(os.getcwd(), "ExpOut20Demean.mat")
 expOutPcaesig = os.path.join(os.getcwd(), "ExpOut20Pcaesig.mat")
-
+expOutWhiten = os.path.join(os.getcwd(), "ExpOut20Whiteesig.mat")
 
 INPUT20MVCFILE = "trial1_20MVC.otb+"
 INPUT40MVCFILE = "trial1_40MVC.otb+"
@@ -39,6 +39,8 @@ INPUT40MVCFILE = "trial1_40MVC.otb+"
 inputFile20 = os.path.join(os.getcwd())
 inputFile40 = os.path.join(os.getcwd())
 input = loadmat(expOutOpenOTBPlus)
+# used for multiple functions
+outputE, outputD = pcaesig.pcaesig(input.get("signal")[0][0][0])
 
 # file loaders: openOTBplus, openIntan.m and openOEphys.m
 # config updaters: Quattrodlg.m, Intandlg.m, OEphysdlg.m
@@ -187,7 +189,8 @@ class Test20MVCfile(unittest.TestCase):
     def testpcaesig(self):
         if not os.path.exists(expOutPcaesig):
             print("expected output file for pcaesig not found!")
-        outputE, outputD = pcaesig.pcaesig(input.get("signal")[0][0][0])
+        # global as it needs to be accessed again later
+        # outputE, outputD = pcaesig.pcaesig(input.get("signal")[0][0][0])
         expected = loadmat(expOutPcaesig)
         expectedE = expected.get('E')
         expectedD = expected.get('D')
@@ -201,20 +204,29 @@ class Test20MVCfile(unittest.TestCase):
         except AssertionError as e:
             raise AssertionError(f"pcaesig failed to return the expected D matrix:\n{e}")
         
-
+    # failing, numbers are different
     def testWhiteesig(self):
-        signal = 'from above'
-        matrixE = 'from above'
-        matrixD = 'from above'
-        outputWhitenedEMG, outputWhiteningMatrix, outputDewhiteningMatrix = whiteesig.whiteesig(input.get("signal")[0][0][0], matrixE, matrixD)
+        # doesnt need E and D??? The original matlab code uses it
+        outputWhitenedEMG, outputWhiteningMatrix, outputDewhiteningMatrix = whiteesig.whiteesig(input.get("signal")[0][0][0])
        
-        expectedWhitenedEMG = 42
-        expectedWhiteningMatrix = 42
-        expectedDewhiteningMatrix = 42
+        expected = loadmat(expOutWhiten)
+        expectedWhitenedEMG = expected.get('whitensignals')
+        expectedWhiteningMatrix = expected.get('whiteningMatrix')
+        expectedDewhiteningMatrix = expected.get('dewhiteningMatrix')
 
-        self.assertEqual(outputWhitenedEMG, expectedWhitenedEMG, "whiteesig failed to return the expected output for the whitenedEMG")
-        self.assertEqual(outputWhiteningMatrix, expectedWhiteningMatrix, "whiteesig failed to return the expected output for the whiteningMatrix")
-        self.assertEqual(outputDewhiteningMatrix, expectedDewhiteningMatrix, "whiteesig failed to return the expected output for the DewhiteningMatrix")
+        try:
+            npt.assert_array_equal(outputWhitenedEMG, expectedWhitenedEMG)
+        except AssertionError as e:
+            raise AssertionError(f"whiteesig failed to return the expected whitenedEMG:\n{e}")
+        try:
+            npt.assert_array_equal(outputWhiteningMatrix, expectedWhiteningMatrix)
+        except AssertionError as e:
+            raise AssertionError(f"whiteesig failed to return the expected whiteningMatrix:\n{e}")
+        try:
+            npt.assert_array_equal(outputDewhiteningMatrix, expectedDewhiteningMatrix)
+        except AssertionError as e:
+            raise AssertionError(f"whiteesig failed to return the expected dewhiteningMatrix:\n{e}")
+        
 
     def testFixedPointAlg(self):
         initialWeights = 'from above'
@@ -297,6 +309,7 @@ if __name__ == '__main__':
     #suite.addTest(Test20MVCfile('testBandpassingals'))
     #suite.addTest(Test20MVCfile('testExtend'))
     #suite.addTest(Test20MVCfile('testDemean'))
-    suite.addTest(Test20MVCfile('testpcaesig'))
+    #suite.addTest(Test20MVCfile('testpcaesig'))
+    suite.addTest(Test20MVCfile('testWhiteesig'))
     
     unittest.TextTestRunner().run(suite)
