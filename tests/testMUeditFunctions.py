@@ -12,17 +12,22 @@ from utils.manual_editing import pcaesig
 # order the functions by original MUedit app 
 # save each output  
 # compare each MUedit output to outputs by our functions
+
+
+# expected outputs (to update such that it doesnt have to be ran in test folder)
+# loadmat(expOutOpenOTBPlus).get("signal")[0][0][x] returns data, auxiliary, auxiliaryname, fsamp, nChan, ngrid, gridname, muscle, path, target
+# for x = 0, 1, 2... respectively  
+expOutOpenOTBPlus = os.path.join(os.getcwd(), "ExpOut20OpentOTBplus.mat")
+expOutNotchSig = os.path.join(os.getcwd(), "ExpOut20NotchSignals.mat")
+expOutBandpass = os.path.join(os.getcwd(), "ExpOut20BandpassingAlsSurface.mat")
+
+
 INPUT20MVCFILE = "trial1_20MVC.otb+"
 INPUT40MVCFILE = "trial1_40MVC.otb+"
 
 inputFile20 = os.path.join(os.getcwd())
 inputFile40 = os.path.join(os.getcwd())
-
-
-# expected outputs
-expOutOpenOTBPlus = os.path.join(os.getcwd(), "ExpOut20OpentOTBplus.mat")
-expOutNotchSig = os.path.join(os.getcwd(), "ExpOut20NotchSignals.mat")
-
+input = loadmat(expOutOpenOTBPlus)
 
 # file loaders: openOTBplus, openIntan.m and openOEphys.m
 # config updaters: Quattrodlg.m, Intandlg.m, OEphysdlg.m
@@ -110,8 +115,7 @@ class Test20MVCfile(unittest.TestCase):
         if not os.path.exists(expOutNotchSig):
             print("expected notchsignals output file not found!")
         expected = loadmat(expOutNotchSig).get("filteredsignal")
-        signals = openOTBplus.openOTBplus(inputFile20, INPUT20MVCFILE, 0)
-        output = notchsignals.notchsignals(signals[1].get("data"), signals[1].get("fsamp"))
+        output = notchsignals.notchsignals(expected.get("signal")[0][0][0], expected.get("signal")[0][0][3])
         #print(output)
         #print(type(output))
         #print(expected)
@@ -121,12 +125,18 @@ class Test20MVCfile(unittest.TestCase):
         except AssertionError as e:
             raise AssertionError(f"notchsignals failed to return the expected signal:\n{e}")
         
+    # emgtype = 1 (surface)
+    # apparently the difference between our and the original output is tiny, and has something to do with our floating point precision rounding
+    # to double check if acceptable or needs to be strict
+    def testBandpassingals(self):
+        expected = loadmat(expOutBandpass).get('filteredsignal')
+        input = loadmat(expOutOpenOTBPlus)
+        output = bandpassingals.bandpassingals(input.get('signal')[0][0][0], input.get('signal')[0][0][3], 1)
 
-    def testBandpassinggals(self):
-        signal = 'from above'
-        output = bandpassingals.bandpassingals(signal, 1, 1)
-        expected = 42
-        self.assertEqual(output, expected, "bandpassingals failed to return the expected output")
+        try:
+            npt.assert_array_equal((output), expected)
+        except AssertionError as e:
+            raise AssertionError(f"bandpassingals failed to return the expected signal:\n{e}")
 
     def testExtend(self):
         signal = 'from above'
@@ -241,6 +251,7 @@ class Test20MVCfile(unittest.TestCase):
 #    unittest.main()
 if __name__ == '__main__':
     suite = unittest.TestSuite()
-    suite.addTest(Test20MVCfile('testOpenOTBPlus')) 
-    suite.addTest(Test20MVCfile('testNotchSignals'))
+    #suite.addTest(Test20MVCfile('testOpenOTBPlus')) 
+    #suite.addTest(Test20MVCfile('testNotchSignals'))
+    suite.addTest(Test20MVCfile('testBandpassingals'))
     unittest.TextTestRunner().run(suite)
