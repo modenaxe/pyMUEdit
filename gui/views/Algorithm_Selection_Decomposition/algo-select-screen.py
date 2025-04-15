@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
     QLabel, QPushButton, QComboBox, QLineEdit, QProgressBar, 
     QFrame, QGridLayout, QCheckBox, QRadioButton, QSpinBox,
-    QDoubleSpinBox, QScrollArea, QFileDialog
+    QDoubleSpinBox, QScrollArea, QFileDialog, QMessageBox
 )
 from PyQt5.QtCore import Qt, QSize, pyqtSignal, QThread
 from PyQt5.QtGui import QIcon, QFont
@@ -33,12 +33,34 @@ from utils.config_and_input.segmentsession import SegmentSession
 # Import MUeditManual for editing mode
 from MUeditManual import MUeditManual
 
+# Import our recent datasets manager
+try:
+    from gui.recent_datasets_manager import RecentDatasetsManager
+except ImportError:
+    try:
+        from recent_datasets_manager import RecentDatasetsManager
+    except ImportError:
+        print("Warning: recent_datasets_manager.py not found.")
+        # Create a simple placeholder if the module is not found
+        class RecentDatasetsManager:
+            def __init__(self, max_entries=10):
+                self.recent_datasets = []
+            def get_recent_datasets(self, count=None):
+                return self.recent_datasets
+            def add_dataset(self, filepath, dataset_type="", filesize=None, row_count=None):
+                pass
+            def remove_dataset(self, filepath):
+                pass
+
 
 class DecompositionApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Algorithm Selection & Decomposition")
         self.setGeometry(100, 100, 1200, 800)
+        
+        # Create recent datasets manager
+        self.recent_datasets_manager = RecentDatasetsManager()
         
         # Initialize variables
         self.filename = None
@@ -434,35 +456,29 @@ class DecompositionApp(QMainWindow):
             # Suggest the file to open
             self.edit_field.setText(f"Editor opened. Please select {fixed_filename}")
             
+            # Add the edited file to recent datasets
+            row_count = 0
+            if "Pulsetrain" in signal[0, 0].dtype.names:
+                try:
+                    for electrode_pulses in signal[0, 0]["Pulsetrain"][0]:
+                        if hasattr(electrode_pulses, "shape") and electrode_pulses.ndim == 2:
+                            row_count += electrode_pulses.shape[0]
+                except:
+                    pass
+                    
+            # Add to recent datasets with row count = number of motor units
+            if hasattr(self.recent_datasets_manager, 'add_dataset'):
+                self.recent_datasets_manager.add_dataset(
+                    fixed_filename,
+                    dataset_type="Edited Decomposition Data",
+                    row_count=row_count
+                )
+            
         except Exception as e:
             self.edit_field.setText(f"Error opening editing mode: {str(e)}")
             traceback.print_exc()
     
     # Event handlers
-    def save_mat_in_background(self, filename, data, compression=True):
-        self.edit_field.setText("Saving data in background...")
-
-        # Create and configure the worker thread
-        worker = SaveMatWorker(filename, data, compression)
-        self.threads.append(worker)
-
-        worker.finished.connect(lambda: self.on_save_finished(worker))
-        worker.error.connect(lambda msg: self.on_save_error(worker, msg))
-
-        worker.start()
-
-    def on_save_finished(self, worker):
-        self.edit_field.setText("Data saved successfully")
-        self.cleanup_thread(worker)
-
-    def on_save_error(self, worker, error_msg):
-        self.edit_field.setText(f"Error saving data: {error_msg}")
-        self.cleanup_thread(worker)
-
-    def cleanup_thread(self, worker):
-        if worker in self.threads:
-            self.threads.remove(worker)
-
     def select_file_button_pushed(self):
         file, _ = QFileDialog.getOpenFileName(self, "Select file", "", "All Files (*.*)")
         if not file:
@@ -487,6 +503,14 @@ class DecompositionApp(QMainWindow):
 
                 if savename:
                     self.save_mat_in_background(savename, {"signal": signal}, True)
+                    
+                    # Add to recent datasets
+                    if hasattr(self.recent_datasets_manager, 'add_dataset'):
+                        self.recent_datasets_manager.add_dataset(
+                            savename,
+                            dataset_type="Imported OTB+ Data",
+                            filesize=os.path.getsize(savename) if os.path.exists(savename) else None
+                        )
                     
                 self.reference_dropdown.blockSignals(True)
                 self.reference_dropdown.clear()
@@ -522,6 +546,30 @@ class DecompositionApp(QMainWindow):
 
         savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
         self.save_mat_in_background(savename, {"signal": signal}, True)
+
+    def save_mat_in_background(self, filename, data, compression=True):
+        self.edit_field.setText("Saving data in background...")
+
+        # Create and configure the worker thread
+        worker = SaveMatWorker(filename, data, compression)
+        self.threads.append(worker)
+
+        worker.finished.connect(lambda: self.on_save_finished(worker, filename))
+        worker.error.connect(lambda msg: self.on_save_error(worker, msg))
+
+        worker.start()
+
+    def on_save_finished(self, worker, filename):
+        self.edit_field.setText(f"Data saved successfully to {filename}")
+        self.cleanup_thread(worker)
+
+    def on_save_error(self, worker, error_msg):
+        self.edit_field.setText(f"Error saving data: {error_msg}")
+        self.cleanup_thread(worker)
+
+    def cleanup_thread(self, worker):
+        if worker in self.threads:
+            self.threads.remove(worker)
 
     def set_configuration_button_pushed(self):
         if "config" in self.MUdecomp and self.MUdecomp["config"]:
@@ -667,6 +715,27 @@ class DecompositionApp(QMainWindow):
 
             # Store the decomposition result
             self.decomposition_result = formatted_result
+            
+            # Add to recent datasets
+            if hasattr(self.recent_datasets_manager, 'add_dataset'):
+                # Count total MUs
+                total_mus = 0
+                if "Pulsetrain" in result:
+                    if isinstance(result["Pulsetrain"], dict):
+                        for electrode, pulses in result["Pulsetrain"].items():
+                            if hasattr(pulses, "shape"):
+                                total_mus += pulses.shape[0]
+                    elif isinstance(result["Pulsetrain"], list):
+                        for electrode_pulses in result["Pulsetrain"]:
+                            if hasattr(electrode_pulses, "shape"):
+                                total_mus += electrode_pulses.shape[0]
+                
+                # Add to recent datasets with informative metadata
+                self.recent_datasets_manager.add_dataset(
+                    savename,
+                    dataset_type="Decomposition Result",
+                    row_count=total_mus
+                )
 
         self.edit_field.setText("Decomposition complete")
         self.status_text.setText("Complete")
@@ -841,6 +910,27 @@ class DecompositionApp(QMainWindow):
         # Save in background
         self.save_mat_in_background(save_path, {"signal": formatted_result, "parameters": parameters}, True)
         self.edit_field.setText(f"Saving results to {save_path}")
+        
+        # Add to recent datasets
+        if hasattr(self.recent_datasets_manager, 'add_dataset'):
+            # Count total MUs
+            total_mus = 0
+            if "Pulsetrain" in self.decomposition_result:
+                if isinstance(self.decomposition_result["Pulsetrain"], dict):
+                    for electrode, pulses in self.decomposition_result["Pulsetrain"].items():
+                        if hasattr(pulses, "shape"):
+                            total_mus += pulses.shape[0]
+                elif isinstance(self.decomposition_result["Pulsetrain"], list):
+                    for electrode_pulses in self.decomposition_result["Pulsetrain"]:
+                        if hasattr(electrode_pulses, "shape"):
+                            total_mus += electrode_pulses.shape[0]
+            
+            # Add to recent datasets with row count = number of motor units
+            self.recent_datasets_manager.add_dataset(
+                save_path,
+                dataset_type="Saved Decomposition Result",
+                row_count=total_mus
+            )
 
 
 if __name__ == "__main__":
