@@ -4,7 +4,7 @@ import numpy as np
 import scipy.io as sio
 import pyqtgraph as pg
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QDialog, QVBoxLayout
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QCheckBox, QLabel
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5.QtWidgets import (
@@ -14,16 +14,16 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
 )
 
-from gui.MUeditManualUI import setup_ui
+from MUeditManualUI import setup_ui
 from utils.manual_editing.getsil import getsil
 from utils.manual_editing.refinesil import refinesil
 from utils.manual_editing.extendfilter import extendfilter
 from utils.manual_editing.selection_tools import SelectionTool, process_selection
-from utils.decomposition.remoutliers import remoutliers
-from utils.decomposition.remduplicates import remduplicates
-from utils.decomposition.remduplicatesbgrids import remduplicatesbgrids
-from utils.decomposition.extend import extend
-from utils.decomposition.whiteesig import whiteesig
+from utils.decomposition.remove_outliers import remove_outliers
+from utils.decomposition.remove_duplicates import remove_duplicates
+from utils.decomposition.remove_duplicates_between_arrays import remove_duplicates_between_arrays
+from utils.decomposition.extend_emg import extend_emg
+from utils.decomposition.whiten_emg import whiten_emg
 
 
 class MUeditManual(QMainWindow):
@@ -44,6 +44,7 @@ class MUeditManual(QMainWindow):
         self.graphend = None
         self.roi = None
         self.current_selection = None
+        self.mu_checkboxes = []  # Initialize the mu_checkboxes list
 
         # Set up the UI
         setup_ui(self)
@@ -128,20 +129,84 @@ class MUeditManual(QMainWindow):
                         else:
                             self.reference_dropdown.addItem(str(name))
 
-            # Display the first MU
-            if self.mu_dropdown.count() > 0:
-                self.display_current_mu()
+            # Update MU checkboxes
+            self.update_mu_checkboxes()
 
-                # Set initial view limits
-                self.graphstart = self.MUedition["edition"]["time"][0]
-                self.graphend = self.MUedition["edition"]["time"][-1]
-                self.update_plot_limits()
+            # Set initial view limits
+            self.graphstart = self.MUedition["edition"]["time"][0]
+            self.graphend = self.MUedition["edition"]["time"][-1]
+            self.update_plot_limits()
 
         except Exception as e:
             import traceback
 
             print(f"Error importing data: {e}")
             traceback.print_exc()
+
+    def update_mu_checkboxes(self):
+        """Update the MU checkboxes based on loaded data."""
+        # Clear existing checkboxes
+        for checkbox in self.mu_checkboxes:
+            self.mu_checkbox_layout.removeWidget(checkbox)
+            checkbox.deleteLater()
+        self.mu_checkboxes = []
+
+        # Clear any existing "No MUs" label
+        for i in reversed(range(self.mu_checkbox_layout.count())):
+            item = self.mu_checkbox_layout.itemAt(i)
+            if item and item.widget():
+                item.widget().deleteLater()
+
+        # Add checkboxes for each MU
+        if not self.MUedition or len(self.MUedition["edition"]["Pulsetrain"]) == 0:
+            no_mu_label = QLabel("No MUs loaded")
+            no_mu_label.setStyleSheet("color: #f0f0f0; font-family: 'Poppins'; font-size: 16pt;")
+            self.mu_checkbox_layout.addWidget(no_mu_label)
+            return
+
+        for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
+            # Add array header
+            array_label = QLabel(f"Array #{array_idx+1}")
+            array_label.setStyleSheet("color: #f0f0f0; font-family: 'Poppins'; font-size: 16pt; font-weight: bold;")
+            self.mu_checkbox_layout.addWidget(array_label)
+
+            # Add MU checkboxes for this array
+            for mu_idx in range(self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]):
+                mu_text = f"Array_{array_idx+1}_MU_{mu_idx+1}"
+
+                # Get SIL value if available
+                sil_value = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
+                checkbox_text = f"{mu_text} (SIL: {sil_value:.4f})"
+
+                checkbox = QCheckBox(checkbox_text)
+                checkbox.setStyleSheet("color: #f0f0f0; font-family: 'Poppins'; font-size: 14pt;")
+                checkbox.setObjectName(mu_text)  # Store the MU identifier as the object name
+                checkbox.stateChanged.connect(self.mu_checkbox_state_changed)
+
+                self.mu_checkboxes.append(checkbox)
+                self.mu_checkbox_layout.addWidget(checkbox)
+
+        # Add stretch at the end
+        self.mu_checkbox_layout.addStretch()
+
+        # Check the first checkbox by default if any exist
+        if self.mu_checkboxes:
+            self.mu_checkboxes[0].setChecked(True)
+
+    def mu_checkbox_state_changed(self):
+        """Handle changes in MU checkbox selection."""
+        # Get all checked MUs
+        checked_mus = []
+        for checkbox in self.mu_checkboxes:
+            if checkbox.isChecked():
+                checked_mus.append(checkbox.objectName())
+
+        # If none are checked, don't update display
+        if not checked_mus:
+            return
+
+        # Update the display based on selection
+        self.display_selected_mus(checked_mus)
 
     def import_edited_file(self, files):
         """Import data from a previously edited file."""
@@ -161,17 +226,6 @@ class MUeditManual(QMainWindow):
             parameters_data = files["parameters"][0, 0]
             for field in parameters_data.dtype.names:
                 self.MUedition["parameters"][field] = parameters_data[field]
-
-        # Update MU dropdown
-        self.mu_dropdown.clear()
-        for i in range(len(self.MUedition["edition"]["Pulsetrain"])):
-            pulse_train = self.MUedition["edition"]["Pulsetrain"][i]
-            mu_count = pulse_train.shape[0]
-            for j in range(mu_count):
-                self.mu_dropdown.addItem(f"Array_{i+1}_MU_{j+1}")
-
-        self.mu_dropdown.setCurrentIndex(0)
-        self.mu_dropdown.setEnabled(True)
 
     def import_decomposed_file(self, files):
         """Import data from a new decomposition file that hasn't been edited yet."""
@@ -229,16 +283,6 @@ class MUeditManual(QMainWindow):
                 if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
                     self.calculate_silval(array_idx, mu_idx)
 
-        # Update MU dropdown
-        self.mu_dropdown.clear()
-        for i in range(len(self.MUedition["edition"]["Pulsetrain"])):
-            pulse_train = self.MUedition["edition"]["Pulsetrain"][i]
-            for j in range(pulse_train.shape[0]):
-                self.mu_dropdown.addItem(f"Array_{i+1}_MU_{j+1}")
-
-        self.mu_dropdown.setCurrentIndex(0)
-        self.mu_dropdown.setEnabled(True)
-
     def calculate_silval(self, array_idx, mu_idx):
         """Calculate silhouette value for a motor unit."""
         if not self.MUedition:
@@ -281,166 +325,234 @@ class MUeditManual(QMainWindow):
             self.MUedition["edition"]["silval"][(array_idx, mu_idx)] = 0
             self.MUedition["edition"]["silvalcon"][(array_idx, mu_idx)] = np.zeros((1, 2))
 
-    def mu_displayed_dropdown_value_changed(self):
-        """Handle change in selected motor unit."""
-        self.display_current_mu()
+        # Update the checkbox text if it exists
+        for checkbox in self.mu_checkboxes:
+            if checkbox.objectName() == f"Array_{array_idx+1}_MU_{mu_idx+1}":
+                sil_value = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
+                checkbox.setText(f"Array_{array_idx+1}_MU_{mu_idx+1} (SIL: {sil_value:.4f})")
+                break
 
-    def display_current_mu(self):
-        """Display the currently selected motor unit."""
-        if self.MUedition is None or self.mu_dropdown.currentText() == "No MUs":
+    def display_selected_mus(self, checked_mus):
+        """Display the currently selected motor units."""
+        if not self.MUedition:
             return
 
-        # Parse the dropdown text to get array and MU indices
-        mu_text = self.mu_dropdown.currentText()
-        parts = mu_text.split("_")
+        # Clear existing plots in the container
+        for i in reversed(range(self.plots_layout.count())):
+            item = self.plots_layout.itemAt(i)
+            if item:
+                widget = item.widget()
+                if widget:
+                    widget.setParent(None)
 
-        if len(parts) < 4:
-            return
+        # If only one MU is selected, show pulse train and discharge rate
+        if len(checked_mus) == 1:
+            # Single MU display logic - similar to original display_current_mu
+            mu_text = checked_mus[0]
+            parts = mu_text.split("_")
 
-        array_idx = int(parts[1]) - 1
-        mu_idx = int(parts[3]) - 1
+            if len(parts) < 4:
+                return
 
-        # Get the correct pulse train for this MU
-        pulse_train_array = self.MUedition["edition"]["Pulsetrain"][array_idx]
-        pulse_train = pulse_train_array[mu_idx, :]  # Use 2D indexing to get the full row
+            array_idx = int(parts[1]) - 1
+            mu_idx = int(parts[3]) - 1
 
-        # Store the current MU in backup
-        self.Backup["Pulsetrain"] = pulse_train.copy()
-        self.Backup["Dischargetimes"] = (
-            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
-        )
+            # Get the correct pulse train for this MU
+            pulse_train_array = self.MUedition["edition"]["Pulsetrain"][array_idx]
+            pulse_train = pulse_train_array[mu_idx, :]  # Use 2D indexing to get the full row
 
-        # Update SIL info
-        sil_value = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
-        self.sil_info.setText(f"SIL = {sil_value:.4f}")
-
-        # Plot the pulse train
-        self.spiketrain_plot.clear()
-        time_vector = self.MUedition["edition"]["time"]
-
-        # Make sure we're plotting arrays, not scalars
-        if isinstance(time_vector, np.ndarray) and isinstance(pulse_train, np.ndarray):
-            self.spiketrain_plot.plot(
-                time_vector,
-                pulse_train,
-                pen=pg.mkPen(color="#f0f0f0", width=1),
+            # Store the current MU in backup for undo functionality
+            self.Backup["Pulsetrain"] = pulse_train.copy()
+            self.Backup["Dischargetimes"] = (
+                self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
             )
 
-        # Plot the reference signal (target)
-        if "target" in self.MUedition["signal"] and self.MUedition["signal"]["target"].size > 0:
-            # Get target data and ensure it's a 1D array
-            target_data = self.MUedition["signal"]["target"]
-            if target_data.ndim > 1:
-                target_data = target_data[0]  # Get the first row if it's a 2D array
+            # Update SIL info
+            sil_value = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
+            self.sil_info.setText(f"Array_{array_idx+1}_MU_{mu_idx+1} - SIL = {sil_value:.4f}")
 
-            # Make sure target_data is an array and has the right length
-            if isinstance(target_data, np.ndarray) and len(target_data) == len(time_vector):
-                # Normalize target to 0-1 range
-                target_max = np.max(target_data)
-                if target_max > 0:
-                    target_normalized = target_data / target_max
-                    self.spiketrain_plot.plot(
-                        time_vector,  # Use the same time vector
-                        target_normalized,
-                        pen=pg.mkPen(color="#f0f0f0", width=1, style=Qt.PenStyle.DashLine),
-                    )
+            # Show SIL plot if checkbox is checked
+            if self.sil_checkbox.isChecked():
+                self.sil_plot.setVisible(True)
+                self.plots_layout.addWidget(self.sil_plot)
 
-        # Plot discharge times
-        discharge_times = self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
-        if len(discharge_times) > 0:
-            scatter = pg.ScatterPlotItem()
+                # Clear and update SIL plot
+                self.sil_plot.clear()
+                sil_data = self.MUedition["edition"]["silvalcon"].get((array_idx, mu_idx), np.array([]))
 
-            # Find local maxima around each discharge time to place dots at spike peaks
-            window_size = 10  # Number of samples to look around each discharge time
-            x_values = []
-            y_values = []
+                if hasattr(sil_data, "shape") and sil_data.shape[0] > 0 and sil_data.shape[1] > 1:
+                    # Extract time and SIL values
+                    time_indices = sil_data[:, 0].astype(int)
+                    # Make sure indices are valid
+                    valid_indices = np.where(
+                        (time_indices >= 0) & (time_indices < len(self.MUedition["edition"]["time"]))
+                    )[0]
+                    if len(valid_indices) > 0:
+                        time_indices = time_indices[valid_indices]
+                        sil_values = sil_data[valid_indices, 1]
 
-            for dt in discharge_times:
-                if 0 <= dt < len(pulse_train):
-                    # Define window boundaries
-                    start = max(0, dt - window_size)
-                    end = min(len(pulse_train), dt + window_size + 1)
+                        # Create bar chart
+                        x_values = self.MUedition["edition"]["time"][time_indices]
 
-                    # Find local maximum within window
-                    window = pulse_train[start:end]
-                    if len(window) > 0:
-                        local_max_idx = start + np.argmax(window)
+                        for i in range(len(x_values)):
+                            bar_width = 0.5  # seconds
+                            bar = pg.BarGraphItem(
+                                x=[x_values[i]], height=[sil_values[i]], width=bar_width, brush="#262626", pen="#f0f0f0"
+                            )
+                            self.sil_plot.addItem(bar)
 
-                        # Use local maximum for dot placement
-                        x_values.append(time_vector[local_max_idx])
-                        y_values.append(pulse_train[local_max_idx])
+                        # Add a line at SIL=0.9
+                        threshold_line = pg.InfiniteLine(pos=0.9, angle=0, pen=pg.mkPen(color="#76AC30", width=2))
+                        self.sil_plot.addItem(threshold_line)
 
-            if len(x_values) > 0:
-                scatter.addPoints(x=x_values, y=y_values, pen=None, brush=pg.mkBrush("#D95535"), size=10)
-                self.spiketrain_plot.addItem(scatter)
+                        # Set axis ranges
+                        self.sil_plot.setYRange(0.5, 1.0)
+            else:
+                self.sil_plot.setVisible(False)
 
-        # Plot discharge rates
-        self.dr_plot.clear()
-        if len(discharge_times) > 1:
-            # Calculate discharge times for plotting
-            distime = np.zeros(len(discharge_times) - 1)
-            for i in range(len(discharge_times) - 1):
-                midpoint = (discharge_times[i + 1] - discharge_times[i]) // 2 + discharge_times[i]
-                distime[i] = midpoint / float(self.MUedition["signal"]["fsamp"][0, 0])
+            # Show and update spike train plot
+            self.plots_layout.addWidget(self.spiketrain_plot)
+            self.spiketrain_plot.clear()
+            time_vector = self.MUedition["edition"]["time"]
 
-            # Calculate discharge rates
-            dr = 1.0 / (np.diff(discharge_times) / float(self.MUedition["signal"]["fsamp"][0, 0]))
+            if isinstance(time_vector, np.ndarray) and isinstance(pulse_train, np.ndarray):
+                self.spiketrain_plot.plot(
+                    time_vector,
+                    pulse_train,
+                    pen=pg.mkPen(color="#f0f0f0", width=1),
+                )
 
-            # Plot as scatter plot
-            scatter_dr = pg.ScatterPlotItem()
-            scatter_dr.addPoints(x=distime, y=dr, pen=None, brush=pg.mkBrush("#f0f0f0"), size=10)
-            self.dr_plot.addItem(scatter_dr)
+                # Plot reference signal if available
+                if "target" in self.MUedition["signal"] and self.MUedition["signal"]["target"].size > 0:
+                    target_data = self.MUedition["signal"]["target"]
+                    if target_data.ndim > 1:
+                        target_data = target_data[0]
 
-            # Set y-axis range with margin
-            if len(dr) > 0:
-                dr_max = np.max(dr)
-                self.dr_plot.setYRange(0, dr_max * 1.5)
+                    if isinstance(target_data, np.ndarray) and len(target_data) == len(time_vector):
+                        target_max = np.max(target_data)
+                        if target_max > 0:
+                            target_normalized = target_data / target_max
+                            self.spiketrain_plot.plot(
+                                time_vector,
+                                target_normalized,
+                                pen=pg.mkPen(color="#f0f0f0", width=1, style=Qt.PenStyle.DashLine),
+                            )
 
-        # Update SIL plot if enabled
-        if self.sil_checkbox.isChecked():
-            self.sil_plot.clear()
-            sil_data = self.MUedition["edition"]["silvalcon"].get((array_idx, mu_idx), np.array([]))
+            # Plot discharge times
+            discharge_times = self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
+            if len(discharge_times) > 0:
+                scatter = pg.ScatterPlotItem()
 
-            if hasattr(sil_data, "shape") and sil_data.shape[0] > 0 and sil_data.shape[1] > 1:
-                # Extract time and SIL values
-                time_indices = sil_data[:, 0].astype(int)
-                # Make sure indices are valid
-                valid_indices = np.where((time_indices >= 0) & (time_indices < len(time_vector)))[0]
-                if len(valid_indices) > 0:
-                    time_indices = time_indices[valid_indices]
-                    sil_values = sil_data[valid_indices, 1]
+                # Find local maxima around each discharge time
+                window_size = 10
+                x_values = []
+                y_values = []
 
-                    # Create bar chart
-                    x_values = time_vector[time_indices]
+                for dt in discharge_times:
+                    if 0 <= dt < len(pulse_train):
+                        start = int(max(0, dt - window_size))
+                        end = int(min(len(pulse_train), dt + window_size + 1))
 
-                    for i in range(len(x_values)):
-                        bar_width = 0.5  # seconds
-                        bar = pg.BarGraphItem(
-                            x=[x_values[i]], height=[sil_values[i]], width=bar_width, brush="#262626", pen="#f0f0f0"
-                        )
-                        self.sil_plot.addItem(bar)
+                        window = pulse_train[start:end]
+                        if len(window) > 0:
+                            local_max_idx = start + np.argmax(window)
 
-                    # Add a line at SIL=0.9
-                    threshold_line = pg.InfiniteLine(pos=0.9, angle=0, pen=pg.mkPen(color="#76AC30", width=2))
-                    self.sil_plot.addItem(threshold_line)
+                            x_values.append(time_vector[local_max_idx])
+                            y_values.append(pulse_train[local_max_idx])
 
-                    # Set axis ranges
-                    self.sil_plot.setYRange(0.5, 1.0)
+                if len(x_values) > 0:
+                    scatter.addPoints(x=x_values, y=y_values, pen=None, brush=pg.mkBrush("#D95535"), size=10)
+                    self.spiketrain_plot.addItem(scatter)
+
+            # Show and update discharge rate plot
+            self.plots_layout.addWidget(self.dr_plot)
+            self.dr_plot.clear()
+
+            if len(discharge_times) > 1:
+                # Calculate discharge times for plotting
+                distime = np.zeros(len(discharge_times) - 1)
+                for i in range(len(discharge_times) - 1):
+                    midpoint = (discharge_times[i + 1] - discharge_times[i]) // 2 + discharge_times[i]
+                    distime[i] = midpoint / float(self.MUedition["signal"]["fsamp"][0, 0])
+
+                # Calculate discharge rates
+                dr = 1.0 / (np.diff(discharge_times) / float(self.MUedition["signal"]["fsamp"][0, 0]))
+
+                # Plot as scatter plot
+                scatter_dr = pg.ScatterPlotItem()
+                scatter_dr.addPoints(x=distime, y=dr, pen=None, brush=pg.mkBrush("#f0f0f0"), size=10)
+                self.dr_plot.addItem(scatter_dr)
+
+                # Set y-axis range with margin
+                if len(dr) > 0:
+                    dr_max = np.max(dr)
+                    self.dr_plot.setYRange(0, dr_max * 1.5)
+
+        else:
+            # Multiple MUs selected - show only pulse trains stacked vertically
+            self.sil_info.setText(f"{len(checked_mus)} MUs selected")
+
+            # Create a new plot widget for each selected MU
+            for mu_text in checked_mus:
+                parts = mu_text.split("_")
+                if len(parts) < 4:
+                    continue
+
+                array_idx = int(parts[1]) - 1
+                mu_idx = int(parts[3]) - 1
+
+                # Get pulse train data
+                pulse_train = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :]
+                time_vector = self.MUedition["edition"]["time"]
+
+                # Create a new plot for this MU
+                plot_widget = pg.PlotWidget()
+                plot_widget.setBackground("#262626")
+                plot_widget.setFixedHeight(200)  # Fixed height for each plot
+                plot_widget.setLabel("left", f"Array_{array_idx+1}_MU_{mu_idx+1}")
+                plot_widget.getAxis("left").setPen(pg.mkPen(color="#f0f0f0"))
+                plot_widget.getAxis("bottom").setPen(pg.mkPen(color="#f0f0f0"))
+                plot_widget.getAxis("left").setTextPen(pg.mkPen(color="#f0f0f0"))
+                plot_widget.getAxis("bottom").setTextPen(pg.mkPen(color="#f0f0f0"))
+
+                # Plot pulse train
+                plot_widget.plot(
+                    time_vector,
+                    pulse_train,
+                    pen=pg.mkPen(color="#f0f0f0", width=1),
+                )
+
+                # Plot discharge times
+                discharge_times = self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
+                if len(discharge_times) > 0:
+                    scatter = pg.ScatterPlotItem()
+
+                    # Find local maxima around each discharge time
+                    window_size = 10
+                    x_values = []
+                    y_values = []
+
+                    for dt in discharge_times:
+                        if 0 <= dt < len(pulse_train):
+                            start = int(max(0, dt - window_size))
+                            end = int(min(len(pulse_train), dt + window_size + 1))
+
+                            window = pulse_train[start:end]
+                            if len(window) > 0:
+                                local_max_idx = start + np.argmax(window)
+
+                                x_values.append(time_vector[local_max_idx])
+                                y_values.append(pulse_train[local_max_idx])
+
+                    if len(x_values) > 0:
+                        scatter.addPoints(x=x_values, y=y_values, pen=None, brush=pg.mkBrush("#D95535"), size=8)
+                        plot_widget.addItem(scatter)
+
+                # Add the plot to the layout
+                self.plots_layout.addWidget(plot_widget)
 
         # Update plot limits
         self.update_plot_limits()
-
-    def update_plot_limits(self):
-        """Update the limits of all plots to match the current view."""
-        if self.graphstart is None or self.graphend is None:
-            return
-
-        self.spiketrain_plot.setXRange(self.graphstart, self.graphend)
-        self.dr_plot.setXRange(self.graphstart, self.graphend)
-        self.spiketrain_plot.setYRange(-0.05, 1.5)
-
-        if self.sil_checkbox.isChecked():
-            self.sil_plot.setXRange(self.graphstart, self.graphend)
 
     def reference_dropdown_value_changed(self):
         """Handle change in reference signal."""
@@ -467,22 +579,15 @@ class MUeditManual(QMainWindow):
             # Set the selected reference as the target
             self.MUedition["signal"]["target"] = auxiliary_data
 
-            # Update the current view
-            self.display_current_mu()
+            # Update the current view based on checkboxes
+            self.mu_checkbox_state_changed()
         except Exception as e:
             print(f"Error setting reference: {e}")
 
     def sil_checkbox_value_changed(self):
         """Toggle SIL plot visibility."""
-        if self.sil_checkbox.isChecked():
-            self.sil_plot.setVisible(True)
-            self.dr_plot.setFixedHeight(210)  # Smaller when SIL is visible
-        else:
-            self.sil_plot.setVisible(False)
-            self.dr_plot.setFixedHeight(290)  # Larger when SIL is hidden
-
-        # Update the plots
-        self.display_current_mu()
+        # Update the plots (visibility of SIL plot will be handled in display_selected_mus)
+        self.mu_checkbox_state_changed()
 
     # Navigation actions
     def zoom_in_button_pushed(self):
@@ -549,6 +654,29 @@ class MUeditManual(QMainWindow):
 
         self.update_plot_limits()
 
+    def update_plot_limits(self):
+        """Update the limits of all plots to match the current view."""
+        if self.graphstart is None or self.graphend is None:
+            return
+
+        # For single MU view (standard plots)
+        self.spiketrain_plot.setXRange(self.graphstart, self.graphend)
+        self.dr_plot.setXRange(self.graphstart, self.graphend)
+        self.spiketrain_plot.setYRange(-0.05, 1.5)
+
+        if self.sil_checkbox.isChecked():
+            self.sil_plot.setXRange(self.graphstart, self.graphend)
+
+        # For multiple MU view (plots in scroll area)
+        for i in range(self.plots_layout.count()):
+            item = self.plots_layout.itemAt(i)
+            if item:
+                widget = item.widget()
+                if isinstance(widget, pg.PlotWidget):
+                    widget.setXRange(self.graphstart, self.graphend)
+                    if widget != self.sil_plot and widget != self.dr_plot:
+                        widget.setYRange(-0.05, 1.5)
+
     # Editing actions
     def disable_action_buttons(self):
         """Temporarily disable action buttons during selection."""
@@ -568,11 +696,20 @@ class MUeditManual(QMainWindow):
 
     def add_spikes_button_pushed(self):
         """Add spikes by drawing a selection rectangle."""
-        if not self.MUedition or self.mu_dropdown.currentText() == "No MUs":
+        if not self.MUedition:
             return
 
-        # Parse the current MU
-        mu_text = self.mu_dropdown.currentText()
+        # Get the first checked MU
+        checked_mus = []
+        for checkbox in self.mu_checkboxes:
+            if checkbox.isChecked():
+                checked_mus.append(checkbox.objectName())
+                break
+
+        if not checked_mus:
+            return
+
+        mu_text = checked_mus[0]
         parts = mu_text.split("_")
 
         if len(parts) < 4:
@@ -598,11 +735,20 @@ class MUeditManual(QMainWindow):
 
     def delete_spikes_button_pushed(self):
         """Delete spikes by drawing a selection rectangle."""
-        if not self.MUedition or self.mu_dropdown.currentText() == "No MUs":
+        if not self.MUedition:
             return
 
-        # Parse the current MU
-        mu_text = self.mu_dropdown.currentText()
+        # Get the first checked MU
+        checked_mus = []
+        for checkbox in self.mu_checkboxes:
+            if checkbox.isChecked():
+                checked_mus.append(checkbox.objectName())
+                break
+
+        if not checked_mus:
+            return
+
+        mu_text = checked_mus[0]
         parts = mu_text.split("_")
 
         if len(parts) < 4:
@@ -628,11 +774,20 @@ class MUeditManual(QMainWindow):
 
     def delete_dr_button_pushed(self):
         """Delete discharge rates by drawing a selection rectangle in the DR plot."""
-        if not self.MUedition or self.mu_dropdown.currentText() == "No MUs":
+        if not self.MUedition:
             return
 
-        # Parse the current MU
-        mu_text = self.mu_dropdown.currentText()
+        # Get the first checked MU
+        checked_mus = []
+        for checkbox in self.mu_checkboxes:
+            if checkbox.isChecked():
+                checked_mus.append(checkbox.objectName())
+                break
+
+        if not checked_mus:
+            return
+
+        mu_text = checked_mus[0]
         parts = mu_text.split("_")
 
         if len(parts) < 4:
@@ -662,7 +817,12 @@ class MUeditManual(QMainWindow):
         process_selection(self.MUedition, action_type, array_idx, mu_idx, x_min, x_max, y_min, y_max)
 
         # Update the display
-        self.display_current_mu()
+        for checkbox in self.mu_checkboxes:
+            if checkbox.objectName() == f"Array_{array_idx+1}_MU_{mu_idx+1}":
+                if checkbox.isChecked():
+                    # If the MU is currently checked, update the display
+                    self.mu_checkbox_state_changed()
+                break
 
     def lock_spikes_button_pushed(self):
         """Lock the current spikes to keep them during filter updates."""
@@ -673,11 +833,20 @@ class MUeditManual(QMainWindow):
 
     def remove_outliers_button_pushed(self):
         """Remove outliers from the current motor unit."""
-        if not self.MUedition or self.mu_dropdown.currentText() == "No MUs":
+        if not self.MUedition:
             return
 
-        # Parse the current MU
-        mu_text = self.mu_dropdown.currentText()
+        # Get the first checked MU
+        checked_mus = []
+        for checkbox in self.mu_checkboxes:
+            if checkbox.isChecked():
+                checked_mus.append(checkbox.objectName())
+                break
+
+        if not checked_mus:
+            return
+
+        mu_text = checked_mus[0]
         parts = mu_text.split("_")
 
         if len(parts) < 4:
@@ -705,7 +874,7 @@ class MUeditManual(QMainWindow):
         distime_list = [self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]]
 
         # Apply remoutliers
-        filtered_distime = remoutliers(
+        filtered_distime = remove_outliers(
             pulse_trains, distime_list, 0.3, self.MUedition["signal"]["fsamp"]  # Threshold for CoV of Discharge rate
         )
 
@@ -714,15 +883,24 @@ class MUeditManual(QMainWindow):
             self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = filtered_distime[0]
 
             # Update the display
-            self.display_current_mu()
+            self.mu_checkbox_state_changed()
 
     def update_mu_filter_button_pushed(self):
         """Update the motor unit filter using the current discharge times."""
-        if not self.MUedition or self.mu_dropdown.currentText() == "No MUs":
+        if not self.MUedition:
             return
 
-        # Parse the current MU
-        mu_text = self.mu_dropdown.currentText()
+        # Get the first checked MU
+        checked_mus = []
+        for checkbox in self.mu_checkboxes:
+            if checkbox.isChecked():
+                checked_mus.append(checkbox.objectName())
+                break
+
+        if not checked_mus:
+            return
+
+        mu_text = checked_mus[0]
         parts = mu_text.split("_")
 
         if len(parts) < 4:
@@ -781,23 +959,25 @@ class MUeditManual(QMainWindow):
         # Recalculate SIL values
         self.calculate_silval(array_idx, mu_idx)
 
-        # Display with different colors based on change in SIL
-        new_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
-        sil_diff = old_sil - new_sil
-
-        # Update SIL info
-        self.sil_info.setText(f"SIL = {new_sil:.4f}")
-
-        # Display the updated MU
-        self.display_current_mu()
+        # Update the display
+        self.mu_checkbox_state_changed()
 
     def extend_mu_filter_button_pushed(self):
         """Extend the motor unit filter to the entire signal."""
-        if not self.MUedition or self.mu_dropdown.currentText() == "No MUs":
+        if not self.MUedition:
             return
 
-        # Parse the current MU
-        mu_text = self.mu_dropdown.currentText()
+        # Get the first checked MU
+        checked_mus = []
+        for checkbox in self.mu_checkboxes:
+            if checkbox.isChecked():
+                checked_mus.append(checkbox.objectName())
+                break
+
+        if not checked_mus:
+            return
+
+        mu_text = checked_mus[0]
         parts = mu_text.split("_")
 
         if len(parts) < 4:
@@ -863,7 +1043,7 @@ class MUeditManual(QMainWindow):
             self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = updated_discharge_times
 
             # Update the display to show progress
-            self.display_current_mu()
+            self.mu_checkbox_state_changed()
             QApplication.processEvents()
 
         # Then extend backward
@@ -892,26 +1072,31 @@ class MUeditManual(QMainWindow):
             self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = updated_discharge_times
 
             # Update the display to show progress
-            self.display_current_mu()
+            self.mu_checkbox_state_changed()
             QApplication.processEvents()
 
         # Recalculate SIL values
         self.calculate_silval(array_idx, mu_idx)
 
-        # Update SIL info
-        new_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
-        self.sil_info.setText(f"SIL = {new_sil:.4f}")
-
         # Final display update
-        self.display_current_mu()
+        self.mu_checkbox_state_changed()
 
     def undo_button_pushed(self):
         """Undo the last edit."""
-        if not self.MUedition or self.mu_dropdown.currentText() == "No MUs" or self.Backup["Pulsetrain"] is None:
+        if not self.MUedition or self.Backup["Pulsetrain"] is None:
             return
 
-        # Parse the current MU
-        mu_text = self.mu_dropdown.currentText()
+        # Get the first checked MU
+        checked_mus = []
+        for checkbox in self.mu_checkboxes:
+            if checkbox.isChecked():
+                checked_mus.append(checkbox.objectName())
+                break
+
+        if not checked_mus:
+            return
+
+        mu_text = checked_mus[0]
         parts = mu_text.split("_")
 
         if len(parts) < 4:
@@ -928,37 +1113,47 @@ class MUeditManual(QMainWindow):
         self.calculate_silval(array_idx, mu_idx)
 
         # Update the display
-        self.display_current_mu()
+        self.mu_checkbox_state_changed()
 
     def flag_mu_for_deletion_button_pushed(self):
-        """Flag the current motor unit for deletion."""
-        if not self.MUedition or self.mu_dropdown.currentText() == "No MUs":
+        """Flag the selected motor units for deletion."""
+        if not self.MUedition:
             return
 
-        # Parse the current MU
-        mu_text = self.mu_dropdown.currentText()
-        parts = mu_text.split("_")
+        # Find all checked MUs
+        for checkbox in self.mu_checkboxes:
+            if checkbox.isChecked():
+                mu_text = checkbox.objectName()
+                parts = mu_text.split("_")
 
-        if len(parts) < 4:
-            return
+                if len(parts) < 4:
+                    continue
 
-        array_idx = int(parts[1]) - 1
-        mu_idx = int(parts[3]) - 1
+                array_idx = int(parts[1]) - 1
+                mu_idx = int(parts[3]) - 1
 
-        # Store current state for undo
-        self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
-        self.Backup["Dischargetimes"] = (
-            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
-        )
+                # Store current state for undo (only for the last MU - limitation)
+                self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
+                self.Backup["Dischargetimes"] = (
+                    self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
+                )
 
-        # Set pulse train to zeros and minimal discharge times
-        self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = 0
-        self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = np.array(
-            [1, self.MUedition["signal"]["fsamp"]]
-        )
+                # Extract the sampling frequency as a scalar
+                if self.MUedition["signal"]["fsamp"].ndim > 1:
+                    fsamp = float(self.MUedition["signal"]["fsamp"][0, 0])
+                else:
+                    fsamp = float(self.MUedition["signal"]["fsamp"][0])
+
+                # Set pulse train to zeros and minimal discharge times
+                self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = 0
+                self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = np.array([1, fsamp])
+
+                # Update SIL in checkbox text
+                sil_value = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
+                checkbox.setText(f"{mu_text} (SIL: {sil_value:.4f}) - FLAGGED")
 
         # Update the display
-        self.display_current_mu()
+        self.mu_checkbox_state_changed()
 
     # Batch processing
     def remove_all_outliers_button_pushed(self):
@@ -1001,7 +1196,7 @@ class MUeditManual(QMainWindow):
 
                 # Apply remoutliers if there are discharge times
                 if len(distime_list[0]) > 1:
-                    filtered_distime = remoutliers(
+                    filtered_distime = remove_outliers(
                         pulse_trains,
                         distime_list,
                         0.3,  # Threshold for CoV of Discharge rate
@@ -1012,6 +1207,9 @@ class MUeditManual(QMainWindow):
                     if filtered_distime and len(filtered_distime) > 0:
                         self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = filtered_distime[0]
 
+                    # Update SIL values
+                    self.calculate_silval(array_idx, mu_idx)
+
                 processed_mus += 1
 
             if progress.wasCanceled():
@@ -1020,7 +1218,7 @@ class MUeditManual(QMainWindow):
         progress.setValue(100)
 
         # Update the current MU display
-        self.display_current_mu()
+        self.mu_checkbox_state_changed()
 
     def update_all_mu_filters_button_pushed(self):
         """Update filters for all motor units."""
@@ -1066,14 +1264,17 @@ class MUeditManual(QMainWindow):
                     extension_factor = min(1000 // emg_data.shape[0], 25)
 
                     # Extend the EMG signal
-                    extended_emg = extend(emg_data, extension_factor)
+                    extended_emg = np.zeros(
+                        [emg_data.shape[0] * extension_factor, emg_data.shape[1] + extension_factor - 1]
+                    )
+                    extended_emg = extend_emg(extended_emg, emg_data, extension_factor)
 
                     # Calculate covariance and pseudo-inverse
                     covariance = extended_emg @ extended_emg.T / extended_emg.shape[1]
                     inverse_cov = np.linalg.pinv(covariance)
 
                     # Get whitened signal
-                    _, _, dewhitening_matrix = whiteesig(extended_emg)
+                    _, _, dewhitening_matrix = whiten_emg(extended_emg)
 
                     # Calculate motor unit filter
                     mu_filter = np.sum(extended_emg[:, discharge_times], axis=1, keepdims=True)
@@ -1130,7 +1331,7 @@ class MUeditManual(QMainWindow):
         progress.setValue(100)
 
         # Update the current MU display
-        self.display_current_mu()
+        self.mu_checkbox_state_changed()
 
     def remove_flagged_mu_button_pushed(self):
         """Remove motor units that have been flagged for deletion."""
@@ -1211,18 +1412,8 @@ class MUeditManual(QMainWindow):
         self.MUedition["edition"]["silval"] = clean_silval
         self.MUedition["edition"]["silvalcon"] = clean_silvalcon
 
-        # Update the MU dropdown
-        self.mu_dropdown.clear()
-
-        for array_idx in range(len(clean_pulsetrain)):
-            for mu_idx in range(clean_pulsetrain[array_idx].shape[0]):
-                self.mu_dropdown.addItem(f"Array_{array_idx+1}_MU_{mu_idx+1}")
-
-        if self.mu_dropdown.count() > 0:
-            self.mu_dropdown.setCurrentIndex(0)
-            self.display_current_mu()
-        else:
-            self.mu_dropdown.addItem("No MUs")
+        # Update the MU checkboxes
+        self.update_mu_checkboxes()
 
     def remove_duplicates_within_grids_button_pushed(self):
         """Remove duplicate motor units within each grid."""
@@ -1252,14 +1443,15 @@ class MUeditManual(QMainWindow):
                     discharge_times.append(np.array([]))
 
             # Remove duplicates
-            unique_pulse_train, unique_discharge_times = remduplicates(
+            unique_discharge_times, unique_pulse_train, _ = remove_duplicates(
                 pulse_train,
                 discharge_times,
                 discharge_times,
-                round(fsamp / 40),  # Fixed: use scalar fsamp
+                np.zeros((1, 1)),  # Placeholder for mu_filters (not used)
+                round(fsamp / 40),
                 0.00025,
                 0.3,  # Duplicate threshold
-                fsamp,  # Fixed: use scalar fsamp
+                fsamp,
             )
 
             # Replace with unique MUs
@@ -1270,18 +1462,8 @@ class MUeditManual(QMainWindow):
                 self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = unique_discharge_times[mu_idx]
                 self.calculate_silval(array_idx, mu_idx)
 
-        # Update the MU dropdown
-        self.mu_dropdown.clear()
-
-        for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
-            for mu_idx in range(self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]):
-                self.mu_dropdown.addItem(f"Array_{array_idx+1}_MU_{mu_idx+1}")
-
-        if self.mu_dropdown.count() > 0:
-            self.mu_dropdown.setCurrentIndex(0)
-            self.display_current_mu()
-        else:
-            self.mu_dropdown.addItem("No MUs")
+        # Update the MU checkboxes
+        self.update_mu_checkboxes()
 
     def remove_duplicates_between_grids_button_pushed(self):
         """Remove duplicate motor units between grids."""
@@ -1319,14 +1501,8 @@ class MUeditManual(QMainWindow):
                 mu_idx_global += 1
 
         # Remove duplicates between arrays
-        unique_pulse_train, unique_discharge_times, unique_muscle = remduplicatesbgrids(
-            all_pulse_trains,
-            all_discharge_times,
-            muscle,
-            round(fsamp / 40),  # Fixed: use scalar fsamp
-            0.00025,
-            0.3,  # Duplicate threshold
-            fsamp,  # Fixed: use scalar fsamp
+        unique_discharge_times, unique_pulse_train, unique_muscle = remove_duplicates_between_arrays(
+            all_pulse_trains, all_discharge_times, muscle, round(fsamp / 40), 0.00025, 0.3, fsamp  # Duplicate threshold
         )
 
         # Recreate data structures
@@ -1370,18 +1546,8 @@ class MUeditManual(QMainWindow):
         self.MUedition["edition"]["Pulsetrain"] = new_pulsetrain
         self.MUedition["edition"]["Dischargetimes"] = new_dischargetimes
 
-        # Update the MU dropdown
-        self.mu_dropdown.clear()
-
-        for array_idx in range(len(new_pulsetrain)):
-            for mu_idx in range(new_pulsetrain[array_idx].shape[0]):
-                self.mu_dropdown.addItem(f"Array_{array_idx+1}_MU_{mu_idx+1}")
-
-        if self.mu_dropdown.count() > 0:
-            self.mu_dropdown.setCurrentIndex(0)
-            self.display_current_mu()
-        else:
-            self.mu_dropdown.addItem("No MUs")
+        # Update the MU checkboxes
+        self.update_mu_checkboxes()
 
     # Visualization methods
     def plot_mu_spiketrains_button_pushed(self):
@@ -1499,11 +1665,11 @@ class MUeditManual(QMainWindow):
         # Set figure background color
         fig.patch.set_facecolor("#262626")
 
-        # Get the currently selected MU
-        current_mu = self.mu_dropdown.currentText()
-        parts = current_mu.split("_")
-        current_array_idx = int(parts[1]) - 1 if len(parts) > 1 else -1
-        current_mu_idx = int(parts[3]) - 1 if len(parts) > 3 else -1
+        # Get the currently selected MUs
+        checked_mus = []
+        for checkbox in self.mu_checkboxes:
+            if checkbox.isChecked():
+                checked_mus.append(checkbox.objectName())
 
         # Extract the sampling frequency as a scalar
         if self.MUedition["signal"]["fsamp"].ndim > 1:
@@ -1538,8 +1704,9 @@ class MUeditManual(QMainWindow):
                 # Smooth using convolution
                 smoothed_dr = np.convolve(firing, hann_window, mode="same")
 
-                # Determine line style - highlight current MU
-                if array_idx == current_array_idx and mu_idx == current_mu_idx:
+                # Determine line style - highlight current MUs
+                mu_text = f"Array_{array_idx+1}_MU_{mu_idx+1}"
+                if mu_text in checked_mus:
                     ax.plot(self.MUedition["edition"]["time"], smoothed_dr, color="#D95535", linewidth=3)
                 else:
                     ax.plot(self.MUedition["edition"]["time"], smoothed_dr, color="#f0f0f0", linewidth=1, alpha=0.7)

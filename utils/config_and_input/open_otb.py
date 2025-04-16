@@ -1,0 +1,166 @@
+import glob, os
+import xml.etree.ElementTree as ET
+import tarfile as tf
+import numpy as np
+from typing import TYPE_CHECKING, Any, Dict, List, Union, Tuple
+
+if TYPE_CHECKING:
+    from EmgDecomposition import offline_EMG
+
+
+def open_otb(emg_obj: "offline_EMG", inputfile: str) -> None:
+    """
+    Opens OTB file and extracts data.
+    Moved from offline_EMG class to a standalone function.
+
+    Args:
+        emg_obj: Instance of offline_EMG class
+        inputfile: Path to the input OTB file
+    """
+    print(inputfile)
+    file_name = inputfile.split("/")[1]
+    temp_dir = os.path.join(emg_obj.save_dir, "temp_tarholder")
+    print(f"Using temporary directory: {temp_dir}")
+
+    # make a temporary directory to store the data of the otb file if it doesn't exist yet
+    if not os.path.isdir(temp_dir):
+        print(f"Creating temp directory {temp_dir}")
+        os.mkdir(temp_dir)
+
+    # Open the .tar file and extract all data
+    print("Extracting OTB archive...")
+    with tf.open(inputfile, "r") as emg_tar:
+        emg_tar.extractall(temp_dir)
+    print("Extraction complete")
+
+    # os.chdir(temp_dir)
+    sig_files = [f for f in os.listdir(temp_dir) if f.endswith(".sig")]
+    print(f"Found {len(sig_files)} signal files: {sig_files}")
+    trial_label_sig = sig_files[0]  # only one .sig so can be used to get the trial name (0 index list->string)
+    trial_label_xml = trial_label_sig.split(".")[0] + ".xml"
+    trial_label_sig = os.path.join(temp_dir, trial_label_sig)
+    trial_label_xml = os.path.join(temp_dir, trial_label_xml)
+    print(f"Using signal file: {trial_label_sig}")
+    print(f"Using XML file: {trial_label_xml}")
+
+    # read the contents of the trial xml file
+    print("Parsing XML configuration...")
+    with open(trial_label_xml, encoding="utf-8") as file:
+        xml = ET.fromstring(file.read())
+
+    # get sampling frequency, no. bits of AD converter, no. channels, electrode names and muscle names
+    root_element = xml.find(".")
+    if root_element is None:
+        raise ValueError("Could not find root element in XML file")
+
+    fsamp = int(root_element.attrib["SampleFrequency"])
+    nADbit = int(root_element.attrib["ad_bits"])
+    nchans = int(root_element.attrib["DeviceTotalChannels"])
+
+    channels_element = xml.find("./Channels")
+    if channels_element is None:
+        raise ValueError("Could not find Channels element in XML file")
+
+    electrode_names = []
+    muscle_names = []
+
+    for child in channels_element:
+        if len(child) > 0 and child[0] is not None:
+            if "ID" in child[0].attrib:
+                electrode_names.append(child[0].attrib["ID"])
+            else:
+                electrode_names.append("Unknown")
+
+            if "Muscle" in child[0].attrib:
+                muscle_names.append(child[0].attrib["Muscle"])
+            else:
+                muscle_names.append("Unknown")
+
+    print(f"Parsed XML: fsamp={fsamp}Hz, nADbit={nADbit}, nchans={nchans}")
+    print(f"Found {len(electrode_names)} electrodes: {electrode_names[:5]}...")
+    print(f"Found {len(muscle_names)} muscles: {muscle_names[:5]}...")
+    print(f"Keeping all electrode names as is.")
+
+    # count the number of electrodes
+    ngrids = sum(1 for name in electrode_names if name.startswith("GR"))
+    nneedles = len(electrode_names) - (
+        sum(
+            1
+            for name in electrode_names
+            if any(substring.lower() in name.lower() for substring in ["aux", "ramp", "buffer"])
+        )
+        + ngrids
+    )
+    nelectrodes = nneedles + ngrids
+    print(f"Electrode counts: grids={ngrids}, needles={nneedles}, total={nelectrodes}")
+
+    # read in the EMG trial data
+    print("Reading EMG data...")
+    emg_data = np.fromfile(open(trial_label_sig), dtype="int" + str(nADbit))
+
+    # need to reshape because it is read as a stream
+    emg_data = np.transpose(emg_data.reshape(int(len(emg_data) / nchans), nchans))
+    emg_data = emg_data.astype(float)  # needed otherwise you just get an integer from the bits to microvolt division
+    print(f"EMG data shape: {emg_data.shape}")
+
+    # convert the data from bits to microvolts
+    print("Converting data from bits to microvolts...")
+    for i in range(nchans):
+        emg_data[i, :] = (np.dot(emg_data[i, :], 5000)) / (2 ** float(nADbit))  # np.dot is faster than *
+    print("Conversion complete")
+
+    # create a dictionary containing all relevant signal parameters and data
+    signal = dict(
+        data=emg_data,
+        fsamp=fsamp,
+        nchans=nchans,
+        ngrids=ngrids,
+        nneedles=nneedles,
+        nelectrodes=nelectrodes,
+        electrodes=electrode_names[: nneedles + ngrids],
+        muscles=muscle_names[: nneedles + ngrids],
+    )  # discard the other muscle and grid entries, not relevant
+    print(f"Signal dictionary created with {len(signal)} keys")
+
+    # if the signals were recorded with a feedback generated by OTBiolab+, get the target and the path performed by the participant
+    if emg_obj.ref_exist:
+        print("Reference signals exist, loading target and path data...")
+        # only opening the last two .sip files because the first is not needed for analysis
+        # would only need MSE between the participant path (file 2) and the target path (file 3)
+        ######## path #########
+        sip_files = glob.glob(f"{temp_dir}/*.sip")
+        print(f"Found {len(sip_files)} SIP files: {sip_files}")
+        _, path_label, target_label = sorted(sip_files)
+
+        with open(path_label) as file:
+            path = np.fromfile(file, dtype="float64")
+            path = path[: np.shape(emg_data)[1]]
+        print(f"Path data loaded, shape: {path.shape}")
+
+        ######## target ########
+        with open(target_label) as file:
+            target = np.fromfile(file, dtype="float64")
+            target = target[: np.shape(emg_data)[1]]
+        print(f"Target data loaded, shape: {target.shape}")
+
+        signal["path"] = path
+        signal["target"] = target
+        print("Added path and target to signal dictionary")
+
+    # delete the temp_tarholder directory since everything we need has been taken out of it
+    print(f"Cleaning up temporary directory {temp_dir}...")
+    for file_name in os.listdir(temp_dir):
+        file = os.path.join(temp_dir, file_name)
+        if os.path.isfile(file):
+            os.remove(file)
+
+    os.rmdir(temp_dir)
+    print("Temporary directory removed")
+
+    emg_obj.signal_dict = signal
+    emg_obj.decomp_dict = {}  # initialising this dictionary here for later use
+
+    # initialising a dictionary that is an empty nested list
+    emg_obj.mu_dict = dict(pulse_trains=[], discharge_times=[[] for item in range(1)])
+
+    return

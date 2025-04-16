@@ -10,6 +10,8 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QCheckBox,
     QGroupBox,
+    QScrollArea,
+    QTabWidget,
 )
 
 
@@ -72,10 +74,22 @@ def setup_control_panel(main_window):
 
     file_layout.addLayout(file_select_layout)
 
-    # Batch processing section
+    # Create tab widget for collapsible sections
+    main_window.tabs = QTabWidget()
+    main_window.tabs.setStyleSheet(
+        "QTabBar::tab { background-color: #262626; color: #f0f0f0; font-family: 'Poppins'; font-size: 14pt; padding: 8px; }"
+        "QTabBar::tab:selected { background-color: #404040; }"
+        "QTabWidget::pane { border: 1px solid #404040; }"
+    )
+
+    # Create the batch processing tab
+    batch_tab = QWidget()
+    batch_layout = QVBoxLayout(batch_tab)
+
+    # Batch processing content
     batch_group = QGroupBox("Batch Processing")
     batch_group.setStyleSheet("color: #8F9ED9; font-family: 'Poppins'; font-size: 18pt; font-weight: bold;")
-    batch_layout = QVBoxLayout(batch_group)
+    batch_content_layout = QVBoxLayout(batch_group)
 
     # Create batch processing buttons
     main_window.remove_outliers_btn = QPushButton("1 - Remove all the outliers")
@@ -108,16 +122,23 @@ def setup_control_panel(main_window):
     )
     main_window.remove_duplicates_between_btn.clicked.connect(main_window.remove_duplicates_between_grids_button_pushed)
 
-    batch_layout.addWidget(main_window.remove_outliers_btn)
-    batch_layout.addWidget(main_window.update_filters_btn)
-    batch_layout.addWidget(main_window.remove_flagged_btn)
-    batch_layout.addWidget(main_window.remove_duplicates_within_btn)
-    batch_layout.addWidget(main_window.remove_duplicates_between_btn)
+    batch_content_layout.addWidget(main_window.remove_outliers_btn)
+    batch_content_layout.addWidget(main_window.update_filters_btn)
+    batch_content_layout.addWidget(main_window.remove_flagged_btn)
+    batch_content_layout.addWidget(main_window.remove_duplicates_within_btn)
+    batch_content_layout.addWidget(main_window.remove_duplicates_between_btn)
 
-    # Visualization section
+    batch_layout.addWidget(batch_group)
+    batch_layout.addStretch()
+
+    # Create visualization tab
+    viz_tab = QWidget()
+    viz_layout = QVBoxLayout(viz_tab)
+
+    # Visualization content
     viz_group = QGroupBox("Visualization")
     viz_group.setStyleSheet("color: #61C7BF; font-family: 'Poppins'; font-size: 18pt; font-weight: bold;")
-    viz_layout = QVBoxLayout(viz_group)
+    viz_content_layout = QVBoxLayout(viz_group)
 
     reference_layout = QHBoxLayout()
     reference_label = QLabel("Reference")
@@ -149,9 +170,54 @@ def setup_control_panel(main_window):
     )
     main_window.plot_firingrates_btn.clicked.connect(main_window.plot_mu_firingrates_button_pushed)
 
-    viz_layout.addLayout(reference_layout)
-    viz_layout.addWidget(main_window.plot_spiketrains_btn)
-    viz_layout.addWidget(main_window.plot_firingrates_btn)
+    viz_content_layout.addLayout(reference_layout)
+    viz_content_layout.addWidget(main_window.plot_spiketrains_btn)
+    viz_content_layout.addWidget(main_window.plot_firingrates_btn)
+
+    viz_layout.addWidget(viz_group)
+    viz_layout.addStretch()
+
+    # Create MU selection tab
+    mu_tab = QWidget()
+    mu_layout = QVBoxLayout(mu_tab)
+
+    # MU selection content
+    mu_group = QGroupBox("Motor Unit Selection")
+    mu_group.setStyleSheet("color: #f0f0f0; font-family: 'Poppins'; font-size: 18pt; font-weight: bold;")
+    mu_content_layout = QVBoxLayout(mu_group)
+
+    # Create a scroll area for MU checkboxes
+    scroll_area = QScrollArea()
+    scroll_area.setWidgetResizable(True)
+    scroll_area.setStyleSheet("background-color: #262626; border: none;")
+
+    checkbox_container = QWidget()
+    main_window.mu_checkbox_layout = QVBoxLayout(checkbox_container)
+    main_window.mu_checkboxes = []  # Store references to checkboxes
+
+    # Initially add a label indicating no MUs
+    no_mu_label = QLabel("No MUs loaded")
+    no_mu_label.setStyleSheet("color: #f0f0f0; font-family: 'Poppins'; font-size: 16pt;")
+    main_window.mu_checkbox_layout.addWidget(no_mu_label)
+    main_window.mu_checkbox_layout.addStretch()
+
+    scroll_area.setWidget(checkbox_container)
+    mu_content_layout.addWidget(scroll_area)
+
+    # Add flag button in the MU selection tab
+    main_window.flag_mu_btn = QPushButton("Flag selected MU(s) for deletion")
+    main_window.flag_mu_btn.setStyleSheet(
+        "color: #FF0000; background-color: #262626; font-family: 'Poppins'; font-size: 18pt;"
+    )
+    main_window.flag_mu_btn.clicked.connect(main_window.flag_mu_for_deletion_button_pushed)
+    mu_content_layout.addWidget(main_window.flag_mu_btn)
+
+    mu_layout.addWidget(mu_group)
+
+    # Add the tabs to the tab widget
+    main_window.tabs.addTab(mu_tab, "MU Selection")
+    main_window.tabs.addTab(batch_tab, "Batch Processing")
+    main_window.tabs.addTab(viz_tab, "Visualization")
 
     # Save section
     save_group = QGroupBox("Save the Edition")
@@ -168,62 +234,14 @@ def setup_control_panel(main_window):
 
     # Add all sections to control panel
     control_layout.addWidget(file_group)
-    control_layout.addWidget(batch_group)
-    control_layout.addWidget(viz_group)
+    control_layout.addWidget(main_window.tabs, 1)  # Give the tabs a stretch factor
     control_layout.addWidget(save_group)
-    control_layout.addStretch()
 
 
 def setup_display_panel(main_window):
     """Set up the display panel with all controls and plots."""
     main_window.display_panel = QWidget()
     display_layout = QVBoxLayout(main_window.display_panel)
-
-    # MU selection toolbar
-    mu_toolbar = QWidget()
-    mu_toolbar_layout = QHBoxLayout(mu_toolbar)
-
-    mu_label = QLabel("MU displayed #")
-    mu_label.setStyleSheet("color: #f0f0f0; font-family: 'Poppins'; font-size: 24pt; font-weight: bold;")
-
-    main_window.mu_dropdown = QComboBox()
-    main_window.mu_dropdown.setEnabled(False)
-    main_window.mu_dropdown.setStyleSheet(
-        "color: #f0f0f0; background-color: #262626; font-family: 'Poppins'; font-size: 18pt;"
-    )
-    main_window.mu_dropdown.currentIndexChanged.connect(main_window.mu_displayed_dropdown_value_changed)
-    main_window.mu_dropdown.addItem("No MUs")
-
-    main_window.flag_mu_btn = QPushButton("Flag MU for deletion")
-    main_window.flag_mu_btn.setStyleSheet(
-        "color: #FF0000; background-color: #262626; font-family: 'Poppins'; font-size: 18pt;"
-    )
-    main_window.flag_mu_btn.clicked.connect(main_window.flag_mu_for_deletion_button_pushed)
-
-    main_window.remove_outliers_single_btn = QPushButton("Remove outliers")
-    main_window.remove_outliers_single_btn.setStyleSheet(
-        "color: #f0f0f0; background-color: #262626; font-family: 'Poppins'; font-size: 18pt;"
-    )
-    main_window.remove_outliers_single_btn.clicked.connect(main_window.remove_outliers_button_pushed)
-
-    main_window.undo_btn = QPushButton("Undo")
-    main_window.undo_btn.setStyleSheet(
-        "color: #63D412; background-color: #262626; font-family: 'Poppins'; font-size: 18pt;"
-    )
-    main_window.undo_btn.clicked.connect(main_window.undo_button_pushed)
-
-    main_window.sil_info = QLineEdit()
-    main_window.sil_info.setReadOnly(True)
-    main_window.sil_info.setStyleSheet(
-        "color: #ffffff; background-color: #262626; font-family: 'Poppins'; font-size: 18pt;"
-    )
-
-    mu_toolbar_layout.addWidget(mu_label)
-    mu_toolbar_layout.addWidget(main_window.mu_dropdown)
-    mu_toolbar_layout.addWidget(main_window.flag_mu_btn)
-    mu_toolbar_layout.addWidget(main_window.remove_outliers_single_btn)
-    mu_toolbar_layout.addWidget(main_window.undo_btn)
-    mu_toolbar_layout.addWidget(main_window.sil_info)
 
     # Action buttons
     action_buttons = QWidget()
@@ -265,12 +283,26 @@ def setup_display_panel(main_window):
     )
     main_window.extend_mu_filter_btn.clicked.connect(main_window.extend_mu_filter_button_pushed)
 
+    main_window.remove_outliers_single_btn = QPushButton("Remove outliers")
+    main_window.remove_outliers_single_btn.setStyleSheet(
+        "color: #f0f0f0; background-color: #262626; font-family: 'Poppins'; font-size: 18pt;"
+    )
+    main_window.remove_outliers_single_btn.clicked.connect(main_window.remove_outliers_button_pushed)
+
+    main_window.undo_btn = QPushButton("Undo")
+    main_window.undo_btn.setStyleSheet(
+        "color: #63D412; background-color: #262626; font-family: 'Poppins'; font-size: 18pt;"
+    )
+    main_window.undo_btn.clicked.connect(main_window.undo_button_pushed)
+
     action_layout.addWidget(main_window.add_spikes_btn)
     action_layout.addWidget(main_window.delete_spikes_btn)
     action_layout.addWidget(main_window.delete_dr_btn)
     action_layout.addWidget(main_window.lock_spikes_btn)
     action_layout.addWidget(main_window.update_mu_filter_btn)
     action_layout.addWidget(main_window.extend_mu_filter_btn)
+    action_layout.addWidget(main_window.remove_outliers_single_btn)
+    action_layout.addWidget(main_window.undo_btn)
 
     # Navigation buttons
     nav_buttons = QWidget()
@@ -305,7 +337,23 @@ def setup_display_panel(main_window):
     nav_layout.addWidget(main_window.zoom_out_btn)
     nav_layout.addWidget(main_window.scroll_right_btn)
 
-    # Plots
+    # SIL info display
+    main_window.sil_info = QLineEdit()
+    main_window.sil_info.setReadOnly(True)
+    main_window.sil_info.setStyleSheet(
+        "color: #ffffff; background-color: #262626; font-family: 'Poppins'; font-size: 18pt;"
+    )
+
+    # Create a scroll area for plots when multiple MUs are selected
+    main_window.plots_scroll_area = QScrollArea()
+    main_window.plots_scroll_area.setWidgetResizable(True)
+    main_window.plots_scroll_area.setStyleSheet("background-color: #262626; border: none;")
+
+    main_window.plots_container = QWidget()
+    main_window.plots_layout = QVBoxLayout(main_window.plots_container)
+    main_window.plots_scroll_area.setWidget(main_window.plots_container)
+
+    # Individual plots
     main_window.sil_plot = pg.PlotWidget()
     main_window.sil_plot.setBackground("#262626")
     main_window.sil_plot.setLabel("left", "SIL")
@@ -333,10 +381,13 @@ def setup_display_panel(main_window):
     main_window.dr_plot.getAxis("left").setTextPen(pg.mkPen(color="#f0f0f0"))
     main_window.dr_plot.getAxis("bottom").setTextPen(pg.mkPen(color="#f0f0f0"))
 
-    # Add plots and controls to the display panel
-    display_layout.addWidget(mu_toolbar)
-    display_layout.addWidget(main_window.sil_plot, 1)  # The 1 is the stretch factor
-    display_layout.addWidget(main_window.spiketrain_plot, 3)
-    display_layout.addWidget(main_window.dr_plot, 2)
+    # Store individual plots in plots_layout
+    main_window.plots_layout.addWidget(main_window.sil_plot)
+    main_window.plots_layout.addWidget(main_window.spiketrain_plot)
+    main_window.plots_layout.addWidget(main_window.dr_plot)
+
+    # Add everything to the display panel
+    display_layout.addWidget(main_window.sil_info)
+    display_layout.addWidget(main_window.plots_scroll_area, 1)  # Give the plots area a stretch factor
     display_layout.addWidget(action_buttons)
     display_layout.addWidget(nav_buttons)
