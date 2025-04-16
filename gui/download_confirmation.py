@@ -81,7 +81,7 @@ class ExportCompleteWidget(QWidget):
         return card, card_layout
 
     def _create_return_button(self):
-        return_button = QPushButton(" Return to Export Setup"); return_button.setIcon(get_icon(QStyle.SP_ArrowLeft)); return_button.setIconSize(QSize(16, 16)); return_button.setCursor(Qt.PointingHandCursor); return_button.setFont(QFont("Arial", 9))
+        return_button = QPushButton(" 🡸 Return to Export Setup"); return_button.setCursor(Qt.PointingHandCursor); return_button.setFont(QFont("Arial", 9))
         return_button.setStyleSheet(f""" QPushButton {{ color: {self.colors['text_secondary']}; background-color: transparent; border: none; text-align: left; padding: 5px 0px; }} QPushButton:hover {{ color: {self.colors['text_primary']}; text-decoration: underline; }} """)
         return_button.clicked.connect(self.handle_return) # Connect to internal handler
         return return_button
@@ -99,21 +99,82 @@ class ExportCompleteWidget(QWidget):
         return confirm_card
 
     def _create_download_row(self, filename, filesize):
-        download_frame = QFrame(); download_frame.setObjectName("downloadRowComplete") # Unique name
-        download_frame.setStyleSheet(f""" #downloadRowComplete {{ background-color: {self.colors['download_row_bg']}; border: 1px solid {self.colors['download_row_border']}; border-radius: 5px; padding: 10px 12px; }} #downloadRowComplete > * {{ background-color: transparent; border: none; }} """)
-        row_layout = QHBoxLayout(download_frame); row_layout.setContentsMargins(0,0,0,0); row_layout.setSpacing(10)
-        icon_label = QLabel(); icon_pixmap = get_icon(QStyle.SP_FileIcon).pixmap(QSize(18, 18)); icon_label.setPixmap(icon_pixmap); icon_label.setFixedSize(QSize(18, 18)); icon_label.setStyleSheet("margin-top: 2px;")
-        info_layout = QVBoxLayout(); info_layout.setSpacing(1); info_layout.setContentsMargins(0,0,0,0)
-        # Store references to labels
-        self._download_filename_label = QLabel(filename); self._download_filename_label.setFont(QFont("Arial", 10, QFont.Bold)); self._download_filename_label.setStyleSheet(f"color: {self.colors['text_primary']};")
-        self._download_filesize_label = QLabel(filesize); self._download_filesize_label.setFont(QFont("Arial", 9)); self._download_filesize_label.setStyleSheet(f"color: {self.colors['text_secondary']};")
-        info_layout.addWidget(self._download_filename_label); info_layout.addWidget(self._download_filesize_label)
-        row_layout.addWidget(icon_label); row_layout.addLayout(info_layout); row_layout.addStretch(1)
-        download_button = QPushButton("Download"); download_button.setFont(QFont("Arial", 9, QFont.Bold)); download_button.setIcon(get_icon(QStyle.SP_ArrowDown)); download_button.setIconSize(QSize(14, 14)); download_button.setMinimumHeight(30); download_button.setCursor(Qt.PointingHandCursor)
-        download_button.setStyleSheet(f""" QPushButton {{ background-color: {self.colors['button_dark_bg']}; color: {self.colors['button_dark_text']}; border: none; border-radius: 5px; padding: 6px 15px; }} QPushButton:hover {{ background-color: {self.colors['button_dark_hover']}; }} QPushButton:pressed {{ background-color: {self.colors['button_dark_bg']}; }} """)
-        download_button.clicked.connect(self.handle_main_download) # Connect to internal handler
+        download_frame = QFrame()
+        download_frame.setObjectName("downloadRowComplete")  # Unique name
+        download_frame.setStyleSheet(f"""
+            #downloadRowComplete {{
+                background-color: {self.colors['download_row_bg']};
+                border: 1px solid {self.colors['download_row_border']};
+                border-radius: 5px;
+                padding: 10px 12px;
+            }}
+            #downloadRowComplete > * {{
+                background-color: transparent;
+                border: none;
+            }}
+        """)
+        row_layout = QHBoxLayout(download_frame)
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.setSpacing(10)
+
+        icon_label = QLabel()
+        icon_pixmap = get_icon(QStyle.SP_FileIcon).pixmap(QSize(18, 18))
+        icon_label.setPixmap(icon_pixmap)
+        icon_label.setFixedSize(QSize(18, 18))
+        icon_label.setStyleSheet("margin-top: 2px;")
+
+        info_layout = QVBoxLayout()
+        info_layout.setSpacing(1)
+        info_layout.setContentsMargins(0, 0, 0, 0)
+
+        self._download_filename_label = QLabel(filename)
+        self._download_filename_label.setFont(QFont("Arial", 10, QFont.Bold))
+        self._download_filename_label.setStyleSheet(f"color: {self.colors['text_primary']};")
+
+        self._download_filesize_label = QLabel(filesize)
+        self._download_filesize_label.setFont(QFont("Arial", 9))
+        self._download_filesize_label.setStyleSheet(f"color: {self.colors['text_secondary']};")
+
+        info_layout.addWidget(self._download_filename_label)
+        info_layout.addWidget(self._download_filesize_label)
+
+        row_layout.addWidget(icon_label)
+        row_layout.addLayout(info_layout)
+        row_layout.addStretch(1)
+
+        download_button = QPushButton("Download")
+        download_button.setIcon(QIcon("cloud_download.svg"))
+        download_button.setStyleSheet("color: white;")
+        download_button.setIconSize(QSize(24, 24))
+        download_button.setFont(QFont("Arial", 9, QFont.Bold))
+        download_button.setMinimumHeight(30)
+        download_button.setCursor(Qt.PointingHandCursor)
+
+        # Updated button style
+        download_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: #3CB371; 
+                color: white;
+                border: none;
+                border-radius: 5px;
+                padding: 6px 15px;
+            }}
+            QPushButton:hover {{
+                background-color: #20c997;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }}
+            QPushButton:pressed {{
+                background-color: {self.colors['button_dark_bg']};
+                padding-left: 7px;
+                padding-top: 7px;
+            }}
+        """)
+
+        download_button.clicked.connect(self.handle_main_download)
         row_layout.addWidget(download_button)
+
         return download_frame
+
 
     def _create_recent_exports_section(self):
         recent_card, recent_layout = self._create_styled_card()
@@ -127,13 +188,15 @@ class ExportCompleteWidget(QWidget):
         item_widget = QFrame(); item_widget.setObjectName("recentExportItemComplete") # Unique name
         item_widget.setStyleSheet(f""" #recentExportItemComplete {{ background-color: transparent; border: none; border-radius: 4px; padding: 6px 0px; }} #recentExportItemComplete:hover {{ background-color: {self.colors['download_row_bg']}; }} #recentExportItemComplete > * {{ background-color: transparent; border: none; }} """)
         item_layout = QHBoxLayout(item_widget); item_layout.setContentsMargins(5, 0, 5, 0); item_layout.setSpacing(12)
-        icon_label = QLabel(); icon_pixmap = get_icon(QStyle.SP_FileIcon).pixmap(QSize(18, 18)); icon_label.setPixmap(icon_pixmap); icon_label.setFixedSize(QSize(18, 18)); icon_label.setStyleSheet("margin-top: 1px;")
+        icon_label = QLabel(); icon_label.setPixmap(QPixmap("fileIcon.svg").scaled(QSize(17, 17), Qt.KeepAspectRatio, Qt.SmoothTransformation)); icon_label.setFixedSize(QSize(18, 18))
+        icon_label.setStyleSheet("margin-top: 1px;")
+        item_layout.addWidget(icon_label)
         item_layout.addWidget(icon_label)
         info_widget = QWidget(); info_layout = QVBoxLayout(info_widget); info_layout.setContentsMargins(0,0,0,0); info_layout.setSpacing(1)
         filename_label = QLabel(filename); filename_label.setFont(QFont("Arial", 10)); filename_label.setStyleSheet(f"color: {self.colors['text_primary']};")
         metadata_label = QLabel(metadata); metadata_label.setFont(QFont("Arial", 9)); metadata_label.setStyleSheet(f"color: {self.colors['text_secondary']};")
         info_layout.addWidget(filename_label); info_layout.addWidget(metadata_label); item_layout.addWidget(info_widget, 1)
-        download_button = QPushButton(); download_button.setIcon(get_icon(QStyle.SP_ArrowDown)); download_button.setIconSize(QSize(16, 16)); download_button.setFixedSize(30, 30); download_button.setCursor(Qt.PointingHandCursor); download_button.setToolTip(f"Download {filename}")
+        download_button = QPushButton(""); download_button.setIcon(QIcon("cloud_download.svg"));download_button.setIconSize(QSize(24, 24)); download_button.setFont(QFont("Arial", 13)); download_button.setFixedSize(30, 30); download_button.setCursor(Qt.PointingHandCursor); download_button.setToolTip(f"Download {filename}")
         download_button.setStyleSheet(f""" QPushButton {{ background-color: transparent; border: none; border-radius: 4px; padding: 0px; }} QPushButton:hover {{ background-color: {self.colors['download_btn_hover']}; }} QPushButton:pressed {{ background-color: {self.colors['download_btn_pressed']}; }} """)
         download_button.clicked.connect(lambda checked=False, fn=filename: self.handle_recent_download(fn)) # Connect to internal handler
         item_layout.addWidget(download_button)

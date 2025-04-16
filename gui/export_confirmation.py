@@ -162,26 +162,65 @@ class ExportConfirmWidget(QWidget):
             list_layout.addWidget(item_label); self.include_item_labels.append(item_label)
         details_layout.addLayout(list_layout); details_layout.addStretch(1)
         return details_frame
-
+    
     def _create_action_buttons(self):
         """Creates the layout for the Export and Cancel buttons."""
-        button_layout = QHBoxLayout(); button_layout.setSpacing(10); button_layout.setContentsMargins(0, 10, 0, 0)
-        export_button = QPushButton("Confirm and Export"); export_button.setFont(QFont("Arial", 10, QFont.Bold)); export_button.setIcon(get_icon(QStyle.SP_DialogSaveButton)); export_button.setIconSize(QSize(16, 16)); export_button.setMinimumHeight(36); export_button.setCursor(Qt.PointingHandCursor)
-        export_button.setStyleSheet(f""" QPushButton {{ background-color: {self.colors['button_dark_bg']}; color: {self.colors['button_dark_text']}; border: none; border-radius: 5px; padding: 8px 18px; }} QPushButton:hover {{ background-color: {self.colors['button_dark_hover']}; }} QPushButton:pressed {{ background-color: {self.colors['button_dark_bg']}; }} """)
-        export_button.clicked.connect(self.handle_export) # Connect to internal handler first
+        button_layout = QHBoxLayout()
+        button_layout.setSpacing(14)
+        button_layout.setContentsMargins(0, 20, 0, 0)
 
-        cancel_button = QPushButton("Back"); cancel_button.setFont(QFont("Arial", 10)); cancel_button.setMinimumHeight(36); cancel_button.setCursor(Qt.PointingHandCursor)
-        cancel_button.setIcon(get_icon(QStyle.SP_ArrowLeft)) # Back icon
-        cancel_button.setIconSize(QSize(16,16))
-        cancel_button.setStyleSheet(f""" QPushButton {{ background-color: {self.colors['button_light_bg']}; color: {self.colors['button_light_text']}; border: 1px solid {self.colors['button_light_border']}; border-radius: 5px; padding: 8px 18px; }} QPushButton:hover {{ background-color: {self.colors['button_light_hover_bg']}; border-color: #adb5bd; }} QPushButton:pressed {{ background-color: #e9ecef; }} """)
-        cancel_button.clicked.connect(self.handle_cancel) # Connect to internal handler
+        # Confirm and Export button (Primary)
+        export_button = QPushButton("✔ Confirm and Export")
+        export_button.setFont(QFont("Segoe UI", 10))
+        export_button.setIconSize(QSize(20, 20))
+        export_button.setMinimumHeight(42)
+        export_button.setCursor(Qt.PointingHandCursor)
+        export_button.setStyleSheet("""
+            QPushButton {
+                background-color: #1d3557;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 10px 24px;
+            }
+            QPushButton:hover {
+                background-color: #457b9d;
+            }
+            QPushButton:pressed {
+                background-color: #1d3557;
+            }
+        """)
+        export_button.clicked.connect(self.handle_export)
 
-        # Align buttons as needed (e.g., push right)
+        # Cancel / Back button (Secondary)
+        cancel_button = QPushButton("🡸 Back")
+        cancel_button.setFont(QFont("Segoe UI", 10))
+        cancel_button.setMinimumHeight(42)
+        cancel_button.setCursor(Qt.PointingHandCursor)
+        cancel_button.setStyleSheet("""
+            QPushButton {
+                background-color: #1d3557;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 10px 24px;
+            }
+            QPushButton:hover {
+                background-color: #457b9d;
+                border-color: #adb5bd;
+            }
+            QPushButton:pressed {
+                background-color: #1d3557;
+            }
+        """)
+        cancel_button.clicked.connect(self.handle_cancel)
+
+        # Add spacing and align
         button_layout.addStretch(1)
         button_layout.addWidget(cancel_button)
         button_layout.addWidget(export_button)
         return button_layout
-
+    
     def set_export_details(self, selected_format_text, filename):
         """Sets the display labels based on details from the previous screen."""
         self.format_display_label.setText(selected_format_text)
