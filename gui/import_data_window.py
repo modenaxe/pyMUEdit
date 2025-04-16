@@ -40,6 +40,20 @@ except ImportError:
     import navigator
 
 
+# Add a simple offline_EMG class to work with open_otb
+class offline_EMG:
+    def __init__(self):
+        self.save_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp")
+        self.ref_exist = False
+        self.signal_dict = None
+        self.decomp_dict = None
+        self.mu_dict = None
+
+        # Create save directory if it doesn't exist
+        if not os.path.exists(self.save_dir):
+            os.makedirs(self.save_dir)
+
+
 class ImportDataWindow(QWidget):
     # Signal to notify the main window to return to dashboard
     return_to_dashboard_requested = pyqtSignal()
@@ -59,6 +73,7 @@ class ImportDataWindow(QWidget):
         self.pathname = None
         self.imported_signal = None  # Will store the imported signal data
         self.threads = []  # Keep reference to worker threads
+        self.emg_obj = offline_EMG()  # Initialize the offline_EMG object
 
         # Define color scheme
         self.colors = {
@@ -475,10 +490,29 @@ class ImportDataWindow(QWidget):
         ext = os.path.splitext(file)[1].lower()
         if ext == ".otb+":
             try:
-                config, signal, savename = open_otb(path, file, 0)
-                if savename:
-                    self.save_mat_in_background(savename, {"signal": signal}, True)
+                # Construct the full file path
+                full_path = os.path.join(path, file)
+
+                # Create a new EMG object for this file
+                self.emg_obj = offline_EMG()
+
+                # Call the open_otb function with the correct parameters
+                open_otb(self.emg_obj, full_path)
+
+                # Get the signal from the EMG object
+                signal = self.emg_obj.signal_dict
+
+                # Store the imported signal
                 self.imported_signal = signal
+
+                # Create a default save name for .mat files
+                savename = os.path.join(path, file + "_processed.mat")
+
+                # Save the data as a .mat file in the background
+                if signal:
+                    self.save_mat_in_background(savename, {"signal": signal}, True)
+
+                # Update the UI
                 self.preview_message.setText(
                     f"Successfully loaded {file}\nFile contains EMG data with {signal['data'].shape[0]} channels"
                 )
