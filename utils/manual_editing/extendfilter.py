@@ -1,17 +1,16 @@
 import numpy as np
 from scipy import signal
 from sklearn.cluster import KMeans
-from utils.decomposition.bandpassingals import bandpassingals
-from utils.decomposition.extend import extend
-from utils.decomposition.whiteesig import whiteesig
-from utils.manual_editing.pcaesig import pcaesig
+from utils.decomposition.bandpass_filter import bandpass_filter
+from utils.decomposition.extend_emg import extend_emg
+from utils.decomposition.whiten_emg import whiten_emg
 
 
 def extendfilter(EMG, EMGmask, PulseT, distime, idx, fsamp, EMGtype):
     nbextchan = 1000
     mask = EMGmask == 0
     EMG = EMG[mask][:, idx]
-    EMG = bandpassingals(EMG, fsamp, EMGtype)
+    EMG = bandpass_filter(EMG, fsamp, EMGtype)
 
     # Find spikes in the window (excluding edges)
     edge_samples = round(0.1 * fsamp)
@@ -24,15 +23,15 @@ def extendfilter(EMG, EMGmask, PulseT, distime, idx, fsamp, EMGtype):
 
         # Extend the EMG signal
         exFactor1 = round(nbextchan / EMG.shape[0])
-        eSIG = extend(EMG, exFactor1)
+        extended_template = np.zeros([EMG.shape[0] * exFactor1, EMG.shape[1] + exFactor1 - 1])
+        eSIG = extend_emg(extended_template, EMG, exFactor1)
 
         # Create covariance matrix and its pseudoinverse
         ReSIG = np.dot(eSIG, eSIG.T) / eSIG.shape[1]
         iReSIGt = np.linalg.pinv(ReSIG)
 
         # Perform PCA and whitening
-        E, D = pcaesig(eSIG)
-        wSIG, _, dewhiteningMatrix = whiteesig(eSIG, E, D)  # type:ignore
+        wSIG, _, dewhiteningMatrix = whiten_emg(eSIG)
 
         # Calculate the filter as the sum of whitened signal at spike times
         MUFilters = np.sum(wSIG[:, spikes2], axis=1).reshape(-1, 1)
