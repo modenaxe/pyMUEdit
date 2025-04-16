@@ -4,10 +4,24 @@ import traceback
 import numpy as np
 import scipy.io as sio
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
-    QLabel, QPushButton, QComboBox, QLineEdit, QProgressBar, 
-    QFrame, QGridLayout, QCheckBox, QRadioButton, QSpinBox,
-    QDoubleSpinBox, QScrollArea, QFileDialog
+    QApplication,
+    QMainWindow,
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QComboBox,
+    QLineEdit,
+    QProgressBar,
+    QFrame,
+    QGridLayout,
+    QCheckBox,
+    QRadioButton,
+    QSpinBox,
+    QDoubleSpinBox,
+    QScrollArea,
+    QFileDialog,
 )
 from PyQt5.QtCore import Qt, QSize, pyqtSignal, QThread
 from PyQt5.QtGui import QIcon, QFont
@@ -15,6 +29,7 @@ from PyQt5.QtGui import QIcon, QFont
 # Add project root to path
 import sys
 from pathlib import Path
+
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
@@ -24,14 +39,28 @@ import pyqtgraph as pg
 # Import workers from the root directory
 from SaveMatWorker import SaveMatWorker
 from DecompositionWorker import DecompositionWorker
-from HDEMGdecomposition import prepare_parameters
 
 # Import UI related modules from utils
-from utils.config_and_input.openOTBplus import openOTBplus
+from utils.config_and_input.open_otb import open_otb
+from utils.config_and_input.prepare_parameters import prepare_parameters
 from utils.config_and_input.segmentsession import SegmentSession
 
 # Import MUeditManual for editing mode
 from MUeditManual import MUeditManual
+
+
+# Define offline_EMG class to work with the open_otb function
+class offline_EMG:
+    def __init__(self):
+        self.save_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp")
+        self.ref_exist = False
+        self.signal_dict = None
+        self.decomp_dict = None
+        self.mu_dict = None
+
+        # Create save directory if it doesn't exist
+        if not os.path.exists(self.save_dir):
+            os.makedirs(self.save_dir)
 
 
 class DecompositionApp(QMainWindow):
@@ -39,7 +68,7 @@ class DecompositionApp(QMainWindow):
         super().__init__()
         self.setWindowTitle("Algorithm Selection & Decomposition")
         self.setGeometry(100, 100, 1200, 800)
-        
+
         # Initialize variables
         self.filename = None
         self.pathname = None
@@ -55,146 +84,147 @@ class DecompositionApp(QMainWindow):
         self.threads = []
         self.iteration_counter = 0
         self.decomposition_result = None  # Store the decomposition result
-        
+        self.emg_obj = None  # Will store the EMG object
+
         # Main widget and layout
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.main_layout = QHBoxLayout(self.central_widget)
-        
+
         # Create the left panel for settings
         self.setup_left_panel()
-        
+
         # Create the center panel for visualization
         self.setup_center_panel()
-        
+
         # Create the right panel for status and results
         self.setup_right_panel()
-        
+
     def setup_left_panel(self):
         left_panel = QWidget()
         left_panel.setMaximumWidth(250)
         left_layout = QVBoxLayout(left_panel)
-        
+
         # Algorithm Selection
         algo_label = QLabel("Algorithm Selection")
         self.algo_combo = QComboBox()
         self.algo_combo.addItem("Fast ICA")
         self.algo_combo.addItem("Other Algorithm 1")
         self.algo_combo.addItem("Other Algorithm 2")
-        
+
         # File Selection
         self.select_file_button = QPushButton("Select File")
         self.select_file_button.clicked.connect(self.select_file_button_pushed)
-        
+
         self.edit_field_saving_3 = QLineEdit()
         self.edit_field_saving_3.setReadOnly(True)
-        
+
         # Processing Options
         processing_label = QLabel("Processing Options")
-        
+
         # Check EMG Quality
         check_emg_label = QLabel("Check EMG Quality")
         self.check_emg_dropdown = QComboBox()
         self.check_emg_dropdown.addItem("Yes")
         self.check_emg_dropdown.addItem("No")
-        
+
         # COV Filter
         cov_filter_label = QLabel("COV Filter")
         self.cov_filter_dropdown = QComboBox()
         self.cov_filter_dropdown.addItem("Yes")
         self.cov_filter_dropdown.addItem("No")
-        
+
         # Reference
         reference_label = QLabel("Reference")
         self.reference_dropdown = QComboBox()
         self.reference_dropdown.addItem("EMG amplitude")
         self.reference_dropdown.addItem("Target")
-        
+
         # Set Configuration Button
         self.set_configuration_button = QPushButton("Set Configuration")
         self.set_configuration_button.clicked.connect(self.set_configuration_button_pushed)
         self.set_configuration_button.setEnabled(False)
-        
+
         # Segment Session
         self.segment_session_button = QPushButton("Segment Session")
         self.segment_session_button.clicked.connect(self.segment_session_button_pushed)
-        
+
         # Contrast Function
         contrast_label = QLabel("Contrast Function")
         self.contrast_function_dropdown = QComboBox()
         self.contrast_function_dropdown.addItem("Skew")
         self.contrast_function_dropdown.addItem("Logcosh")
         self.contrast_function_dropdown.addItem("Kurtosis")
-        
+
         # Initialisation
         init_label = QLabel("Initialisation")
         self.initialisation_dropdown = QComboBox()
         self.initialisation_dropdown.addItem("EMG max")
         self.initialisation_dropdown.addItem("Random")
-        
+
         # Peel Off
         peel_label = QLabel("Peel Off")
         self.peeloff_dropdown = QComboBox()
         self.peeloff_dropdown.addItem("Yes")
         self.peeloff_dropdown.addItem("No")
-        
+
         # Refine Motor Units
         refine_label = QLabel("Refine Motor Units")
         self.refine_mus_dropdown = QComboBox()
         self.refine_mus_dropdown.addItem("Yes")
         self.refine_mus_dropdown.addItem("No")
-        
+
         # Iterations and Windows
         iter_layout = QHBoxLayout()
         iter_label = QLabel("Iterations")
         self.number_iterations_field = QSpinBox()
         self.number_iterations_field.setValue(75)
         self.number_iterations_field.setRange(1, 1000)
-        
+
         windows_label = QLabel("Windows")
         self.number_windows_field = QSpinBox()
         self.number_windows_field.setValue(1)
         self.number_windows_field.setRange(1, 100)
-        
+
         iter_layout.addWidget(iter_label)
         iter_layout.addWidget(self.number_iterations_field)
         iter_layout.addWidget(windows_label)
         iter_layout.addWidget(self.number_windows_field)
-        
+
         # Threshold Target
         threshold_label = QLabel("Threshold Target")
         self.threshold_target_field = QDoubleSpinBox()
         self.threshold_target_field.setValue(0.8)
         self.threshold_target_field.setRange(0, 1)
         self.threshold_target_field.setSingleStep(0.1)
-        
+
         # Duplicate Threshold
         duplicate_label = QLabel("Duplicate Threshold")
         self.duplicate_threshold_field = QDoubleSpinBox()
         self.duplicate_threshold_field.setValue(0.3)
         self.duplicate_threshold_field.setRange(0, 1)
         self.duplicate_threshold_field.setSingleStep(0.1)
-        
+
         # SIL Threshold
         sil_label = QLabel("SIL Threshold")
         self.sil_threshold_field = QDoubleSpinBox()
         self.sil_threshold_field.setValue(0.9)
         self.sil_threshold_field.setRange(0, 1)
         self.sil_threshold_field.setSingleStep(0.1)
-        
+
         # COV Threshold
         cov_threshold_label = QLabel("COV Threshold")
         self.cov_threshold_field = QDoubleSpinBox()
         self.cov_threshold_field.setValue(0.5)
         self.cov_threshold_field.setRange(0, 1)
         self.cov_threshold_field.setSingleStep(0.1)
-        
+
         # Nb of extended channels
         channels_label = QLabel("Nb of extended channels")
         self.nb_extended_channels_field = QSpinBox()
         self.nb_extended_channels_field.setValue(1000)
         self.nb_extended_channels_field.setRange(10, 5000)
-        
+
         # Add all widgets to left layout
         left_layout.addWidget(algo_label)
         left_layout.addWidget(self.algo_combo)
@@ -229,53 +259,53 @@ class DecompositionApp(QMainWindow):
         left_layout.addWidget(channels_label)
         left_layout.addWidget(self.nb_extended_channels_field)
         left_layout.addStretch()
-        
+
         self.main_layout.addWidget(left_panel)
-        
+
     def setup_center_panel(self):
         center_panel = QWidget()
         center_layout = QVBoxLayout(center_panel)
-        
+
         # Status display field
         self.edit_field = QLineEdit()
         self.edit_field.setReadOnly(True)
         self.edit_field.setText("Ready")
-        
+
         # Decomposition Controls section
         controls_layout = QHBoxLayout()
         decomp_label = QLabel("Decomposition Controls")
         decomp_label.setFont(QFont("Arial", 10, QFont.Bold))
-        
+
         self.start_button = QPushButton("▶ Start Decomposition")
         self.start_button.setStyleSheet("background-color: #4CAF50; color: white; padding: 8px 16px;")
         self.start_button.clicked.connect(self.start_button_pushed)
-        
+
         controls_layout.addWidget(decomp_label)
         controls_layout.addStretch()
         controls_layout.addWidget(self.start_button)
-        
+
         # Signal Processing Visualization section
         signal_label = QLabel("Signal Processing Visualization")
         signal_label.setFont(QFont("Arial", 10, QFont.Bold))
-        
+
         # Signal visualization area using pyqtgraph
         self.ui_plot_reference = pg.PlotWidget()
-        self.ui_plot_reference.setBackground('w')  # White background
-        self.ui_plot_reference.setLabel('left', 'Amplitude')
-        self.ui_plot_reference.setLabel('bottom', 'Time (s)')
+        self.ui_plot_reference.setBackground("w")  # White background
+        self.ui_plot_reference.setLabel("left", "Amplitude")
+        self.ui_plot_reference.setLabel("bottom", "Time (s)")
         self.ui_plot_reference.showGrid(x=True, y=True)
-        
+
         # Motor Unit Outputs section
         motor_unit_label = QLabel("Motor Unit Outputs")
         motor_unit_label.setFont(QFont("Arial", 10, QFont.Bold))
-        
+
         # Motor unit visualization area using pyqtgraph
         self.ui_plot_pulsetrain = pg.PlotWidget()
-        self.ui_plot_pulsetrain.setBackground('w')  # White background
-        self.ui_plot_pulsetrain.setLabel('left', 'Amplitude')
-        self.ui_plot_pulsetrain.setLabel('bottom', 'Time (s)')
+        self.ui_plot_pulsetrain.setBackground("w")  # White background
+        self.ui_plot_pulsetrain.setLabel("left", "Amplitude")
+        self.ui_plot_pulsetrain.setLabel("bottom", "Time (s)")
         self.ui_plot_pulsetrain.showGrid(x=True, y=True)
-        
+
         # Add all widgets to center layout
         center_layout.addWidget(self.edit_field)
         center_layout.addLayout(controls_layout)
@@ -283,49 +313,49 @@ class DecompositionApp(QMainWindow):
         center_layout.addWidget(self.ui_plot_reference, stretch=3)
         center_layout.addWidget(motor_unit_label)
         center_layout.addWidget(self.ui_plot_pulsetrain, stretch=2)
-        
+
         self.main_layout.addWidget(center_panel, stretch=3)
-        
+
     def setup_right_panel(self):
         right_panel = QWidget()
         right_panel.setMaximumWidth(250)
         right_layout = QVBoxLayout(right_panel)
-        
+
         # Processing Status section
         status_label = QLabel("Processing Status")
-        
+
         self.status_progress = QProgressBar()
         self.status_progress.setValue(0)
-        
+
         self.status_text = QLabel("Ready")
-        
+
         # Analysis Results section
         results_label = QLabel("Analysis Results")
         results_label.setFont(QFont("Arial", 10, QFont.Bold))
-        
+
         self.motor_units_label = QLabel("Motor Units: --")
-        
+
         self.sil_value_label = QLabel("SIL: --")
-        
+
         self.cov_value_label = QLabel("CoV: --")
-        
+
         # Save Output button
         self.save_output_button = QPushButton("💾 Save Output")
         self.save_output_button.setEnabled(False)
         self.save_output_button.clicked.connect(self.save_output_to_location)
-        
+
         # Navigation section
         nav_label = QLabel("Navigation")
         nav_label.setFont(QFont("Arial", 10, QFont.Bold))
-        
+
         self.edit_mode_btn = QPushButton("✏️ Editing Mode")
         self.edit_mode_btn.clicked.connect(self.open_editing_mode)
         self.edit_mode_btn.setEnabled(False)
-        
+
         self.analysis_mode_btn = QPushButton("📊 Analysis Mode")
-        
+
         self.export_btn = QPushButton("📤 Export")
-        
+
         # Add all widgets to right layout
         right_layout.addWidget(status_label)
         right_layout.addWidget(self.status_progress)
@@ -342,49 +372,51 @@ class DecompositionApp(QMainWindow):
         right_layout.addWidget(self.analysis_mode_btn)
         right_layout.addWidget(self.export_btn)
         right_layout.addStretch()
-        
+
         self.main_layout.addWidget(right_panel)
-    
+
     def open_editing_mode(self):
         """Open the MUeditManual window for editing motor units"""
         if not self.pathname or not self.filename:
             self.edit_field.setText("No file selected for editing")
             return
-            
+
         try:
             # First check if the output file exists
             output_filename = os.path.join(self.pathname, self.filename + "_output_decomp.mat")
             if not os.path.exists(output_filename):
                 self.edit_field.setText(f"Output file {output_filename} not found")
                 return
-                
+
             # Load the data first to fix the structure
             data = sio.loadmat(output_filename)
             if "signal" not in data:
                 self.edit_field.setText("Invalid file format: 'signal' field not found")
                 return
-                
+
             signal = data["signal"]
-            
+
             # Create the proper data structure for MUeditManual
             edition_data = {
-                "time": np.linspace(0, signal[0, 0]["data"].shape[1] / signal[0, 0]["fsamp"][0, 0], signal[0, 0]["data"].shape[1]),
+                "time": np.linspace(
+                    0, signal[0, 0]["data"].shape[1] / signal[0, 0]["fsamp"][0, 0], signal[0, 0]["data"].shape[1]
+                ),
                 "Pulsetrain": [],
                 "Dischargetimes": {},
                 "silval": {},
-                "silvalcon": {}
+                "silvalcon": {},
             }
-            
+
             # Format the Pulsetrain data correctly
             # MUeditManual expects a list of 2D arrays (one per electrode)
             # Each 2D array should have shape (n_motor_units, signal_length)
             if "Pulsetrain" in signal[0, 0].dtype.names:
                 pulsetrain_data = signal[0, 0]["Pulsetrain"][0]
-                
+
                 for i in range(len(pulsetrain_data)):
                     # Get the pulse train for this electrode
                     electrode_pulses = pulsetrain_data[i]
-                    
+
                     # Check if it's already 2D
                     if electrode_pulses.ndim == 2:
                         edition_data["Pulsetrain"].append(electrode_pulses)
@@ -394,50 +426,50 @@ class DecompositionApp(QMainWindow):
                     else:
                         # Skip empty or invalid arrays
                         edition_data["Pulsetrain"].append(np.zeros((0, signal[0, 0]["data"].shape[1])))
-            
+
             # Format the Dischargetimes data correctly
             # MUeditManual expects a dictionary with (array_idx, mu_idx) tuple keys
             if "Dischargetimes" in signal[0, 0].dtype.names:
                 dischargetimes_data = signal[0, 0]["Dischargetimes"]
-                
+
                 for i in range(dischargetimes_data.shape[0]):
                     for j in range(dischargetimes_data.shape[1]):
                         # Get the discharge times array
                         dt = dischargetimes_data[i, j]
-                        
+
                         # Skip empty arrays
                         if isinstance(dt, np.ndarray) and dt.size > 0:
                             # Store with tuple key (array_idx, mu_idx)
                             edition_data["Dischargetimes"][(i, j)] = dt.flatten()
-            
+
             # Create a new .mat file with the fixed structure
             fixed_filename = os.path.join(self.pathname, self.filename + "_fixed_for_editing.mat")
-            
+
             # Create the structure expected by MUeditManual
             fixed_data = {
                 "signal": signal,  # Original signal data
-                "edition": edition_data  # Properly formatted edition data
+                "edition": edition_data,  # Properly formatted edition data
             }
-            
+
             # Use existing save_mat_in_background function to save the fixed data
             self.save_mat_in_background(fixed_filename, fixed_data, True)
-            
+
             # Update UI
             self.edit_field.setText(f"Preparing data for editing and opening editor...")
-            
+
             # Create the MUeditManual window
             self.mu_edit_window = MUeditManual()
-            
+
             # Show the window without preloading
             self.mu_edit_window.show()
-            
+
             # Suggest the file to open
             self.edit_field.setText(f"Editor opened. Please select {fixed_filename}")
-            
+
         except Exception as e:
             self.edit_field.setText(f"Error opening editing mode: {str(e)}")
             traceback.print_exc()
-    
+
     # Event handlers
     def save_mat_in_background(self, filename, data, compression=True):
         self.edit_field.setText("Saving data in background...")
@@ -480,14 +512,33 @@ class DecompositionApp(QMainWindow):
         ext = os.path.splitext(self.filename)[1]
         if ext == ".otb+":  # OT Biolab+
             try:
-                self.MUdecomp["config"], signal, savename = openOTBplus(self.pathname, self.filename, 1)
-                if self.MUdecomp["config"]:
+                # Create a new EMG object for this file
+                self.emg_obj = offline_EMG()
+
+                # Set reference existence based on any metadata if needed
+                self.emg_obj.ref_exist = True  # Or set based on some logic
+
+                # Build the full path to the file
+                full_file_path = os.path.join(self.pathname, self.filename)
+
+                # Call the open_otb function with the correct parameters
+                self.edit_field.setText(f"Loading file {self.filename}...")
+                open_otb(self.emg_obj, full_file_path)
+
+                # Get the signal from the EMG object
+                signal = self.emg_obj.signal_dict
+
+                if not signal:
+                    raise ValueError("No signal")
+
+                # Handle configuration UI if needed
+                if hasattr(self, "MUdecomp") and "config" in self.MUdecomp and self.MUdecomp["config"]:
                     self.MUdecomp["config"].hide()
                     self.set_configuration_button.setEnabled(True)
+                else:
+                    self.set_configuration_button.setEnabled(True)
 
-                if savename:
-                    self.save_mat_in_background(savename, {"signal": signal}, True)
-                    
+                # Update the reference dropdown with available signals
                 self.reference_dropdown.blockSignals(True)
                 self.reference_dropdown.clear()
 
@@ -513,15 +564,22 @@ class DecompositionApp(QMainWindow):
                         self.reference_dropdown.addItem(name)
                 else:
                     self.reference_dropdown.addItem("EMG amplitude")
-                
+
                 self.reference_dropdown.blockSignals(False)
-                
+
+                # Create a default save name for .mat files
+                savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
+
+                # Save the data as a .mat file in the background
+                self.save_mat_in_background(savename, {"signal": signal}, True)
+
+                # Update UI
+                self.edit_field.setText(f"Successfully loaded {self.filename}")
+
             except Exception as e:
                 self.edit_field.setText(f"Error loading file: {str(e)}")
+                traceback.print_exc()
                 return
-
-        savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
-        self.save_mat_in_background(savename, {"signal": signal}, True)
 
     def set_configuration_button_pushed(self):
         if "config" in self.MUdecomp and self.MUdecomp["config"]:
@@ -564,7 +622,7 @@ class DecompositionApp(QMainWindow):
         if not self.pathname or not self.filename:
             self.edit_field.setText("Please select a file first")
             return
-            
+
         # Get UI parameters
         ui_params = {
             "check_emg": self.check_emg_dropdown.currentText(),
@@ -603,7 +661,7 @@ class DecompositionApp(QMainWindow):
             self.edit_field.setText("Starting decomposition...")
             self.status_text.setText("Processing...")
             self.status_progress.setValue(10)
-            
+
             # Create and configure the worker thread
             self.decomp_worker = DecompositionWorker(signal, parameters)
             self.threads.append(self.decomp_worker)  # Keep a reference to prevent garbage collection
@@ -686,12 +744,12 @@ class DecompositionApp(QMainWindow):
                 for electrode_pulses in result["Pulsetrain"]:
                     if hasattr(electrode_pulses, "shape"):
                         total_mus += electrode_pulses.shape[0]
-                
+
         self.motor_units_label.setText(f"Motor Units: {total_mus}")
 
         if hasattr(self, "decomp_worker") and self.decomp_worker in self.threads:
             self.threads.remove(self.decomp_worker)
-            
+
     def on_decomposition_error(self, error_msg):
         """Handle errors during decomposition"""
         self.edit_field.setText(f"Error in decomposition: {error_msg}")
@@ -706,7 +764,7 @@ class DecompositionApp(QMainWindow):
         """Update progress information during decomposition"""
         self.edit_field.setText(message)
         self.status_text.setText(message.split("-")[0] if "-" in message else message)
-        
+
         if progress is not None and isinstance(progress, (int, float)):
             self.status_progress.setValue(int(progress))
         elif "Iteration" in message and "of" in message:
@@ -718,7 +776,7 @@ class DecompositionApp(QMainWindow):
                 self.status_progress.setValue(int(current / total * 100))
             except:
                 pass
-                
+
     def update_plots(self, time, target, plateau_coords, icasig=None, spikes=None, time2=None, sil=None, cov=None):
         """Update plot displays during decomposition using PyQtGraph"""
         try:
@@ -810,34 +868,34 @@ class DecompositionApp(QMainWindow):
         except Exception as e:
             print(f"Error in update_plots: {e}")
             traceback.print_exc()
-            
+
     def save_output_to_location(self):
         """Save decomposition results to a user-specified location"""
-        if not hasattr(self, 'decomposition_result') or self.decomposition_result is None:
+        if not hasattr(self, "decomposition_result") or self.decomposition_result is None:
             self.edit_field.setText("No decomposition results available to save")
             return
-        
+
         # Open file dialog to select save location
         save_path, _ = QFileDialog.getSaveFileName(
-            self, 
-            "Save Decomposition Results", 
+            self,
+            "Save Decomposition Results",
             os.path.join(self.pathname if self.pathname else "", "decomposition_results.mat"),
-            "MAT Files (*.mat);;All Files (*.*)"
+            "MAT Files (*.mat);;All Files (*.*)",
         )
-        
+
         if not save_path:  # User cancelled
             return
-        
+
         # Ensure the path has a .mat extension
-        if not save_path.lower().endswith('.mat'):
-            save_path += '.mat'
-        
+        if not save_path.lower().endswith(".mat"):
+            save_path += ".mat"
+
         # Format the result properly (same as in on_decomposition_complete)
         formatted_result = self.decomposition_result
-        
+
         # Get the parameters that were used
-        parameters = prepare_parameters(self.ui_params) if hasattr(self, 'ui_params') else {}
-        
+        parameters = prepare_parameters(self.ui_params) if hasattr(self, "ui_params") else {}
+
         # Save in background
         self.save_mat_in_background(save_path, {"signal": formatted_result, "parameters": parameters}, True)
         self.edit_field.setText(f"Saving results to {save_path}")
