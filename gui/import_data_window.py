@@ -108,37 +108,6 @@ class ImportDataWindow(QMainWindow):
         title_layout.addWidget(title_label)
         title_layout.addStretch()
         
-        # Menu buttons
-        file_btn = QPushButton("File")
-        file_btn.setObjectName("menuButton")
-        edit_btn = QPushButton("Edit")
-        edit_btn.setObjectName("menuButton")
-        view_btn = QPushButton("View")
-        view_btn.setObjectName("menuButton")
-        help_btn = QPushButton("Help")
-        help_btn.setObjectName("menuButton")
-        
-        # Apply styling to menu buttons
-        for btn in [file_btn, edit_btn, view_btn, help_btn]:
-            btn.setStyleSheet("""
-                #menuButton {
-                    background: transparent;
-                    border: none;
-                    padding: 8px 12px;
-                    font-size: 14px;
-                }
-                #menuButton:hover {
-                    background-color: #f0f0f0;
-                }
-            """)
-        
-        header_layout.addLayout(title_layout)
-        header_layout.addStretch(1)
-        header_layout.addWidget(file_btn)
-        header_layout.addWidget(edit_btn)
-        header_layout.addWidget(view_btn)
-        header_layout.addWidget(help_btn)
-        
         self.main_layout.addWidget(header)
     
     def create_content_area(self):
@@ -217,24 +186,6 @@ class ImportDataWindow(QMainWindow):
             sidebar_layout.addWidget(file_item)
         
         sidebar_layout.addStretch(1)
-        
-        # Add expand/collapse button at bottom
-        expand_btn = QToolButton()
-        expand_btn.setIcon(self.style().standardIcon(self.style().SP_ArrowLeft))
-        expand_btn.setIconSize(QSize(16, 16))
-        expand_btn.setFixedSize(32, 32)
-        expand_btn.setStyleSheet("""
-            QToolButton {
-                background-color: #e0e0e0;
-                border: none;
-                border-radius: 16px;
-            }
-            QToolButton:hover {
-                background-color: #d0d0d0;
-            }
-        """)
-        
-        sidebar_layout.addWidget(expand_btn, 0, Qt.AlignHCenter)
         
         parent_layout.addWidget(sidebar)
     
