@@ -108,74 +108,6 @@ class HDEMGVisualizationInterface(QMainWindow):
         grid3_layout.addWidget(grid3_text)
         sidebar_layout.addLayout(grid3_layout)
         
-        # Frequency
-        freq_layout = QHBoxLayout()
-        freq_label = QLabel("Frequency")
-        freq_combo = QComboBox()
-        freq_combo.addItem("500 Hz")
-        freq_combo.addItem("1000 Hz")
-        freq_combo.addItem("2000 Hz")
-        
-        sidebar_layout.addWidget(freq_label)
-        sidebar_layout.addWidget(freq_combo)
-        
-        # HP Filter
-        hp_layout = QHBoxLayout()
-        hp_label = QLabel("HP Filter")
-        hp_combo = QComboBox()
-        hp_combo.addItem("10 Hz")
-        hp_combo.addItem("20 Hz")
-        hp_combo.addItem("30 Hz")
-        
-        sidebar_layout.addWidget(hp_label)
-        sidebar_layout.addWidget(hp_combo)
-        
-        # LP Filter
-        lp_layout = QHBoxLayout()
-        lp_label = QLabel("LP Filter")
-        lp_combo = QComboBox()
-        lp_combo.addItem("450 Hz")
-        lp_combo.addItem("500 Hz")
-        lp_combo.addItem("550 Hz")
-        
-        sidebar_layout.addWidget(lp_label)
-        sidebar_layout.addWidget(lp_combo)
-        
-        # Refresh Rate
-        refresh_layout = QHBoxLayout()
-        refresh_label = QLabel("Refresh Rate")
-        refresh_combo = QComboBox()
-        refresh_combo.addItem("30 fps")
-        refresh_combo.addItem("60 fps")
-        refresh_combo.addItem("120 fps")
-        
-        sidebar_layout.addWidget(refresh_label)
-        sidebar_layout.addWidget(refresh_combo)
-        
-        # Saving Settings
-        saving_label = QLabel("Saving Settings")
-        saving_label.setFont(QFont("Arial", 10, QFont.Bold))
-        sidebar_layout.addWidget(saving_label)
-        
-        # Select Folder
-        folder_button = QPushButton("Select Folder")
-        folder_button.setIcon(QIcon.fromTheme("folder-open"))
-        sidebar_layout.addWidget(folder_button)
-        
-        # Export Button
-        export_button = QPushButton("Export")
-        export_button.setIcon(QIcon.fromTheme("document-save"))
-        sidebar_layout.addWidget(export_button)
-        
-        # Start Visualization buttons
-        start_noise_button = QPushButton("Start Visualization - Check Noise")
-        start_noise_button.setStyleSheet("background-color: #1b6e41; color: white;")
-        sidebar_layout.addWidget(start_noise_button)
-        
-        start_emg_button = QPushButton("Start Visualization - Check EMG")
-        start_emg_button.setStyleSheet("background-color: #1e2d7a; color: white;")
-        sidebar_layout.addWidget(start_emg_button)
-        
         sidebar_layout.addStretch(1)  # Push everything up
         
         return sidebar_widget
@@ -220,16 +152,6 @@ class HDEMGVisualizationInterface(QMainWindow):
         control_layout.addWidget(zoom_out_btn)
         
         control_layout.addStretch(1)  # Push to left
-        
-        # Initialize and Disconnect buttons
-        init_button = QPushButton("Initialize Quattrocento")
-        init_button.setStyleSheet("background-color: #c4be18; color: black;")
-        
-        disconnect_button = QPushButton("Disconnect Quattrocento")
-        disconnect_button.setStyleSheet("background-color: #c22c32; color: white;")
-        
-        control_layout.addWidget(init_button)
-        control_layout.addWidget(disconnect_button)
         
         viz_layout.addLayout(control_layout)
         

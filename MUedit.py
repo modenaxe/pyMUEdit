@@ -11,14 +11,13 @@ from PyQt5.QtWidgets import (
     QFileDialog,
 )
 
-# Import UI module
-from gui.MUeditUI import setup_ui
+from MUeditUI import setup_ui
 
-from utils.config_and_input.openOTBplus import openOTBplus
+from utils.config_and_input.prepare_parameters import prepare_parameters
 from utils.config_and_input.segmentsession import SegmentSession
-from SaveMatWorker import SaveMatWorker
 from DecompositionWorker import DecompositionWorker
-from HDEMGdecomposition import prepare_parameters
+from SaveMatWorker import SaveMatWorker
+from EmgDecomposition import offline_EMG
 
 
 class MUedit(QMainWindow):
@@ -105,13 +104,19 @@ class MUedit(QMainWindow):
         # Load files
         ext = os.path.splitext(self.filename)[1]
         if ext == ".otb+":  # OT Biolab+
-            self.MUdecomp["config"], signal, savename = openOTBplus(self.pathname, self.filename, 1)
-            if self.MUdecomp["config"]:
-                self.MUdecomp["config"].hide()
-                self.set_configuration_button.setEnabled(True)
+            temp_dir = "./temp_decomp"
+            if not os.path.exists(temp_dir):
+                os.makedirs(temp_dir)
 
-            if savename:
-                self.save_mat_in_background(savename, {"signal": signal}, True)
+            self.emg_obj = offline_EMG(temp_dir, True)
+            self.emg_obj.open_otb(os.path.join(self.pathname, self.filename))
+
+            # Get signal from the emg_obj
+            signal = self.emg_obj.signal_dict
+
+            # Keep a reference to config for compatibility
+            self.MUdecomp["config"] = None
+            self.set_configuration_button.setEnabled(True)
 
         self.reference_dropdown.blockSignals(True)
         self.reference_dropdown.clear()
@@ -215,16 +220,12 @@ class MUedit(QMainWindow):
 
         parameters = prepare_parameters(ui_params)
 
-        # Load signal data
-        if self.pathname and self.filename:
-            savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
-        file = sio.loadmat(savename)
-        signal = file["signal"]
-
         # Disable the start button during processing
         self.start_button.setEnabled(False)
         self.edit_field.setText("Starting decomposition...")
-        self.decomp_worker = DecompositionWorker(signal, parameters)
+
+        # Pass the entire emg_obj to the DecompositionWorker
+        self.decomp_worker = DecompositionWorker(self.emg_obj, parameters)
         self.threads.append(self.decomp_worker)  # Keep a reference to prevent garbage collection
 
         # Connect signals
@@ -368,7 +369,7 @@ class MUedit(QMainWindow):
                         else:
                             mask_obj[0, i] = np.zeros((0, 1), dtype=int)
 
-            formatted_result["EMGmask"] = mask_obj
+                formatted_result["EMGmask"] = mask_obj
 
             parameters = prepare_parameters(self.ui_params) if hasattr(self, "ui_params") else {}
             self.save_mat_in_background(savename, {"signal": formatted_result, "parameters": parameters}, True)

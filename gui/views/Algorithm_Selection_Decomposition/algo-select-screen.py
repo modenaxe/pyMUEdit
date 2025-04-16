@@ -30,6 +30,9 @@ from HDEMGdecomposition import prepare_parameters
 from utils.config_and_input.openOTBplus import openOTBplus
 from utils.config_and_input.segmentsession import SegmentSession
 
+# Import MUeditManual for editing mode
+from MUeditManual import MUeditManual
+
 
 class DecompositionApp(QMainWindow):
     def __init__(self):
@@ -51,6 +54,7 @@ class DecompositionApp(QMainWindow):
         self.roi = None
         self.threads = []
         self.iteration_counter = 0
+        self.decomposition_result = None  # Store the decomposition result
         
         # Main widget and layout
         self.central_widget = QWidget()
@@ -315,6 +319,8 @@ class DecompositionApp(QMainWindow):
         nav_label.setFont(QFont("Arial", 10, QFont.Bold))
         
         self.edit_mode_btn = QPushButton("✏️ Editing Mode")
+        self.edit_mode_btn.clicked.connect(self.open_editing_mode)
+        self.edit_mode_btn.setEnabled(False)
         
         self.analysis_mode_btn = QPushButton("📊 Analysis Mode")
         
@@ -338,6 +344,99 @@ class DecompositionApp(QMainWindow):
         right_layout.addStretch()
         
         self.main_layout.addWidget(right_panel)
+    
+    def open_editing_mode(self):
+        """Open the MUeditManual window for editing motor units"""
+        if not self.pathname or not self.filename:
+            self.edit_field.setText("No file selected for editing")
+            return
+            
+        try:
+            # First check if the output file exists
+            output_filename = os.path.join(self.pathname, self.filename + "_output_decomp.mat")
+            if not os.path.exists(output_filename):
+                self.edit_field.setText(f"Output file {output_filename} not found")
+                return
+                
+            # Load the data first to fix the structure
+            data = sio.loadmat(output_filename)
+            if "signal" not in data:
+                self.edit_field.setText("Invalid file format: 'signal' field not found")
+                return
+                
+            signal = data["signal"]
+            
+            # Create the proper data structure for MUeditManual
+            edition_data = {
+                "time": np.linspace(0, signal[0, 0]["data"].shape[1] / signal[0, 0]["fsamp"][0, 0], signal[0, 0]["data"].shape[1]),
+                "Pulsetrain": [],
+                "Dischargetimes": {},
+                "silval": {},
+                "silvalcon": {}
+            }
+            
+            # Format the Pulsetrain data correctly
+            # MUeditManual expects a list of 2D arrays (one per electrode)
+            # Each 2D array should have shape (n_motor_units, signal_length)
+            if "Pulsetrain" in signal[0, 0].dtype.names:
+                pulsetrain_data = signal[0, 0]["Pulsetrain"][0]
+                
+                for i in range(len(pulsetrain_data)):
+                    # Get the pulse train for this electrode
+                    electrode_pulses = pulsetrain_data[i]
+                    
+                    # Check if it's already 2D
+                    if electrode_pulses.ndim == 2:
+                        edition_data["Pulsetrain"].append(electrode_pulses)
+                    elif electrode_pulses.ndim == 1:
+                        # Convert 1D array to 2D with one row
+                        edition_data["Pulsetrain"].append(electrode_pulses.reshape(1, -1))
+                    else:
+                        # Skip empty or invalid arrays
+                        edition_data["Pulsetrain"].append(np.zeros((0, signal[0, 0]["data"].shape[1])))
+            
+            # Format the Dischargetimes data correctly
+            # MUeditManual expects a dictionary with (array_idx, mu_idx) tuple keys
+            if "Dischargetimes" in signal[0, 0].dtype.names:
+                dischargetimes_data = signal[0, 0]["Dischargetimes"]
+                
+                for i in range(dischargetimes_data.shape[0]):
+                    for j in range(dischargetimes_data.shape[1]):
+                        # Get the discharge times array
+                        dt = dischargetimes_data[i, j]
+                        
+                        # Skip empty arrays
+                        if isinstance(dt, np.ndarray) and dt.size > 0:
+                            # Store with tuple key (array_idx, mu_idx)
+                            edition_data["Dischargetimes"][(i, j)] = dt.flatten()
+            
+            # Create a new .mat file with the fixed structure
+            fixed_filename = os.path.join(self.pathname, self.filename + "_fixed_for_editing.mat")
+            
+            # Create the structure expected by MUeditManual
+            fixed_data = {
+                "signal": signal,  # Original signal data
+                "edition": edition_data  # Properly formatted edition data
+            }
+            
+            # Use existing save_mat_in_background function to save the fixed data
+            self.save_mat_in_background(fixed_filename, fixed_data, True)
+            
+            # Update UI
+            self.edit_field.setText(f"Preparing data for editing and opening editor...")
+            
+            # Create the MUeditManual window
+            self.mu_edit_window = MUeditManual()
+            
+            # Show the window without preloading
+            self.mu_edit_window.show()
+            
+            # Suggest the file to open
+            self.edit_field.setText(f"Editor opened. Please select {fixed_filename}")
+            
+        except Exception as e:
+            self.edit_field.setText(f"Error opening editing mode: {str(e)}")
+            traceback.print_exc()
     
     # Event handlers
     def save_mat_in_background(self, filename, data, compression=True):
@@ -524,9 +623,6 @@ class DecompositionApp(QMainWindow):
 
     def on_decomposition_complete(self, result):
         """Handle successful completion of decomposition"""
-        # Store the result for later saving
-        self.decomposition_result = result
-
         if self.pathname and self.filename:
             savename = os.path.join(self.pathname, self.filename + "_output_decomp.mat")
 
@@ -569,11 +665,15 @@ class DecompositionApp(QMainWindow):
             parameters = prepare_parameters(self.ui_params) if hasattr(self, "ui_params") else {}
             self.save_mat_in_background(savename, {"signal": formatted_result, "parameters": parameters}, True)
 
+            # Store the decomposition result
+            self.decomposition_result = formatted_result
+
         self.edit_field.setText("Decomposition complete")
         self.status_text.setText("Complete")
         self.status_progress.setValue(100)
         self.start_button.setEnabled(True)
         self.save_output_button.setEnabled(True)
+        self.edit_mode_btn.setEnabled(True)
 
         # Count total motor units
         total_mus = 0
@@ -591,7 +691,7 @@ class DecompositionApp(QMainWindow):
 
         if hasattr(self, "decomp_worker") and self.decomp_worker in self.threads:
             self.threads.remove(self.decomp_worker)
-
+            
     def on_decomposition_error(self, error_msg):
         """Handle errors during decomposition"""
         self.edit_field.setText(f"Error in decomposition: {error_msg}")
@@ -618,7 +718,7 @@ class DecompositionApp(QMainWindow):
                 self.status_progress.setValue(int(current / total * 100))
             except:
                 pass
-
+                
     def update_plots(self, time, target, plateau_coords, icasig=None, spikes=None, time2=None, sil=None, cov=None):
         """Update plot displays during decomposition using PyQtGraph"""
         try:
@@ -710,37 +810,37 @@ class DecompositionApp(QMainWindow):
         except Exception as e:
             print(f"Error in update_plots: {e}")
             traceback.print_exc()
-
+            
     def save_output_to_location(self):
-      """Save decomposition results to a user-specified location"""
-      if not hasattr(self, 'decomposition_result') or self.decomposition_result is None:
-          self.edit_field.setText("No decomposition results available to save")
-          return
-      
-      # Open file dialog to select save location
-      save_path, _ = QFileDialog.getSaveFileName(
-          self, 
-          "Save Decomposition Results", 
-          os.path.join(self.pathname if self.pathname else "", "decomposition_results.mat"),
-          "MAT Files (*.mat);;All Files (*.*)"
-      )
-      
-      if not save_path:  # User cancelled
-          return
-      
-      # Ensure the path has a .mat extension
-      if not save_path.lower().endswith('.mat'):
-          save_path += '.mat'
-      
-      # Format the result properly (same as in on_decomposition_complete)
-      formatted_result = self.decomposition_result
-      
-      # Get the parameters that were used
-      parameters = prepare_parameters(self.ui_params) if hasattr(self, 'ui_params') else {}
-      
-      # Save in background
-      self.save_mat_in_background(save_path, {"signal": formatted_result, "parameters": parameters}, True)
-      self.edit_field.setText(f"Saving results to {save_path}")
+        """Save decomposition results to a user-specified location"""
+        if not hasattr(self, 'decomposition_result') or self.decomposition_result is None:
+            self.edit_field.setText("No decomposition results available to save")
+            return
+        
+        # Open file dialog to select save location
+        save_path, _ = QFileDialog.getSaveFileName(
+            self, 
+            "Save Decomposition Results", 
+            os.path.join(self.pathname if self.pathname else "", "decomposition_results.mat"),
+            "MAT Files (*.mat);;All Files (*.*)"
+        )
+        
+        if not save_path:  # User cancelled
+            return
+        
+        # Ensure the path has a .mat extension
+        if not save_path.lower().endswith('.mat'):
+            save_path += '.mat'
+        
+        # Format the result properly (same as in on_decomposition_complete)
+        formatted_result = self.decomposition_result
+        
+        # Get the parameters that were used
+        parameters = prepare_parameters(self.ui_params) if hasattr(self, 'ui_params') else {}
+        
+        # Save in background
+        self.save_mat_in_background(save_path, {"signal": formatted_result, "parameters": parameters}, True)
+        self.edit_field.setText(f"Saving results to {save_path}")
 
 
 if __name__ == "__main__":

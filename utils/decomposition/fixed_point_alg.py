@@ -114,22 +114,23 @@ def _fixed_point_core(w, X, B, cf_func_id, maxiter=500):
     return w_new
 
 
-def fixedpointalg(w, X, B, maxiter, contrastfunc):
+def fixed_point_alg(w, B, X, cf_type, dot_cf, its=500):
     """
-    Legacy function for compatibility with original code.
+    Drop-in replacement for the original fixed_point_alg function with optimized implementation.
 
     Args:
         w: Initial separation vector
-        X: Whitened signal matrix
         B: Basis matrix of previously found separation vectors
-        maxiter: Maximum number of iterations
-        contrastfunc: Name of contrast function to use
+        X: Whitened signal matrix
+        cf_type: Contrast function (unused, for compatibility)
+        dot_cf: Derivative of contrast function (unused, for compatibility)
+        its: Maximum iterations
 
     Returns:
         w: Updated separation vector
     """
-    # Ensure w has the right shape
-    w_flat = w.flatten()
+    # Ensure inputs are properly formatted
+    w_flat = w.ravel()
 
     # Ensure arrays are in C-contiguous format for Numba
     if not X.flags.c_contiguous:
@@ -137,16 +138,16 @@ def fixedpointalg(w, X, B, maxiter, contrastfunc):
     if not B.flags.c_contiguous:
         B = np.ascontiguousarray(B)
 
-    # Map contrast function to ID
-    if contrastfunc == "skew":
+    # Map contrast function based on the input function objects
+    # This checks identity of function objects to determine which one was passed
+    if cf_type is skew:
         cf_id = 0
-    elif contrastfunc == "kurtosis":
+    elif cf_type is square:
         cf_id = 1
-    else:  # logcosh or default
+    else:  # Default to logcosh
         cf_id = 2
 
-    # Run optimized algorithm
-    result = _fixed_point_core(w_flat.copy(), X, B, cf_id, maxiter)
-
-    # Return in the expected shape
-    return result.reshape(-1, 1)
+    # Run optimized core algorithm
+    result = _fixed_point_core(w_flat.copy(), X, B, cf_id, its)
+    # Return in the original format expected by the caller
+    return result
