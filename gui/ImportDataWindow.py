@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
 from PyQt5.QtCore import pyqtSignal
 
 # Import UI setup function
-from ui.ImportDataWindowUi import setup_ui
+from ui.ImportDataWindowUI import setup_ui
 
 # Ensure the current and project directories are in the system path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -17,6 +17,9 @@ sys.path.append(current_dir)
 from utils.config_and_input.open_otb import open_otb
 from EmgDecomposition import offline_EMG as EMG_offline_EMG
 from SaveMatWorker import SaveMatWorker
+
+# Import DecompositionApp for passing data
+from DecompositionApp import DecompositionApp
 
 
 class ImportDataWindow(QWidget):
@@ -34,6 +37,7 @@ class ImportDataWindow(QWidget):
         self.pathname = None
         self.imported_signal = None  # Will store the imported signal data
         self.threads = []  # Keep reference to worker threads
+        self.decomp_app = None  # Reference to DecompositionApp window
 
         # Create EMG object using the appropriate class
         temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp")
@@ -64,9 +68,6 @@ class ImportDataWindow(QWidget):
         self.dropzone.setAcceptDrops(True)
         self.dropzone.dragEnterEvent = self.dragEnterEvent
         self.dropzone.dropEvent = self.dropEvent
-
-    # Remove the problematic _connect_file_items method since we don't need it anymore
-    # We've moved the event handling to the ClickableFileItem class
 
     def select_file(self):
         """Open file dialog to select a file."""
@@ -174,41 +175,43 @@ class ImportDataWindow(QWidget):
         self.return_to_dashboard_requested.emit()
 
     def go_to_algorithm_screen(self):
-        if not self.filename or not self.imported_signal:
+        """Open the DecompositionApp and pass the loaded data."""
+        if not self.filename or not self.emg_obj:
             return
-        try:
-            import os, importlib.util, traceback
 
+        try:
+            # Save data as .mat file (for compatibility with other parts of the pipeline)
             if self.pathname and self.filename:
                 savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
-            self.save_mat_in_background(savename, {"signal": self.imported_signal}, True)
+                self.save_mat_in_background(savename, {"signal": self.imported_signal}, True)
 
-            file_path = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "DecompositionApp.py",
+            # Create the DecompositionApp instance and pass data directly
+            self.decomp_app = DecompositionApp(
+                emg_obj=self.emg_obj,
+                filename=self.filename,
+                pathname=self.pathname,
+                imported_signal=self.imported_signal,
             )
-            if not os.path.exists(file_path):
-                print(f"File not found: {file_path}")
-                return
-            print(f"Loading algorithm screen from: {file_path}")
-            spec = importlib.util.spec_from_file_location("decomp_app", file_path)
 
-            if not spec or not spec.loader:
-                return
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            DecompositionApp = module.DecompositionApp
-            self.algo_window = DecompositionApp()
-            self.algo_window.filename = self.filename
-            self.algo_window.pathname = self.pathname
-            self.algo_window.edit_field_saving_3.setText(self.filename)
-            if hasattr(self.algo_window, "set_configuration_button"):
-                self.algo_window.set_configuration_button.setEnabled(True)
-            self.algo_window.show()
-            self.close()
+            # Connect back button signal if it exists
+            if hasattr(self.decomp_app, "back_to_import"):
+                self.decomp_app.back_to_import_btn.clicked.connect(self.show_import_window)
+
+            # Show the DecompositionApp window
+            self.decomp_app.show()
+
+            # Hide the import window (don't close it)
+            self.hide()
+
         except Exception as e:
             print(f"Error opening algorithm screen: {e}")
             traceback.print_exc()
+
+    def show_import_window(self):
+        """Show this window again when returning from DecompositionApp."""
+        self.show()
+        if self.decomp_app:
+            self.decomp_app.hide()
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():

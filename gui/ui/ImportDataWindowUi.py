@@ -1,25 +1,6 @@
-import sys
-import os
-from PyQt5.QtWidgets import (
-    QApplication,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QLabel,
-    QFrame,
-    QFileDialog,
-    QSizePolicy,
-    QSpacerItem,
-    QToolButton,
-    QMenu,
-    QAction,
-    QLineEdit,
-    QProgressBar,
-    QStyle,
-)
-from PyQt5.QtGui import QIcon, QFont, QPixmap, QColor, QPainter, QPen, QBrush, QCursor
-from PyQt5.QtCore import Qt, QSize, QRect, QPoint
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame, QToolButton, QStyle
+from PyQt5.QtGui import QFont, QCursor
+from PyQt5.QtCore import Qt, QSize
 
 
 def setup_ui(import_window):

@@ -4,26 +4,12 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QPushButton,
 from PyQt5.QtCore import Qt
 
 # Import UI setup function
-from ui.HDEMGDashboardUi import setup_ui, update_sidebar_selection
+from ui.HDEMGDashboardUI import setup_ui, update_sidebar_selection
 
 # Import for external windows/widgets
-try:
-    from ImportDataWindow import ImportDataWindow
-except ImportError:
-    ImportDataWindow = None
-    print("Warning: import_data_window.py not found.")
-
-try:
-    from MU_analysis import MotorUnitAnalysisWidget
-except ImportError as e:
-    MotorUnitAnalysisWidget = None
-    print(f"Warning: MU_analysis.py failed import: {e}.")
-
-try:
-    from export_results import ExportResultsWindow
-except ImportError:
-    ExportResultsWindow = None
-    print("Warning: export_results.py not found.")
+from ImportDataWindow import ImportDataWindow
+from MU_analysis import MotorUnitAnalysisWidget
+from export_results import ExportResultsWindow
 
 
 class HDEMGDashboard(QMainWindow):
