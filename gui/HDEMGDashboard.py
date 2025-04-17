@@ -4,11 +4,11 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QPushButton,
 from PyQt5.QtCore import Qt
 
 # Import UI setup function
-from ui.main_window_ui import setup_ui, update_sidebar_selection
+from ui.HDEMGDashboardUi import setup_ui, update_sidebar_selection
 
 # Import for external windows/widgets
 try:
-    from import_data_window import ImportDataWindow
+    from ImportDataWindow import ImportDataWindow
 except ImportError:
     ImportDataWindow = None
     print("Warning: import_data_window.py not found.")
