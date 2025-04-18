@@ -1,4 +1,5 @@
 import sys
+import os
 from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
@@ -8,10 +9,12 @@ from PyQt5.QtWidgets import (
     QLabel,
     QFrame,
     QComboBox,
+    QSpacerItem,
+    QSizePolicy,
     QStyle,
     QStackedWidget,
 )
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QIcon, QFont, QColor
 from PyQt5.QtCore import Qt, QSize
 
 
@@ -90,9 +93,14 @@ def create_export_setup_widget(parent):
     setup_layout.setSpacing(20)
 
     # Add sections to the layout
-    setup_layout.addWidget(create_export_setup_section(setup_widget, colors))
+    setup_card = create_export_setup_section(setup_widget, colors)
+    setup_layout.addWidget(setup_card)
     setup_layout.addWidget(create_recent_exports_section(setup_widget, colors))
     setup_layout.addStretch(1)
+
+    # Store references to key UI elements that parent window will need
+    setup_widget.format_combo = setup_card.findChild(QComboBox)
+    setup_widget.export_button = setup_card.findChild(QPushButton)
 
     return setup_widget
 
@@ -115,13 +123,14 @@ def create_export_setup_section(widget, colors):
     format_label.setStyleSheet(f"color: {colors['text_primary']}; margin-bottom: -5px;")
     card_layout.addWidget(format_label)
 
-    widget.format_combo = QComboBox()
-    widget.format_combo.addItems(
+    format_combo = QComboBox()
+    format_combo.setObjectName("formatCombo")
+    format_combo.addItems(
         [".csv (Comma Separated Values)", ".mat (MATLAB)", ".xlsx (Excel Spreadsheet)", ".txt (Text File)"]
     )
-    widget.format_combo.setPlaceholderText("Choose an export format...")
-    widget.format_combo.setCurrentIndex(-1)
-    card_layout.addWidget(widget.format_combo)
+    format_combo.setPlaceholderText("Choose an export format...")
+    format_combo.setCurrentIndex(-1)
+    card_layout.addWidget(format_combo)
 
     # Add data details section
     data_details_frame = QFrame()
@@ -145,6 +154,7 @@ def create_export_setup_section(widget, colors):
 
     # Add export button
     export_button = QPushButton("Export Data")
+    export_button.setObjectName("exportButton")
     export_button.setFont(QFont("Arial", 10, QFont.Bold))
     export_button.setIcon(get_icon("SP_ArrowDown"))
     export_button.setIconSize(QSize(16, 16))
@@ -153,7 +163,7 @@ def create_export_setup_section(widget, colors):
     export_button.setStyleSheet(
         f""" QPushButton {{ background-color: {colors['button_dark_bg']}; color: {colors['button_dark_text']}; border: none; border-radius: 4px; padding: 8px 15px; }} QPushButton:hover {{ background-color: {colors['button_dark_hover']}; }} """
     )
-    export_button.clicked.connect(widget.handle_export_request)
+    # We'll connect the button later in the main class
     card_layout.addWidget(export_button)
 
     return setup_card
@@ -267,7 +277,8 @@ def create_recent_export_item(widget, icon, filename, metadata, colors):
     download_button.setFixedSize(QSize(30, 30))
     download_button.setCursor(Qt.CursorShape.PointingHandCursor)
     download_button.setProperty("filename", filename)
-    download_button.clicked.connect(lambda: widget.handle_download_recent(filename))
+    # We'll connect this in the main class
+    download_button.setProperty("filename", filename)
     item_layout.addWidget(download_button)
 
     return item_frame
@@ -296,6 +307,18 @@ if __name__ == "__main__":
 
     # Add setup widget to stacked widget
     test_widget.setup_view = create_export_setup_widget(test_widget)
+
+    # Connect the export button manually
+    test_widget.setup_view.export_button.clicked.connect(test_widget.handle_export_request)
+
+    # Connect download buttons
+    recent_items = test_widget.setup_view.findChildren(QFrame, "recentItemSetup")
+    for item in recent_items:
+        download_btn = item.findChild(QPushButton, "downloadBtnSetup")
+        if download_btn:
+            filename = download_btn.property("filename")
+            download_btn.clicked.connect(lambda checked=False, fn=filename: test_widget.handle_download_recent(fn))
+
     test_widget.stacked_widget.addWidget(test_widget.setup_view)
 
     test_layout.addWidget(test_widget)

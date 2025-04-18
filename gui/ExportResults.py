@@ -1,7 +1,15 @@
 import sys
 import os
 import traceback
-from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import (
+    QApplication,
+    QWidget,
+    QFileDialog,
+    QMessageBox,
+    QStyle,
+    QFrame,
+    QPushButton,
+)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 
@@ -21,6 +29,8 @@ class ExportResultsWindow(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, False)
         self.setWindowTitle("Export Results")
         self.setMinimumSize(600, 550)  # Adjusted size
+
+        # Use the get_icon helper function for the window icon
         self.setWindowIcon(get_icon("SP_DialogSaveButton"))
 
         # Set up the UI from the imported setup_ui function
@@ -28,17 +38,22 @@ class ExportResultsWindow(QWidget):
 
         # --- Create Views ---
         self.setup_view = create_export_setup_widget(self)
-        self.confirmation_view = ExportConfirm()
-        self.complete_view = DownloadConfirmation()
+        self.confirmation_view = ExportConfirm() if ExportConfirm else QWidget()
+        self.complete_view = DownloadConfirmation() if DownloadConfirmation else QWidget()
 
         # --- Add Views to Stack ---
         self.stacked_widget.addWidget(self.setup_view)
         self.stacked_widget.addWidget(self.confirmation_view)
         self.stacked_widget.addWidget(self.complete_view)
 
-        # --- Connect Signals ---
-        self.setup_view.handle_export_request = self.handle_export_request
+        # --- Connect Signals and Buttons ---
+        # Connect export button to handler
+        self.setup_view.export_button.clicked.connect(self.handle_export_request)
 
+        # Connect download buttons for recent items
+        self.connect_recent_download_buttons()
+
+        # Connect views if they're the correct types
         if isinstance(self.confirmation_view, ExportConfirm):
             self.confirmation_view.cancel_requested.connect(self.show_setup_view)
             self.confirmation_view.export_confirmed.connect(self.execute_final_export)
@@ -51,6 +66,16 @@ class ExportResultsWindow(QWidget):
         # --- Initial View ---
         self.show_setup_view()
 
+    def connect_recent_download_buttons(self):
+        """Connect the download buttons on recent export items."""
+        recent_items = self.setup_view.findChildren(QFrame, "recentItemSetup")
+        for item in recent_items:
+            download_btn = item.findChild(QPushButton, "downloadBtnSetup")
+            if download_btn:
+                filename = download_btn.property("filename")
+                if filename:
+                    download_btn.clicked.connect(lambda checked=False, fn=filename: self.handle_download_recent(fn))
+
     def handle_export_request(self):
         """Handle the export request from the setup view."""
         selected_format = self.setup_view.format_combo.currentText()
@@ -59,6 +84,13 @@ class ExportResultsWindow(QWidget):
             return
         print(f"Setup Widget: Requesting export with format: {selected_format}")
         self.show_confirmation_view(selected_format)
+
+    def handle_download_recent(self, filename):
+        """Handle download request from recent exports list."""
+        print(f"Download requested for recent file: {filename}")
+        QMessageBox.information(
+            self, "Download", f"Download requested for:\n{filename}\n\n(Add actual download logic here)"
+        )
 
     def show_setup_view(self):
         """Switch to the setup view."""
@@ -186,10 +218,9 @@ class ExportResultsWindow(QWidget):
         )
 
     def closeEvent(self, event):
-        """Override close event to hide instead of close."""
-        print("ExportResultsWindow: Hiding instead of closing.")
-        self.hide()
-        event.ignore()
+        """Close the window."""
+        print("ExportResultsWindow: Closing window")
+        event.accept()
 
 
 # --- Main execution block ---

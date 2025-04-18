@@ -1,28 +1,35 @@
-# MU_analysis.py
-
 import sys
-import os
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QPushButton, QLabel, QFrame, QCheckBox, QComboBox, QSpacerItem,
-    QSizePolicy, QStyle, QGraphicsDropShadowEffect, QScrollArea, QMainWindow
+    QApplication,
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QGridLayout,
+    QPushButton,
+    QLabel,
+    QFrame,
+    QCheckBox,
+    QComboBox,
+    QSpacerItem,
+    QSizePolicy,
+    QStyle,
+    QGraphicsDropShadowEffect,
+    QScrollArea,
+    QMainWindow,
 )
-from PyQt5.QtGui import QIcon, QFont, QColor, QPixmap
+from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
-import traceback  # Import for error printing
+import traceback
 
-# --- Import the ExportResultsWindow class ---
-try:
-    from export_results import ExportResultsWindow
-except ImportError:
-    print("Warning: export_results.py not found.")
-    ExportResultsWindow = None
-# --- End Import ---
+from ExportResults import ExportResultsWindow
+
 
 def get_icon(standard_icon):
-    return QApplication.style().standardIcon(standard_icon)
+    """Helper function to get standard icons safely."""
+    return QApplication.style().standardIcon(getattr(QStyle, standard_icon))  # type:ignore
 
-class MotorUnitAnalysisWidget(QWidget):
+
+class MUAnalysis(QWidget):
     return_to_dashboard_requested = pyqtSignal()
 
     def __init__(self, parent=None):
@@ -46,7 +53,7 @@ class MotorUnitAnalysisWidget(QWidget):
             "button_dark_bg": "#343a40",
             "button_dark_text": "#ffffff",
             "button_dark_hover": "#495057",
-            "button_grey_bg": "#e9ecee",  # Note: Adjusted value if necessary
+            "button_grey_bg": "#e9ecee",
             "button_grey_text": "#495057",
             "button_grey_border": "#ced4da",
             "button_grey_hover": "#dee2e6",
@@ -106,13 +113,14 @@ class MotorUnitAnalysisWidget(QWidget):
         top_bar = QFrame()
         top_bar.setObjectName("topBar")
         top_bar.setFixedHeight(55)
-        top_bar.setStyleSheet(f"""
+        top_bar.setStyleSheet(
+            f"""
             #topBar {{
                 background-color: {self.colors['bg_topbar']};
                 border-bottom: 1px solid {self.colors['border_light']};
             }}
             #topBar > QPushButton {{
-                background: transparent;
+                background-color: transparent;
                 border: none;
                 color: {self.colors['text_secondary']};
                 font-size: 9pt;
@@ -121,12 +129,13 @@ class MotorUnitAnalysisWidget(QWidget):
             #topBar > QPushButton:hover {{
                 color: {self.colors['text_primary']};
             }}
-        """)
+        """
+        )
         top_bar_layout = QHBoxLayout(top_bar)
         top_bar_layout.setContentsMargins(15, 0, 15, 0)
         top_bar_layout.setSpacing(10)
         icon_label = QLabel()
-        icon_pixmap = get_icon(QStyle.SP_ComputerIcon).pixmap(QSize(24, 24))
+        icon_pixmap = get_icon("SP_ComputerIcon").pixmap(QSize(24, 24))
         icon_label.setPixmap(icon_pixmap)
         icon_label.setFixedSize(QSize(28, 28))
         title_label = QLabel("Motor Unit Analysis")
@@ -139,10 +148,11 @@ class MotorUnitAnalysisWidget(QWidget):
         projects_btn = QPushButton("Projects")
         settings_btn = QPushButton("Settings")
         user_button = QPushButton()
-        user_button.setIcon(get_icon(QStyle.SP_DialogOkButton))
+        user_button.setIcon(get_icon("SP_DialogOkButton"))
         user_button.setIconSize(QSize(18, 18))
         user_button.setFixedSize(30, 30)
-        user_button.setStyleSheet(f"""
+        user_button.setStyleSheet(
+            f"""
             QPushButton {{
                 background-color: {self.colors['button_dark_bg']};
                 border-radius: 15px;
@@ -151,12 +161,13 @@ class MotorUnitAnalysisWidget(QWidget):
             QPushButton:hover {{
                 background-color: {self.colors['button_dark_hover']};
             }}
-        """)
+        """
+        )
         top_bar_layout.addWidget(dashboard_btn)
         top_bar_layout.addWidget(projects_btn)
         top_bar_layout.addWidget(settings_btn)
         top_bar_layout.addWidget(user_button)
-        if hasattr(self, 'request_return_to_dashboard'):
+        if hasattr(self, "request_return_to_dashboard"):
             dashboard_btn.clicked.connect(self.request_return_to_dashboard)
         else:
             print("ERROR: request_return_to_dashboard method missing!")
@@ -168,7 +179,8 @@ class MotorUnitAnalysisWidget(QWidget):
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setContentsMargins(0, 0, 0, 0)
         sidebar_layout.setSpacing(10)
-        sidebar.setStyleSheet(f"""
+        sidebar.setStyleSheet(
+            f"""
             #leftSidebar QLabel {{
                 color: {self.colors['text_primary']};
                 font-size: 10pt;
@@ -190,7 +202,8 @@ class MotorUnitAnalysisWidget(QWidget):
             #leftSidebar QCheckBox:hover {{
                 background-color: {self.colors['border_light']};
             }}
-        """)
+        """
+        )
         title_label = QLabel("Motor Units")
         sidebar_layout.addWidget(title_label)
         self.unit_checkboxes = []
@@ -203,8 +216,9 @@ class MotorUnitAnalysisWidget(QWidget):
         compare_button = QPushButton("Compare Selected Units")
         compare_button.setFont(QFont("Arial", 9))
         compare_button.setMinimumHeight(32)
-        compare_button.setCursor(Qt.PointingHandCursor)
-        compare_button.setStyleSheet(f"""
+        compare_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        compare_button.setStyleSheet(
+            f"""
             QPushButton {{
                 background-color: {self.colors['button_grey_bg']};
                 color: {self.colors['button_grey_text']};
@@ -215,7 +229,8 @@ class MotorUnitAnalysisWidget(QWidget):
             QPushButton:hover {{
                 background-color: {self.colors['button_grey_hover']};
             }}
-        """)
+        """
+        )
         compare_button.clicked.connect(self.handle_compare_units)
         sidebar_layout.addWidget(compare_button)
         sidebar_layout.addStretch(1)
@@ -225,7 +240,7 @@ class MotorUnitAnalysisWidget(QWidget):
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setFrameShape(QFrame.NoFrame)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll_area.setStyleSheet("background-color: transparent; border: none;")
         scroll_content = QWidget()
         scroll_content.setStyleSheet("background-color: transparent;")
@@ -245,7 +260,8 @@ class MotorUnitAnalysisWidget(QWidget):
     def _create_plot_panel(self, title, placeholder_text):
         panel = QFrame()
         panel.setObjectName("plotCard")
-        panel.setStyleSheet(f"""
+        panel.setStyleSheet(
+            f"""
             #plotCard {{
                 background-color: {self.colors['bg_card']};
                 border: 1px solid {self.colors['border_light']};
@@ -259,7 +275,8 @@ class MotorUnitAnalysisWidget(QWidget):
                 border: none;
                 background: transparent;
             }}
-        """)
+        """
+        )
         panel_layout = QVBoxLayout(panel)
         panel_layout.setContentsMargins(0, 0, 0, 0)
         panel_layout.setSpacing(0)
@@ -269,23 +286,27 @@ class MotorUnitAnalysisWidget(QWidget):
         placeholder.setObjectName("graphPlaceholder")
         placeholder.setMinimumHeight(180)
         placeholder.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        placeholder.setStyleSheet(f"""
+        placeholder.setStyleSheet(
+            f"""
             #graphPlaceholder {{
                 background-color: {self.colors['placeholder_bg']};
                 border-bottom-left-radius: 6px;
                 border-bottom-right-radius: 6px;
                 margin: 0px 15px 15px 15px;
             }}
-        """)
+        """
+        )
         placeholder_layout = QVBoxLayout(placeholder)
         placeholder_label = QLabel(placeholder_text)
-        placeholder_label.setAlignment(Qt.AlignCenter)
-        placeholder_label.setStyleSheet(f"color: {self.colors['text_secondary']}; font-size: 10pt; background: transparent;")
+        placeholder_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        placeholder_label.setStyleSheet(
+            f"color: {self.colors['text_secondary']}; font-size: 10pt; background: transparent;"
+        )
         placeholder_layout.addWidget(placeholder_label)
         panel_layout.addWidget(placeholder, stretch=1)
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(10)
-        shadow.setColor(self.colors['shadow'])
+        shadow.setColor(self.colors["shadow"])
         shadow.setOffset(0, 2)
         panel.setGraphicsEffect(shadow)
         return panel
@@ -293,7 +314,8 @@ class MotorUnitAnalysisWidget(QWidget):
     def _create_property_comparison_panel(self):
         panel = QFrame()
         panel.setObjectName("plotCard")
-        panel.setStyleSheet(f"""
+        panel.setStyleSheet(
+            f"""
             #plotCard {{
                 background-color: {self.colors['bg_card']};
                 border: 1px solid {self.colors['border_light']};
@@ -327,7 +349,8 @@ class MotorUnitAnalysisWidget(QWidget):
                 width: 10px;
                 height: 10px;
             }}
-        """)
+        """
+        )
         panel_layout = QVBoxLayout(panel)
         panel_layout.setContentsMargins(0, 0, 0, 0)
         panel_layout.setSpacing(0)
@@ -338,16 +361,20 @@ class MotorUnitAnalysisWidget(QWidget):
         placeholder.setObjectName("graphPlaceholder")
         placeholder.setMinimumHeight(250)
         placeholder.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        placeholder.setStyleSheet(f"""
+        placeholder.setStyleSheet(
+            f"""
             #graphPlaceholder {{
                 background-color: {self.colors['placeholder_bg']};
                 margin: 0px 15px 10px 15px;
             }}
-        """)
+        """
+        )
         placeholder_layout = QVBoxLayout(placeholder)
         placeholder_label = QLabel("Scatter Plot")
-        placeholder_label.setAlignment(Qt.AlignCenter)
-        placeholder_label.setStyleSheet(f"color: {self.colors['text_secondary']}; font-size: 10pt; background: transparent;")
+        placeholder_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        placeholder_label.setStyleSheet(
+            f"color: {self.colors['text_secondary']}; font-size: 10pt; background: transparent;"
+        )
         placeholder_layout.addWidget(placeholder_label)
         panel_layout.addWidget(placeholder, stretch=1)
         control_layout = QHBoxLayout()
@@ -363,7 +390,7 @@ class MotorUnitAnalysisWidget(QWidget):
         panel_layout.addLayout(control_layout)
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(10)
-        shadow.setColor(self.colors['shadow'])
+        shadow.setColor(self.colors["shadow"])
         shadow.setOffset(0, 2)
         panel.setGraphicsEffect(shadow)
         return panel
@@ -371,7 +398,8 @@ class MotorUnitAnalysisWidget(QWidget):
     def _create_time_series_panel(self):
         panel = QFrame()
         panel.setObjectName("plotCard")
-        panel.setStyleSheet(f"""
+        panel.setStyleSheet(
+            f"""
             #plotCard {{
                 background-color: {self.colors['bg_card']};
                 border: 1px solid {self.colors['border_light']};
@@ -396,7 +424,8 @@ class MotorUnitAnalysisWidget(QWidget):
             QPushButton#controlButton:hover {{
                 background-color: {self.colors['button_grey_hover']};
             }}
-        """)
+        """
+        )
         panel_layout = QVBoxLayout(panel)
         panel_layout.setContentsMargins(0, 0, 0, 0)
         panel_layout.setSpacing(0)
@@ -407,16 +436,20 @@ class MotorUnitAnalysisWidget(QWidget):
         placeholder.setObjectName("graphPlaceholder")
         placeholder.setMinimumHeight(220)
         placeholder.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        placeholder.setStyleSheet(f"""
+        placeholder.setStyleSheet(
+            f"""
             #graphPlaceholder {{
                 background-color: {self.colors['placeholder_bg']};
                 margin: 0px 15px 10px 15px;
             }}
-        """)
+        """
+        )
         placeholder_layout = QVBoxLayout(placeholder)
         placeholder_label = QLabel("Time Series Visualization")
-        placeholder_label.setAlignment(Qt.AlignCenter)
-        placeholder_label.setStyleSheet(f"color: {self.colors['text_secondary']}; font-size: 10pt; background: transparent;")
+        placeholder_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        placeholder_label.setStyleSheet(
+            f"color: {self.colors['text_secondary']}; font-size: 10pt; background: transparent;"
+        )
         placeholder_layout.addWidget(placeholder_label)
         panel_layout.addWidget(placeholder, stretch=1)
         control_layout = QHBoxLayout()
@@ -424,10 +457,10 @@ class MotorUnitAnalysisWidget(QWidget):
         control_layout.setSpacing(8)
         zoom_btn = QPushButton("Zoom")
         zoom_btn.setObjectName("controlButton")
-        zoom_btn.setIcon(get_icon(QStyle.SP_FileDialogContentsView))
+        zoom_btn.setIcon(get_icon("SP_FileDialogContentsView"))
         pan_btn = QPushButton("Pan")
         pan_btn.setObjectName("controlButton")
-        pan_btn.setIcon(get_icon(QStyle.SP_DirOpenIcon))
+        pan_btn.setIcon(get_icon("SP_DirOpenIcon"))
         zoom_btn.setIconSize(QSize(12, 12))
         pan_btn.setIconSize(QSize(12, 12))
         control_layout.addWidget(zoom_btn)
@@ -436,7 +469,7 @@ class MotorUnitAnalysisWidget(QWidget):
         panel_layout.addLayout(control_layout)
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(10)
-        shadow.setColor(self.colors['shadow'])
+        shadow.setColor(self.colors["shadow"])
         shadow.setOffset(0, 2)
         panel.setGraphicsEffect(shadow)
         return panel
@@ -448,7 +481,8 @@ class MotorUnitAnalysisWidget(QWidget):
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setContentsMargins(0, 0, 0, 0)
         sidebar_layout.setSpacing(15)
-        sidebar.setStyleSheet(f"""
+        sidebar.setStyleSheet(
+            f"""
             #rightSidebar > QLabel#sidebarTitle {{
                 color: {self.colors['text_primary']};
                 font-size: 10pt;
@@ -475,7 +509,8 @@ class MotorUnitAnalysisWidget(QWidget):
                 border: none;
                 background: transparent;
             }}
-        """)
+        """
+        )
         title_label = QLabel("Statistical Summary")
         title_label.setObjectName("sidebarTitle")
         sidebar_layout.addWidget(title_label)
@@ -483,7 +518,7 @@ class MotorUnitAnalysisWidget(QWidget):
             "Mean Firing Rate": "24.5 Hz",
             "Variance": "3.2",
             "Standard Deviation": "1.8",
-            "Coherence": "1.6"
+            "Coherence": "1.6",
         }
         for label, value in summary_data.items():
             sidebar_layout.addWidget(self._create_summary_item(label, value))
@@ -491,8 +526,9 @@ class MotorUnitAnalysisWidget(QWidget):
         refine_button = QPushButton("Refine Data")
         refine_button.setMinimumHeight(36)
         refine_button.setFont(QFont("Arial", 9, QFont.Bold))
-        refine_button.setCursor(Qt.PointingHandCursor)
-        refine_button.setStyleSheet(f"""
+        refine_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        refine_button.setStyleSheet(
+            f"""
             QPushButton {{
                 background-color: {self.colors['button_dark_bg']};
                 color: {self.colors['button_dark_text']};
@@ -503,15 +539,17 @@ class MotorUnitAnalysisWidget(QWidget):
             QPushButton:hover {{
                 background-color: {self.colors['button_dark_hover']};
             }}
-        """)
+        """
+        )
         refine_button.clicked.connect(self.handle_refine_data)
         sidebar_layout.addWidget(refine_button)
         # --- Create Export Button ---
         export_button = QPushButton("Export Analysis Report")
         export_button.setMinimumHeight(36)
         export_button.setFont(QFont("Arial", 9, QFont.Bold))
-        export_button.setCursor(Qt.PointingHandCursor)
-        export_button.setStyleSheet(f"""
+        export_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        export_button.setStyleSheet(
+            f"""
             QPushButton {{
                 background-color: {self.colors['button_dark_bg']};
                 color: {self.colors['button_dark_text']};
@@ -522,9 +560,10 @@ class MotorUnitAnalysisWidget(QWidget):
             QPushButton:hover {{
                 background-color: {self.colors['button_dark_hover']};
             }}
-        """)
+        """
+        )
         # Connect the export button to the trigger method
-        if hasattr(self, '_trigger_export_window_open'):
+        if hasattr(self, "_trigger_export_window_open"):
             print(f"--- DEBUG: Connecting export_button to {self._trigger_export_window_open} ---")
             export_button.clicked.connect(self._trigger_export_window_open)
             print("--- DEBUG: Connection attempted ---")
@@ -562,7 +601,7 @@ class MotorUnitAnalysisWidget(QWidget):
 # --- Main execution block (for testing) ---
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    analysis_widget = MotorUnitAnalysisWidget()
+    analysis_widget = MUAnalysis()
     test_window = QMainWindow()
     test_window.setCentralWidget(analysis_widget)
     test_window.setWindowTitle("Motor Unit Analysis Widget Test")

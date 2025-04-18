@@ -8,7 +8,7 @@ from ui.HDEMGDashboardUI import setup_ui, update_sidebar_selection
 
 # Import for external windows/widgets
 from ImportDataWindow import ImportDataWindow
-from MU_analysis import MotorUnitAnalysisWidget
+from ui.MUAnalysisUI import MUAnalysis
 from ExportResults import ExportResultsWindow
 
 
@@ -90,8 +90,8 @@ class HDEMGDashboard(QMainWindow):
     def initialize_external_widgets(self):
         """Initialize external widgets if their modules are available."""
         # Initialize MU Analysis page
-        if MotorUnitAnalysisWidget:
-            self.mu_analysis_page = MotorUnitAnalysisWidget()
+        if MUAnalysis:
+            self.mu_analysis_page = MUAnalysis()
             self.mu_analysis_page.return_to_dashboard_requested.connect(self.show_dashboard_view)
             if hasattr(self.mu_analysis_page, "set_export_window_opener"):
                 self.mu_analysis_page.set_export_window_opener(self.open_export_results_window)
@@ -119,7 +119,7 @@ class HDEMGDashboard(QMainWindow):
         else:
             self.sidebar_buttons["import"].setEnabled(False)
 
-        if not MotorUnitAnalysisWidget:
+        if not MUAnalysis:
             self.sidebar_buttons["mu_analysis"].setEnabled(False)
 
         # Connect "New Analysis" button on the dashboard

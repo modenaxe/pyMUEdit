@@ -17,12 +17,7 @@ class ExportConfirm(QWidget):
     cancel_requested = pyqtSignal()
 
     def __init__(self, parent=None):
-        """
-        Initializes the ExportConfirmWidget.
-
-        Args:
-            parent (QWidget, optional): The parent widget. Defaults to None.
-        """
+        """Initializes the ExportConfirmWidget."""
         super().__init__(parent)
 
         # Set up the UI (calls the setup_ui function from ExportConfirmUI.py)
