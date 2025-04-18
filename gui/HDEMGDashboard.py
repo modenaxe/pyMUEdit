@@ -9,7 +9,7 @@ from ui.HDEMGDashboardUI import setup_ui, update_sidebar_selection
 # Import for external windows/widgets
 from ImportDataWindow import ImportDataWindow
 from MU_analysis import MotorUnitAnalysisWidget
-from export_results import ExportResultsWindow
+from ExportResults import ExportResultsWindow
 
 
 class HDEMGDashboard(QMainWindow):

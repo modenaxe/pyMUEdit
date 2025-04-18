@@ -24,12 +24,12 @@ from PyQt5.QtCore import Qt, QSize, pyqtSignal
 
 # --- Import Widgets ---
 try:
-    from export_confirmation import ExportConfirmWidget
+    from ExportConfirm import ExportConfirm
 except ImportError:
     ExportConfirmWidget = None
     print("Warning: ExportConfirmWidget not found.")
 try:
-    from download_confirmation import ExportCompleteWidget
+    from DownloadConfirmation import DownloadConfirmation
 except ImportError:
     ExportCompleteWidget = None
     print("Warning: ExportCompleteWidget not found.")
