@@ -22,7 +22,7 @@ def notch_filter(signal, fsamp, to_han=False):
             final_signal = signal[chan, :]
 
         fourier_signal = np.fft.fft(final_signal)
-        fourier_interf = np.zeros(len(fourier_signal), dtype="complex_")
+        fourier_interf = np.zeros(len(fourier_signal), dtype="complex128")
         interf2remove = np.zeros(len(fourier_signal), dtype=np.int32)
         window = fsamp
         tracker = 0
