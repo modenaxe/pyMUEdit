@@ -1,5 +1,4 @@
 import sys
-import os
 from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
@@ -9,12 +8,10 @@ from PyQt5.QtWidgets import (
     QLabel,
     QFrame,
     QComboBox,
-    QSpacerItem,
-    QSizePolicy,
     QStyle,
     QStackedWidget,
 )
-from PyQt5.QtGui import QIcon, QFont, QColor
+from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt, QSize
 
 

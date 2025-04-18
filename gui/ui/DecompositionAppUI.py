@@ -12,7 +12,6 @@ from PyQt5.QtWidgets import (
     QSpinBox,
     QDoubleSpinBox,
 )
-from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QFont
 import pyqtgraph as pg
 

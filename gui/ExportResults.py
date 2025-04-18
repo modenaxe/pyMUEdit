@@ -6,12 +6,10 @@ from PyQt5.QtWidgets import (
     QWidget,
     QFileDialog,
     QMessageBox,
-    QStyle,
     QFrame,
     QPushButton,
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon
 
 # Import UI setup function
 from ui.ExportResultsUI import setup_ui, create_export_setup_widget, get_icon

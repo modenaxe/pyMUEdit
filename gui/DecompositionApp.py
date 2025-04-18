@@ -3,13 +3,8 @@ import os
 import traceback
 import numpy as np
 import scipy.io as sio
-from PyQt5.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QFileDialog,
-    QMessageBox,
-)
-from PyQt5.QtCore import Qt, QSize, QThread
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
+from PyQt5.QtCore import Qt
 import pyqtgraph as pg
 
 # Add project root to path
@@ -24,12 +19,8 @@ from ui.DecompositionAppUI import setup_ui
 # Import workers and other required modules
 from SaveMatWorker import SaveMatWorker
 from DecompositionWorker import DecompositionWorker
-
-# Import UI related modules from utils
 from utils.config_and_input.prepare_parameters import prepare_parameters
 from utils.config_and_input.segmentsession import SegmentSession
-
-# Import MUeditManual for editing mode
 from MUeditManual import MUeditManual
 
 
