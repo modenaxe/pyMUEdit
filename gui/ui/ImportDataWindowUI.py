@@ -5,7 +5,6 @@ from PyQt5.QtCore import Qt, QSize
 
 def setup_ui(import_window):
     """Set up the UI for the import data window."""
-
     # Set widget properties
     import_window.setWindowTitle("HDEMG Analysis - Import Data")
     import_window.resize(1200, 800)
