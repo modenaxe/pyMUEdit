@@ -18,6 +18,7 @@ from PyQt5.QtCore import Qt, QSize
 
 def setup_ui(main_window):
     """Sets up the UI for the HDEMG dashboard."""
+
     # Main window settings
     main_window.setWindowTitle("HDEMG App")
     main_window.resize(1400, 700)
