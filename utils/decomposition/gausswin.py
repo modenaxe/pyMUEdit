@@ -9,6 +9,6 @@ def gausswin(M, alpha=2.5):
     signals in motor unit extraction.
     """
 
-    n = np.arange(-(M - 1) / 2, (M - 1) / 2 + 1, dtype=np.float128)
+    n = np.arange(-(M - 1) / 2, (M - 1) / 2 + 1, dtype="complex128")
     w = np.exp((-1 / 2) * (alpha * n / ((M - 1) / 2)) ** 2)
     return w
