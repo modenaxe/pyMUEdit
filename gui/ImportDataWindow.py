@@ -26,6 +26,8 @@ class ImportDataWindow(QWidget):
     # Signal to notify the main window to return to dashboard
     return_to_dashboard_requested = pyqtSignal()
 
+    decomposition_requested = pyqtSignal(object, str, str, object)
+
     # Signal to notify other windows when a file is imported (if needed)
     fileImported = pyqtSignal(dict)
 
@@ -175,7 +177,7 @@ class ImportDataWindow(QWidget):
         self.return_to_dashboard_requested.emit()
 
     def go_to_algorithm_screen(self):
-        """Open the DecompositionApp and pass the loaded data."""
+        """Signal to the dashboard to show the decomposition view."""
         if not self.filename or not self.emg_obj:
             return
 
@@ -185,26 +187,11 @@ class ImportDataWindow(QWidget):
                 savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
                 self.save_mat_in_background(savename, {"signal": self.imported_signal}, True)
 
-            # Create the DecompositionApp instance and pass data directly
-            self.decomp_app = DecompositionApp(
-                emg_obj=self.emg_obj,
-                filename=self.filename,
-                pathname=self.pathname,
-                imported_signal=self.imported_signal,
-            )
-
-            # Connect back button signal if it exists
-            if hasattr(self.decomp_app, "back_to_import"):
-                self.decomp_app.back_to_import_btn.clicked.connect(self.show_import_window)
-
-            # Show the DecompositionApp window
-            self.decomp_app.show()
-
-            # Hide the import window (don't close it)
-            self.hide()
+            # Emit signal to request showing decomposition view
+            self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal)
 
         except Exception as e:
-            print(f"Error opening algorithm screen: {e}")
+            print(f"Error requesting decomposition view: {e}")
             traceback.print_exc()
 
     def show_import_window(self):

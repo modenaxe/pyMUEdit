@@ -25,8 +25,8 @@ from MUeditManual import MUeditManual
 
 
 class DecompositionApp(QMainWindow):
-    def __init__(self, emg_obj=None, filename=None, pathname=None, imported_signal=None):
-        super().__init__()
+    def __init__(self, emg_obj=None, filename=None, pathname=None, imported_signal=None, parent=None):
+        super().__init__(parent)
 
         # Initialize variables
         self.filename = filename
@@ -72,7 +72,8 @@ class DecompositionApp(QMainWindow):
 
     def back_to_import(self):
         """Return to the Import window."""
-        self.close()
+        # This will now be connected externally to show the import view in the dashboard
+        pass
 
     def set_data(self, emg_obj, filename, pathname, imported_signal=None):
         """Set data from ImportDataWindow and update UI."""
