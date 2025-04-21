@@ -1,15 +1,19 @@
 import sys
 import traceback
-from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QPushButton, QStyle
+import os
+from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QPushButton, QStyle, QMessageBox
 from PyQt5.QtCore import Qt
+from datetime import datetime
 
-# Import UI setup function
+# Import UI setup function - using your existing function
 from ui.HDEMGDashboardUI import setup_ui, update_sidebar_selection
 
 # Import for external windows/widgets
 from ImportDataWindow import ImportDataWindow
 from ui.MUAnalysisUI import MUAnalysis
 from ExportResults import ExportResultsWindow
+from DecompositionApp import DecompositionApp
+from VisualizationManager import VisualizationManager
 
 
 class HDEMGDashboard(QMainWindow):
@@ -22,6 +26,10 @@ class HDEMGDashboard(QMainWindow):
         self.mu_analysis_page = None
         self.manual_editing_page = None
         self.decomposition_page = None
+        self.current_decomposition_app = None
+
+        # Initialize visualization manager
+        self.visualization_manager = VisualizationManager()
 
         # Colors and recent items for demonstration
         self.colors = {
@@ -40,34 +48,10 @@ class HDEMGDashboard(QMainWindow):
             "sidebar_selected_bg": "#e6e6e6",
         }
 
-        # Sample data for the UI
-        self.recent_visualizations = [
-            {
-                "title": "HDEMG Analysis",
-                "date": "Last modified: Jan 15, 2025",
-                "type": "hdemg",
-                "icon": getattr(QStyle, "SP_FileDialogDetailedView"),
-            },
-            {
-                "title": "Neuro Analysis",
-                "date": "Last modified: Jan 14, 2025",
-                "type": "neuro",
-                "icon": getattr(QStyle, "SP_DialogApplyButton"),
-            },
-            {
-                "title": "EMG Recording 23",
-                "date": "Last modified: Jan 13, 2025",
-                "type": "emg",
-                "icon": getattr(QStyle, "SP_FileDialogInfoView"),
-            },
-            {
-                "title": "EEG Study Results",
-                "date": "Last modified: Jan 10, 2025",
-                "type": "eeg",
-                "icon": getattr(QStyle, "SP_DialogHelpButton"),
-            },
-        ]
-
+        # Load recent visualizations from manager
+        self.recent_visualizations = self._load_recent_visualizations()
+        
+        # Sample data for recent datasets (you may want to implement dataset tracking too)
         self.recent_datasets = [
             {"filename": "HDEMG_Analysis2025.csv", "metadata": "2.5MB • 1,000 rows"},
             {"filename": "NeuroSignal_Analysis.xlsx", "metadata": "1.8MB • 750 rows"},
@@ -78,7 +62,7 @@ class HDEMGDashboard(QMainWindow):
         # Initialize external widgets if available
         self.initialize_external_widgets()
 
-        # Set up the UI (imported from main_window_ui.py)
+        # Set up the UI components by calling the function from HDEMGDashboardUI.py
         setup_ui(self)
 
         # Connect signals to slots
@@ -86,6 +70,43 @@ class HDEMGDashboard(QMainWindow):
 
         # Start on dashboard view
         self.show_dashboard_view()
+
+    def _load_recent_visualizations(self):
+        """Load recent visualizations from the visualization manager and format for the UI."""
+        try:
+            recent_vis_data = self.visualization_manager.get_recent_visualizations()
+            ui_vis_data = []
+            
+            for vis in recent_vis_data:
+                # Format the visualization data for the UI
+                title = vis.get("title", "Unnamed Visualization")
+                date_str = f"Last modified: {vis.get('modified', 'Unknown date')}"
+                vis_type = vis.get("icon_type", "hdemg")
+                
+                # Get appropriate icon for visualization type
+                icon_mapping = {
+                    "hdemg": getattr(QStyle, "SP_FileDialogDetailedView"),
+                    "neuro": getattr(QStyle, "SP_DialogApplyButton"),
+                    "emg": getattr(QStyle, "SP_FileDialogInfoView"),
+                    "eeg": getattr(QStyle, "SP_DialogHelpButton"),
+                    "default": getattr(QStyle, "SP_FileDialogDetailedView")
+                }
+                icon = icon_mapping.get(vis_type, icon_mapping["default"])
+                
+                ui_vis_data.append({
+                    "title": title,
+                    "date": date_str,
+                    "type": vis_type,
+                    "icon": icon,
+                    "id": vis.get("id", "unknown_id")  # Store the ID for loading later
+                })
+            
+            return ui_vis_data
+            
+        except Exception as e:
+            print(f"Error loading recent visualizations: {e}")
+            traceback.print_exc()
+            return []
 
     def initialize_external_widgets(self):
         """Initialize external widgets if their modules are available."""
@@ -141,14 +162,46 @@ class HDEMGDashboard(QMainWindow):
 
         if new_viz_btn and ImportDataWindow:
             new_viz_btn.clicked.connect(self.show_import_data_view)
+            
+        # Connect visualization cards if they exist
+        self.connect_visualization_cards()
+
+    def connect_visualization_cards(self):
+        """Connect click handlers for visualization cards."""
+        # Find the viz container in the dashboard
+        try:
+            content_widget = self.dashboard_page.widget()
+            if not content_widget:
+                return
+                
+            # Look for frames in the visualization section
+            viz_cards = content_widget.findChildren(QFrame, lambda name: name.startswith("vizCard_"))
+            
+            for card in viz_cards:
+                # Connect directly to the open_visualization method
+                title = card.property("title")
+                vis_id = card.property("vis_id")
+                if title and vis_id:
+                    card.mousePressEvent = lambda event, t=title, v=vis_id: self.open_visualization(t, v)
+        except Exception as e:
+            print(f"Error connecting visualization cards: {e}")
+            traceback.print_exc()
 
     # Navigation methods
     def show_dashboard_view(self):
         """Switches the central widget to the dashboard page."""
         print("Switching to Dashboard View")
-
+        
+        # Refresh recent visualizations when returning to dashboard
+        self.recent_visualizations = self._load_recent_visualizations()
+        
+        # We don't recreate the dashboard page - use the existing one from setup_ui
         self.central_stacked_widget.setCurrentWidget(self.dashboard_page)
         update_sidebar_selection(self, "dashboard")
+        
+        # Update visualization cards - this function should be implemented in HDEMGDashboardUI.py
+        # If not available, you'll need to adapt your UI to support this
+        self.connect_visualization_cards()
 
     def show_mu_analysis_view(self):
         """Switches the central widget to the MU Analysis page."""
@@ -186,14 +239,114 @@ class HDEMGDashboard(QMainWindow):
         else:
             print("Decomposition view widget not found.")
 
-    def open_visualization(self, title):
+    def open_visualization(self, title, vis_id=None):
         """Handles clicks on visualization cards."""
         print(f"Clicked visualization/analysis card: {title}")
-        # Map visualization titles to corresponding views
-        if "HDEMG Analysis" in title and hasattr(self, "mu_analysis_page") and self.mu_analysis_page:
-            self.show_mu_analysis_view()
+        
+        if vis_id:
+            # Get the visualization data from the manager
+            vis_data = self.visualization_manager.get_visualization(vis_id)
+            
+            if vis_data:
+                # Open the visualization in DecompositionApp
+                self.load_saved_visualization(vis_data)
+            else:
+                QMessageBox.warning(self, "Visualization Not Found", 
+                                   f"The visualization '{title}' could not be found.")
         else:
-            print(f"No specific action defined for card '{title}'. Staying on Dashboard.")
+            print(f"No ID provided for visualization '{title}'. Cannot load.")
+
+    def load_saved_visualization(self, vis_data):
+        """
+        Loads a saved visualization into a new DecompositionApp instance.
+        
+        Args:
+            vis_data (dict): The visualization data from the visualization manager
+        """
+        try:
+            print(f"Loading visualization: {vis_data.get('title')}")
+            
+            # Check if the result file exists
+            result_path = vis_data.get('result_path')
+            if not result_path or not os.path.exists(result_path):
+                QMessageBox.warning(self, "File Not Found", 
+                                    f"The result file for this visualization could not be found at: {result_path}")
+                return
+            
+            # Create a new DecompositionApp instance
+            self.current_decomposition_app = DecompositionApp(
+                filename=vis_data.get('filename'),
+                pathname=os.path.dirname(result_path),
+                parameters=vis_data.get('parameters'),
+                result_file=result_path
+            )
+            
+            # Set parent dashboard for communication
+            self.current_decomposition_app.set_parent_dashboard(self)
+            
+            # Connect back button
+            if hasattr(self.current_decomposition_app, "back_to_import"):
+                self.current_decomposition_app.back_to_import_btn.clicked.connect(self.on_decomp_app_closed)
+            
+            # Show the DecompositionApp
+            self.current_decomposition_app.show()
+            
+            # Update the visualization's last modified date
+            self.visualization_manager.update_visualization(
+                vis_data['id'], 
+                {'modified': datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+            )
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An error occurred while loading the visualization: {str(e)}")
+            print(f"Error loading visualization: {e}")
+            traceback.print_exc()
+
+    def on_decomp_app_closed(self):
+        """Handle when decomposition app is closed."""
+        # Show the dashboard again
+        self.show()
+        
+        # Close the decomposition app
+        if self.current_decomposition_app:
+            self.current_decomposition_app.hide()
+            self.current_decomposition_app = None
+        
+        # Refresh the dashboard view
+        self.show_dashboard_view()
+
+    def on_decomposition_complete(self, emg_obj, filename, pathname, result_path, parameters):
+        """
+        Called when a decomposition is complete to save its visualization data.
+        
+        Args:
+            emg_obj: The EMG object with decomposition results
+            filename: Original filename
+            pathname: Original path
+            result_path: Path to saved result file
+            parameters: Parameters used for decomposition
+        """
+        try:
+            # Create a title based on the filename
+            title = f"HDEMG Analysis - {filename}"
+            
+            # Add the visualization to the manager
+            vis_id = self.visualization_manager.add_visualization(
+                title=title,
+                filename=filename,
+                parameters=parameters,
+                result_path=result_path,
+                icon_type="hdemg"
+            )
+            
+            print(f"Added new visualization with ID: {vis_id}")
+            
+            # Refresh the dashboard view
+            self.recent_visualizations = self._load_recent_visualizations()
+            
+        except Exception as e:
+            print(f"Error saving visualization data: {e}")
+            traceback.print_exc()
 
     def open_export_results_window(self):
         """Opens the Export Results window, creating it if necessary."""

@@ -39,7 +39,7 @@ def setup_ui(main_window):
     main_window.central_stacked_widget = QStackedWidget()
     main_window.central_stacked_widget.setStyleSheet("background-color: transparent;")
 
-    # Dashboard page
+    # Dashboard page - Create this with a custom method
     main_window.dashboard_page = _create_dashboard_page(main_window)
     main_window.central_stacked_widget.addWidget(main_window.dashboard_page)
 
@@ -278,10 +278,20 @@ def _create_viz_section_frame(main_window):
         viz_container_layout.addWidget(no_viz_label)
     else:
         for idx, viz_data in enumerate(main_window.recent_visualizations):
-            viz_card = create_viz_card(
-                viz_data["title"], viz_data["date"], main_window, viz_data["type"], viz_data["icon"], idx
+            # Create a card with custom click handling to open the visualization
+            viz_card = create_clickable_viz_card(
+                viz_data["title"], 
+                viz_data["date"], 
+                main_window, 
+                viz_data["type"], 
+                viz_data["icon"], 
+                idx,
+                viz_data.get("id", None)  # Pass the visualization ID to the card
             )
             viz_container_layout.addWidget(viz_card)
+
+        # Add stretch to prevent cards from spreading too far apart when there are few
+        viz_container_layout.addStretch()
 
     viz_scroll_area.setWidget(viz_container)
     viz_layout.addWidget(viz_title)
@@ -332,14 +342,28 @@ def _create_datasets_frame(main_window):
     return datasets_frame
 
 
-def create_viz_card(title, date, main_window, card_type="default", icon_style=None, idx=0):
-    """Creates a visualization card for the dashboard."""
-    card = QFrame()
+def create_clickable_viz_card(title, date, main_window, card_type="default", icon_style=None, idx=0, vis_id=None):
+    """Creates a visualization card for the dashboard with click handling."""
+    # Custom class to handle clicks properly
+    class ClickableVisCard(QFrame):
+        def __init__(self, title, vis_id=None, parent=None):
+            super().__init__(parent)
+            self.title = title
+            self.vis_id = vis_id
+            
+        def mousePressEvent(self, event):
+            # Call the parent window's open_visualization method with visualization ID
+            main_window.open_visualization(self.title, self.vis_id)
+            super().mousePressEvent(event)
+
+    # Create the clickable card
+    card = ClickableVisCard(title, vis_id)
     sanitized_title = title.replace(" ", "_").replace(":", "").lower()
     card.setObjectName(f"vizCard_{sanitized_title}_{idx}")
     card.setFrameShape(QFrame.StyledPanel)
     card.setFixedSize(250, 180)
     card.setProperty("title", title)
+    card.setProperty("vis_id", vis_id)  # Store ID as a property for later use
 
     if card_type in main_window.colors:
         bg_color = main_window.colors.get(f"bg_card_{card_type}", main_window.colors["bg_card_default"])

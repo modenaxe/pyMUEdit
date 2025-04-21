@@ -3,9 +3,10 @@ import os
 import traceback
 import numpy as np
 import scipy.io as sio
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox
+from PyQt5.QtCore import Qt, pyqtSignal
 import pyqtgraph as pg
+from datetime import datetime
 
 # Add project root to path
 from pathlib import Path
@@ -25,7 +26,10 @@ from MUeditManual import MUeditManual
 
 
 class DecompositionApp(QMainWindow):
-    def __init__(self, emg_obj=None, filename=None, pathname=None, imported_signal=None):
+    # Signal to notify the dashboard when a visualization is completed
+    visualization_completed = pyqtSignal(object, str, str, str, dict)
+    
+    def __init__(self, emg_obj=None, filename=None, pathname=None, imported_signal=None, parameters=None, result_file=None):
         super().__init__()
 
         # Initialize variables
@@ -33,6 +37,8 @@ class DecompositionApp(QMainWindow):
         self.pathname = pathname
         self.emg_obj = emg_obj
         self.imported_signal = imported_signal
+        self.result_file = result_file
+        self.parent_dashboard = None
 
         self.MUdecomp = {"config": None}
         self.Configuration = None
@@ -44,7 +50,7 @@ class DecompositionApp(QMainWindow):
         self.threads = []
         self.iteration_counter = 0
         self.decomposition_result = None  # Store the decomposition result
-        self.ui_params = None  # Store UI parameters
+        self.ui_params = parameters or None  # Store UI parameters
 
         # Set up the UI components by calling the function from DecompositionAppUI.py
         setup_ui(self)
@@ -55,6 +61,10 @@ class DecompositionApp(QMainWindow):
         # Initialize with data if provided
         if self.emg_obj and self.filename:
             self.update_ui_with_loaded_data()
+            
+        # If a result file was provided, load it
+        if self.result_file and os.path.exists(self.result_file):
+            self.load_result_file(self.result_file)
 
     def connect_signals(self):
         """Connect all UI signals to their handlers."""
@@ -71,8 +81,12 @@ class DecompositionApp(QMainWindow):
         self.back_to_import_btn.clicked.connect(self.back_to_import)
 
     def back_to_import(self):
-        """Return to the Import window."""
+        """Return to the Import window or dashboard."""
         self.close()
+        
+        # Notify parent dashboard if available
+        if self.parent_dashboard:
+            self.parent_dashboard.on_decomp_app_closed()
 
     def set_data(self, emg_obj, filename, pathname, imported_signal=None):
         """Set data from ImportDataWindow and update UI."""
@@ -82,6 +96,170 @@ class DecompositionApp(QMainWindow):
         self.imported_signal = imported_signal
 
         self.update_ui_with_loaded_data()
+        
+    def set_parent_dashboard(self, dashboard):
+        """Set the parent dashboard for communication."""
+        self.parent_dashboard = dashboard
+        
+    def load_result_file(self, result_file):
+        """Load a saved result file."""
+        try:
+            if not os.path.exists(result_file):
+                QMessageBox.warning(self, "File Not Found", f"Could not find result file: {result_file}")
+                return False
+                
+            # Load the .mat file
+            data = sio.loadmat(result_file)
+            
+            # Check if it has the expected structure
+            if "signal" not in data:
+                QMessageBox.warning(self, "Invalid File", "The result file does not contain valid decomposition data.")
+                return False
+                
+            # Extract parameters if available
+            if "parameters" in data:
+                self.ui_params = {}
+                params = data["parameters"]
+                
+                # Convert MATLAB parameters to Python dictionary
+                for param in params.dtype.names:
+                    self.ui_params[param] = params[param][0, 0]
+                    
+                # Update UI controls with the parameters
+                self.update_ui_controls_from_parameters()
+                
+            # Extract and set the result data
+            self.decomposition_result = data["signal"]
+            
+            # If available, update EMP amplitude/signal preview plot
+            if hasattr(self.decomposition_result, "data") and hasattr(self.decomposition_result, "fsamp"):
+                self.update_signal_preview()
+                
+            # Update motor unit count
+            self.update_motor_unit_count()
+            
+            # Enable editing mode
+            self.edit_mode_btn.setEnabled(True)
+            self.save_output_button.setEnabled(True)
+            
+            self.status_text.setText("Loaded decomposition result file")
+            self.edit_field.setText(f"Loaded {os.path.basename(result_file)}")
+            
+            return True
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to load result file: {str(e)}")
+            traceback.print_exc()
+            return False
+    
+    def update_ui_controls_from_parameters(self):
+        """Update UI controls based on loaded parameters."""
+        if not self.ui_params:
+            return
+            
+        # Map parameters to UI controls
+        try:
+            # Number iterations
+            if "NITER" in self.ui_params:
+                self.number_iterations_field.setValue(self.ui_params["NITER"])
+                
+            # Windows
+            if "nwindows" in self.ui_params:
+                self.number_windows_field.setValue(self.ui_params["nwindows"])
+                
+            # Check EMG
+            if "checkEMG" in self.ui_params:
+                self.check_emg_dropdown.setCurrentIndex(1 if self.ui_params["checkEMG"] == 0 else 0)
+                
+            # Peel off
+            if "peeloff" in self.ui_params:
+                self.peeloff_dropdown.setCurrentIndex(1 if self.ui_params["peeloff"] == 0 else 0)
+                
+            # CoV filter
+            if "covfilter" in self.ui_params:
+                self.cov_filter_dropdown.setCurrentIndex(1 if self.ui_params["covfilter"] == 0 else 0)
+                
+            # Initialization
+            if "initialization" in self.ui_params:
+                self.initialisation_dropdown.setCurrentIndex(self.ui_params["initialization"])
+                
+            # Refine MUs
+            if "refineMU" in self.ui_params:
+                self.refine_mus_dropdown.setCurrentIndex(1 if self.ui_params["refineMU"] == 0 else 0)
+                
+            # Contrast function
+            if "contrastfunc" in self.ui_params:
+                contrast_mapping = {"square": 0, "skew": 1, "logcosh": 2}
+                if self.ui_params["contrastfunc"] in contrast_mapping:
+                    self.contrast_function_dropdown.setCurrentIndex(contrast_mapping[self.ui_params["contrastfunc"]])
+                    
+            # Thresholds
+            if "thresholdtarget" in self.ui_params:
+                self.threshold_target_field.setValue(self.ui_params["thresholdtarget"])
+                
+            if "duplicatesthresh" in self.ui_params:
+                self.duplicate_threshold_field.setValue(self.ui_params["duplicatesthresh"])
+                
+            if "silthr" in self.ui_params:
+                self.sil_threshold_field.setValue(self.ui_params["silthr"])
+                
+            if "covthr" in self.ui_params:
+                self.cov_threshold_field.setValue(self.ui_params["covthr"])
+                
+            if "nbextchan" in self.ui_params:
+                self.nb_extended_channels_field.setValue(self.ui_params["nbextchan"])
+                
+        except Exception as e:
+            print(f"Error updating UI controls from parameters: {e}")
+            traceback.print_exc()
+
+    def update_signal_preview(self):
+        """Update the signal preview plot with loaded data."""
+        try:
+            if hasattr(self.decomposition_result, "data") and hasattr(self.decomposition_result, "fsamp"):
+                # Create a time vector
+                data = self.decomposition_result["data"]
+                fsamp = self.decomposition_result["fsamp"]
+                nsamples = data.shape[1]
+                time = np.arange(nsamples) / fsamp
+
+                # Clear existing plot
+                self.ui_plot_reference.clear()
+
+                # Plot first few channels
+                num_preview_channels = min(3, data.shape[0])
+                colors = ["b", "g", "r", "c", "m", "y"]
+
+                for i in range(num_preview_channels):
+                    self.ui_plot_reference.plot(
+                        time, data[i, :], pen=pg.mkPen(color=colors[i % len(colors)], width=1)
+                    )
+
+                self.ui_plot_reference.setTitle(f"Signal Preview ({num_preview_channels} channels)")
+        except Exception as e:
+            print(f"Error updating signal preview: {e}")
+            traceback.print_exc()
+
+    def update_motor_unit_count(self):
+        """Update the motor unit count display."""
+        try:
+            total_mus = 0
+            
+            if hasattr(self.decomposition_result, "Pulsetrain"):
+                pulsetrain = self.decomposition_result["Pulsetrain"]
+                
+                if isinstance(pulsetrain, np.ndarray) and pulsetrain.ndim > 1:
+                    # Iterate through the cell array
+                    for i in range(pulsetrain.shape[1]):
+                        if i < pulsetrain.shape[1] and pulsetrain[0, i] is not None:
+                            if hasattr(pulsetrain[0, i], "shape"):
+                                total_mus += pulsetrain[0, i].shape[0]
+            
+            self.motor_units_label.setText(f"Motor Units: {total_mus}")
+            
+        except Exception as e:
+            print(f"Error updating motor unit count: {e}")
+            traceback.print_exc()
 
     def update_ui_with_loaded_data(self):
         """Update UI elements with the loaded data information."""
@@ -389,8 +567,11 @@ class DecompositionApp(QMainWindow):
 
     def on_decomposition_complete(self, result):
         """Handle successful completion of decomposition"""
+        result_file = None
+        
         if self.pathname and self.filename:
             savename = os.path.join(self.pathname, self.filename + "_output_decomp.mat")
+            result_file = savename
 
             formatted_result = result.copy() if isinstance(result, dict) else result
 
@@ -531,6 +712,26 @@ class DecompositionApp(QMainWindow):
                         total_mus += electrode_pulses.shape[0]
 
         self.motor_units_label.setText(f"Motor Units: {total_mus}")
+
+        # Emit signal to notify dashboard of completed visualization
+        if hasattr(self, "parent_dashboard") and self.parent_dashboard and hasattr(self, "visualization_completed"):
+            # Include EMG object, filename, path, result file path, and parameters
+            self.visualization_completed.emit(
+                self.emg_obj,
+                self.filename,
+                self.pathname,
+                result_file,
+                self.ui_params
+            )
+            # Call parent dashboard's method directly
+            if hasattr(self.parent_dashboard, "on_decomposition_complete"):
+                self.parent_dashboard.on_decomposition_complete(
+                    self.emg_obj,
+                    self.filename,
+                    self.pathname,
+                    result_file,
+                    self.ui_params
+                )
 
         if hasattr(self, "decomp_worker") and self.decomp_worker in self.threads:
             self.threads.remove(self.decomp_worker)
@@ -674,6 +875,16 @@ class DecompositionApp(QMainWindow):
         # Save in background
         self.save_mat_in_background(save_path, {"signal": formatted_result, "parameters": parameters}, True)
         self.edit_field.setText(f"Saving results to {save_path}")
+        
+        # If connected to dashboard, notify of new result saved
+        if hasattr(self, "parent_dashboard") and self.parent_dashboard and hasattr(self.parent_dashboard, "on_decomposition_complete"):
+            self.parent_dashboard.on_decomposition_complete(
+                self.emg_obj,
+                self.filename,
+                self.pathname,
+                save_path,
+                self.ui_params
+            )
 
 
 if __name__ == "__main__":
