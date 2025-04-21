@@ -47,25 +47,25 @@ class HDEMGDashboard(QMainWindow):
                 "title": "HDEMG Analysis",
                 "date": "Last modified: Jan 15, 2025",
                 "type": "hdemg",
-                "icon": getattr(QStyle, "SP_FileDialogDetailedView"),
+                "icon": "visualization_icon",
             },
             {
                 "title": "Neuro Analysis",
                 "date": "Last modified: Jan 14, 2025",
                 "type": "neuro",
-                "icon": getattr(QStyle, "SP_DialogApplyButton"),
+                "icon": "visualization_icon",
             },
             {
                 "title": "EMG Recording 23",
                 "date": "Last modified: Jan 13, 2025",
                 "type": "emg",
-                "icon": getattr(QStyle, "SP_FileDialogInfoView"),
+                "icon": "visualization_icon",
             },
             {
                 "title": "EEG Study Results",
                 "date": "Last modified: Jan 10, 2025",
                 "type": "eeg",
-                "icon": getattr(QStyle, "SP_DialogHelpButton"),
+                "icon": "visualization_icon",
             },
         ]
 

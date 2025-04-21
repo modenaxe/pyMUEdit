@@ -12,7 +12,6 @@ class CleanCard(QFrame):
         # Set up styling
         self.setObjectName("cleanCard")
         self.setFrameShape(QFrame.StyledPanel)
-        self.setMinimumSize(200, 150)
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
         # Apply styling
@@ -35,7 +34,7 @@ class CleanCard(QFrame):
 
         # Set up layout
         self.layout = QVBoxLayout(self)  # type:ignore
-        self.layout.setContentsMargins(15, 15, 15, 15)
+        self.layout.setContentsMargins(15, 5, 15, 15)
         self.layout.setSpacing(10)
 
         # Content widget

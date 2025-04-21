@@ -37,7 +37,7 @@ class Sidebar(QFrame):
 
         # Set up layout with more padding at the top
         self.layout = QVBoxLayout(self)  # type:ignore
-        self.layout.setContentsMargins(0, 20, 0, 20)
+        self.layout.setContentsMargins(5, 20, 5, 20)
         self.layout.setSpacing(0)  # We'll control spacing through the buttons
 
         # Add app title and icon

@@ -221,6 +221,7 @@ def _create_visualizations_section(main_window):
     """Creates the Recent Visualizations section with cards."""
     # Create a card to hold the visualizations
     section_card = CleanCard()
+    section_card.setMinimumSize(200, 300)
     section_layout = QVBoxLayout()
     section_layout.setContentsMargins(0, 0, 0, 0)
     section_layout.setSpacing(15)
@@ -237,9 +238,9 @@ def _create_visualizations_section(main_window):
 
     # Add visualization cards
     if hasattr(main_window, "recent_visualizations") and main_window.recent_visualizations:
-        for viz_data in main_window.recent_visualizations[:2]:  # Show only first two cards as in image
+        for viz_data in main_window.recent_visualizations[:3]:  # Show only first two cards as in image
             # Create card for each visualization
-            card = VisualizationCard(title=viz_data["title"], date=viz_data["date"])
+            card = VisualizationCard(title=viz_data["title"], date=viz_data["date"], icon=viz_data.get("icon"))
             cards_layout.addWidget(card)
     else:
         # Create a placeholder card
@@ -256,8 +257,9 @@ def _create_datasets_section(main_window):
     """Creates the Recent Datasets section with clean list items."""
     # Create a card to hold the datasets
     section_card = CleanCard()
+    section_card.setMinimumSize(200, 200)
     section_layout = QVBoxLayout()
-    section_layout.setContentsMargins(0, 0, 0, 0)
+    section_layout.setContentsMargins(0, 0, 0, 5)
     section_layout.setSpacing(15)
 
     # Add section title
