@@ -34,6 +34,7 @@ class SettingsGroup(CleanCard):
         # Add to card layout
         self.content_layout.addWidget(self.header)
         self.content_layout.addWidget(self.fields_container)
+        self.content_widget.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
 
     def add_field(self, field):
         """

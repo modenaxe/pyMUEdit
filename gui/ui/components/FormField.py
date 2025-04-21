@@ -26,5 +26,6 @@ class FormField(QWidget):
 
         self.label = QLabel(label_text)
         self.label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+        self.label.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
 
         self.layout.addWidget(self.label)

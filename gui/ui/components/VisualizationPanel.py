@@ -39,6 +39,7 @@ class VisualizationPanel(CleanCard):
 
         # Add to card content
         self.content_layout.addLayout(self.panel_layout)
+        self.content_widget.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
 
     def set_plot_widget(self, plot_widget):
         """

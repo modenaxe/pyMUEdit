@@ -66,6 +66,7 @@ class CollapsiblePanel(QFrame):
         self.title_label = QLabel(title)
         self.title_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
         self.title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+        self.title_label.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
 
         # Expand/collapse indicator
         self.toggle_button = QPushButton()

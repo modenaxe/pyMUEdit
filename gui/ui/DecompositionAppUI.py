@@ -90,7 +90,6 @@ def setup_left_panel(main_window):
     file_info_group = SettingsGroup("File Information")
     main_window.file_info_display = QLabel("No file loaded")
     main_window.file_info_display.setWordWrap(True)
-    main_window.file_info_display.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
     file_info_group.add_field(main_window.file_info_display)
     left_layout.addWidget(file_info_group)
 
@@ -98,24 +97,6 @@ def setup_left_panel(main_window):
     algo_panel = CollapsiblePanel("Algorithm Selection")
     algo_field = FormDropdown("Algorithm", ["Fast ICA", "Other Algorithm 1", "Other Algorithm 2"])
     main_window.algo_combo = algo_field.dropdown
-    # Use system styles for dropdown arrows
-    main_window.algo_combo.setStyleSheet(
-        f"""
-        QComboBox {{
-            border: 1px solid {CleanTheme.BORDER};
-            border-radius: 4px;
-            padding: 5px 8px;
-            background-color: white;
-            min-height: 20px;
-        }}
-        QComboBox::drop-down {{
-            subcontrol-origin: padding;
-            subcontrol-position: top right;
-            width: 20px;
-            border-left: 1px solid {CleanTheme.BORDER};
-        }}
-        """
-    )
     main_window.algo_combo.setCurrentText("Fast ICA")  # Set initial value
     algo_panel.add_widget(algo_field)
     left_layout.addWidget(algo_panel)
@@ -125,19 +106,19 @@ def setup_left_panel(main_window):
 
     check_emg_field = FormDropdown("Check EMG Quality", ["Yes", "No"])
     main_window.check_emg_dropdown = check_emg_field.dropdown
-    main_window.check_emg_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())  # Use same style
+    main_window.check_emg_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
     main_window.check_emg_dropdown.setCurrentText("Yes")  # Set initial value
     options_panel.add_widget(check_emg_field)
 
     cov_filter_field = FormDropdown("COV Filter", ["Yes", "No"])
     main_window.cov_filter_dropdown = cov_filter_field.dropdown
-    main_window.cov_filter_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())  # Use same style
+    main_window.cov_filter_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
     main_window.cov_filter_dropdown.setCurrentText("Yes")  # Set initial value
     options_panel.add_widget(cov_filter_field)
 
     reference_field = FormDropdown("Reference", ["EMG amplitude", "Target"])
     main_window.reference_dropdown = reference_field.dropdown
-    main_window.reference_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())  # Use same style
+    main_window.reference_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
     main_window.reference_dropdown.setCurrentText("EMG amplitude")  # Set initial value
     options_panel.add_widget(reference_field)
 
@@ -148,83 +129,61 @@ def setup_left_panel(main_window):
 
     contrast_field = FormDropdown("Contrast Function", ["square", "skew", "logcosh"])
     main_window.contrast_function_dropdown = contrast_field.dropdown
-    main_window.contrast_function_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())  # Use same style
+    main_window.contrast_function_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
     main_window.contrast_function_dropdown.setCurrentText("square")  # Set initial value
     advanced_panel.add_widget(contrast_field)
 
     init_field = FormDropdown("Initialisation", ["EMG max", "Random"])
     main_window.initialisation_dropdown = init_field.dropdown
-    main_window.initialisation_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())  # Use same style
+    main_window.initialisation_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
     main_window.initialisation_dropdown.setCurrentText("Random")  # Set initial value
     advanced_panel.add_widget(init_field)
 
     peel_field = FormDropdown("Peel Off", ["Yes", "No"])
     main_window.peeloff_dropdown = peel_field.dropdown
-    main_window.peeloff_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())  # Use same style
+    main_window.peeloff_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
     main_window.peeloff_dropdown.setCurrentText("Yes")  # Set initial value
     advanced_panel.add_widget(peel_field)
 
     refine_field = FormDropdown("Refine Motor Units", ["Yes", "No"])
     main_window.refine_mus_dropdown = refine_field.dropdown
-    main_window.refine_mus_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())  # Use same style
+    main_window.refine_mus_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
     main_window.refine_mus_dropdown.setCurrentText("Yes")  # Set initial value
     advanced_panel.add_widget(refine_field)
 
     left_layout.addWidget(advanced_panel)
 
-    # Common style for spinboxes
-    spinbox_style = f"""
-    QSpinBox, QDoubleSpinBox {{
-        border: 1px solid {CleanTheme.BORDER};
-        border-radius: 4px;
-        padding: 5px;
-        background-color: white;
-        min-height: 20px;
-    }}
-    QSpinBox::up-button, QDoubleSpinBox::up-button,
-    QSpinBox::down-button, QDoubleSpinBox::down-button {{
-        width: 16px;
-        border-left: 1px solid {CleanTheme.BORDER};
-    }}
-    """
-
     # Parameters panel
     params_panel = CollapsiblePanel("Parameters")
 
-    iter_field = FormSpinBox("Iterations", 78, 1, 1000)  # Updated to match screenshot
+    iter_field = FormSpinBox("Iterations", 150, 1, 1000)
     main_window.number_iterations_field = iter_field.spinbox
-    main_window.number_iterations_field.setStyleSheet(spinbox_style)
+
     params_panel.add_widget(iter_field)
 
-    windows_field = FormSpinBox("Windows", 7, 1, 100)  # Updated to match screenshot
+    windows_field = FormSpinBox("Windows", 1, 1, 100)
     main_window.number_windows_field = windows_field.spinbox
-    main_window.number_windows_field.setStyleSheet(spinbox_style)
     params_panel.add_widget(windows_field)
 
-    threshold_field = FormDoubleSpinBox("Threshold Target", 1.00, 0, 1, 0.1)  # Updated to match screenshot
+    threshold_field = FormDoubleSpinBox("Threshold Target", 0.9, 0, 1, 0.1)
     main_window.threshold_target_field = threshold_field.spinbox
-    main_window.threshold_target_field.setStyleSheet(spinbox_style)
     params_panel.add_widget(threshold_field)
+
+    channels_field = FormSpinBox("Extended Channels", 1000, 10, 5000)
+    main_window.nb_extended_channels_field = channels_field.spinbox
+    params_panel.add_widget(channels_field)
 
     duplicate_field = FormDoubleSpinBox("Duplicate Threshold", 0.3, 0, 1, 0.1)
     main_window.duplicate_threshold_field = duplicate_field.spinbox
-    main_window.duplicate_threshold_field.setStyleSheet(spinbox_style)
     params_panel.add_widget(duplicate_field)
 
     sil_field = FormDoubleSpinBox("SIL Threshold", 0.9, 0, 1, 0.1)
     main_window.sil_threshold_field = sil_field.spinbox
-    main_window.sil_threshold_field.setStyleSheet(spinbox_style)
     params_panel.add_widget(sil_field)
 
     cov_field = FormDoubleSpinBox("COV Threshold", 0.5, 0, 1, 0.1)
     main_window.cov_threshold_field = cov_field.spinbox
-    main_window.cov_threshold_field.setStyleSheet(spinbox_style)
     params_panel.add_widget(cov_field)
-
-    channels_field = FormSpinBox("Extended Channels", 99, 10, 5000)  # Updated to match screenshot
-    main_window.nb_extended_channels_field = channels_field.spinbox
-    main_window.nb_extended_channels_field.setStyleSheet(spinbox_style)
-    params_panel.add_widget(channels_field)
 
     left_layout.addWidget(params_panel)
 
@@ -374,25 +333,6 @@ def setup_right_panel(main_window, parent_layout):
     config_group.add_field(main_window.segment_session_button)
 
     right_layout.addWidget(config_group)
-
-    # Navigation group
-    nav_group = SettingsGroup("Navigation")
-
-    main_window.edit_mode_btn = ActionButton("✏️ Editing Mode", primary=False)
-    main_window.edit_mode_btn.setEnabled(True)  # Set to True for visual consistency with image
-    nav_group.add_field(main_window.edit_mode_btn)
-
-    main_window.analysis_mode_btn = ActionButton("📊 Analysis Mode", primary=False)
-    nav_group.add_field(main_window.analysis_mode_btn)
-
-    main_window.export_btn = ActionButton("📤 Export", primary=False)
-    nav_group.add_field(main_window.export_btn)
-
-    # Back to Import button
-    main_window.back_to_import_btn = ActionButton("← Back to Import", primary=False)
-    nav_group.add_field(main_window.back_to_import_btn)
-
-    right_layout.addWidget(nav_group)
 
     right_layout.addStretch(1)
     parent_layout.addWidget(right_panel, 1)
