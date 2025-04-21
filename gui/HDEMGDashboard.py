@@ -1,6 +1,6 @@
 import sys
 import traceback
-from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QPushButton, QStyle
+from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QPushButton, QStyle, QWidget, QVBoxLayout
 from PyQt5.QtCore import Qt
 
 # Import UI setup function
@@ -10,6 +10,7 @@ from ui.HDEMGDashboardUI import setup_ui, update_sidebar_selection
 from ImportDataWindow import ImportDataWindow
 from ui.MUAnalysisUI import MUAnalysis
 from ExportResults import ExportResultsWindow
+from DecompositionApp import DecompositionApp
 
 
 class HDEMGDashboard(QMainWindow):
@@ -46,25 +47,25 @@ class HDEMGDashboard(QMainWindow):
                 "title": "HDEMG Analysis",
                 "date": "Last modified: Jan 15, 2025",
                 "type": "hdemg",
-                "icon": getattr(QStyle, "SP_FileDialogDetailedView"),
+                "icon": "visualization_icon",
             },
             {
                 "title": "Neuro Analysis",
                 "date": "Last modified: Jan 14, 2025",
                 "type": "neuro",
-                "icon": getattr(QStyle, "SP_DialogApplyButton"),
+                "icon": "visualization_icon",
             },
             {
                 "title": "EMG Recording 23",
                 "date": "Last modified: Jan 13, 2025",
                 "type": "emg",
-                "icon": getattr(QStyle, "SP_FileDialogInfoView"),
+                "icon": "visualization_icon",
             },
             {
                 "title": "EEG Study Results",
                 "date": "Last modified: Jan 10, 2025",
                 "type": "eeg",
-                "icon": getattr(QStyle, "SP_DialogHelpButton"),
+                "icon": "visualization_icon",
             },
         ]
 
@@ -105,6 +106,62 @@ class HDEMGDashboard(QMainWindow):
             self.import_data_page.setWindowFlags(getattr(Qt.WindowType, "Widget"))
             if hasattr(self.import_data_page, "return_to_dashboard_requested"):
                 self.import_data_page.return_to_dashboard_requested.connect(self.show_dashboard_view)
+            # Connect the new signal for decomposition
+            if hasattr(self.import_data_page, "decomposition_requested"):
+                self.import_data_page.decomposition_requested.connect(self.create_decomposition_view)
+
+    def create_decomposition_view(self, emg_obj, filename, pathname, imported_signal):
+        """Creates a decomposition view with the provided data and adds it to the stacked widget."""
+        try:
+            print("Creating decomposition view with provided data")
+
+            # Create a wrapper widget to hold the DecompositionApp
+            wrapper = QWidget()
+            wrapper.setObjectName("decomposition_wrapper")
+            wrapper_layout = QVBoxLayout(wrapper)
+            wrapper_layout.setContentsMargins(0, 0, 0, 0)
+
+            # Create DecompositionApp instance
+            decomp_app = DecompositionApp(
+                emg_obj=emg_obj,
+                filename=filename,
+                pathname=pathname,
+                imported_signal=imported_signal,
+                parent=self,  # Set parent for proper widget hierarchy
+            )
+
+            # Set window flags to make it a widget instead of a window
+            decomp_app.setWindowFlags(Qt.WindowType.Widget)
+
+            # Add to layout
+            wrapper_layout.addWidget(decomp_app)
+
+            # Connect back button to show import view
+            if hasattr(decomp_app, "back_to_import_btn"):
+                decomp_app.back_to_import_btn.clicked.connect(self.show_import_data_view)
+
+            # Replace the placeholder with our real decomposition view
+            self.decomposition_page = wrapper
+
+            # Remove the old placeholder if it exists
+            for i in range(self.central_stacked_widget.count()):
+                widget = self.central_stacked_widget.widget(i)
+                if widget and (
+                    widget.objectName() == "decomposition_placeholder"
+                    or (hasattr(widget, "objectName") and widget.objectName() == "decomposition_placeholder")
+                ):
+                    self.central_stacked_widget.removeWidget(widget)
+                    break
+
+            # Add the wrapper to the stacked widget
+            self.central_stacked_widget.addWidget(wrapper)
+
+            # Show the decomposition view
+            self.show_decomposition_view()
+
+        except Exception as e:
+            print(f"Error creating decomposition view: {e}")
+            traceback.print_exc()
 
     def connect_signals(self):
         """Connect UI signals to slot methods."""
