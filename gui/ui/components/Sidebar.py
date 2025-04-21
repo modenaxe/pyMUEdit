@@ -132,6 +132,9 @@ class Sidebar(QFrame):
 
         # Add section header
         recent_header = SectionHeader("Recent Files")
+        recent_header.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        recent_header.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+        recent_header.setContentsMargins(10, 15, 0, 0)
         recent_files_layout.addWidget(recent_header)
 
         # Add recent files
@@ -143,7 +146,7 @@ class Sidebar(QFrame):
             metadata = f"{file_size}"
 
             # Create dataset item
-            dataset_item = DatasetItem(filename, metadata)
+            dataset_item = DatasetItem(filename, metadata, True)
 
             # Make the dataset item clickable
             dataset_item.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))

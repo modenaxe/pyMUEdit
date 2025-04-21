@@ -1,6 +1,7 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QApplication
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QApplication, QScrollArea
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtSvg import QSvgWidget
 
 # Import custom components
 from ui.components import CleanTheme, CleanCard, ActionButton, SectionHeader, Sidebar
@@ -40,6 +41,13 @@ def setup_ui(import_window):
 
 def create_right_content(import_window):
     """Create the right content area with dropzone and preview."""
+    # Create scroll area for content
+    scroll_area = QScrollArea()
+    scroll_area.setWidgetResizable(True)
+    scroll_area.setFrameShape(QFrame.NoFrame)
+    scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    scroll_area.setStyleSheet("background: transparent; border: none;")
+
     # Create container widget
     right_content = QWidget()
     right_layout = QVBoxLayout(right_content)
@@ -61,13 +69,16 @@ def create_right_content(import_window):
     # Add stretch to push content to the top
     right_layout.addStretch(1)
 
-    return right_content
+    # Set the content widget to the scroll area
+    scroll_area.setWidget(right_content)
+
+    return scroll_area
 
 
 def create_dropzone_card(import_window):
     """Create a clean card for the file dropzone."""
     dropzone_card = CleanCard()
-    dropzone_card.setMinimumHeight(200)
+    dropzone_card.setMinimumHeight(250)
 
     # Create layout for content
     dropzone_layout = QVBoxLayout()
@@ -75,14 +86,17 @@ def create_dropzone_card(import_window):
     dropzone_layout.setSpacing(15)
     dropzone_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    # Add icon
-    cloud_icon = QLabel()
-    cloud_icon.setPixmap(
-        import_window.style()
-        .standardIcon(getattr(Qt.CursorShape, "ResourceType") if hasattr(Qt.CursorShape, "ResourceType") else 0)
-        .pixmap(QSize(48, 48))
-    )
-    cloud_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    # Add SVG icon
+    icon_container = QWidget()
+    icon_layout = QHBoxLayout(icon_container)
+    icon_layout.setContentsMargins(0, 0, 0, 0)
+    icon_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    cloud_icon = QSvgWidget("public/upload_icon.svg")
+    cloud_icon.setFixedSize(48, 33)
+    cloud_icon.setStyleSheet("margin-bottom: 10px;")
+
+    icon_layout.addWidget(cloud_icon)
 
     # Add descriptive text
     drag_label = QLabel("Drag and drop your HDEMG files here")
@@ -108,7 +122,7 @@ def create_dropzone_card(import_window):
 
     # Add widgets to layout
     dropzone_layout.addStretch()
-    dropzone_layout.addWidget(cloud_icon)
+    dropzone_layout.addWidget(icon_container)
     dropzone_layout.addWidget(drag_label)
     dropzone_layout.addWidget(import_window.file_info_label)
     dropzone_layout.addWidget(or_label)
@@ -128,7 +142,7 @@ def create_dropzone_card(import_window):
 def create_preview_section(import_window):
     """Create the signal preview section."""
     preview_card = CleanCard()
-    preview_card.setMinimumHeight(300)
+    preview_card.setMinimumHeight(200)
 
     # Create layout for content
     preview_layout = QVBoxLayout()
