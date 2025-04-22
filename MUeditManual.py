@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
 )
 
-from MUeditManualUI import setup_ui
+from gui.ui.MUeditManualUI import setup_ui
 from utils.manual_editing.getsil import getsil
 from utils.manual_editing.refinesil import refinesil
 from utils.manual_editing.extendfilter import extendfilter
@@ -419,7 +419,7 @@ class MUeditManual(QMainWindow):
                 self.spiketrain_plot.plot(
                     time_vector,
                     pulse_train,
-                    pen=pg.mkPen(color="#f0f0f0", width=1),
+                    pen=pg.mkPen(color="#999999", width=1),
                 )
 
                 # Plot reference signal if available
@@ -435,7 +435,7 @@ class MUeditManual(QMainWindow):
                             self.spiketrain_plot.plot(
                                 time_vector,
                                 target_normalized,
-                                pen=pg.mkPen(color="#f0f0f0", width=1, style=Qt.PenStyle.DashLine),
+                                pen=pg.mkPen(color="#4CAF50", width=1, style=Qt.PenStyle.DashLine),
                             )
 
             # Plot discharge times
@@ -480,7 +480,7 @@ class MUeditManual(QMainWindow):
 
                 # Plot as scatter plot
                 scatter_dr = pg.ScatterPlotItem()
-                scatter_dr.addPoints(x=distime, y=dr, pen=None, brush=pg.mkBrush("#f0f0f0"), size=10)
+                scatter_dr.addPoints(x=distime, y=dr, pen=None, brush=pg.mkBrush("#D95535"), size=10)
                 self.dr_plot.addItem(scatter_dr)
 
                 # Set y-axis range with margin
