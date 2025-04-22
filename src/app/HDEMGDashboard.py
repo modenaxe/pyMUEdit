@@ -11,6 +11,7 @@ from app.ImportDataWindow import ImportDataWindow
 from app.ExportResults import ExportResultsWindow
 from app.DecompositionApp import DecompositionApp
 from ui.MUAnalysisUI import MUAnalysis
+from MUeditManual import MUeditManual  # Import MUeditManual class
 
 
 class HDEMGDashboard(QMainWindow):
@@ -82,6 +83,9 @@ class HDEMGDashboard(QMainWindow):
         # Set up the UI (imported from main_window_ui.py)
         setup_ui(self)
 
+        # Now create the manual editing view
+        self.create_manual_editing_view()
+
         # Connect signals to slots
         self.connect_signals()
 
@@ -109,6 +113,42 @@ class HDEMGDashboard(QMainWindow):
             # Connect the new signal for decomposition
             if hasattr(self.import_data_page, "decomposition_requested"):
                 self.import_data_page.decomposition_requested.connect(self.create_decomposition_view)
+
+        # Note: Manual Editing page is now created after setup_ui in __init__
+
+    def create_manual_editing_view(self):
+        """Creates a manual editing view and adds it to the stacked widget."""
+        try:
+            print("Creating manual editing view")
+
+            # Create a wrapper widget to hold the MUeditManual
+            wrapper = QWidget()
+            wrapper.setObjectName("manual_editing_wrapper")
+            wrapper_layout = QVBoxLayout(wrapper)
+            wrapper_layout.setContentsMargins(0, 0, 0, 0)
+
+            # Create MUeditManual instance
+            manual_edit_app = MUeditManual()
+
+            # Set window flags to make it a widget instead of a window
+            manual_edit_app.setWindowFlags(Qt.WindowType.Widget)
+
+            # Connect return signal if available
+            if hasattr(manual_edit_app, "return_to_dashboard_requested"):
+                manual_edit_app.return_to_dashboard_requested.connect(self.show_dashboard_view)
+
+            # Add to layout
+            wrapper_layout.addWidget(manual_edit_app)
+
+            # Replace the placeholder with our real manual editing view
+            self.manual_editing_page = wrapper
+
+            # Add the wrapper to the stacked widget
+            self.central_stacked_widget.addWidget(wrapper)
+
+        except Exception as e:
+            print(f"Error creating manual editing view: {e}")
+            traceback.print_exc()
 
     def create_decomposition_view(self, emg_obj, filename, pathname, imported_signal):
         """Creates a decomposition view with the provided data and adds it to the stacked widget."""

@@ -3,16 +3,22 @@ import sys
 import numpy as np
 import scipy.io as sio
 import pyqtgraph as pg
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QCheckBox, QLabel, QWidget, QFrame
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import (
+    QDialog,
+    QVBoxLayout,
+    QCheckBox,
+    QLabel,
+    QWidget,
+    QFrame,
+    QHBoxLayout,
+    QPushButton,
     QApplication,
     QMainWindow,
     QFileDialog,
-    QVBoxLayout,
 )
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
 from ui.MUeditManualUI import setup_ui
 from core.utils.manual_editing.getsil import getsil
@@ -32,8 +38,11 @@ class MUeditManual(QMainWindow):
     Allows for viewing and editing motor unit discharge patterns.
     """
 
-    def __init__(self):
-        super().__init__()
+    # Add signal to return to dashboard if needed
+    return_to_dashboard_requested = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
         # Initialize main data structures
         self.filename = None
@@ -48,6 +57,53 @@ class MUeditManual(QMainWindow):
 
         # Set up the UI
         setup_ui(self)
+
+        # Add back button if needed when used in embedded mode
+        if parent:
+            self.add_back_button()
+
+    def add_back_button(self):
+        """Add a back button to return to dashboard when used in embedded mode."""
+        # This method is called only when embedded in the dashboard
+        back_button = QPushButton("← Back to Dashboard")
+        back_button.clicked.connect(self.request_return_to_dashboard)
+        back_button.setFixedWidth(200)
+        back_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #333333;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                padding: 8px 15px;
+                margin: 10px;
+            }
+            QPushButton:hover {
+                background-color: #555555;
+            }
+        """
+        )
+
+        # Find a suitable place to add the button
+        # Option 1: Add to the main layout if it exists
+        if hasattr(self, "main_layout"):
+            self.main_layout.addWidget(back_button)
+        # Option 2: Create a container for it at the top of the window
+        else:
+            container = QWidget()
+            container_layout = QHBoxLayout(container)
+            container_layout.setContentsMargins(10, 10, 10, 0)
+            container_layout.addWidget(back_button)
+            container_layout.addStretch(1)
+
+            # Insert at the top of the window
+            central_widget_layout = self.central_widget.layout()
+            if central_widget_layout:
+                central_widget_layout.insertWidget(0, container)
+
+    def request_return_to_dashboard(self):
+        """Emit signal to request returning to dashboard."""
+        self.return_to_dashboard_requested.emit()
 
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts."""
