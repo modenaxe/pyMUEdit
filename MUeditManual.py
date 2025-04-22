@@ -509,7 +509,7 @@ class MUeditManual(QMainWindow):
                 self.spiketrain_plot.plot(
                     time_vector,
                     pulse_train,
-                    pen=pg.mkPen(color="#999999", width=1),
+                    pen=pg.mkPen(color="#333333", width=1),
                 )
 
                 # Plot reference signal if available
