@@ -4,7 +4,7 @@ import numpy as np
 import scipy.io as sio
 import pyqtgraph as pg
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QCheckBox, QLabel
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QCheckBox, QLabel, QWidget, QFrame
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5.QtWidgets import (
@@ -144,14 +144,29 @@ class MUeditManual(QMainWindow):
             traceback.print_exc()
 
     def update_mu_checkboxes(self):
-        """Update the MU checkboxes based on loaded data."""
-        # Clear existing checkboxes
+        """Update the MU checkboxes based on loaded data using collapsible panels."""
+        # Initialize array panels list if it doesn't exist
+        if not hasattr(self, "mu_panels"):
+            self.mu_panels = []
+
+        # Initialize array "check all" checkboxes list if it doesn't exist
+        if not hasattr(self, "array_checkboxes"):
+            self.array_checkboxes = []
+
+        # Clear existing checkboxes and panels
         for checkbox in self.mu_checkboxes:
-            self.mu_checkbox_layout.removeWidget(checkbox)
             checkbox.deleteLater()
         self.mu_checkboxes = []
 
-        # Clear any existing "No MUs" label
+        for checkbox in self.array_checkboxes:
+            checkbox.deleteLater()
+        self.array_checkboxes = []
+
+        for panel in self.mu_panels:
+            panel.deleteLater()
+        self.mu_panels = []
+
+        # Clear any existing widgets
         for i in reversed(range(self.mu_checkbox_layout.count())):
             item = self.mu_checkbox_layout.itemAt(i)
             if item and item.widget():
@@ -160,34 +175,72 @@ class MUeditManual(QMainWindow):
         # Add checkboxes for each MU
         if not self.MUedition or len(self.MUedition["edition"]["Pulsetrain"]) == 0:
             no_mu_label = QLabel("No MUs loaded")
-            no_mu_label.setStyleSheet("color: #f0f0f0; font-family: 'Poppins'; font-size: 16pt;")
+            no_mu_label.setStyleSheet("color: #333333; font-family: 'Poppins'; font-size: 16pt;")
             self.mu_checkbox_layout.addWidget(no_mu_label)
+            # Add stretch to keep items at the top
+            self.mu_checkbox_layout.addStretch(1)
             return
 
+        from gui.ui.components import CollapsiblePanel
+
         for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
-            # Add array header
-            array_label = QLabel(f"Array #{array_idx+1}")
-            array_label.setStyleSheet("color: #f0f0f0; font-family: 'Poppins'; font-size: 16pt; font-weight: bold;")
-            self.mu_checkbox_layout.addWidget(array_label)
+            # Create collapsible panel for this array
+            array_panel = CollapsiblePanel(f"Array #{array_idx+1}")
+            self.mu_panels.append(array_panel)
+
+            # Create container widget for checkboxes in this array
+            checkbox_container = QWidget()
+            checkbox_layout = QVBoxLayout(checkbox_container)
+            checkbox_layout.setContentsMargins(10, 5, 10, 5)
+            checkbox_layout.setSpacing(5)
+
+            # Add "Check All" checkbox at the top
+            check_all_checkbox = QCheckBox("Check All")
+            check_all_checkbox.setStyleSheet(
+                "color: #333333; font-family: 'Poppins'; font-size: 14pt; font-weight: bold;"
+            )
+            check_all_checkbox.setProperty("array_idx", array_idx)
+            check_all_checkbox.stateChanged.connect(self.array_checkbox_state_changed)
+            self.array_checkboxes.append(check_all_checkbox)
+            checkbox_layout.addWidget(check_all_checkbox)
+
+            # Add separator line
+            separator = QFrame()
+            separator.setFrameShape(QFrame.HLine)
+            separator.setFrameShadow(QFrame.Sunken)
+            separator.setStyleSheet("background-color: #cccccc;")
+            separator.setMaximumHeight(1)
+            checkbox_layout.addWidget(separator)
 
             # Add MU checkboxes for this array
+            has_checkboxes = False
             for mu_idx in range(self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]):
-                mu_text = f"Array_{array_idx+1}_MU_{mu_idx+1}"
+                has_checkboxes = True
+                mu_identifier = f"Array_{array_idx+1}_MU_{mu_idx+1}"
 
                 # Get SIL value if available
                 sil_value = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
-                checkbox_text = f"{mu_text} (SIL: {sil_value:.4f})"
+                # Simplified display text without array_number
+                checkbox_text = f"MU_{mu_idx+1} (SIL: {sil_value:.4f})"
 
                 checkbox = QCheckBox(checkbox_text)
-                checkbox.setStyleSheet("color: #f0f0f0; font-family: 'Poppins'; font-size: 14pt;")
-                checkbox.setObjectName(mu_text)  # Store the MU identifier as the object name
+                checkbox.setStyleSheet("color: #333333; font-family: 'Poppins'; font-size: 14pt;")
+                checkbox.setObjectName(mu_identifier)  # Keep the full identifier in objectName
+                checkbox.setProperty("array_idx", array_idx)  # Store array index for check all functionality
                 checkbox.stateChanged.connect(self.mu_checkbox_state_changed)
 
                 self.mu_checkboxes.append(checkbox)
-                self.mu_checkbox_layout.addWidget(checkbox)
+                checkbox_layout.addWidget(checkbox)
 
-        # Add stretch at the end
-        self.mu_checkbox_layout.addStretch()
+            # Only add panel if it has checkboxes
+            if has_checkboxes:
+                # Add the checkbox container to the panel
+                array_panel.add_widget(checkbox_container)
+                # Add the panel to the main layout
+                self.mu_checkbox_layout.addWidget(array_panel)
+
+        # Add stretch at the end to keep items at the top
+        self.mu_checkbox_layout.addStretch(1)
 
         # Check the first checkbox by default if any exist
         if self.mu_checkboxes:
@@ -201,12 +254,49 @@ class MUeditManual(QMainWindow):
             if checkbox.isChecked():
                 checked_mus.append(checkbox.objectName())
 
+        # Update "Check All" checkboxes based on individual selections
+        self.update_array_checkboxes()
+
         # If none are checked, don't update display
         if not checked_mus:
             return
 
         # Update the display based on selection
         self.display_selected_mus(checked_mus)
+
+    def update_array_checkboxes(self):
+        """Update the state of "Check All" checkboxes based on individual MU selections."""
+        # Block signals to prevent recursive updates
+        for checkbox in self.array_checkboxes:
+            checkbox.blockSignals(True)
+
+        # Check each array's checkboxes
+        for array_checkbox in self.array_checkboxes:
+            array_idx = array_checkbox.property("array_idx")
+            if array_idx is None:
+                continue
+
+            # Count how many MUs are in this array and how many are checked
+            array_mu_count = 0
+            array_checked_count = 0
+
+            for mu_checkbox in self.mu_checkboxes:
+                if mu_checkbox.property("array_idx") == array_idx:
+                    array_mu_count += 1
+                    if mu_checkbox.isChecked():
+                        array_checked_count += 1
+
+            # Set the array checkbox state
+            if array_checked_count == 0:
+                array_checkbox.setCheckState(Qt.CheckState.Unchecked)
+            elif array_checked_count == array_mu_count:
+                array_checkbox.setCheckState(Qt.CheckState.Checked)
+            else:
+                array_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
+
+        # Unblock signals
+        for checkbox in self.array_checkboxes:
+            checkbox.blockSignals(False)
 
     def import_edited_file(self, files):
         """Import data from a previously edited file."""
@@ -329,7 +419,7 @@ class MUeditManual(QMainWindow):
         for checkbox in self.mu_checkboxes:
             if checkbox.objectName() == f"Array_{array_idx+1}_MU_{mu_idx+1}":
                 sil_value = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
-                checkbox.setText(f"Array_{array_idx+1}_MU_{mu_idx+1} (SIL: {sil_value:.4f})")
+                checkbox.setText(f"MU_{mu_idx+1} (SIL: {sil_value:.4f})")
                 break
 
     def display_selected_mus(self, checked_mus):
@@ -397,7 +487,7 @@ class MUeditManual(QMainWindow):
                         for i in range(len(x_values)):
                             bar_width = 0.5  # seconds
                             bar = pg.BarGraphItem(
-                                x=[x_values[i]], height=[sil_values[i]], width=bar_width, brush="#262626", pen="#f0f0f0"
+                                x=[x_values[i]], height=[sil_values[i]], width=bar_width, brush="#262626", pen="#333333"
                             )
                             self.sil_plot.addItem(bar)
 
@@ -506,20 +596,14 @@ class MUeditManual(QMainWindow):
                 time_vector = self.MUedition["edition"]["time"]
 
                 # Create a new plot for this MU
-                plot_widget = pg.PlotWidget()
-                plot_widget.setBackground("#262626")
+                plot_widget = self.create_plot_widget(f"Array_{array_idx+1}_MU_{mu_idx+1}")
                 plot_widget.setFixedHeight(200)  # Fixed height for each plot
-                plot_widget.setLabel("left", f"Array_{array_idx+1}_MU_{mu_idx+1}")
-                plot_widget.getAxis("left").setPen(pg.mkPen(color="#f0f0f0"))
-                plot_widget.getAxis("bottom").setPen(pg.mkPen(color="#f0f0f0"))
-                plot_widget.getAxis("left").setTextPen(pg.mkPen(color="#f0f0f0"))
-                plot_widget.getAxis("bottom").setTextPen(pg.mkPen(color="#f0f0f0"))
 
-                # Plot pulse train
+                # Plot pulse train with consistent style
                 plot_widget.plot(
                     time_vector,
                     pulse_train,
-                    pen=pg.mkPen(color="#f0f0f0", width=1),
+                    pen=pg.mkPen(color="#333333", width=1),
                 )
 
                 # Plot discharge times
@@ -553,6 +637,61 @@ class MUeditManual(QMainWindow):
 
         # Update plot limits
         self.update_plot_limits()
+
+    # Helper function for creating plot widgets in multi-MU view
+    def create_plot_widget(self, y_label, x_label="Time (s)"):
+        """Create a standardized plot widget with consistent styling for multi-MU view."""
+        plot = pg.PlotWidget()
+        plot.setBackground("w")  # White background
+
+        # Set axis labels
+        if y_label:
+            plot.setLabel("left", y_label)
+        if x_label:
+            plot.setLabel("bottom", x_label)
+
+        # Style the axes with dark color for visibility
+        axis_color = "#333333"
+        plot.getAxis("left").setPen(pg.mkPen(color=axis_color))
+        plot.getAxis("bottom").setPen(pg.mkPen(color=axis_color))
+        plot.getAxis("left").setTextPen(pg.mkPen(color=axis_color))
+        plot.getAxis("bottom").setTextPen(pg.mkPen(color=axis_color))
+
+        # Add grid
+        plot.showGrid(x=True, y=True, alpha=0.3)
+
+        # Set y-axis range for proper visualization of pulse trains
+        plot.setYRange(-0.05, 1.5)
+
+        return plot
+
+    def array_checkbox_state_changed(self, state):
+        """Handle changes in the "Check All" checkbox for an array."""
+        # Get the sender checkbox
+        sender = self.sender()
+        if not sender:
+            return
+
+        # Get the array index from the sender's property
+        array_idx = sender.property("array_idx")
+        if array_idx is None:
+            return
+
+        # Block signals temporarily to prevent recursive signal handling
+        for checkbox in self.mu_checkboxes:
+            checkbox.blockSignals(True)
+
+        # Set all MU checkboxes in this array to the same state
+        for checkbox in self.mu_checkboxes:
+            if checkbox.property("array_idx") == array_idx:
+                checkbox.setChecked(state == Qt.CheckState.Checked)
+
+        # Unblock signals
+        for checkbox in self.mu_checkboxes:
+            checkbox.blockSignals(False)
+
+        # Update the display based on selection
+        self.display_selected_mus([cb.objectName() for cb in self.mu_checkboxes if cb.isChecked()])
 
     def reference_dropdown_value_changed(self):
         """Handle change in reference signal."""
