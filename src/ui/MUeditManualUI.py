@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (
 )
 
 # Import custom components
-from gui.ui.components import (
+from ui.components import (
     CleanTheme,
     ActionButton,
     CleanCard,

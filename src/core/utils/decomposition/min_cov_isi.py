@@ -1,5 +1,5 @@
 import numpy as np
-from utils.decomposition.get_spikes import get_spikes
+from core.utils.decomposition.get_spikes import get_spikes
 
 
 def min_cov_isi(w_n, B, Z, fsamp, cov_n, spikes_n):

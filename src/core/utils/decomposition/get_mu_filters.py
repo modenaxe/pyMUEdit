@@ -1,5 +1,5 @@
 import numpy as np
-from utils.decomposition.extend_emg import extend_emg
+from core.utils.decomposition.extend_emg import extend_emg
 
 
 def get_mu_filters(data, rejected_channels, discharge_times, chans_per_electrode, g):

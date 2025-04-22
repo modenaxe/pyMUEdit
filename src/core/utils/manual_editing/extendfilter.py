@@ -1,9 +1,9 @@
 import numpy as np
 from scipy import signal
 from sklearn.cluster import KMeans
-from utils.decomposition.bandpass_filter import bandpass_filter
-from utils.decomposition.extend_emg import extend_emg
-from utils.decomposition.whiten_emg import whiten_emg
+from core.utils.decomposition.bandpass_filter import bandpass_filter
+from core.utils.decomposition.extend_emg import extend_emg
+from core.utils.decomposition.whiten_emg import whiten_emg
 
 
 def extendfilter(EMG, EMGmask, PulseT, distime, idx, fsamp, EMGtype):

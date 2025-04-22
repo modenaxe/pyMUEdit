@@ -18,7 +18,7 @@ def whiten_emg(signal):
 
     sorted_evalues = np.sort(evalues)[::-1]
     penalty = np.mean(sorted_evalues[len(sorted_evalues) // 2 :])  # int won't wokr for odd numbers
-    penalty = max(0, penalty)
+    penalty = max(0, penalty)  # type:ignore
 
     rank_limit = np.sum(evalues > penalty) - 1
     if rank_limit < np.shape(signal)[0]:

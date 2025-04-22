@@ -1,5 +1,5 @@
 import numpy as np
-from utils.decomposition.xcorr import xcorr
+from core.utils.decomposition.xcorr import xcorr
 
 
 def remove_duplicates(pulse_trains, discharge_times, discharge_times2, mu_filters, maxlag, jitter_val, tol, fsamp):

@@ -14,16 +14,16 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
 )
 
-from gui.ui.MUeditManualUI import setup_ui
-from utils.manual_editing.getsil import getsil
-from utils.manual_editing.refinesil import refinesil
-from utils.manual_editing.extendfilter import extendfilter
-from utils.manual_editing.selection_tools import SelectionTool, process_selection
-from utils.decomposition.remove_outliers import remove_outliers
-from utils.decomposition.remove_duplicates import remove_duplicates
-from utils.decomposition.remove_duplicates_between_arrays import remove_duplicates_between_arrays
-from utils.decomposition.extend_emg import extend_emg
-from utils.decomposition.whiten_emg import whiten_emg
+from ui.MUeditManualUI import setup_ui
+from core.utils.manual_editing.getsil import getsil
+from core.utils.manual_editing.refinesil import refinesil
+from core.utils.manual_editing.extendfilter import extendfilter
+from core.utils.manual_editing.selection_tools import SelectionTool, process_selection
+from core.utils.decomposition.remove_outliers import remove_outliers
+from core.utils.decomposition.remove_duplicates import remove_duplicates
+from core.utils.decomposition.remove_duplicates_between_arrays import remove_duplicates_between_arrays
+from core.utils.decomposition.extend_emg import extend_emg
+from core.utils.decomposition.whiten_emg import whiten_emg
 
 
 class MUeditManual(QMainWindow):
@@ -181,7 +181,7 @@ class MUeditManual(QMainWindow):
             self.mu_checkbox_layout.addStretch(1)
             return
 
-        from gui.ui.components import CollapsiblePanel
+        from ui.components import CollapsiblePanel
 
         for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
             # Create collapsible panel for this array

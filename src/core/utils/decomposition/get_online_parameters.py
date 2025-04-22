@@ -1,8 +1,8 @@
 # type:ignore
 import numpy as np
 from sklearn.cluster import KMeans
-from utils.decomposition.extend_emg import extend_emg
-from utils.decomposition.get_spikes import maxk
+from core.utils.decomposition.extend_emg import extend_emg
+from core.utils.decomposition.get_spikes import maxk
 
 
 def get_online_parameters(data, rejected_channels, mu_filters, chans_per_electrode, fsamp, g):

@@ -2,26 +2,26 @@ import scipy
 import numpy as np
 from typing import Dict, List, Tuple, Any, Optional, Union
 
-from utils.config_and_input.open_otb import open_otb
-from utils.config_and_input.electrode_formatter import electrode_formatter
-from utils.decomposition.notch_filter import notch_filter
-from utils.decomposition.bandpass_filter import bandpass_filter
-from utils.decomposition.extend_emg import extend_emg
-from utils.decomposition.whiten_emg import whiten_emg
-from utils.decomposition.get_spikes import get_spikes
-from utils.decomposition.min_cov_isi import min_cov_isi
-from utils.decomposition.get_silhouette import get_silhouette
-from utils.decomposition.peel_off import peel_off
-from utils.decomposition.batch_process_filters import batch_process_filters
-from utils.decomposition.remove_duplicates import remove_duplicates
-from utils.decomposition.remove_duplicates_between_arrays import remove_duplicates_between_arrays
-from utils.decomposition.remove_outliers import remove_outliers
-from utils.decomposition.refine_mus import refine_mus
-from utils.decomposition.get_pulse_trains import get_pulse_trains
-from utils.decomposition.get_mu_filters import get_mu_filters
-from utils.decomposition.get_online_parameters import get_online_parameters
-from utils.decomposition.fixed_point_alg import fixed_point_alg
-from utils.decomposition.mathematical_functions import (
+from .utils.config_and_input.open_otb import open_otb
+from .utils.config_and_input.electrode_formatter import electrode_formatter
+from .utils.decomposition.notch_filter import notch_filter
+from .utils.decomposition.bandpass_filter import bandpass_filter
+from .utils.decomposition.extend_emg import extend_emg
+from .utils.decomposition.whiten_emg import whiten_emg
+from .utils.decomposition.get_spikes import get_spikes
+from .utils.decomposition.min_cov_isi import min_cov_isi
+from .utils.decomposition.get_silhouette import get_silhouette
+from .utils.decomposition.peel_off import peel_off
+from .utils.decomposition.batch_process_filters import batch_process_filters
+from .utils.decomposition.remove_duplicates import remove_duplicates
+from .utils.decomposition.remove_duplicates_between_arrays import remove_duplicates_between_arrays
+from .utils.decomposition.remove_outliers import remove_outliers
+from .utils.decomposition.refine_mus import refine_mus
+from .utils.decomposition.get_pulse_trains import get_pulse_trains
+from .utils.decomposition.get_mu_filters import get_mu_filters
+from .utils.decomposition.get_online_parameters import get_online_parameters
+from .utils.decomposition.fixed_point_alg import fixed_point_alg
+from .utils.decomposition.mathematical_functions import (
     square,
     skew,
     exp,

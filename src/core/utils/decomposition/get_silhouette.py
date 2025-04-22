@@ -1,7 +1,7 @@
 import numpy as np
 import scipy
 from sklearn.cluster import KMeans
-from utils.decomposition.get_spikes import maxk
+from core.utils.decomposition.get_spikes import maxk
 
 
 def get_silhouette(w_n, Z, fsamp):

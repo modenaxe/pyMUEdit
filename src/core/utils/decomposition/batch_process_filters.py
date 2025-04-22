@@ -1,7 +1,7 @@
 import numpy as np
 import scipy
 from sklearn.cluster import KMeans
-from utils.decomposition.get_spikes import maxk
+from core.utils.decomposition.get_spikes import maxk
 
 
 def batch_process_filters(whit_sig, mu_filters, plateau, extender, diff, orig_sig_size, fsamp):

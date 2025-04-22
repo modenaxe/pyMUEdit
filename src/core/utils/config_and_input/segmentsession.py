@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (
     QDoubleSpinBox,
 )
 import scipy.io as sio
-from utils.config_and_input.segmenttargets import segmenttargets
+from core.utils.config_and_input.segmenttargets import segmenttargets
 
 
 class SegmentSession(QMainWindow):

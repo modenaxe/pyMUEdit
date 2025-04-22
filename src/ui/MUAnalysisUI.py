@@ -21,7 +21,7 @@ from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
 import traceback
 
-from ExportResults import ExportResultsWindow
+from app.ExportResults import ExportResultsWindow
 
 
 def get_icon(standard_icon):

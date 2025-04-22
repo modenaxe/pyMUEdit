@@ -1,6 +1,6 @@
 import numpy as np
 import scipy
-from utils.decomposition.cutMUAP import cutMUAP
+from core.utils.decomposition.cutMUAP import cutMUAP
 
 
 def peel_off(Z, spikes, fsamp):

@@ -17,10 +17,10 @@ sys.path.insert(0, str(project_root))
 from ui.DecompositionAppUI import setup_ui
 
 # Import workers and other required modules
-from SaveMatWorker import SaveMatWorker
-from DecompositionWorker import DecompositionWorker
-from utils.config_and_input.prepare_parameters import prepare_parameters
-from utils.config_and_input.segmentsession import SegmentSession
+from workers.SaveMatWorker import SaveMatWorker
+from workers.DecompositionWorker import DecompositionWorker
+from core.utils.config_and_input.prepare_parameters import prepare_parameters
+from core.utils.config_and_input.segmentsession import SegmentSession
 from MUeditManual import MUeditManual
 
 

@@ -15,9 +15,9 @@ sys.path.append(project_root)
 sys.path.append(current_dir)
 
 # Import needed functions from other modules
-from utils.config_and_input.open_otb import open_otb
-from EmgDecomposition import offline_EMG as EMG_offline_EMG
-from SaveMatWorker import SaveMatWorker
+from core.utils.config_and_input.open_otb import open_otb
+from core.EmgDecomposition import offline_EMG as EMG_offline_EMG
+from workers.SaveMatWorker import SaveMatWorker
 
 
 class ImportDataWindow(QWidget):

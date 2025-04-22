@@ -1,6 +1,6 @@
 import numpy as np
-from utils.decomposition.notch_filter import notch_filter
-from utils.decomposition.bandpass_filter import bandpass_filter
+from core.utils.decomposition.notch_filter import notch_filter
+from core.utils.decomposition.bandpass_filter import bandpass_filter
 from typing import TYPE_CHECKING, Any, Dict, List, Union, Tuple
 
 if TYPE_CHECKING:

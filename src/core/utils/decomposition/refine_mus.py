@@ -1,8 +1,8 @@
 import numpy as np
 import scipy
 from sklearn.cluster import KMeans
-from utils.decomposition.extend_emg import extend_emg
-from utils.decomposition.get_spikes import maxk
+from core.utils.decomposition.extend_emg import extend_emg
+from core.utils.decomposition.get_spikes import maxk
 
 
 def refine_mus(signal, signal_mask, pulse_trains_n_1, discharge_times_n_1, fsamp):

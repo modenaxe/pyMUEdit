@@ -1,8 +1,8 @@
 import numpy as np
 import scipy
 from sklearn.cluster import KMeans
-from utils.decomposition.extend_emg import extend_emg
-from utils.decomposition.get_spikes import maxk
+from core.utils.decomposition.extend_emg import extend_emg
+from core.utils.decomposition.get_spikes import maxk
 
 
 def get_pulse_trains(data, rejected_channels, mu_filters, chans_per_electrode, fsamp, g):

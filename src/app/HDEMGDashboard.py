@@ -7,10 +7,10 @@ from PyQt5.QtCore import Qt
 from ui.HDEMGDashboardUI import setup_ui, update_sidebar_selection
 
 # Import for external windows/widgets
-from ImportDataWindow import ImportDataWindow
+from app.ImportDataWindow import ImportDataWindow
+from app.ExportResults import ExportResultsWindow
+from app.DecompositionApp import DecompositionApp
 from ui.MUAnalysisUI import MUAnalysis
-from ExportResults import ExportResultsWindow
-from DecompositionApp import DecompositionApp
 
 
 class HDEMGDashboard(QMainWindow):
