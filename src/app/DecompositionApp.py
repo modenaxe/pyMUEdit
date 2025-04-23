@@ -5,7 +5,6 @@ import numpy as np
 import scipy.io as sio
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
 from PyQt5.QtCore import Qt
-from ui.components.VisualisationPage import VisualisationPage
 
 import pyqtgraph as pg
 
@@ -17,6 +16,7 @@ sys.path.insert(0, str(project_root))
 
 # Import UI setup
 from ui.DecompositionAppUI import setup_ui
+from ui.components.VisualisationPage import VisualisationPage
 
 # Import workers and other required modules
 from workers.SaveMatWorker import SaveMatWorker
