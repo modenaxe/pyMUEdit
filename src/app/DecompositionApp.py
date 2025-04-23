@@ -5,6 +5,7 @@ import numpy as np
 import scipy.io as sio
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
 from PyQt5.QtCore import Qt
+
 import pyqtgraph as pg
 
 # Add project root to path
@@ -15,6 +16,7 @@ sys.path.insert(0, str(project_root))
 
 # Import UI setup
 from ui.DecompositionAppUI import setup_ui
+from ui.components.VisualisationPage import VisualisationPage
 
 # Import workers and other required modules
 from workers.SaveMatWorker import SaveMatWorker
@@ -67,11 +69,25 @@ class DecompositionApp(QMainWindow):
 
         # Right panel connections
         self.save_output_button.clicked.connect(self.save_output_to_location)
+        self.channel_view_button.clicked.connect(self.open_channel_viewer)
 
     def back_to_import(self):
         """Return to the Import window."""
         # This will now be connected externally to show the import view in the dashboard
         pass
+
+    def open_channel_viewer(self):
+        """Open the Channel Viewer window with the current EMG data"""
+        if not self.emg_obj or "data" not in self.emg_obj.signal_dict:
+            self.edit_field.setText("No EMG data loaded for channel viewer.")
+            return
+
+        try:
+            emg_data = self.emg_obj.signal_dict["data"]
+            self.visualisation_page = VisualisationPage(emg_data=emg_data)
+            self.visualisation_page.show()
+        except Exception as e:
+            self.edit_field.setText(f"Failed to load channel viewer: {e}")
 
     def set_data(self, emg_obj, filename, pathname, imported_signal=None):
         """Set data from ImportDataWindow and update UI."""
