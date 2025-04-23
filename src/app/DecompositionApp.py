@@ -5,7 +5,7 @@ import numpy as np
 import scipy.io as sio
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
 from PyQt5.QtCore import Qt
-from src.ui.components.VisualisationPage import VisualisationPage
+from ui.components.VisualisationPage import VisualisationPage
 
 import pyqtgraph as pg
 
@@ -77,19 +77,18 @@ class DecompositionApp(QMainWindow):
         pass
 
     def open_channel_viewer(self):
-    """Open the Channel Viewer window with the current EMG data"""
-    if not self.emg_obj or "data" not in self.emg_obj.signal_dict:
-        self.edit_field.setText("No EMG data loaded for channel viewer.")
-        return
+        """Open the Channel Viewer window with the current EMG data"""
+        if not self.emg_obj or "data" not in self.emg_obj.signal_dict:
+            self.edit_field.setText("No EMG data loaded for channel viewer.")
+            return
 
-    try:
-        emg_data = self.emg_obj.signal_dict["data"]
-        self.visualisation_page = VisualisationPage(emg_data=emg_data)
-        self.visualisation_page.show()
-    except Exception as e:
-        self.edit_field.setText(f"Failed to load channel viewer: {e}")
+        try:
+            emg_data = self.emg_obj.signal_dict["data"]
+            self.visualisation_page = VisualisationPage(emg_data=emg_data)
+            self.visualisation_page.show()
+        except Exception as e:
+            self.edit_field.setText(f"Failed to load channel viewer: {e}")
 
-    
     def set_data(self, emg_obj, filename, pathname, imported_signal=None):
         """Set data from ImportDataWindow and update UI."""
         self.emg_obj = emg_obj
