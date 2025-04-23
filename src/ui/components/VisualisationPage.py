@@ -1,7 +1,7 @@
 # app/gui/pages/VisualisationPage.py
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
-from app.gui.components.VisualizationPanel import VisualizationPanel
-from app.gui.components.ChannelViewer import ChannelViewer
+from src.ui.components.VisualizationPanel import VisualizationPanel
+from src.ui.components.ChannelViewer import ChannelViewer
 
 class VisualisationPage(QWidget):
     def __init__(self, emg_data, parent=None):
