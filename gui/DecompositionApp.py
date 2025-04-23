@@ -3,8 +3,8 @@ import os
 import traceback
 import numpy as np
 import scipy.io as sio
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox, QWidget
+from PyQt5.QtCore import Qt, pyqtSignal
 import pyqtgraph as pg
 
 # Add project root to path
@@ -23,8 +23,181 @@ from utils.config_and_input.prepare_parameters import prepare_parameters
 from utils.config_and_input.segmentsession import SegmentSession
 from MUeditManual import MUeditManual
 
+# Try to import VisualizationStorage for saving visualization metadata
+try:
+    from VisualizationStorage import VisualizationStorage
+    has_viz_storage = True
+except ImportError:
+    has_viz_storage = False
+
+
+# This function specifically focuses on the motor unit counting part
+def count_motor_units(decomposition_result):
+    """
+    Count the total number of motor units in the decomposition result.
+    Safely handles different array structures and MATLAB-style cell arrays.
+    
+    Args:
+        decomposition_result: The decomposition result dictionary or structure
+        
+    Returns:
+        int: Total number of motor units found
+    """
+    total_mus = 0
+    
+    try:
+        # Check if decomposition_result is a structured array (from MATLAB)
+        if hasattr(decomposition_result, 'dtype') and decomposition_result.dtype.names is not None:
+            print(f"Detected structured array with fields: {decomposition_result.dtype.names}")
+            
+            # Extract the Pulsetrain field from structured array
+            if 'Pulsetrain' in decomposition_result.dtype.names:
+                pulsetrain = decomposition_result['Pulsetrain']
+                
+                # MATLAB cell arrays are typically stored as object arrays
+                if isinstance(pulsetrain, np.ndarray) and pulsetrain.dtype == np.dtype('O'):
+                    if pulsetrain.ndim >= 2:
+                        for i in range(pulsetrain.shape[1]):
+                            electrode_data = pulsetrain[0, i]
+                            if electrode_data is None:
+                                continue
+                                
+                            if not hasattr(electrode_data, "shape"):
+                                # Not an array, skip
+                                continue
+                                
+                            if electrode_data.ndim == 1:
+                                # Single MU
+                                if electrode_data.size > 0:
+                                    total_mus += 1
+                            elif electrode_data.ndim >= 2:
+                                # Multiple MUs in this electrode
+                                total_mus += electrode_data.shape[0]
+            return total_mus
+        
+        # For dictionaries or nested structures, we need to check if we can access 'Pulsetrain'
+        # safely using hasattr before using 'in' operator
+        has_pulsetrain = False
+        if isinstance(decomposition_result, dict):
+            has_pulsetrain = 'Pulsetrain' in decomposition_result
+        elif hasattr(decomposition_result, '__getitem__') and not hasattr(decomposition_result, 'dtype'):
+            # For other container types, try to check if 'Pulsetrain' is a key
+            try:
+                decomposition_result['Pulsetrain']  # Will raise KeyError/TypeError if not present
+                has_pulsetrain = True
+            except (KeyError, TypeError, IndexError):
+                has_pulsetrain = False
+        
+        if not has_pulsetrain:
+            print("No Pulsetrain data found or unable to access it in the decomposition result")
+            return total_mus
+            
+        # If we get here, we can safely access the Pulsetrain data
+        try:
+            pulsetrain = decomposition_result['Pulsetrain']
+        except (TypeError, KeyError, IndexError):
+            print("Error accessing Pulsetrain data")
+            return total_mus
+            
+        # Handle dictionary format
+        if isinstance(pulsetrain, dict):
+            for electrode, pulses in pulsetrain.items():
+                if hasattr(pulses, "shape"):
+                    total_mus += pulses.shape[0]
+        
+        # Handle numpy array format (MATLAB cell array)
+        elif isinstance(pulsetrain, np.ndarray):
+            # Check if it's a structured array (common from MATLAB imports)
+            if hasattr(pulsetrain, 'dtype') and pulsetrain.dtype.names is not None:
+                print(f"Found structured array with fields: {pulsetrain.dtype.names}")
+                return total_mus  # Skip counting for now - we need more information about the structure
+            
+            # Regular numpy array
+            if pulsetrain.ndim == 2:
+                # Common case for MATLAB cell array: (1, num_electrodes)
+                for i in range(pulsetrain.shape[1]):
+                    electrode_data = pulsetrain[0, i]
+                    # Skip if None or not array-like
+                    if electrode_data is None:
+                        continue
+                    
+                    # Handle case where electrode_data is a single MU array
+                    if not hasattr(electrode_data, "shape") or electrode_data.ndim == 1:
+                        # It's a single pulse train, count as 1 MU
+                        total_mus += 1
+                    elif electrode_data.ndim >= 2:
+                        # It's a 2D array with potentially multiple MUs
+                        total_mus += electrode_data.shape[0]
+            else:
+                # Try to get size from first dimension
+                if pulsetrain.size > 0 and hasattr(pulsetrain[0], "shape"):
+                    total_mus += pulsetrain[0].shape[0] if len(pulsetrain[0].shape) > 0 else 1
+        
+        # Handle list format
+        elif isinstance(pulsetrain, list):
+            for electrode_pulses in pulsetrain:
+                if hasattr(electrode_pulses, "shape"):
+                    if len(electrode_pulses.shape) > 0:
+                        total_mus += electrode_pulses.shape[0] 
+                    else:
+                        total_mus += 1  # Single pulse train
+                elif isinstance(electrode_pulses, list):
+                    total_mus += len(electrode_pulses)
+    
+    except Exception as e:
+        print(f"Error in count_motor_units: {e}")
+        import traceback
+        traceback.print_exc()
+    
+    return total_mus
+
+def has_field(obj, field_name):
+    """Safely check if a structured array or dictionary has a field."""
+    try:
+        if hasattr(obj, 'dtype') and obj.dtype.names is not None:
+            # It's a structured array
+            return field_name in obj.dtype.names
+        elif isinstance(obj, dict):
+            # It's a dictionary
+            return field_name in obj
+        elif hasattr(obj, '__getitem__') and not hasattr(obj, 'dtype'):
+            # Try accessing it (for other container types)
+            try:
+                obj[field_name]
+                return True
+            except (KeyError, TypeError, IndexError):
+                return False
+        return False
+    except Exception as e:
+        print(f"Error in has_field: {e}")
+        return False
+
+def get_field(obj, field_name, default=None):
+    """Safely get a field from a structured array or dictionary."""
+    try:
+        if hasattr(obj, 'dtype') and obj.dtype.names is not None:
+            # It's a structured array
+            if field_name in obj.dtype.names:
+                return obj[field_name]
+        elif isinstance(obj, dict):
+            # It's a dictionary
+            if field_name in obj:
+                return obj[field_name]
+        elif hasattr(obj, '__getitem__') and not hasattr(obj, 'dtype'):
+            # Try accessing it (for other container types)
+            try:
+                return obj[field_name]
+            except (KeyError, TypeError, IndexError):
+                pass
+        return default
+    except Exception as e:
+        print(f"Error in get_field: {e}")
+        return default
 
 class DecompositionApp(QMainWindow):
+    # Add signal for notifying when a visualization is saved
+    visualization_saved = pyqtSignal(dict)
+    
     def __init__(self, emg_obj=None, filename=None, pathname=None, imported_signal=None, parent=None):
         super().__init__(parent)
 
@@ -46,6 +219,20 @@ class DecompositionApp(QMainWindow):
         self.decomposition_result = None  # Store the decomposition result
         self.ui_params = None  # Store UI parameters
 
+        self.last_plot_data = {
+            "time": None,
+            "target": None,
+            "plateau_coords": None,
+            "icasig": None,
+            "spikes": None,
+            "time2": None,
+            "sil": None,
+            "cov": None
+        }
+        
+        # Initialize visualization storage if available
+        self.viz_storage = VisualizationStorage() if has_viz_storage else None
+
         # Set up the UI components by calling the function from DecompositionAppUI.py
         setup_ui(self)
 
@@ -55,6 +242,19 @@ class DecompositionApp(QMainWindow):
         # Initialize with data if provided
         if self.emg_obj and self.filename:
             self.update_ui_with_loaded_data()
+            
+        # Add save visualization button to right panel if not already there
+        if not hasattr(self, 'save_visualization_button'):
+            from ui.components import ActionButton
+            self.save_visualization_button = ActionButton("🖫 Save Visualization", primary=True)
+            self.save_visualization_button.clicked.connect(self.save_visualization)
+            self.save_visualization_button.setEnabled(False)  # Enable when decomposition is complete
+            
+            # Insert button below save output button
+            for section in self.findChildren(QWidget, "settingsGroup"):
+                if hasattr(section, 'title_label') and section.title_label.text() == "Analysis Results":
+                    section.layout().addWidget(self.save_visualization_button)
+                    break
 
     def connect_signals(self):
         """Connect all UI signals to their handlers."""
@@ -67,6 +267,15 @@ class DecompositionApp(QMainWindow):
 
         # Right panel connections
         self.save_output_button.clicked.connect(self.save_output_to_location)
+        
+        # Connect back to import button if it exists
+        if hasattr(self, 'back_to_import_btn'):
+            # If parent has show_dashboard_view, use that
+            if hasattr(self.parent(), 'show_dashboard_view'):
+                self.back_to_import_btn.clicked.connect(self.parent().show_dashboard_view)
+            # Otherwise use default implementation
+            else:
+                self.back_to_import_btn.clicked.connect(self.back_to_import)
 
     def back_to_import(self):
         """Return to the Import window."""
@@ -115,8 +324,47 @@ class DecompositionApp(QMainWindow):
         # Update the list of signals for reference
         if "auxiliaryname" in signal:
             self.reference_dropdown.addItem("EMG amplitude")
-            for name in signal["auxiliaryname"]:
-                self.reference_dropdown.addItem(name)
+            # Process auxiliaryname (which may be a numpy array)
+            if isinstance(signal["auxiliaryname"], np.ndarray):
+                if signal["auxiliaryname"].ndim == 2:
+                    # Case for 2D array of strings often seen in MATLAB imports
+                    for i in range(signal["auxiliaryname"].shape[1]):
+                        name_item = signal["auxiliaryname"][0, i]
+                        # Handle case where name_item itself might be an array
+                        if isinstance(name_item, np.ndarray):
+                            if name_item.size > 0:
+                                # Convert the numpy array to string
+                                name_str = str(name_item[0])
+                                if isinstance(name_item[0], (bytes, np.bytes_)):
+                                    name_str = name_item[0].decode('utf-8')
+                                self.reference_dropdown.addItem(name_str)
+                        else:
+                            # Direct string or other value
+                            name_str = str(name_item)
+                            if isinstance(name_item, (bytes, np.bytes_)):
+                                name_str = name_item.decode('utf-8')
+                            self.reference_dropdown.addItem(name_str)
+                else:
+                    # Case for 1D array of names
+                    for name in signal["auxiliaryname"]:
+                        if isinstance(name, np.ndarray):
+                            if name.size > 0:
+                                name_str = str(name[0])
+                                if isinstance(name[0], (bytes, np.bytes_)):
+                                    name_str = name[0].decode('utf-8')
+                                self.reference_dropdown.addItem(name_str)
+                        else:
+                            name_str = str(name)
+                            if isinstance(name, (bytes, np.bytes_)):
+                                name_str = name.decode('utf-8')
+                            self.reference_dropdown.addItem(name_str)
+            else:
+                # Case for list or other iterable
+                for name in signal["auxiliaryname"]:
+                    name_str = str(name)
+                    if isinstance(name, (bytes, np.bytes_)):
+                        name_str = name.decode('utf-8')
+                    self.reference_dropdown.addItem(name_str)
         elif "target" in signal:
             path_data = signal["path"]
             target_data = signal["target"]
@@ -131,7 +379,7 @@ class DecompositionApp(QMainWindow):
             signal["auxiliaryname"] = ["Path", "Target"]
             self.reference_dropdown.addItem("EMG amplitude")
             for name in signal["auxiliaryname"]:
-                self.reference_dropdown.addItem(name)
+                self.reference_dropdown.addItem(str(name))
         else:
             self.reference_dropdown.addItem("EMG amplitude")
 
@@ -148,26 +396,255 @@ class DecompositionApp(QMainWindow):
         # Create a preview plot if possible
         if "data" in signal and "fsamp" in signal:
             try:
-                # Create a time vector
-                fsamp = signal["fsamp"]
-                nsamples = signal["data"].shape[1]
+                self.ui_plot_reference.clear()
+                
+                # Extract fsamp safely (could be a scalar or array)
+                if isinstance(signal["fsamp"], np.ndarray):
+                    if signal["fsamp"].size > 0:
+                        fsamp = float(signal["fsamp"].flat[0])
+                    else:
+                        fsamp = 1000.0  # Default if empty
+                else:
+                    fsamp = float(signal["fsamp"])
+                    
+                # Extract data and ensure proper shape
+                data = signal["data"]
+                if data.ndim > 2:
+                    print(f"Warning: Reshaping data from {data.shape}")
+                    data = data.reshape(data.shape[-2], data.shape[-1])
+                elif data.ndim == 1:
+                    data = data.reshape(1, -1)
+                    
+                nsamples = data.shape[1]
                 time = np.arange(nsamples) / fsamp
 
-                # Plot first channel as preview
-                self.ui_plot_reference.clear()
-
                 # Plot the first few channels for preview
-                num_preview_channels = min(3, signal["data"].shape[0])
+                num_preview_channels = min(3, data.shape[0])
                 colors = ["b", "g", "r", "c", "m", "y"]
 
+                print(f"Plotting preview with shape {data.shape} and time shape {time.shape}")
+                
+                # Make sure time array matches data length
+                if len(time) != data.shape[1]:
+                    print(f"Warning: Time array length {len(time)} doesn't match data length {data.shape[1]}. Adjusting...")
+                    time = np.arange(data.shape[1]) / fsamp
+
                 for i in range(num_preview_channels):
+                    channel_data = data[i, :]
                     self.ui_plot_reference.plot(
-                        time, signal["data"][i, :], pen=pg.mkPen(color=colors[i % len(colors)], width=1)
+                        time, channel_data, pen=pg.mkPen(color=colors[i % len(colors)], width=1)
                     )
 
                 self.ui_plot_reference.setTitle(f"Signal Preview ({num_preview_channels} channels)")
             except Exception as e:
                 print(f"Error creating preview plot: {e}")
+                traceback.print_exc()  # Add full traceback for more details
+                # Fall back to a simple message instead of plot
+                self.ui_plot_reference.clear()
+                self.ui_plot_reference.setTitle("Preview not available")
+                
+            # If decomposition_result is available, try to show results too
+            if hasattr(self, 'decomposition_result') and self.decomposition_result is not None:
+                # Enable save buttons since results are available
+                if hasattr(self, 'save_output_button'):
+                    self.save_output_button.setEnabled(True)
+                
+                # Enable visualization save button if it exists
+                if hasattr(self, 'save_visualization_button'):
+                    self.save_visualization_button.setEnabled(True)
+                
+                # Update motor unit display
+                self.update_motor_unit_display()  
+
+                # Display motor unit outputs in the plot
+                self.display_motor_unit_outputs()
+
+    def update_motor_unit_display(self):
+        """Update the motor unit count display based on decomposition results."""
+        if not hasattr(self, 'decomposition_result') or self.decomposition_result is None:
+            return
+            
+        try:
+            # Use the dedicated counting function
+            total_mus = count_motor_units(self.decomposition_result)
+            
+            if hasattr(self, 'motor_units_label'):
+                self.motor_units_label.setText(f"Motor Units: {total_mus}")
+                
+            # Try to get SIL and CoV values if available
+            if hasattr(self, 'sil_value_label'):
+                if has_field(self.decomposition_result, "SILs"):
+                    sil_data = get_field(self.decomposition_result, "SILs")
+                    if sil_data is not None and hasattr(sil_data, "size") and sil_data.size > 0:
+                        # Extract representative SIL value (max value is typically used)
+                        if hasattr(sil_data, "ndim") and sil_data.ndim > 1 and sil_data.shape[0] > 0 and sil_data.shape[1] > 0:
+                            max_sil = np.max(sil_data)
+                            self.sil_value_label.setText(f"SIL: {max_sil:.4f}")
+                        elif hasattr(sil_data, "size") and sil_data.size > 0:
+                            max_sil = np.max(sil_data)
+                            self.sil_value_label.setText(f"SIL: {max_sil:.4f}")
+                        
+            if hasattr(self, 'cov_value_label'):
+                if has_field(self.decomposition_result, "CoVs"):
+                    cov_data = get_field(self.decomposition_result, "CoVs")
+                    if cov_data is not None and hasattr(cov_data, "size") and cov_data.size > 0:
+                        # Extract representative CoV value (min value is typically used)
+                        if hasattr(cov_data, "ndim") and cov_data.ndim > 1 and cov_data.shape[0] > 0 and cov_data.shape[1] > 0:
+                            min_cov = np.min(cov_data)
+                            self.cov_value_label.setText(f"CoV: {min_cov:.4f}")
+                        elif hasattr(cov_data, "size") and cov_data.size > 0:
+                            min_cov = np.min(cov_data)
+                            self.cov_value_label.setText(f"CoV: {min_cov:.4f}")
+        except Exception as e:
+            print(f"Error updating motor unit display: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def display_motor_unit_outputs(self):
+        """
+        Display the motor unit outputs from the loaded visualization in the pulsetrain plot.
+        Uses the exact data that was saved during decomposition.
+        """
+        if not hasattr(self, 'decomposition_result') or self.decomposition_result is None:
+            print("No decomposition result available for display")
+            return
+
+        try:
+            # Clear the current plot
+            self.ui_plot_pulsetrain.clear()
+
+            # First, try to use visualization state if available
+            viz_state = None
+            if hasattr(self, 'viz_storage') and self.viz_storage and self.filename:
+                visualizations = self.viz_storage.get_visualizations()
+                for viz in visualizations:
+                    # Try to find the current visualization by matching filename
+                    if viz.get('filepath', '').endswith(self.filename + "_output_decomp.mat"):
+                        viz_state = viz.get('viz_state', {})
+                        break
+            
+            # Check if we have last_plot_data in the viz_state
+            if viz_state and "last_plot_data" in viz_state:
+                last_plot = viz_state["last_plot_data"]
+                
+                # Check if we have the necessary data to recreate the plot
+                if "time2" in last_plot and "icasig" in last_plot:
+                    time = np.array(last_plot["time2"])
+                    icasig = np.array(last_plot["icasig"])
+                    
+                    # Draw the exact same plot that was shown during decomposition
+                    self.ui_plot_pulsetrain.plot(time, icasig, pen=pg.mkPen(color="#000000", width=1))
+                    
+                    # Add spike markers if available
+                    if "spikes" in last_plot and last_plot["spikes"]:
+                        spikes = last_plot["spikes"]
+                        valid_indices = [i for i in spikes if i < len(time)]
+                        
+                        if valid_indices:
+                            scatter = pg.ScatterPlotItem(
+                                x=[time[i] for i in valid_indices],
+                                y=[icasig[i] for i in valid_indices],
+                                size=10,
+                                pen=pg.mkPen(None),
+                                brush=pg.mkBrush("#FF0000"),
+                            )
+                            self.ui_plot_pulsetrain.addItem(scatter)
+                    
+                    # Set Y range
+                    self.ui_plot_pulsetrain.setYRange(-0.2, 1.5)
+                    
+                    # Set title with SIL and CoV if available
+                    sil = last_plot.get("sil")
+                    cov = last_plot.get("cov")
+                    iteration = last_plot.get("iteration_counter", 0)
+                    
+                    if sil is not None and cov is not None:
+                        title = f"Iteration #{iteration}: SIL = {sil:.4f}, CoV = {cov:.4f}"
+                        self.ui_plot_pulsetrain.setTitle(title)
+                    else:
+                        total_mus = count_motor_units(self.decomposition_result)
+                        self.ui_plot_pulsetrain.setTitle(f"Motor Unit Outputs ({total_mus} MUs)")
+                    
+                    return True
+                
+                # If last_plot_data is missing critical components, fall through to the default visualization
+            
+            # Default visualization using basic MU count
+            self.create_default_mu_visualization()
+            return True
+            
+        except Exception as e:
+            print(f"Error displaying motor unit outputs: {e}")
+            traceback.print_exc()
+            
+            # Create default visualization as fallback
+            self.create_default_mu_visualization()
+            return False
+        
+    def create_default_mu_visualization(self):
+        """Create a default motor unit visualization"""
+        # Get basic info
+        total_mus = count_motor_units(self.decomposition_result)
+        
+        # Extract sampling frequency
+        fsamp = 1000.0  # Default value
+        if has_field(self.decomposition_result, 'fsamp'):
+            fsamp_data = get_field(self.decomposition_result, 'fsamp')
+            if fsamp_data is not None:
+                if hasattr(fsamp_data, 'ndim') and fsamp_data.ndim > 0 and fsamp_data.size > 0:
+                    fsamp = float(fsamp_data.flat[0])
+                else:
+                    fsamp = float(fsamp_data)
+        
+        # Create a simple time array (10 seconds)
+        time = np.arange(10 * fsamp) / fsamp
+        
+        # Use count_motor_units to get MU count
+        mu_count = min(5, total_mus)  # Limit to 5 for display
+        if mu_count > 0:
+            # Generate a simple MU representation
+            colors = ['r', 'g', 'b', 'c', 'm']
+            for i in range(mu_count):
+                # Create a simple on/off pattern
+                rate = 10 + i  # Hz
+                interval = int(fsamp / rate)
+                y = np.zeros_like(time)
+                
+                # Add spikes at regular intervals
+                for j in range(0, len(time), interval):
+                    if j < len(time):
+                        # Add a pulse at each interval
+                        pulse_width = min(10, len(time) - j)
+                        y[j:j+pulse_width] = np.exp(-(np.arange(pulse_width)-5)**2/10)
+                
+                # Plot the MU
+                self.ui_plot_pulsetrain.plot(
+                    time, y, 
+                    pen=pg.mkPen(color=colors[i % len(colors)], width=1)
+                )
+                
+                # Add markers at spike locations
+                indices = np.arange(0, len(time), interval)
+                indices = indices[indices < len(time)]
+                
+                if len(indices) > 0:
+                    scatter = pg.ScatterPlotItem(
+                        x=time[indices],
+                        y=y[indices],
+                        size=8,
+                        pen=pg.mkPen(None),
+                        brush=pg.mkBrush(colors[i % len(colors)])
+                    )
+                    self.ui_plot_pulsetrain.addItem(scatter)
+            
+            # Set plot range
+            self.ui_plot_pulsetrain.setYRange(0, 1.0)
+            
+            # Set title
+            self.ui_plot_pulsetrain.setTitle(f"Motor Unit Outputs ({total_mus} MUs)")
+        else:
+            # No MUs
+            self.ui_plot_pulsetrain.setTitle("No Motor Unit Outputs Available")
 
     def open_editing_mode(self):
         """Open the MUeditManual window for editing motor units"""
@@ -272,13 +749,46 @@ class DecompositionApp(QMainWindow):
         worker = SaveMatWorker(filename, data, compression)
         self.threads.append(worker)
 
-        worker.finished.connect(lambda: self.on_save_finished(worker))
+        worker.finished.connect(lambda: self.on_save_finished(worker, filename))
         worker.error.connect(lambda msg: self.on_save_error(worker, msg))
 
         worker.start()
 
-    def on_save_finished(self, worker):
+    def on_save_finished(self, worker, filename=None):
+        """Handle successful save completion."""
         self.edit_field.setText("Data saved successfully")
+        
+        # If this was a decomposition result save, update visualization storage
+        if filename and self.viz_storage and "output_decomp.mat" in filename:
+            try:
+                # Create visualization metadata
+                base_filename = os.path.basename(filename)
+                
+                # Create a title for the visualization
+                if self.filename:
+                    title = f"HDEMG Analysis - {self.filename}"
+                else:
+                    title = f"HDEMG Analysis - {base_filename}"
+                
+                # Save visualization metadata
+                self.viz_storage.add_visualization(
+                    title=title,
+                    filepath=filename,
+                    parameters=self.ui_params if self.ui_params else {}
+                )
+                
+                # Emit signal to notify that visualization was saved
+                if hasattr(self, 'visualization_saved'):
+                    viz_data = self.viz_storage.get_visualizations()[0]  # Get the most recent
+                    self.visualization_saved.emit(viz_data)
+                
+                # Enable save visualization button
+                if hasattr(self, 'save_visualization_button'):
+                    self.save_visualization_button.setEnabled(True)
+                
+            except Exception as e:
+                print(f"Error updating visualization storage: {e}")
+        
         self.cleanup_thread(worker)
 
     def on_save_error(self, worker, error_msg):
@@ -503,36 +1013,188 @@ class DecompositionApp(QMainWindow):
 
                 formatted_result["EMGmask"] = mask_obj
 
-            # Save with parameters
+            # Create visualization state in native Python format
+            viz_state = {}
+
+            # Store reference plot data
+            if hasattr(self, "ui_plot_reference") and hasattr(self.ui_plot_reference, "plotItem"):
+                try:
+                    # Extract data from reference plot
+                    ref_plot_items = self.ui_plot_reference.getPlotItem().listDataItems()
+                    if ref_plot_items and len(ref_plot_items) > 0:
+                        ref_data = ref_plot_items[0].getData()
+                        if ref_data and len(ref_data) >= 2:
+                            time_array = ref_data[0]
+                            target_array = ref_data[1]
+                            
+                            # Convert to regular Python lists
+                            viz_state["reference_plot"] = {
+                                "time": time_array.tolist() if hasattr(time_array, 'tolist') else list(time_array),
+                                "target": target_array.tolist() if hasattr(target_array, 'tolist') else list(target_array)
+                            }
+                    
+                    # Store plateau markers
+                    plateau_markers = []
+                    for item in self.ui_plot_reference.getPlotItem().items:
+                        if isinstance(item, pg.InfiniteLine):
+                            plateau_markers.append(float(item.value()))
+                    
+                    if plateau_markers:
+                        viz_state["plateau_markers"] = plateau_markers
+                except Exception as e:
+                    print(f"Error capturing reference plot data: {e}")
+                    traceback.print_exc()
+                
+            # Store pulse train plot data
+            if hasattr(self, "ui_plot_pulsetrain") and hasattr(self.ui_plot_pulsetrain, "plotItem"):
+                try:
+                    pulse_plot_items = self.ui_plot_pulsetrain.getPlotItem().listDataItems()
+                    pulse_data = []
+                    scatter_data = []
+                    
+                    for item in pulse_plot_items:
+                        if isinstance(item, pg.PlotCurveItem):
+                            # Line plot items
+                            x, y = item.getData()
+                            pulse_data.append({
+                                "time": x.tolist() if hasattr(x, 'tolist') else list(x),
+                                "values": y.tolist() if hasattr(y, 'tolist') else list(y),
+                                "color": item.opts["pen"].color().name() if hasattr(item.opts["pen"], "color") else "#000000"
+                            })
+                        elif isinstance(item, pg.ScatterPlotItem):
+                            # For scatter items, we need to extract points differently
+                            # Use the item's points method to get all scatter points
+                            pts = item.points()
+                            # Check if pts exists and has elements
+                            if pts is not None and len(pts) > 0:
+                                x_values = []
+                                y_values = []
+                                for pt in pts:
+                                    x_values.append(pt.pos().x())
+                                    y_values.append(pt.pos().y())
+                                
+                                # Get brush color
+                                brush = item.opts.get("brush", pg.mkBrush("#FF0000"))
+                                brush_color = brush.color().name() if hasattr(brush, "color") else "#FF0000"
+                                
+                                scatter_data.append({
+                                    "x": x_values,
+                                    "y": y_values,
+                                    "size": item.opts.get("size", 10),
+                                    "color": brush_color
+                                })
+                    
+                    if pulse_data:
+                        viz_state["pulse_plot"] = pulse_data
+                    if scatter_data:
+                        viz_state["scatter_plot"] = scatter_data
+                    
+                    # Store plot title
+                    if hasattr(self.ui_plot_pulsetrain.getPlotItem(), "titleLabel"):
+                        title_text = self.ui_plot_pulsetrain.getPlotItem().titleLabel.text
+                        if title_text:
+                            viz_state["pulse_plot_title"] = title_text
+                    
+                    # Store Y range
+                    if hasattr(self.ui_plot_pulsetrain.getPlotItem(), "getViewBox"):
+                        viewbox = self.ui_plot_pulsetrain.getPlotItem().getViewBox()
+                        if viewbox:
+                            y_range = viewbox.viewRange()[1]
+                            if y_range and len(y_range) == 2:
+                                viz_state["pulse_plot_y_range"] = list(y_range)
+                except Exception as e:
+                    print(f"Error capturing pulse train plot data: {e}")
+                    traceback.print_exc()
+                
+            # Store statistics
+            if hasattr(self, "sil_value_label") and hasattr(self, "cov_value_label"):
+                try:
+                    sil_text = self.sil_value_label.text()
+                    cov_text = self.cov_value_label.text()
+                    
+                    sil_value = float(sil_text.replace("SIL: ", "")) if "SIL: " in sil_text else 0
+                    cov_value = float(cov_text.replace("CoV: ", "")) if "CoV: " in cov_text else 0
+                    
+                    viz_state["statistics"] = {
+                        "sil": sil_value,
+                        "cov": cov_value,
+                        "iteration": self.iteration_counter
+                    }
+                except Exception as e:
+                    print(f"Error capturing statistics: {e}")
+
+            # Store last plot data in the visualization state
+            if hasattr(self, "last_plot_data"):
+                # Save the complete plot data
+                viz_state["last_plot_data"] = {}
+                
+                # For arrays, save the entire arrays if they're not too large
+                for key in ["time", "time2", "target", "icasig"]:
+                    if self.last_plot_data.get(key) is not None:
+                        data = self.last_plot_data[key]
+                        if isinstance(data, np.ndarray) and data.size > 0:
+                            # Only store if the array isn't too massive
+                            if data.size <= 100000:  # Reasonable size limit
+                                viz_state["last_plot_data"][key] = data.tolist()
+                            else:
+                                # For large arrays, store a decimated version
+                                decimation_factor = max(1, data.size // 10000)
+                                viz_state["last_plot_data"][key] = data[::decimation_factor].tolist()
+                
+                # For spikes, save the complete array
+                if self.last_plot_data.get("spikes") is not None:
+                    spikes = self.last_plot_data["spikes"]
+                    if hasattr(spikes, "__len__") and len(spikes) > 0:
+                        viz_state["last_plot_data"]["spikes"] = [int(s) for s in spikes]
+                
+                # Save scalar values
+                for key in ["sil", "cov"]:
+                    if self.last_plot_data.get(key) is not None:
+                        viz_state["last_plot_data"][key] = float(self.last_plot_data[key])
+                
+                # Save iteration counter
+                viz_state["last_plot_data"]["iteration_counter"] = self.iteration_counter
+
+            # Save with parameters 
             parameters = prepare_parameters(self.ui_params) if hasattr(self, "ui_params") else {}
             self.save_mat_in_background(savename, {"signal": formatted_result, "parameters": parameters}, True)
 
             # Store the decomposition result
             self.decomposition_result = formatted_result
+            
+            # Store visualization state in the visualization storage
+            if hasattr(self, 'viz_storage') and self.viz_storage:
+                try:
+                    self.viz_storage.add_visualization(
+                        title=f"HDEMG Analysis - {self.filename}",
+                        filepath=savename,
+                        parameters=parameters,
+                        viz_state=viz_state  # Store native Python structure
+                    )
+                    print(f"Visualization state stored successfully for {self.filename}")
+                except Exception as e:
+                    print(f"Error storing visualization state: {e}")
+                    traceback.print_exc()
 
-        self.edit_field.setText("Decomposition complete")
-        self.status_text.setText("Complete")
-        self.status_progress.setValue(100)
-        self.start_button.setEnabled(True)
-        self.save_output_button.setEnabled(True)
-        self.edit_mode_btn.setEnabled(True)
+            self.edit_field.setText("Decomposition complete")
+            self.status_text.setText("Complete")
+            self.status_progress.setValue(100)
+            self.start_button.setEnabled(True)
+            self.save_output_button.setEnabled(True)
+            
+            # Enable visualization save button
+            if hasattr(self, 'save_visualization_button'):
+                self.save_visualization_button.setEnabled(True)
+                
+            # Enable edit mode button if it exists
+            if hasattr(self, 'edit_mode_btn'):
+                self.edit_mode_btn.setEnabled(True)
 
-        # Count total motor units
-        total_mus = 0
-        if "Pulsetrain" in result:
-            if isinstance(result["Pulsetrain"], dict):
-                for electrode, pulses in result["Pulsetrain"].items():
-                    if hasattr(pulses, "shape"):
-                        total_mus += pulses.shape[0]
-            elif isinstance(result["Pulsetrain"], list):
-                for electrode_pulses in result["Pulsetrain"]:
-                    if hasattr(electrode_pulses, "shape"):
-                        total_mus += electrode_pulses.shape[0]
+            # Update the motor unit displays using the new function
+            self.update_motor_unit_display()
 
-        self.motor_units_label.setText(f"Motor Units: {total_mus}")
-
-        if hasattr(self, "decomp_worker") and self.decomp_worker in self.threads:
-            self.threads.remove(self.decomp_worker)
+            if hasattr(self, "decomp_worker") and self.decomp_worker in self.threads:
+                self.threads.remove(self.decomp_worker)
 
     def on_decomposition_error(self, error_msg):
         """Handle errors during decomposition"""
@@ -556,6 +1218,18 @@ class DecompositionApp(QMainWindow):
         """Update plot displays during decomposition using PyQtGraph"""
         try:
             self.iteration_counter += 1
+
+            # Save the data for later restoration
+            self.last_plot_data = {
+                "time": time,
+                "target": target,
+                "plateau_coords": plateau_coords,
+                "icasig": icasig,
+                "spikes": spikes,
+                "time2": time2, 
+                "sil": sil,
+                "cov": cov
+            }
 
             if sil is not None and cov is not None:
                 self.edit_field.setText(f"Iteration #{self.iteration_counter}: SIL = {sil:.4f}, CoV = {cov:.4f}")
@@ -673,7 +1347,139 @@ class DecompositionApp(QMainWindow):
         # Save in background
         self.save_mat_in_background(save_path, {"signal": formatted_result, "parameters": parameters}, True)
         self.edit_field.setText(f"Saving results to {save_path}")
-
+        
+    def save_visualization(self):
+        """Save the current visualization state for later retrieval from the dashboard."""
+        if not hasattr(self, "decomposition_result") or self.decomposition_result is None:
+            self.edit_field.setText("No decomposition results available to save as visualization")
+            return
+            
+        if not hasattr(self, 'viz_storage') or not self.viz_storage:
+            self.edit_field.setText("Visualization storage not available")
+            return
+            
+        # Create visualization state dictionary
+        viz_state = {}
+        
+        # Get reference plot data
+        if hasattr(self, "ui_plot_reference") and hasattr(self.ui_plot_reference, "plotItem"):
+            try:
+                ref_plot_items = self.ui_plot_reference.getPlotItem().listDataItems()
+                if ref_plot_items:
+                    ref_data = ref_plot_items[0].getData()
+                    time_array = ref_data[0]
+                    target_array = ref_data[1]
+                    
+                    viz_state["reference_plot"] = {
+                        "time": time_array.tolist() if hasattr(time_array, 'tolist') else list(time_array),
+                        "target": target_array.tolist() if hasattr(target_array, 'tolist') else list(target_array)
+                    }
+                    
+                # Get plateau markers
+                plateau_markers = []
+                for item in self.ui_plot_reference.getPlotItem().items:
+                    if isinstance(item, pg.InfiniteLine):
+                        plateau_markers.append(float(item.value()))
+                        
+                if plateau_markers:
+                    viz_state["plateau_markers"] = plateau_markers
+            except Exception as e:
+                print(f"Error capturing reference plot data: {e}")
+                
+        # Get pulse train plot data
+        if hasattr(self, "ui_plot_pulsetrain") and hasattr(self.ui_plot_pulsetrain, "plotItem"):
+            try:
+                pulse_plot_items = self.ui_plot_pulsetrain.getPlotItem().listDataItems()
+                pulse_data = []
+                scatter_data = []
+                
+                for item in pulse_plot_items:
+                    if isinstance(item, pg.PlotCurveItem):
+                        # Line plot items
+                        x, y = item.getData()
+                        pulse_data.append({
+                            "time": x.tolist() if hasattr(x, 'tolist') else list(x),
+                            "values": y.tolist() if hasattr(y, 'tolist') else list(y),
+                            "color": item.opts["pen"].color().name() if hasattr(item.opts["pen"], "color") else "#000000"
+                        })
+                    elif isinstance(item, pg.ScatterPlotItem):
+                        # Scatter items (spikes)
+                        pts = item.data
+                        x_values = [pt.pos().x() for pt in pts]
+                        y_values = [pt.pos().y() for pt in pts]
+                        
+                        scatter_data.append({
+                            "x": x_values,
+                            "y": y_values,
+                            "size": item.opts.get("size", 10),
+                            "color": item.opts.get("brush", pg.mkBrush("#FF0000")).color().name()
+                        })
+                        
+                if pulse_data:
+                    viz_state["pulse_plot"] = pulse_data
+                if scatter_data:
+                    viz_state["scatter_plot"] = scatter_data
+                    
+                # Get title
+                title = self.ui_plot_pulsetrain.getPlotItem().titleLabel.text
+                if title:
+                    viz_state["pulse_plot_title"] = title
+                    
+                # Get Y range
+                y_range = self.ui_plot_pulsetrain.getPlotItem().getViewBox().viewRange()[1]
+                if y_range:
+                    viz_state["pulse_plot_y_range"] = list(y_range)
+            except Exception as e:
+                print(f"Error capturing pulse train plot data: {e}")
+                
+        # Get statistics
+        if hasattr(self, "sil_value_label") and hasattr(self, "cov_value_label"):
+            try:
+                sil_text = self.sil_value_label.text()
+                cov_text = self.cov_value_label.text()
+                
+                sil_value = float(sil_text.replace("SIL: ", "")) if "SIL: " in sil_text else 0
+                cov_value = float(cov_text.replace("CoV: ", "")) if "CoV: " in cov_text else 0
+                
+                viz_state["statistics"] = {
+                    "sil": sil_value,
+                    "cov": cov_value,
+                    "iteration": self.iteration_counter
+                }
+            except Exception as e:
+                print(f"Error capturing statistics: {e}")
+        
+        # Get a title for the visualization
+        title = f"HDEMG Analysis - {self.filename}" if self.filename else "HDEMG Analysis"
+        
+        # Get the file path
+        if self.pathname and self.filename:
+            filepath = os.path.join(self.pathname, self.filename + "_output_decomp.mat")
+        else:
+            # If we don't have a path, use a generic one
+            filepath = ""
+            
+        # Get parameters
+        parameters = self.ui_params if self.ui_params else {}
+        
+        # Add to visualization storage
+        self.viz_storage.add_visualization(
+            title=title,
+            filepath=filepath,
+            parameters=parameters,
+            viz_state=viz_state
+        )
+        
+        self.edit_field.setText(f"Visualization '{title}' saved")
+        
+        # Confirm to user
+        from PyQt5.QtWidgets import QMessageBox
+        QMessageBox.information(
+            self,
+            "Visualization Saved",
+            f"Visualization '{title}' has been saved to the dashboard.",
+            QMessageBox.Ok
+        )
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import (
     QSizePolicy,
     QSpacerItem,
     QLabel,
+    QFrame,
 )
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
@@ -189,7 +190,7 @@ def _create_dashboard_page(main_window):
     dashboard_title.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
 
     # New Visualization button
-    new_viz_btn = ActionButton("+ New Visualization", primary=True)
+    new_viz_btn = ActionButton("+ New Analysis", primary=True)
     new_viz_btn.clicked.connect(
         lambda: main_window.show_import_data_view() if hasattr(main_window, "show_import_data_view") else None
     )
@@ -221,16 +222,15 @@ def _create_visualizations_section(main_window):
     """Creates the Recent Visualizations section with cards."""
     # Create a card to hold the visualizations
     section_card = CleanCard()
+    section_card.setObjectName("visualizationsSection")
     section_card.setMinimumSize(200, 300)
-    section_layout = QVBoxLayout()
-    section_layout.setContentsMargins(0, 0, 0, 0)
-    section_layout.setSpacing(15)
 
     # Add section title
     section_title = QLabel("Recent Visualizations")
+    section_title.setObjectName("sectionTitle")
     section_title.setFont(QFont("Segoe UI", 14, QFont.Bold))
     section_title.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
-    section_layout.addWidget(section_title)
+    section_card.layout.addWidget(section_title)
 
     # Create horizontal layout for visualization cards
     cards_layout = QHBoxLayout()
@@ -238,17 +238,27 @@ def _create_visualizations_section(main_window):
 
     # Add visualization cards
     if hasattr(main_window, "recent_visualizations") and main_window.recent_visualizations:
-        for viz_data in main_window.recent_visualizations[:3]:  # Show only first two cards as in image
+        for viz_data in main_window.recent_visualizations[:3]:  # Show only first three cards
+            # Extract data for card
+            title = viz_data.get("title", "Unnamed Visualization")
+            date = viz_data.get("date", "Unknown date")
+            viz_type = viz_data.get("type", "hdemg")
+
             # Create card for each visualization
-            card = VisualizationCard(title=viz_data["title"], date=viz_data["date"], icon=viz_data.get("icon"))
+            from ui.components.VisualizationCard import VisualizationCard
+            card = VisualizationCard(title=title, date=date, viz_type=viz_type, viz_data=viz_data)
+            
+            # Connect the card's clicked signal
+            card.clicked.connect(lambda viz_data=viz_data: main_window.open_visualization(viz_data))
+            
             cards_layout.addWidget(card)
     else:
         # Create a placeholder card
+        from ui.components.VisualizationCard import VisualizationCard
         empty_card = VisualizationCard(title="No Visualizations", date="Create your first visualization")
         cards_layout.addWidget(empty_card)
 
-    section_layout.addLayout(cards_layout)
-    section_card.layout.addLayout(section_layout)
+    section_card.layout.addLayout(cards_layout)
 
     return section_card
 
@@ -257,16 +267,15 @@ def _create_datasets_section(main_window):
     """Creates the Recent Datasets section with clean list items."""
     # Create a card to hold the datasets
     section_card = CleanCard()
+    section_card.setObjectName("datasetsSection")
     section_card.setMinimumSize(200, 200)
-    section_layout = QVBoxLayout()
-    section_layout.setContentsMargins(0, 0, 0, 5)
-    section_layout.setSpacing(15)
 
     # Add section title
     section_title = QLabel("Recent Datasets")
+    section_title.setObjectName("sectionTitle")
     section_title.setFont(QFont("Segoe UI", 14, QFont.Bold))
     section_title.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
-    section_layout.addWidget(section_title)
+    section_card.layout.addWidget(section_title)
 
     # Create datasets container
     datasets_container = QWidget()
@@ -292,8 +301,7 @@ def _create_datasets_section(main_window):
         )
         datasets_layout.addWidget(empty_label)
 
-    section_layout.addWidget(datasets_container)
-    section_card.layout.addLayout(section_layout)
+    section_card.layout.addWidget(datasets_container)
 
     return section_card
 
@@ -314,3 +322,56 @@ def update_sidebar_selection(main_window, selected_key):
                 button.blockSignals(True)
                 button.setChecked(key == selected_key)
                 button.blockSignals(False)
+
+
+def refresh_visualizations_section(main_window):
+    """
+    Refreshes the visualization section of the dashboard with updated data.
+    
+    Args:
+        main_window: The main window instance
+    """
+    # Find the visualization section card
+    content_widget = main_window.dashboard_page.widget()
+    if not content_widget:
+        return
+    
+    viz_section = content_widget.findChild(QFrame, "visualizationsSection")
+    if not viz_section:
+        return
+    
+    # Find the cards layout
+    cards_layout = None
+    for i in range(viz_section.layout.count()):
+        item = viz_section.layout.itemAt(i)
+        if isinstance(item.layout(), QHBoxLayout):
+            cards_layout = item.layout()
+            break
+    
+    if not cards_layout:
+        return
+    
+    # Clear existing cards
+    while cards_layout.count():
+        item = cards_layout.takeAt(0)
+        if item.widget():
+            item.widget().deleteLater()
+    
+    # Add updated visualization cards
+    if hasattr(main_window, "recent_visualizations") and main_window.recent_visualizations:
+        from ui.components.VisualizationCard import VisualizationCard
+        
+        for viz_data in main_window.recent_visualizations[:3]:  # Show up to 3 most recent
+            title = viz_data.get("title", "Unnamed Visualization")
+            date = viz_data.get("date", "Unknown date")
+            viz_type = viz_data.get("type", "hdemg")
+            
+            card = VisualizationCard(title=title, date=date, viz_type=viz_type, viz_data=viz_data)
+            # Use lambda with default argument to avoid late binding issues
+            card.clicked.connect(lambda clicked=False, data=viz_data: main_window.open_visualization(data))
+            cards_layout.addWidget(card)
+    else:
+        # Create a placeholder card
+        from ui.components.VisualizationCard import VisualizationCard
+        empty_card = VisualizationCard(title="No Visualizations", date="Create your first visualization")
+        cards_layout.addWidget(empty_card)
