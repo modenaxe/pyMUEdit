@@ -11,7 +11,7 @@ import numpy.testing as npt
 import filecmp
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 from scipy.io import loadmat
 from core.utils.config_and_input.open_otb import open_otb
 from core.utils.decomposition.notch_filter import notch_filter
@@ -23,8 +23,8 @@ from core.utils.decomposition.get_spikes import get_spikes
 from core.utils.decomposition.min_cov_isi import min_cov_isi
 from core.utils.decomposition.get_silhouette import get_silhouette
 from core.utils.decomposition.peel_off import peel_off
+# pcaesig test was removed for now
 
-# pcaesig test has been removed
 # expected outputs (to update such that it doesnt have to be ran in test folder)
 # loadmat(expOutOpenOTBPlus).get("signal")[0][0][x] returns data, auxiliary, auxiliaryname, fsamp, nChan, ngrid, gridname, muscle, path, target
 # for x = 0, 1, 2... respectively  
@@ -35,7 +35,6 @@ expOutBandpass = os.path.join(os.getcwd(), "ExpOut20BandpassingAlsSurface.mat")
 expOutExt3 = os.path.join(os.getcwd(), "ExpOut20Extend3.mat")
 expOutExt10 = os.path.join(os.getcwd(), "ExpOut20Extend10.mat")
 expOutDemean = os.path.join(os.getcwd(), "ExpOut20Demean.mat")
-expOutPcaesig = os.path.join(os.getcwd(), "ExpOut20Pcaesig.mat")
 expOutWhiten = os.path.join(os.getcwd(), "ExpOut20Whiteesig.mat")
 
 INPUT20MVCFILE = "trial1_20MVC.otb+"
@@ -44,7 +43,6 @@ INPUT40MVCFILE = "trial1_40MVC.otb+"
 inputFile20 = os.path.join(os.getcwd())
 inputFile40 = os.path.join(os.getcwd())
 input = loadmat(expOutOpenOTBPlus)
-
 
 # Tests uses unmodified data from original open_otb file where possible, which came from the provided data files trial1_20MVC.otb+ and trial1_40MVC.otb+
 class Test20MVCfile(unittest.TestCase): 
