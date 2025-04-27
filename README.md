@@ -19,7 +19,7 @@ This application has been dockerized to allow for easy deployment and use on any
 1. Clone this repository:
 
    ```bash
-   git clone <repository-url>
+   git clone git@github.com:unsw-cse-comp99-3900/capstone-project-2025-t1-25t1-3900-w16a-celery.git
    cd capstone-project-2025-11-25t1-3900-w16a-celery
    ```
 
@@ -42,7 +42,7 @@ This application has been dockerized to allow for easy deployment and use on any
 1. Clone this repository:
 
    ```bash
-   git clone <repository-url>
+   git clone git@github.com:unsw-cse-comp99-3900/capstone-project-2025-t1-25t1-3900-w16a-celery.git
    cd capstone-project-2025-11-25t1-3900-w16a-celery
    ```
 
