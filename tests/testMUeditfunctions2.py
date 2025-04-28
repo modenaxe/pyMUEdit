@@ -38,6 +38,10 @@ expOutExt10 = os.path.join(os.getcwd(), "ExpOut20Extend10.mat")
 expOutDemean = os.path.join(os.getcwd(), "ExpOut20Demean.mat")
 expOutWhiten = os.path.join(os.getcwd(), "ExpOut20Whiteesig.mat")
 expOutFilterExtendWhiten =  os.path.join(os.getcwd(), "ExpOut20FilterExtendWhiten.mat")
+expOutConSphSkew = os.path.join(os.getcwd(), "ExpOut20ConSphSkew.mat")
+expOutConSphKurt = os.path.join(os.getcwd(), "ExpOut20ConSphKurt.mat")
+expOutConSphLogc = os.path.join(os.getcwd(), "ExpOut20ConSphLogc.mat")
+
 INPUT20MVCFILE = "trial1_20MVC.otb+"
 INPUT40MVCFILE = "trial1_40MVC.otb+"
 
@@ -284,9 +288,11 @@ class Test20MVCfile(unittest.TestCase):
         initialWeights = loadmat(expOutOpenOTBPlus)
         whitenedSignal = loadmat(expOutWhiten)
         seperationMatrix = 42 # whats a seperation matrix/basis matrix? Where can i find one
-        
-        expectedWeights = 42
-        # fixed_point_alg now takes dot_cf as a parameter, which might need to be provided
+        # basis matrix isnt mentioned anywhere else except our fixed point alg??? Are we using different names across diff functions???
+        expectedSkew = loadmat(expOutConSphSkew)
+        expectedKurtosis = loadmat(expOutConSphKurt)
+        expectedLogc = loadmat(expOutConSphLogc)
+
         contrastFunc = 0  # skew
         expectedSkew = 42
         outputSkew = fixed_point_alg(initialWeights, seperationMatrix, whitenedSignal, contrastFunc, None)
@@ -331,6 +337,7 @@ class Test20MVCfile(unittest.TestCase):
         fsamp = 42
         # min_cov_isi has a different parameter list compared to minimizeCOVISI
         # It now takes B, Z, fsamp, cov_n, spikes_n
+        # B wasnt accessed in the min cov isi function? is this the right version or did someone forget to push
         B = 42  # Basis matrix
         Z = whitenedSignal
         spikes_n = 42
@@ -373,9 +380,10 @@ class Test20MVCfile(unittest.TestCase):
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
-    suite.addTest(Test20MVCfile('testOpenOTB')) 
+    #suite.addTest(Test20MVCfile('testOpenOTB')) 
     suite.addTest(Test20MVCfile('testConvolutiveSphering')) 
-    #suite.addTest(Test20MVCfile('testNotchFilter'))
+    # notchfilter, bandpass, extend and whitening will be merged into convolutivesphereing
+    #suite.addTest(Test20MVCfile('testNotchFilter')) 
     #suite.addTest(Test20MVCfile('testBandpassFilter'))
     #suite.addTest(Test20MVCfile('testExtendEMG'))
     #suite.addTest(Test20MVCfile('testDemean'))
