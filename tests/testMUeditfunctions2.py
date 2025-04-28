@@ -24,7 +24,7 @@ from core.utils.decomposition.min_cov_isi import min_cov_isi
 from core.utils.decomposition.get_silhouette import get_silhouette
 from core.utils.decomposition.peel_off import peel_off
 from core.EmgDecomposition import offline_EMG
-# pcaesig test was removed for now
+
 
 # expected outputs (to update such that it doesnt have to be ran in test folder)
 # loadmat(expOutOpenOTBPlus).get("signal")[0][0][x] returns data, auxiliary, auxiliaryname, fsamp, nChan, ngrid, gridname, muscle, path, target
@@ -133,6 +133,7 @@ class Test20MVCfile(unittest.TestCase):
 # to add segment sessions
 # to add formatsignalHDEMG.m
 
+    # This ones confusing, not sure how to test it proper
     # all the filters got merged together? maybe chain the original matlab code and test everything together
     # concolutive sphering:         
     #     1) Filter the batched EMG data 
@@ -175,7 +176,7 @@ class Test20MVCfile(unittest.TestCase):
         
     # emgtype = 1 (surface) or "surface" in new version
     # apparently the difference between our and the original output is tiny, and has something to do with our floating point precision rounding
-    # to double check if acceptable or needs to be 
+    # to double check if acceptable or needs to be (double checked, its acceptable)
     # which files differentiation from?
     def testBandpassFilter(self):
         if not os.path.exists(expOutBandpass):
@@ -216,6 +217,7 @@ class Test20MVCfile(unittest.TestCase):
 
     # The demean function might be integrated into whiten_emg or another function
     # This test may need modification
+    # This function being integrated w another func is prob whats breaking one of the other tests. Just need to find out and combine the two tests
     def testDemean(self):
         if not os.path.exists(expOutDemean):
             print("expected output file for demean not found!")
@@ -232,6 +234,7 @@ class Test20MVCfile(unittest.TestCase):
         """
         pass
         
+    # is part of convul_sphering, to combine w other tests
     def testWhitenEMG(self):
         # whiten_emg may have a different signature than the old whiteesig function
         outputWhitenedEMG, outputWhiteningMatrix, outputDewhiteningMatrix = whiten_emg(input.get("signal")[0][0][0])
@@ -253,19 +256,62 @@ class Test20MVCfile(unittest.TestCase):
             npt.assert_array_equal(outputDewhiteningMatrix, expectedDewhiteningMatrix)
         except AssertionError as e:
             raise AssertionError(f"whiten_emg failed to return the expected dewhiteningMatrix:\n{e}")
-        
+
+
+# original fix point alg
+# % Input: 
+# %   w = initial weigths
+# %   X = whitened signal
+# %   B = separation matrix of MU filters
+# %   maxiter = maximal number of iteration before convergence
+# %   contrastfunc = contrast function
+#
+# % Output:
+# %   w = weigths (MU filter)    
+
+# our implementation
+#     Args:
+#     w: Initial separation vector (flattened)
+#     X: Whitened signal matrix
+#     B: Basis matrix
+#     cf_func_id: 0=skew, 1=kurtosis, 2=logcosh
+#     maxiter: Maximum iterations
+#
+# Returns:
+#     w: Updated separation vector
     def testFixedPointAlg(self):
         # Note: Parameters might have changed in the new implementation
-        initialWeights = 'from above'
-        whitenedSignal = 'from above'
-        seperationMatrix = 42
-        contrastFunc = 42  # This might be different in the new implementation
+        initialWeights = loadmat(expOutOpenOTBPlus)
+        whitenedSignal = loadmat(expOutWhiten)
+        seperationMatrix = 42 # whats a seperation matrix/basis matrix? Where can i find one
+        
         expectedWeights = 42
         # fixed_point_alg now takes dot_cf as a parameter, which might need to be provided
-        outputWeights = fixed_point_alg(initialWeights, seperationMatrix, whitenedSignal, contrastFunc, None)
+        contrastFunc = 0  # skew
+        expectedSkew = 42
+        outputSkew = fixed_point_alg(initialWeights, seperationMatrix, whitenedSignal, contrastFunc, None)
+        try:
+            npt.assert_array_equal(outputSkew, expectedSkew)
+        except AssertionError as e:
+            raise AssertionError(f"fixed_point_alg failed to return the expected seperation vector using the skew contrast func:\n{e}")
 
-        self.assertEqual(outputWeights, expectedWeights, "fixed_point_alg failed to return the expected output for the weights")
-        
+        contrastFunc = 1 # kurtosis
+        expectedKurtosis = 42
+        outputKurtosis = fixed_point_alg(initialWeights, seperationMatrix, whitenedSignal, contrastFunc, None)
+        try:
+            npt.assert_array_equal(outputKurtosis, expectedKurtosis)
+        except AssertionError as e:
+            raise AssertionError(f"fixed_point_alg failed to return the expected seperation vector using the kurtosis contrast func:\n{e}")
+
+        contrastFunc = 2 # logcosh
+        expectedLogcosh = 42
+        outputLogcosh = fixed_point_alg(initialWeights, seperationMatrix, whitenedSignal, contrastFunc, None)
+        try:
+            npt.assert_array_equal(outputLogcosh, expectedLogcosh)
+        except AssertionError as e:
+            raise AssertionError(f"fixed_point_alg failed to return the expected seperation vector using the logcosh contrast func:\n{e}")
+
+
     def testGetSpikes(self):
         initialWeights = 'from above'
         whitenedSignal = 'from above'
