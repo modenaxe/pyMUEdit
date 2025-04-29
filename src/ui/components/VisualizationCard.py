@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QFrame, QVBoxLayout, QWidget, QLabel, QApplication, QSizePolicy
-from PyQt5.QtGui import QFont, QIcon, QPixmap
+from PyQt5.QtWidgets import QFrame, QVBoxLayout, QWidget, QLabel, QApplication, QSizePolicy, QGraphicsDropShadowEffect
+from PyQt5.QtGui import QFont, QIcon, QPixmap, QColor, QCursor
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtSvg import QSvgWidget
 import os
@@ -10,7 +10,7 @@ from .CleanTheme import CleanTheme
 class VisualizationCard(QFrame):
     """A card specifically for visualizations with icon and text below"""
 
-    def __init__(self, title=None, icon=None, date=None, parent=None):
+    def __init__(self, title=None, icon=None, date=None, state_path=None, index=0, parent=None):
         super().__init__(parent)
 
         # Set up styling for the entire card
@@ -18,6 +18,13 @@ class VisualizationCard(QFrame):
         self.setFrameShape(QFrame.StyledPanel)
         self.setMinimumSize(150, 200)
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+
+        # Store properties for state persistence
+        self.title = title
+        self.date = date
+        self.icon = icon
+        self.state_path = state_path
+        self.card_index = index
 
         # Apply styling - light gray background for the entire card
         self.setStyleSheet(
@@ -106,19 +113,63 @@ class VisualizationCard(QFrame):
 
         # Add title if provided
         if title:
-            title_label = QLabel(title)
-            title_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
-            title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
-            title_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
-            self.layout.addWidget(title_label)
+            self.title_label = QLabel(title)
+            self.title_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
+            self.title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+            self.title_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            self.layout.addWidget(self.title_label)
 
         # Add date if provided
         if date:
-            date_label = QLabel(date)
-            date_label.setFont(QFont("Segoe UI", 9))
-            date_label.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
-            date_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
-            self.layout.addWidget(date_label)
+            self.date_label = QLabel(date)
+            self.date_label.setFont(QFont("Segoe UI", 9))
+            self.date_label.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
+            self.date_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            self.layout.addWidget(self.date_label)
 
         # Make card interactive
         self.setCursor(Qt.CursorShape.PointingHandCursor)
+        
+        # Store original mousePressEvent and override
+        self._original_mouse_press = self.mousePressEvent
+        self.mousePressEvent = self.on_card_click
+
+    def set_title(self, title):
+        """Set card title."""
+        self.title = title
+        if hasattr(self, 'title_label'):
+            self.title_label.setText(title)
+
+    def set_date(self, date):
+        """Set card date."""
+        self.date = date
+        if hasattr(self, 'date_label'):
+            self.date_label.setText(date)
+            
+    def set_state_path(self, state_path):
+        """Set the state path for loading the visualization."""
+        self.state_path = state_path
+
+    def on_card_click(self, event):
+        """Handle card clicks by finding parent dashboard and signaling."""
+        # Find parent dashboard
+        parent = self.parent()
+        while parent is not None:
+            try:
+                from app.HDEMGDashboard import HDEMGDashboard
+                if isinstance(parent, HDEMGDashboard):
+                    # Call dashboard's handler
+                    if hasattr(parent, 'on_visualization_card_clicked'):
+                        parent.on_visualization_card_clicked(self.card_index)
+                    elif hasattr(parent, 'open_visualization'):  # Fallback to existing method
+                        parent.open_visualization(self.title)
+                    break
+                parent = parent.parent()
+            except ImportError:
+                # If we can't import HDEMGDashboard (likely due to circular imports)
+                # Just go up the parent chain
+                parent = parent.parent()
+        
+        # Call original mousePressEvent if it exists
+        if hasattr(self, '_original_mouse_press') and callable(self._original_mouse_press):
+            self._original_mouse_press(event)
