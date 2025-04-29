@@ -128,6 +128,121 @@ capstone-project-2025-11-25t1-3900-w16a-celery/
   docker rm hdemg-analysis-tool
   ```
 
+### Application Features
+
+- Import and analyze HDEMG data
+- Decompose EMG signals into motor units
+- Edit motor units manually
+- Visualize signal patterns
+- Export analysis results
+
+---
+
+### Supported Input Formats  
+
+* `.otb+` (OT BioLab +)  
+* `.rhd` (Intan RHX “one file per channel”)  
+* `.mat` / `.csv`
+
+> **Minimum array sizes** — at least **32 surface** *or* **16 intramuscular** electrodes are required.
+
+### Session Segmentation  
+
+1. Click **Segment Session**.  
+2. Choose an auxiliary channel or **EMG amplitude**.  
+3. Enter a **threshold** *or* specify **number of windows** and drag-select them.  
+4. Click **Concatenate** (merge) or **Split** (each window to its own `.mat`).
+
+---
+
+### Decomposition Parameters  
+
+| Setting | Purpose |
+|---------|---------|
+| **Reference** | Auto segmentation on `Target`, or manual on any trace. |
+| **Check EMG** | “Yes” opens per-column QC to discard noisy channels. |
+| **Contrast** | `logcosh`, `skew`, `kurtosis`. |
+| **Initialisation** | `EMG max` (deterministic) or `Random`. |
+| **CoV filter** | Keep units with ISI-CoV below threshold. |
+| **Peel-off** | Subtract accepted unit before next iteration. |
+| **Refine MUs** | Automatic outlier removal & filter update. |
+| **Iterations** | FastICA iterations per grid & window. |
+| **Windows** | Number of ROIs. |
+| **Threshold target** | Fraction (0-1) of target force. |
+| **Extended channels** | Size after time-delay embedding. |
+| **Duplicate thr.** | Overlap % to tag duplicates (default 0.30). |
+| **SIL / CoV thresholds** | Quality cut-offs. |
+
+---
+
+### Running Decomposition  
+
+1. Perform channel QC if **Check EMG = Yes**.  
+2. Select ROIs if manual segmentation.  
+3. Progress bar reports `Grid`, `Iteration`, `SIL`, `CoV`.  
+4. Output `*_output_decomp.mat` contains  
+
+| Variable | Content |
+|----------|---------|
+| `signal.Pulsetrain` | Cell (units × time) per grid |
+| `signal.Dischargetimes` | 2-D cell `[grid, unit]` |
+
+---
+
+### Manual Editing  
+
+| Action | Key | Effect |
+|--------|-----|--------|
+| Flag unit(s) | — | Mark unreliable trains |
+| Remove outliers | **r** | Delete spikes causing extreme ISI |
+| Add spikes | **a** | Box-select missed spikes |
+| Delete spikes | **d** | Box-select false positives |
+| Update filter | **Space** | Re-estimate separation vector (current window) |
+| Extend filter | **e** | Slide window (50 % overlap) across recording |
+| Lock spikes | **s** | Freeze current spikes before re-evaluation |
+| Undo / Redo | Ctrl-Z / Ctrl-Y | Unlimited stack |
+
+*Marker colours* — green (+SIL), blue, orange, red (–SIL).
+
+Batch buttons: **Remove all outliers**, **Update all MU filters**.  
+**Save** → `*_edited.mat` containing an `edition` structure (edited pulse trains & times).
+
+---
+
+### Duplicate Check & Visualisation  
+
+*Duplicates* — spikes aligned within ±0.5 ms; overlap ≥ `Duplicate thr.`.  
+Buttons: **Remove duplicates within grid** / **across grids**.
+
+*Visualisation* tab  
+* **Plot MU spike trains** — raster per grid  
+* **Plot MU firing rates** — 1 s Hanning-smoothed rate
+
+---
+
+## Algorithmic Detail (advanced users)  
+
+> For those who wish to extend or audit the pipeline.
+
+```
+import  → grid/muscle  → segment  → channel QC
+     ↓                   ↓
+filter (notch + BP)  →  extend + whiten
+     ↓
+FastICA (fixed_point_alg)
+     ↓
+K-means spike/noise  ↻  refine (min_cov_isi)
+     ↓
+SIL assessment  →  accept & peel-off  →  repeat until done
+```
+
+*Built with:* Python 3 · NumPy · SciPy · scikit-learn · Matplotlib/PyQtGraph · PyQt5
+
+---
+```
+*Prepared by **Team W16A-CELERY** — UNSW Capstone 2025.*
+```
+
 ### Troubleshooting
 
 If you encounter issues:
@@ -150,11 +265,3 @@ If you encounter issues:
 4. **Python module not found errors**:
    - If you encounter missing module errors, you may need to add them to requirements.txt
    - Rebuild the Docker image after updating: `docker-compose build` or `docker build -t hdemg-analysis-tool .`
-
-## Application Features
-
-- Import and analyze HDEMG data
-- Decompose EMG signals into motor units
-- Edit motor units manually
-- Visualize signal patterns
-- Export analysis results
