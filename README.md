@@ -2,6 +2,11 @@
 
 A Python-based application for High-Density Electromyography (HDEMG) signal analysis with motor unit decomposition, visualization, and editing capabilities.
 
+Original matlab code the application is based off:
+https://github.com/simonavrillon/MUedit 
+Drive containing data files used for testing:
+https://drive.google.com/drive/folders/1nIpH1ksYWE-vQplEtilz843h2BuCuDmy
+
 ## Dockerized Application
 
 This application has been dockerized to allow for easy deployment and use on any system with Docker installed, eliminating the need to install dependencies locally. The application runs entirely inside the container and is accessed through your web browser or a VNC client.
