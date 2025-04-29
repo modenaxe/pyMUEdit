@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
 from PyQt5.QtCore import Qt
 
 import pyqtgraph as pg
+from core.utils.decomposition_state import DecompositionState
 
 # Add project root to path
 from pathlib import Path
@@ -520,7 +521,7 @@ class DecompositionApp(QMainWindow):
                 formatted_result["EMGmask"] = mask_obj
 
             # Save with parameters
-            parameters = prepare_parameters(self.ui_params) if hasattr(self, "ui_params") else {}
+            parameters = prepare_parameters(self.ui_params) if hasattr(self, 'ui_params') else {}
             self.save_mat_in_background(savename, {"signal": formatted_result, "parameters": parameters}, True)
 
             # Store the decomposition result
@@ -531,7 +532,6 @@ class DecompositionApp(QMainWindow):
         self.status_progress.setValue(100)
         self.start_button.setEnabled(True)
         self.save_output_button.setEnabled(True)
-        self.edit_mode_btn.setEnabled(True)
 
         # Count total motor units
         total_mus = 0
@@ -546,6 +546,29 @@ class DecompositionApp(QMainWindow):
                         total_mus += electrode_pulses.shape[0]
 
         self.motor_units_label.setText(f"Motor Units: {total_mus}")
+
+        # Save the decomposition state
+        try:
+            # Import the DecompositionState class
+            from core.utils.decomposition_state import DecompositionState
+            
+            # Save the state and get metadata
+            state_meta = DecompositionState.save_state(self)
+            
+            # Add to dashboard's recent visualizations if parent exists
+            if hasattr(self, 'parent') and callable(self.parent):
+                parent = self.parent()
+                if parent is not None and hasattr(parent, 'add_recent_visualization'):
+                    parent.add_recent_visualization(state_meta)
+                    print(f"Successfully added visualization to dashboard: {state_meta['title']}")
+                else:
+                    print("Parent exists but does not have add_recent_visualization method")
+            else:
+                print("No parent available to add visualization to dashboard")
+        except Exception as e:
+            print(f"Error saving decomposition state: {e}")
+            import traceback
+            traceback.print_exc()
 
         if hasattr(self, "decomp_worker") and self.decomp_worker in self.threads:
             self.threads.remove(self.decomp_worker)

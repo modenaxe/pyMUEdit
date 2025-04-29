@@ -238,9 +238,15 @@ def _create_visualizations_section(main_window):
 
     # Add visualization cards
     if hasattr(main_window, "recent_visualizations") and main_window.recent_visualizations:
-        for viz_data in main_window.recent_visualizations[:3]:  # Show only first two cards as in image
-            # Create card for each visualization
-            card = VisualizationCard(title=viz_data["title"], date=viz_data["date"], icon=viz_data.get("icon"))
+        for i, viz_data in enumerate(main_window.recent_visualizations[:3]):  # Show only first 3 cards
+            # Create card for each visualization with index and state_path
+            card = VisualizationCard(
+                title=viz_data["title"], 
+                date=viz_data["date"], 
+                icon=viz_data.get("icon", "visualization_icon"),
+                state_path=viz_data.get("state_path"),
+                index=i  # Pass index to track which card was clicked
+            )
             cards_layout.addWidget(card)
     else:
         # Create a placeholder card
@@ -277,7 +283,17 @@ def _create_datasets_section(main_window):
     # Add dataset items
     if hasattr(main_window, "recent_datasets") and main_window.recent_datasets:
         for dataset in main_window.recent_datasets:
+            # Create dataset item that will open the file when clicked
             dataset_item = DatasetItem(dataset["filename"], dataset["metadata"])
+            
+            # Store the full path for later use
+            if "pathname" in dataset:
+                dataset_item.setProperty("pathname", dataset["pathname"])
+                
+            # Connect the click event if applicable
+            if hasattr(main_window, "open_dataset"):
+                dataset_item.mousePressEvent = lambda event, d=dataset: main_window.open_dataset(d)
+                
             datasets_layout.addWidget(dataset_item)
     else:
         # Create an empty state message

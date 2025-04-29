@@ -38,6 +38,7 @@ class ImportDataWindow(QWidget):
         self.pathname = None
         self.imported_signal = None  # Will store the imported signal data
         self.threads = []  # Keep reference to worker threads
+        self.file_size_bytes = None  # Store file size in bytes
 
         # Create EMG object using the appropriate class
         temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp")
@@ -46,7 +47,7 @@ class ImportDataWindow(QWidget):
         self.emg_obj = EMG_offline_EMG(save_dir=temp_dir, to_filter=True)
 
         # Sample recent files list (could be loaded from settings/history)
-        self.recent_files = ["HDEMG_data_001.csv", "HDEMG_data_002.csv", "HDEMG_data_003.csv"]
+        self.recent_files = []
 
         # Set up the UI using our improved UI setup
         setup_ui(self)
@@ -109,10 +110,11 @@ class ImportDataWindow(QWidget):
         self.file_info_label.setVisible(True)
         self.footer_file_info.setText(f"File: {self.filename}")
 
-        # Update file size and format
+        # Get file size in bytes
         file_size = os.path.getsize(file)
         file_format = os.path.splitext(self.filename)[1].upper().replace(".", "")
 
+        # Format file size for display
         if file_size < 1024:
             size_str = f"{file_size} bytes"
         elif file_size < 1024 * 1024:
@@ -123,8 +125,11 @@ class ImportDataWindow(QWidget):
         self.size_info.setText(f"Size: {size_str}")
         self.format_info.setText(f"Format: {file_format}")
 
-        # Load the file
+        # Load the file (passing the whole path)
         self.load_file(self.pathname, self.filename)
+        
+        # Pass file size in original units (bytes)
+        self.file_size_bytes = file_size
 
     def load_recent_file(self, filename):
         """Load a file from the recent files list."""
@@ -184,8 +189,15 @@ class ImportDataWindow(QWidget):
                 )
                 self.next_btn.setEnabled(True)
 
-                # Signal that we've imported a file
-                self.fileImported.emit({"filename": file, "signal": signal})
+                # Signal that we've imported a file with more details
+                file_info = {
+                    "filename": file,
+                    "pathname": path,
+                    "signal": signal,
+                    "filesize": os.path.getsize(full_path)  # Get actual file size
+                }
+                
+                self.fileImported.emit(file_info)
 
             except Exception as e:
                 self.preview_message.setText(f"Error loading file: {str(e)}")
