@@ -1,0 +1,11 @@
+services:
+  hdemg-app:
+    build: .
+    image: hdemg-analysis-tool
+    container_name: hdemg-analysis-tool
+    ports:
+      - "5900:5900" # VNC port
+      - "6080:6080" # noVNC web access port
+    volumes:
+      - ./data:/app/data # Mount data directory for persistent storage
+    restart: unless-stopped

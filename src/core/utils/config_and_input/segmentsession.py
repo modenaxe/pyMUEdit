@@ -6,14 +6,26 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QLabel,
-    QPushButton,
-    QComboBox,
     QLineEdit,
-    QSpinBox,
-    QDoubleSpinBox,
+    QFrame,
+    QScrollArea,
 )
 import scipy.io as sio
 from core.utils.config_and_input.segmenttargets import segmenttargets
+
+# Import custom UI components
+from ui.components import (
+    CleanTheme,
+    ActionButton,
+    CleanCard,
+    CollapsiblePanel,
+    FormField,
+    FormDropdown,
+    FormSpinBox,
+    FormDoubleSpinBox,
+    SectionHeader,
+    CleanScrollBar,
+)
 
 
 class SegmentSession(QMainWindow):
@@ -29,102 +41,171 @@ class SegmentSession(QMainWindow):
 
     def initUI(self):
         self.setWindowTitle("Segment Session")
-        self.setGeometry(100, 100, 600, 331)
-        self.setStyleSheet("background-color: #262626;")
+        self.setGeometry(100, 100, 900, 750)  # Increased size for better visualization
+        self.setStyleSheet(f"background-color: {CleanTheme.BG_MAIN};")
+
+        # Create scroll area for main content
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setFrameShape(QFrame.NoFrame)
+        CleanScrollBar.apply(scroll_area)
 
         # Main widget and layout
         main_widget = QWidget()
         main_layout = QVBoxLayout(main_widget)
-        self.setCentralWidget(main_widget)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+        main_layout.setSpacing(15)
 
-        # Top control panel
-        top_panel = QWidget()
-        top_layout = QHBoxLayout(top_panel)
+        # Set the widget for the scroll area and set as central widget
+        scroll_area.setWidget(main_widget)
+        self.setCentralWidget(scroll_area)
 
+        # Section header
+        header = SectionHeader("Segment Session")
+        main_layout.addWidget(header)
+
+        # Settings card with controls
+        settings_card = CleanCard()
+        settings_layout = QVBoxLayout()
+        settings_layout.setSpacing(15)
+
+        # Create input fields
         # Reference dropdown
-        reference_label = QLabel("Reference")
-        reference_label.setStyleSheet("color: #f0f0f0; font-family: 'Poppins';")
-        self.reference_dropdown = QComboBox()
-        self.reference_dropdown.addItem("No ref")
+        self.reference_panel = CollapsiblePanel("Reference Signal")
+        self.reference_field = FormDropdown("Select reference signal")
+        self.reference_dropdown = self.reference_field.dropdown
+        self.reference_dropdown.addItem("EMG amplitude")
         self.reference_dropdown.currentIndexChanged.connect(self.reference_dropdown_value_changed)
-        self.reference_dropdown.setStyleSheet("color: #f0f0f0; background-color: #262626; font-family: 'Poppins';")
+        self.reference_panel.add_widget(self.reference_field)
+
+        # Parameters panel
+        self.params_panel = CollapsiblePanel("Segmentation Parameters")
 
         # Threshold field
-        threshold_label = QLabel("Threshold")
-        threshold_label.setStyleSheet("color: #f0f0f0; font-family: 'Poppins';")
-        self.threshold_field = QDoubleSpinBox()
-        self.threshold_field.setRange(0, 1)
-        self.threshold_field.setSingleStep(0.1)
-        self.threshold_field.setStyleSheet("color: #f0f0f0; background-color: #262626; font-family: 'Poppins';")
+        self.threshold_form_field = FormDoubleSpinBox("Threshold", 0.8, 0, 1, 0.1)
+        self.threshold_field = self.threshold_form_field.spinbox
         self.threshold_field.valueChanged.connect(self.threshold_field_value_changed)
         self.threshold_field.setEnabled(False)
+        self.params_panel.add_widget(self.threshold_form_field)
 
         # Windows field
-        windows_label = QLabel("Windows")
-        windows_label.setStyleSheet("color: #f0f0f0; font-family: 'Poppins';")
-        self.windows_field = QSpinBox()
-        self.windows_field.setRange(1, 10)
-        self.windows_field.setStyleSheet("color: #f0f0f0; background-color: #262626; font-family: 'Poppins';")
+        self.windows_form_field = FormSpinBox("Windows", 1, 1, 10)
+        self.windows_field = self.windows_form_field.spinbox
         self.windows_field.valueChanged.connect(self.windows_field_value_changed)
+        self.params_panel.add_widget(self.windows_form_field)
 
-        # Buttons
-        self.concatenate_button = QPushButton("Concatenate")
-        self.concatenate_button.setStyleSheet(
-            "color: #f0f0f0; background-color: #262626; font-family: 'Poppins'; font-weight: bold;"
+        # Add panels to settings layout
+        settings_layout.addWidget(self.reference_panel)
+        settings_layout.addWidget(self.params_panel)
+
+        # Add settings layout to card
+        settings_card.content_layout.addLayout(settings_layout)
+        main_layout.addWidget(settings_card)
+
+        # Visualization Card
+        viz_card = CleanCard()
+        viz_card.setMinimumHeight(400)  # Ensure card has enough height for plot
+        viz_layout = QVBoxLayout()
+        viz_layout.setSpacing(10)
+
+        # Plot title
+        plot_title = QLabel("Signal Visualization")
+        plot_title.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY}; font-size: 14px; font-weight: bold;")
+        viz_layout.addWidget(plot_title)
+
+        # Plot widget
+        plot_container = QFrame()
+        plot_container.setStyleSheet(
+            f"""
+            background-color: {CleanTheme.BG_CARD};
+            border: 1px solid {CleanTheme.BORDER};
+            border-radius: 5px;
+            padding: 2px;
+        """
         )
-        self.concatenate_button.clicked.connect(self.concatenate_button_pushed)
+        plot_container_layout = QVBoxLayout(plot_container)
+        plot_container_layout.setContentsMargins(5, 5, 5, 5)
 
-        self.split_button = QPushButton("Split")
-        self.split_button.setStyleSheet(
-            "color: #f0f0f0; background-color: #262626; font-family: 'Poppins'; font-weight: bold;"
-        )
-        self.split_button.clicked.connect(self.split_button_pushed)
-
-        self.ok_button = QPushButton("OK")
-        self.ok_button.setStyleSheet(
-            "color: #f0f0f0; background-color: #262626; font-family: 'Poppins'; font-weight: bold;"
-        )
-        self.ok_button.clicked.connect(self.ok_button_pushed)
-
-        # Pathname field (hidden)
-        self.pathname = QLineEdit()
-        self.pathname.setStyleSheet("color: #f0f0f0; background-color: #262626; font-family: 'Poppins';")
-        self.pathname.setVisible(False)
-
-        # Add controls to top layout
-        top_layout.addWidget(reference_label)
-        top_layout.addWidget(self.reference_dropdown)
-        top_layout.addWidget(threshold_label)
-        top_layout.addWidget(self.threshold_field)
-        top_layout.addWidget(windows_label)
-        top_layout.addWidget(self.windows_field)
-        top_layout.addWidget(self.concatenate_button)
-        top_layout.addWidget(self.split_button)
-        top_layout.addWidget(self.ok_button)
-
-        # Canvas for plotting - use PyQtGraph instead of matplotlib
         self.plot_widget = pg.PlotWidget()
-        self.plot_widget.setBackground("#262626")
+        self.plot_widget.setBackground(CleanTheme.BG_VISUALIZATION)
         self.plot_widget.setLabel("left", "Reference")
         self.plot_widget.setLabel("bottom", "Time (s)")
-        self.plot_widget.getAxis("left").setPen(pg.mkPen(color="#f0f0f0"))
-        self.plot_widget.getAxis("bottom").setPen(pg.mkPen(color="#f0f0f0"))
-        self.plot_widget.getAxis("left").setTextPen(pg.mkPen(color="#f0f0f0"))
-        self.plot_widget.getAxis("bottom").setTextPen(pg.mkPen(color="#f0f0f0"))
+        self.plot_widget.getAxis("left").setPen(pg.mkPen(color=CleanTheme.TEXT_PRIMARY))
+        self.plot_widget.getAxis("bottom").setPen(pg.mkPen(color=CleanTheme.TEXT_PRIMARY))
+        self.plot_widget.getAxis("left").setTextPen(pg.mkPen(color=CleanTheme.TEXT_PRIMARY))
+        self.plot_widget.getAxis("bottom").setTextPen(pg.mkPen(color=CleanTheme.TEXT_PRIMARY))
+        self.plot_widget.setMinimumHeight(350)  # Set minimum height to prevent squishing
+        self.plot_widget.showGrid(x=True, y=True, alpha=0.3)  # Add grid for better readability
+
+        plot_container_layout.addWidget(self.plot_widget)
+        viz_layout.addWidget(plot_container)
+
+        # Add a frame for the select button
+        select_frame = QFrame()
+        select_layout = QHBoxLayout(select_frame)
 
         # Create select button for manual ROI selection
-        self.select_button = QPushButton("Select Region")
-        self.select_button.setStyleSheet(
-            "color: #f0f0f0; background-color: #262626; font-family: 'Poppins'; font-weight: bold;"
-        )
+        self.select_button = ActionButton("Select Region", primary=False)
         self.select_button.clicked.connect(self.create_roi)
         self.select_button.setVisible(False)
+        select_layout.addWidget(self.select_button)
+        select_layout.addStretch(1)  # Push button to the left
 
-        # Add widgets to main layout
-        main_layout.addWidget(top_panel)
-        main_layout.addWidget(self.plot_widget)
-        main_layout.addWidget(self.select_button)
-        main_layout.addWidget(self.pathname)
+        viz_layout.addWidget(select_frame)
+
+        # Add visualization layout to card
+        viz_card.content_layout.addLayout(viz_layout)
+        main_layout.addWidget(viz_card)
+
+        # Actions card
+        actions_card = CleanCard()
+        actions_layout = QHBoxLayout()
+        actions_layout.setSpacing(10)
+
+        # Create action buttons
+        self.concatenate_button = ActionButton("Concatenate", primary=False)
+        self.concatenate_button.clicked.connect(self.concatenate_button_pushed)
+
+        self.split_button = ActionButton("Split", primary=False)
+        self.split_button.clicked.connect(self.split_button_pushed)
+
+        self.ok_button = ActionButton("OK", primary=True)
+        self.ok_button.clicked.connect(self.ok_button_pushed)
+
+        # Add buttons to layout
+        actions_layout.addWidget(self.concatenate_button)
+        actions_layout.addWidget(self.split_button)
+        actions_layout.addStretch(1)  # Push OK button to the right
+        actions_layout.addWidget(self.ok_button)
+
+        # Add actions layout to card
+        actions_card.content_layout.addLayout(actions_layout)
+        main_layout.addWidget(actions_card)
+
+        # Hidden pathname field
+        pathname_frame = QFrame()
+        pathname_layout = QHBoxLayout(pathname_frame)
+        pathname_label = QLabel("File Path:")
+        pathname_label.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
+        self.pathname = QLineEdit()
+        self.pathname.setStyleSheet(
+            f"""
+            QLineEdit {{
+                color: {CleanTheme.TEXT_SECONDARY};
+                background-color: {CleanTheme.BG_CARD};
+                border: 1px solid {CleanTheme.BORDER};
+                border-radius: 4px;
+                padding: 6px;
+            }}
+            """
+        )
+        pathname_layout.addWidget(pathname_label)
+        pathname_layout.addWidget(self.pathname)
+        pathname_frame.setVisible(False)  # Hide by default
+        main_layout.addWidget(pathname_frame)
+
+        # Add stretch to push content to the top
+        main_layout.addStretch(1)
 
     def initialize_with_file(self):
         if self.pathname.text():
@@ -213,7 +294,7 @@ class SegmentSession(QMainWindow):
                     )
 
                 # Plot the mean envelope
-                self.plot_widget.plot(emg_data["mean_envelope"], pen=pg.mkPen(color=(217, 84, 26), width=2))
+                self.plot_widget.plot(emg_data["mean_envelope"], pen=pg.mkPen(color="#D95535", width=2))
 
                 self.set_safe_ylim(emg_data["y_min"], emg_data["y_max"])
                 self.threshold_field.setEnabled(False)
@@ -244,7 +325,7 @@ class SegmentSession(QMainWindow):
                     raise ValueError(f"Auxiliary signal '{self.reference_dropdown.currentText()}' not found")
 
                 signal["target"] = signal["auxiliary"][idx, :]
-                self.plot_widget.plot(signal["target"], pen=pg.mkPen(color=(242, 242, 242), width=2))
+                self.plot_widget.plot(signal["target"], pen=pg.mkPen(color=CleanTheme.TEXT_PRIMARY, width=2))
 
                 if not np.any(np.isnan(signal["target"])):
                     self.set_safe_ylim(np.min(signal["target"]), np.max(signal["target"]))
@@ -274,7 +355,7 @@ class SegmentSession(QMainWindow):
 
             # Update plot
             self.plot_widget.clear()
-            self.plot_widget.plot(signal["target"], pen=pg.mkPen(color=(242, 242, 242), width=2))
+            self.plot_widget.plot(signal["target"], pen=pg.mkPen(color=CleanTheme.TEXT_PRIMARY, width=2))
 
             # Add vertical lines for segments
             for i in range(len(self.coordinates) // 2):
@@ -378,7 +459,7 @@ class SegmentSession(QMainWindow):
 
             # Update plot
             self.plot_widget.clear()
-            self.plot_widget.plot(signal["target"], pen=pg.mkPen(color=(242, 242, 242), width=2))
+            self.plot_widget.plot(signal["target"], pen=pg.mkPen(color=CleanTheme.TEXT_PRIMARY, width=2))
 
             # Reset current window counter and show select button
             self.current_window = 0
@@ -422,7 +503,7 @@ class SegmentSession(QMainWindow):
             # Update pathname and plot with first segment
             self.pathname.setText(f"{pathname_base}_1.mat")
             self.plot_widget.clear()
-            self.plot_widget.plot(target_segments[0], pen=pg.mkPen(color=(242, 242, 242), width=2))
+            self.plot_widget.plot(target_segments[0], pen=pg.mkPen(color=CleanTheme.TEXT_PRIMARY, width=2))
             if not np.any(np.isnan(target_segments[0])):
                 self.set_safe_ylim(np.min(target_segments[0]), np.max(target_segments[0]))
 
@@ -459,7 +540,7 @@ class SegmentSession(QMainWindow):
 
             # Update plot with PyQtGraph
             self.plot_widget.clear()
-            self.plot_widget.plot(signal["target"], pen=pg.mkPen(color=(242, 242, 242), width=2))
+            self.plot_widget.plot(signal["target"], pen=pg.mkPen(color=CleanTheme.TEXT_PRIMARY, width=2))
             if not np.any(np.isnan(signal["target"])):
                 self.set_safe_ylim(np.min(signal["target"]), np.max(signal["target"]))
 

@@ -1,53 +1,144 @@
-Project Link:
-https://unsw-my.sharepoint.com/:b:/g/personal/z5457396_ad_unsw_edu_au/EZDXEj6-KdVHhTAYwLtUpXABa6Rdv-_usMerwVv2zG88Mg?e=d67qOJ
+# HDEMG Analysis Tool
 
+A Python-based application for High-Density Electromyography (HDEMG) signal analysis with motor unit decomposition, visualization, and editing capabilities.
 
-[![Open in Visual Studio Code](https://classroom.github.com/assets/open-in-vscode-2e0aaae1b6195c2367325f4f02e2d04e9abb55f0b24a779b69b11b9e10269abc.svg)](https://classroom.github.com/online_ide?assignment_repo_id=18296375&assignment_repo_type=AssignmentRepo)
+## Dockerized Application
 
+This application has been dockerized to allow for easy deployment and use on any system with Docker installed, eliminating the need to install dependencies locally. The application runs entirely inside the container and is accessed through your web browser or a VNC client.
 
+### Prerequisites
 
-# OpenHDEMG — User Manual (v1.0)
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/) (optional but recommended)
+- A web browser or VNC client
+
+### Quick Start Guide
+
+#### The Easy Way (Using the Scripts)
+
+1. Clone this repository:
+
+   ```bash
+   git clone git@github.com:unsw-cse-comp99-3900/capstone-project-2025-t1-25t1-3900-w16a-celery.git
+   cd capstone-project-2025-11-25t1-3900-w16a-celery
+   ```
+
+2. Run the application:
+
+   - **Linux/macOS**: Make the script executable and run it
+     ```bash
+     chmod +x run-hdemg.sh
+     ./run-hdemg.sh
+     ```
+   - **Windows**: Double-click on `run-hdemg.bat`
+
+3. Access the application:
+   - Open your web browser and navigate to: http://localhost:6080/vnc.html
+   - Click the "Connect" button
+   - You'll see the HDEMG Analysis Tool running in your browser
+
+#### Manual Setup
+
+1. Clone this repository:
+
+   ```bash
+   git clone git@github.com:unsw-cse-comp99-3900/capstone-project-2025-t1-25t1-3900-w16a-celery.git
+   cd capstone-project-2025-11-25t1-3900-w16a-celery
+   ```
+
+2. Create a data directory:
+
+   ```bash
+   mkdir -p data
+   ```
+
+3. Build and start the Docker container:
+
+   ```bash
+   # With Docker Compose (recommended)
+   docker-compose up -d
+
+   # Or with Docker only
+   docker build -t hdemg-analysis-tool .
+   docker run -d --name hdemg-analysis-tool -p 5900:5900 -p 6080:6080 -v $(pwd)/data:/app/data hdemg-analysis-tool
+   ```
+
+4. Access the application:
+   - **Web Browser**: Navigate to http://localhost:6080/vnc.html and click "Connect"
+   - **VNC Client**: Connect to localhost:5900
+
+### Accessing the Application
+
+You have two options to access the application:
+
+1. **Web Browser (Recommended)**:
+
+   - Open http://localhost:6080/vnc.html in your web browser
+   - Click the "Connect" button
+   - No additional software needed
+
+2. **VNC Client**:
+   - Install any VNC client (like [RealVNC Viewer](https://www.realvnc.com/en/connect/download/viewer/))
+   - Connect to `localhost:5900`
+   - No password is required
+
+### Persisting Data
+
+The Docker setup mounts a `data` directory from your host machine to `/app/data` inside the container. Use this directory to store and access your HDEMG data files.
+
+### Project Structure
+
+```
+capstone-project-2025-11-25t1-3900-w16a-celery/
+├── data/                  # Data directory mounted into the container
+├── docs/                  # Documentation
+├── src/                   # Source code
+│   ├── app/               # Main application modules
+│   │   ├── DecompositionApp.py
+│   │   ├── DownloadConfirmation.py
+│   │   ├── ExportConfirm.py
+│   │   ├── ExportResults.py
+│   │   ├── HDEMGDashboard.py
+│   │   ├── ImportDataWindow.py
+│   │   └── MUeditManual.py
+│   ├── core/              # Core functionality
+│   ├── public/            # Static resources
+│   ├── ui/                # UI components
+│   ├── workers/           # Background worker threads
+│   └── main.py            # Main entry point
+├── docker-compose.yml     # Docker Compose configuration
+├── Dockerfile             # Docker container definition
+├── requirements.txt       # Python dependencies
+├── run-hdemg.bat          # Windows run script
+├── run-hdemg.sh           # Linux/macOS run script
+└── supervisord.conf       # Supervisor configuration
+```
+
+### Stopping the Application
+
+- **With Docker Compose**:
+
+  ```bash
+  docker-compose down
+  ```
+
+- **With Docker only**:
+  ```bash
+  docker stop hdemg-analysis-tool
+  docker rm hdemg-analysis-tool
+  ```
+
+### Application Features
+
+- Import and analyze HDEMG data
+- Decompose EMG signals into motor units
+- Edit motor units manually
+- Visualize signal patterns
+- Export analysis results
 
 ---
 
-## 1  Introduction  
-OpenHDEMG is a Python rewrite of the MATLAB application **MUedit**.  
-Like the original, it separates high-density EMG (HDEMG) signals into individual motor-unit pulse trains using **Fast Independent Component Analysis (FastICA)**. In addition to automatic decomposition, the tool offers per-session configuration, channel visualisation and an interactive manual-editing workspace.
-
----
-
-## 2  Quick-start Installation  
-
-| &nbsp; | Command / Action |
-|-------|------------------|
-| **Prerequisites** | • Python ≥ 3.9  • git (optional)  • macOS / Linux / Windows 10+ |
-| Verify Python | `python3 --version` |
-| **Download** | **A** ZIP — GitHub → **Code → Download ZIP** → unzip<br>**B** git —<br>`git clone https://github.com/unsw-cse-comp99-3900/capstone-project-2025-t1-25t1-3900-w16a-celery.git` |
-| Enter repo | `cd capstone-project-2025-t1-25t1-3900-w16a-celery` |
-| Virtual env | `python3 -m venv venv`<br>`source venv/bin/activate` (mac/Linux)<br>`.\venv\Scripts\Activate` (Win) |
-| Install reqs | `pip install -r requirements.txt` |
-| Launch GUI | `cd src`<br>`python3 main.py` |
-
-The dashboard window should appear within a few seconds.
-
----
-
-## 3  Workflow Overview  
-
-1. **Import** `.otb+ / .mat / .csv` → `open_otb.py`.  
-2. **Annotate** grids & muscles → `Quattrodlg.py`.  
-3. **Segment** contractions → `segmentsession.py`.  
-4. **QC channels** (optional) → `electrode_formatter.py`.  
-5. **Filter** → `notch_filter.py` (adaptive) + `bandpass_filter.py` (20-500 Hz surface, 100-4400 Hz intramuscular).  
-6. **Extend & whiten** → `extend_emg.py`, `whiten_emg.py`.  
-7. **FastICA** → `fixed_point_alg.py`.  
-8. **Spike classification** → `get_spikes.py` (K-means).  
-9. **Refinement** → `min_cov_isi.py` (minimise ISI-CoV).  
-10. **Quality metric** → `get_silhouette.py`; accepted units can be **peeled-off** (`peel_off.py`) and the loop restarts on the residual.
-
----
-
-## 4  Supported Input Formats  
+### Supported Input Formats  
 
 * `.otb+` (OT BioLab +)  
 * `.rhd` (Intan RHX “one file per channel”)  
@@ -55,44 +146,7 @@ The dashboard window should appear within a few seconds.
 
 > **Minimum array sizes** — at least **32 surface** *or* **16 intramuscular** electrodes are required.
 
-### 4.1 Required Signal Fields  
-
-| Field | Description |
-|-------|-------------|
-| `signal.data` | `nChannels × nSamples` matrix (all grids concatenated) |
-| `signal.fsamp` | Sampling frequency (Hz) |
-| `signal.nChan` | Number of recorded channels |
-| `signal.ngrid` | Number of grids / arrays |
-| `signal.gridname` | List of grid IDs (e.g. `"GR08MM1305"`) |
-| `signal.muscle` | List of muscle names |
-
-**Optional but recommended**
-
-| Field | Purpose |
-|-------|---------|
-| `signal.target` | Force / torque **target** trace |
-| `signal.path` | Actual force / torque **path** trace |
-
-### 4.2 Built-in Grid IDs  
-`GR04MM1305`, `GR08MM1305`, `GR10MM0808`, `GR10MM0804`, `HD04MM1305`, `HD08MM1305`, `HD10MM0808`, `HD10MM0804`, plus **Myomatrix** arrays (CAMBER / Emory).
-
-### 4.3 Adding Custom Arrays  
-
-```electrode_formatter.py
-elif electrode_names[i] == "MY_GRID":
-    ElChannelMap.append([
-        [0, 1, 2, 3],
-        [7, 6, 5, 4],
-        [8, 9,10,11]
-    ])
-    rejected_channels.append(np.zeros([12]))  # electrodes
-    IED.append(8)                             # inter-electrode distance mm
-    emg_obj.emgopt.append("surface")          # or "intra"
-```
-
----
-
-## 5  Session Segmentation  
+### Session Segmentation  
 
 1. Click **Segment Session**.  
 2. Choose an auxiliary channel or **EMG amplitude**.  
@@ -101,7 +155,7 @@ elif electrode_names[i] == "MY_GRID":
 
 ---
 
-## 6  Decomposition Parameters  
+### Decomposition Parameters  
 
 | Setting | Purpose |
 |---------|---------|
@@ -121,7 +175,7 @@ elif electrode_names[i] == "MY_GRID":
 
 ---
 
-## 7  Running Decomposition  
+### Running Decomposition  
 
 1. Perform channel QC if **Check EMG = Yes**.  
 2. Select ROIs if manual segmentation.  
@@ -135,7 +189,7 @@ elif electrode_names[i] == "MY_GRID":
 
 ---
 
-## 8  Manual Editing  
+### Manual Editing  
 
 | Action | Key | Effect |
 |--------|-----|--------|
@@ -155,7 +209,7 @@ Batch buttons: **Remove all outliers**, **Update all MU filters**.
 
 ---
 
-## 9  Duplicate Check & Visualisation  
+### Duplicate Check & Visualisation  
 
 *Duplicates* — spikes aligned within ±0.5 ms; overlap ≥ `Duplicate thr.`.  
 Buttons: **Remove duplicates within grid** / **across grids**.
@@ -166,7 +220,7 @@ Buttons: **Remove duplicates within grid** / **across grids**.
 
 ---
 
-## 10  Algorithmic Detail (advanced users)  
+## Algorithmic Detail (advanced users)  
 
 > For those who wish to extend or audit the pipeline.
 
@@ -188,3 +242,26 @@ SIL assessment  →  accept & peel-off  →  repeat until done
 ```
 *Prepared by **Team W16A-CELERY** — UNSW Capstone 2025.*
 ```
+
+### Troubleshooting
+
+If you encounter issues:
+
+1. **Application doesn't appear in the browser**:
+
+   - Make sure ports 5900 and 6080 aren't being used by other applications
+   - Try running `docker logs hdemg-analysis-tool` to see if there are any error messages
+
+2. **Application is slow**:
+
+   - Increase the memory allocated to Docker in Docker Desktop settings
+   - You can adjust screen resolution in the supervisord.conf file if needed
+
+3. **Data files not visible in the application**:
+
+   - Make sure you're placing your files in the `data` directory of your project
+   - Check that the volume mount is working with `docker inspect hdemg-analysis-tool`
+
+4. **Python module not found errors**:
+   - If you encounter missing module errors, you may need to add them to requirements.txt
+   - Rebuild the Docker image after updating: `docker-compose build` or `docker build -t hdemg-analysis-tool .`
