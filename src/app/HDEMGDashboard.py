@@ -8,6 +8,7 @@ import pyqtgraph as pg
 
 # Import UI setup function
 from ui.HDEMGDashboardUI import setup_ui, update_sidebar_selection
+from core.EmgDecomposition import offline_EMG
 
 # Import for external windows/widgets
 from app.ImportDataWindow import ImportDataWindow
@@ -459,6 +460,8 @@ class HDEMGDashboard(QMainWindow):
         """
         from core.utils.decomposition_state import DecompositionState
         import pyqtgraph as pg
+        from PyQt5.QtWidgets import QWidget, QVBoxLayout
+        from core.EmgDecomposition import offline_EMG
         
         try:
             # Load the state
@@ -473,6 +476,21 @@ class HDEMGDashboard(QMainWindow):
             decomp_app.pathname = state['pathname']
             decomp_app.ui_params = state['ui_params']
             decomp_app.decomposition_result = state.get('decomposition_result')
+            
+            # Reconstruct EMG object for channel viewer if data is available
+            if state.get('emg_data') and state['emg_data'].get('data') is not None:
+                try:
+                    # Create a minimal EMG object for channel viewer
+                    emg_data = state['emg_data']
+                    decomp_app.emg_obj = offline_EMG(save_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp"), to_filter=True)
+                    decomp_app.emg_obj.signal_dict = {
+                        'data': emg_data['data'],
+                        'fsamp': emg_data['fsamp'],
+                        'nchans': emg_data['nchans'],
+                    }
+                    print(f"Restored EMG data for channel viewer: shape={emg_data['data'].shape}")
+                except Exception as e:
+                    print(f"Warning: Failed to restore EMG object: {e}")
             
             # Update file info display
             if hasattr(decomp_app, 'update_ui_with_loaded_data'):
@@ -510,6 +528,7 @@ class HDEMGDashboard(QMainWindow):
             # Enable buttons
             decomp_app.start_button.setEnabled(True)
             decomp_app.save_output_button.setEnabled(True)
+            decomp_app.channel_view_button.setEnabled(True if decomp_app.emg_obj else False)
             
             # Create a wrapper widget to hold the DecompositionApp
             wrapper = QWidget()
@@ -541,6 +560,120 @@ class HDEMGDashboard(QMainWindow):
             print(f"Error loading visualization: {e}")
             import traceback
             traceback.print_exc()
+
+    def _reconstruct_plot(self, plot_widget, plot_data):
+        """
+        Reconstructs a plot from saved plot data
+        
+        Args:
+            plot_widget: PyQtGraph PlotWidget to populate
+            plot_data: Dictionary of plot data from the state
+        """
+        import pyqtgraph as pg
+        from PyQt5.QtCore import Qt
+        
+        # Clear the plot
+        plot_widget.clear()
+        
+        # Set plot title if available
+        if plot_data.get('title'):
+            plot_widget.setTitle(plot_data['title'])
+        
+        # Reconstruct each item in the plot
+        for item in plot_data.get('items', []):
+            item_type = item.get('type')
+            
+            if item_type == 'plot':
+                # Recreate line plot
+                x_data = item.get('x_data')
+                y_data = item.get('y_data')
+                
+                if x_data is not None and y_data is not None:
+                    # Create pen from saved settings
+                    pen_data = item.get('pen', {})
+                    
+                    try:
+                        # Get the color, defaulting to black
+                        color = pen_data.get('color', '#000000')
+                        if color is None:
+                            color = '#000000'  # Force black if None was saved
+                            
+                        width = pen_data.get('width', 1)
+                        if width is None:
+                            width = 1  # Force width 1 if None was saved
+                        
+                        # Create the pen
+                        pen = pg.mkPen(color=color, width=width)
+                        
+                        # Add style if it was saved
+                        if pen_data.get('style') == 'dash':
+                            pen.setStyle(Qt.PenStyle.DashLine)
+                    except Exception as e:
+                        print(f"Error creating pen, using default black: {e}")
+                        # Default to simple black pen
+                        pen = pg.mkPen(color='k', width=1)
+                    
+                    # Create the plot item
+                    plot_widget.plot(x_data, y_data, pen=pen)
+            
+            elif item_type == 'infinite_line':
+                # Recreate vertical or horizontal line (plateau markers)
+                pos = item.get('pos')
+                angle = item.get('angle', 90)
+                
+                if pos is not None:
+                    # Create pen from saved settings
+                    pen_data = item.get('pen', {})
+                    
+                    # Use a more compatible way to create the pen
+                    try:
+                        # Method 1: Create pen with color and width
+                        color = pen_data.get('color', '#FF0000')
+                        width = pen_data.get('width', 2)
+                        
+                        # Ensure width is not None
+                        if width is None:
+                            width = 2
+                            
+                        pen = pg.mkPen(color=color, width=width)
+                    except Exception as e:
+                        print(f"Error creating pen, using default: {e}")
+                        pen = pg.mkPen(color='r', width=2)  # Default to simple red pen
+                    
+                    # Create the line
+                    line = pg.InfiniteLine(pos=pos, angle=angle, pen=pen)
+                    plot_widget.addItem(line)
+            
+            elif item_type == 'scatter':
+                # Recreate scatter plot (spikes)
+                x_data = item.get('x_data')
+                y_data = item.get('y_data')
+                
+                if x_data is not None and y_data is not None and len(x_data) == len(y_data):
+                    try:
+                        # Create the scatter plot safely
+                        size = item.get('size', 10)
+                        brush_color = item.get('brush', '#FF0000')
+                        
+                        scatter = pg.ScatterPlotItem(
+                            x=x_data,
+                            y=y_data,
+                            size=size,
+                            pen=None,  # No border pen
+                            brush=pg.mkBrush(brush_color)
+                        )
+                    except Exception as e:
+                        print(f"Error creating scatter plot, using simplified version: {e}")
+                        # Fallback to simpler construction
+                        scatter = pg.ScatterPlotItem(pos=list(zip(x_data, y_data)))
+                    plot_widget.addItem(scatter)
+        
+        # Set axis ranges if available
+        if plot_data.get('x_range'):
+            plot_widget.setXRange(*plot_data['x_range'])
+        
+        if plot_data.get('y_range'):
+            plot_widget.setYRange(*plot_data['y_range'])
 
     def _reconstruct_plot(self, plot_widget, plot_data):
         """

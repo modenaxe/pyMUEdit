@@ -106,12 +106,31 @@ class DecompositionState:
             'current_plot_data': decomp_app.current_plot_data if hasattr(decomp_app, 'current_plot_data') else None,
             'plot_data': plot_data,  # New field for extracted plot data
             
+            # EMG data for channel viewer (use a more safe approach)
+            'emg_data': None,  # Will be set below if available
+            
             # Decomposition result data (for reconstruction)
             'decomposition_result': decomp_app.decomposition_result if hasattr(decomp_app, 'decomposition_result') else None,
             
             # Path to the saved output file for reference
             'output_file': os.path.join(decomp_app.pathname, decomp_app.filename + "_output_decomp.mat") if decomp_app.pathname and decomp_app.filename else None,
         }
+        
+        # Try to safely extract EMG data for channel viewer
+        try:
+            if hasattr(decomp_app, 'emg_obj') and decomp_app.emg_obj:
+                if hasattr(decomp_app.emg_obj, 'signal_dict'):
+                    # Only save the EMG data array and essential metadata, not the full emg_obj
+                    # to reduce serialization issues and file size
+                    state['emg_data'] = {
+                        'data': decomp_app.emg_obj.signal_dict.get('data', None),
+                        'fsamp': decomp_app.emg_obj.signal_dict.get('fsamp', None),
+                        'nchans': decomp_app.emg_obj.signal_dict.get('nchans', None)
+                    }
+                    print(f"EMG data extracted for channel viewer: {state['emg_data']['data'].shape if state['emg_data']['data'] is not None else 'None'}")
+        except Exception as e:
+            print(f"Warning: Failed to extract EMG data for channel viewer: {e}")
+            # This is not critical, so continue with saving anyway
         
         # Create a special object for storing NumPy arrays
         serializable_state = DecompositionState._make_serializable(state)
