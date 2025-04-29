@@ -239,9 +239,6 @@ SIL assessment  →  accept & peel-off  →  repeat until done
 *Built with:* Python 3 · NumPy · SciPy · scikit-learn · Matplotlib/PyQtGraph · PyQt5
 
 ---
-```
-*Prepared by **Team W16A-CELERY** — UNSW Capstone 2025.*
-```
 
 ### Troubleshooting
 
@@ -265,3 +262,7 @@ If you encounter issues:
 4. **Python module not found errors**:
    - If you encounter missing module errors, you may need to add them to requirements.txt
    - Rebuild the Docker image after updating: `docker-compose build` or `docker build -t hdemg-analysis-tool .`
+
+```
+*Prepared by **Team W16A-CELERY** — UNSW Capstone 2025.*
+```
