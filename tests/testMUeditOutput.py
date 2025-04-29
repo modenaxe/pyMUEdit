@@ -4,6 +4,12 @@ import numpy as np
 import os
 import h5py
 
+"""
+requires h5py 
+requires an expected output file in data.io.input_decomposition named: 
+expectedoutput_trial1_20MVC.otb+_decomp.mat
+"""
+
 def load_mat_v73(filename):
     data = {}
     with h5py.File(filename, 'r') as f:
@@ -15,15 +21,12 @@ def load_mat_v73(filename):
     return data
 
 
-
-
 def compare_mat_files(file1, file2):
 
     expected = load_mat_v73(file1)
     output = loadmat(file2)
     #debug
     #print(expected)
-    print('///////////////////')
     #print(output[key])
 
     # Remove MATLAB metadata entries
