@@ -1,4 +1,6 @@
-# HDEMG Analysis Tool
+# HDEMG Analysis Tool 🛑
+
+⚠️ This project is a complete work in progress and should not be used for research until the first official release ⚠️
 
 A Python-based application for High-Density Electromyography (HDEMG) signal analysis with motor unit decomposition, visualization, and editing capabilities.
 
