@@ -213,7 +213,7 @@ class MUeditManual(QMainWindow):
         for checkbox in self.mu_checkboxes:
             checkbox.deleteLater()
         self.mu_checkboxes = []
-
+            
         for checkbox in self.array_checkboxes:
             checkbox.deleteLater()
         self.array_checkboxes = []
@@ -240,6 +240,10 @@ class MUeditManual(QMainWindow):
         from ui.components import CollapsiblePanel
 
         for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
+            # Ignore Empty Pulsetrain
+            if self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0] == 0:
+                continue
+            
             # Create collapsible panel for this array
             array_panel = CollapsiblePanel(f"Array #{array_idx+1}")
             self.mu_panels.append(array_panel)
@@ -395,6 +399,7 @@ class MUeditManual(QMainWindow):
         self.MUedition["edition"]["Dischargetimes"] = {}
         self.MUedition["edition"]["silval"] = {}
         self.MUedition["edition"]["silvalcon"] = {}
+        self.MUedition["edition"]["Flag"] = []
 
         # Extract scalar values
         ngrid = int(self.MUedition["signal"]["ngrid"][0, 0])
@@ -424,10 +429,16 @@ class MUeditManual(QMainWindow):
         # Calculate SIL values for each motor unit
         for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
             pulse_train = self.MUedition["edition"]["Pulsetrain"][array_idx]
-
+            
+            # Give every MU array a Flag array
+            self.MUedition["edition"]["Flag"].append([])
+            
             for mu_idx in range(pulse_train.shape[0]):
                 if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
                     self.calculate_silval(array_idx, mu_idx)
+                    
+                # Give every MU a Flag tag
+                self.MUedition["edition"]["Flag"][array_idx].append(0)
 
     def calculate_silval(self, array_idx, mu_idx):
         """Calculate silhouette value for a motor unit."""
@@ -520,7 +531,7 @@ class MUeditManual(QMainWindow):
             # Show SIL plot if checkbox is checked
             if self.sil_checkbox.isChecked():
                 self.sil_plot.setVisible(True)
-                self.plots_layout.addWidget(self.sil_plot)
+                self.plots_layout.addWidget(self.sil_plot, stretch=1)
 
                 # Clear and update SIL plot
                 self.sil_plot.clear()
@@ -557,7 +568,7 @@ class MUeditManual(QMainWindow):
                 self.sil_plot.setVisible(False)
 
             # Show and update spike train plot
-            self.plots_layout.addWidget(self.spiketrain_plot)
+            self.plots_layout.addWidget(self.spiketrain_plot, stretch=1)
             self.spiketrain_plot.clear()
             time_vector = self.MUedition["edition"]["time"]
 
@@ -611,7 +622,7 @@ class MUeditManual(QMainWindow):
                     self.spiketrain_plot.addItem(scatter)
 
             # Show and update discharge rate plot
-            self.plots_layout.addWidget(self.dr_plot)
+            self.plots_layout.addWidget(self.dr_plot, stretch=1)
             self.dr_plot.clear()
 
             if len(discharge_times) > 1:
@@ -637,6 +648,10 @@ class MUeditManual(QMainWindow):
         else:
             # Multiple MUs selected - show only pulse trains stacked vertically
             self.sil_info.setText(f"{len(checked_mus)} MUs selected")
+            
+            container_height = self.plots_scroll_area.viewport().height()
+            plot_height = container_height // min(3, len(checked_mus))
+            plot_height = min(500, plot_height)
 
             # Create a new plot widget for each selected MU
             for mu_text in checked_mus:
@@ -652,8 +667,9 @@ class MUeditManual(QMainWindow):
                 time_vector = self.MUedition["edition"]["time"]
 
                 # Create a new plot for this MU
+
                 plot_widget = self.create_plot_widget(f"Array_{array_idx+1}_MU_{mu_idx+1}")
-                plot_widget.setFixedHeight(200)  # Fixed height for each plot
+                plot_widget.setFixedHeight(plot_height)  # Fixed height for each plot
 
                 # Plot pulse train with consistent style
                 plot_widget.plot(
@@ -715,6 +731,7 @@ class MUeditManual(QMainWindow):
 
         # Add grid
         plot.showGrid(x=True, y=True, alpha=0.3)
+
 
         # Set y-axis range for proper visualization of pulse trains
         plot.setYRange(-0.05, 1.5)
@@ -1314,7 +1331,6 @@ class MUeditManual(QMainWindow):
         """Flag the selected motor units for deletion."""
         if not self.MUedition:
             return
-
         # Find all checked MUs
         for checkbox in self.mu_checkboxes:
             if checkbox.isChecked():
@@ -1339,12 +1355,16 @@ class MUeditManual(QMainWindow):
                 else:
                     fsamp = float(self.MUedition["signal"]["fsamp"][0])
 
-                # Set pulse train to zeros and minimal discharge times
-                self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = 0
-                self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = np.array([1, fsamp])
+                # # Set pulse train to zeros and minimal discharge times
+                # self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = 0
+                # self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = np.array([1, fsamp])
 
-                # Update SIL in checkbox text
+                # # Update SIL in checkbox text  
                 sil_value = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
+                
+                # Flag MU for deletion
+                self.MUedition["edition"]["Flag"][array_idx][mu_idx] = 1
+                                
                 checkbox.setText(f"{mu_text} (SIL: {sil_value:.4f}) - FLAGGED")
 
         # Update the display
@@ -1561,7 +1581,10 @@ class MUeditManual(QMainWindow):
 
             # Get the pulse trains for this array
             array_pulse_train = self.MUedition["edition"]["Pulsetrain"][array_idx]
-
+            
+            # Get the Flag tag array for this array
+            array_flag = self.MUedition["edition"]["Flag"][array_idx]
+            
             # Create a mask for non-flagged MUs
             keep_mask = np.ones(array_pulse_train.shape[0], dtype=bool)
 
@@ -1572,10 +1595,11 @@ class MUeditManual(QMainWindow):
 
                 # Check if it's flagged for deletion (0 pulse train and minimal discharge times)
                 if (
-                    np.all(array_pulse_train[mu_idx, :] == 0)
-                    and len(discharge_times) == 2
-                    and discharge_times[0] == 1
-                    and discharge_times[1] == self.MUedition["signal"]["fsamp"]
+                    # np.all(array_pulse_train[mu_idx, :] == 0)
+                    # and len(discharge_times) == 2
+                    # and discharge_times[0] == 1
+                    # and discharge_times[1] == self.MUedition["signal"]["fsamp"]
+                    array_flag[mu_idx] == 1
                 ):
                     keep_mask[mu_idx] = False
 
