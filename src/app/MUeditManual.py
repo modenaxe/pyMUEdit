@@ -731,6 +731,8 @@ class MUeditManual(QMainWindow):
 
         # Add grid
         plot.showGrid(x=True, y=True, alpha=0.3)
+        plot.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
 
 
         # Set y-axis range for proper visualization of pulse trains
