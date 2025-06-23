@@ -520,7 +520,7 @@ class MUeditManual(QMainWindow):
             # Show SIL plot if checkbox is checked
             if self.sil_checkbox.isChecked():
                 self.sil_plot.setVisible(True)
-                self.plots_layout.addWidget(self.sil_plot)
+                self.plots_layout.addWidget(self.sil_plot, stretch=1)
 
                 # Clear and update SIL plot
                 self.sil_plot.clear()
@@ -557,7 +557,7 @@ class MUeditManual(QMainWindow):
                 self.sil_plot.setVisible(False)
 
             # Show and update spike train plot
-            self.plots_layout.addWidget(self.spiketrain_plot)
+            self.plots_layout.addWidget(self.spiketrain_plot, stretch=1)
             self.spiketrain_plot.clear()
             time_vector = self.MUedition["edition"]["time"]
 
@@ -611,7 +611,7 @@ class MUeditManual(QMainWindow):
                     self.spiketrain_plot.addItem(scatter)
 
             # Show and update discharge rate plot
-            self.plots_layout.addWidget(self.dr_plot)
+            self.plots_layout.addWidget(self.dr_plot, stretch=1)
             self.dr_plot.clear()
 
             if len(discharge_times) > 1:
@@ -637,6 +637,10 @@ class MUeditManual(QMainWindow):
         else:
             # Multiple MUs selected - show only pulse trains stacked vertically
             self.sil_info.setText(f"{len(checked_mus)} MUs selected")
+            
+            container_height = self.plots_scroll_area.viewport().height()
+            plot_height = container_height // min(3, len(checked_mus))
+            plot_height = min(500, plot_height)
 
             # Create a new plot widget for each selected MU
             for mu_text in checked_mus:
@@ -652,8 +656,9 @@ class MUeditManual(QMainWindow):
                 time_vector = self.MUedition["edition"]["time"]
 
                 # Create a new plot for this MU
+
                 plot_widget = self.create_plot_widget(f"Array_{array_idx+1}_MU_{mu_idx+1}")
-                plot_widget.setFixedHeight(200)  # Fixed height for each plot
+                plot_widget.setFixedHeight(plot_height)  # Fixed height for each plot
 
                 # Plot pulse train with consistent style
                 plot_widget.plot(
@@ -715,6 +720,8 @@ class MUeditManual(QMainWindow):
 
         # Add grid
         plot.showGrid(x=True, y=True, alpha=0.3)
+        plot.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
 
         # Set y-axis range for proper visualization of pulse trains
         plot.setYRange(-0.05, 1.5)
