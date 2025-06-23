@@ -67,6 +67,7 @@ class MUAnalysis(QWidget):
         self.content_layout = QHBoxLayout()
         self.content_layout.setContentsMargins(15, 15, 15, 15)
         self.content_layout.setSpacing(20)
+        self.center = None
         self.content_layout.addWidget(self._create_left_sidebar(), stretch=1)
         self.content_layout.addWidget(self._create_center_area(), stretch=5)
         self.content_layout.addWidget(self._create_right_sidebar(), stretch=2)
@@ -177,70 +178,11 @@ class MUAnalysis(QWidget):
         return sidebar
 
     def _create_center_area(self):
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setFrameShape(QFrame.NoFrame)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll_area.setStyleSheet("background-color: transparent; border: none;")
-        scroll_content = QWidget()
-        scroll_content.setStyleSheet("background-color: transparent;")
-        
-        scroll_area.setWidget(scroll_content)
-        return scroll_area
-
-    def _create_plot_panel(self, title, placeholder_text):
-        panel = QFrame()
-        panel.setObjectName("plotCard")
-        panel.setStyleSheet(
-            f"""
-            #plotCard {{
-                background-color: {self.colors['bg_card']};
-                border: 1px solid {self.colors['border_light']};
-                border-radius: 6px;
-            }}
-            #plotCard > QLabel {{
-                color: {self.colors['text_primary']};
-                font-size: 10pt;
-                font-weight: bold;
-                padding: 10px 15px 5px 15px;
-                border: none;
-                background: transparent;
-            }}
-        """
-        )
-        panel_layout = QVBoxLayout(panel)
-        panel_layout.setContentsMargins(0, 0, 0, 0)
-        panel_layout.setSpacing(0)
-        title_label = QLabel(title)
-        panel_layout.addWidget(title_label)
-        placeholder = QFrame()
-        placeholder.setObjectName("graphPlaceholder")
-        placeholder.setMinimumHeight(180)
-        placeholder.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        placeholder.setStyleSheet(
-            f"""
-            #graphPlaceholder {{
-                background-color: {self.colors['placeholder_bg']};
-                border-bottom-left-radius: 6px;
-                border-bottom-right-radius: 6px;
-                margin: 0px 15px 15px 15px;
-            }}
-        """
-        )
-        placeholder_layout = QVBoxLayout(placeholder)
-        placeholder_label = QLabel(placeholder_text)
-        placeholder_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        placeholder_label.setStyleSheet(
-            f"color: {self.colors['text_secondary']}; font-size: 10pt; background: transparent;"
-        )
-        placeholder_layout.addWidget(placeholder_label)
-        panel_layout.addWidget(placeholder, stretch=1)
-        shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(10)
-        shadow.setColor(self.colors["shadow"])
-        shadow.setOffset(0, 2)
-        panel.setGraphicsEffect(shadow)
-        return panel
+        center = QFrame()
+        center.setObjectName("centerContent")
+        center_layout = QVBoxLayout(center)
+        self.center = center_layout
+        return center
 
     def _create_right_sidebar(self):
         print("--- DEBUG: _create_right_sidebar called ---")
@@ -248,7 +190,7 @@ class MUAnalysis(QWidget):
         sidebar.setObjectName("rightSidebar")
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setContentsMargins(0, 0, 0, 0)
-        sidebar_layout.setSpacing(15)
+        # sidebar_layout.setSpacing(15) 
         sidebar.setStyleSheet(
             f"""
             #rightSidebar > QLabel#sidebarTitle {{
@@ -282,8 +224,6 @@ class MUAnalysis(QWidget):
         title_label = QLabel("File Details")
         title_label.setObjectName("sidebarTitle")
         sidebar_layout.addWidget(title_label)
-
-        sidebar_layout.addStretch(1)
         browse_btn = QPushButton("Load File")
         browse_btn.setMinimumHeight(36)
         browse_btn.setFont(QFont("Arial", 9, QFont.Bold))
@@ -302,10 +242,9 @@ class MUAnalysis(QWidget):
             }}
         """
         )
-        browse_btn.clicked.connect(self.mu.select_file_button_pushed)
+        browse_btn.clicked.connect(lambda: self.mu.select_file_button_pushed(self.center))
         sidebar_layout.addWidget(browse_btn)
-        # --- Create Export Button ---
-
+        sidebar_layout.addStretch(1)
         return sidebar
 
 # --- Main execution block (for testing) ---
