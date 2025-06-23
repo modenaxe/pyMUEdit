@@ -7,3 +7,6 @@ PyQt5_sip==12.17.0
 pyqtgraph==0.13.7
 scikit_learn==1.6.1
 scipy==1.15.2
+openpyxl==3.1.5
+pandastable==0.13.1
+seaborn==0.13.2
