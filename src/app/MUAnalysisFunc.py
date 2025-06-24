@@ -1,6 +1,8 @@
 import sys
 from PyQt5.QtWidgets import (
-    QFileDialog
+    QFileDialog,
+    QLabel,
+    QMessageBox
 )
 from scipy.io import loadmat
 import pandas as pd
@@ -18,28 +20,36 @@ class MUAnalysisFunc:
         self.file = None
         self.canvas = None
 
+    def set_canvas(self,canvas):
+        self.canvas = canvas
+
+        
     def select_file_button_pushed(self,center_panel):
         """Open file dialog to select file for editing and automatically import it."""
+        self.file = None
         file_dialog = QFileDialog()
         file_path, _ = file_dialog.getOpenFileName(None, "Select file", "", "MAT Files (*.mat);;All Files (*.*)")
 
         if file_path:
-            self.emg_from_otb(file_path)
-            self.import_data(file_path, center_panel)
+            valid = self.emg_from_otb(file_path)
+            self.import_data(file_path, center_panel, valid)
 
-
-    def import_data(self, filepath, center_panel):
-        if self.canvas:
+    def import_data(self, filepath, center_panel, valid):
+        if valid:
             fig = self.plot_idr(self.file)
             canvas = FigureCanvas(fig)
-            center_panel.replaceWidget(self.canvas, canvas)
-            self.canvas = canvas
         else:
-            fig = self.plot_idr(self.file)
-            canvas = FigureCanvas(fig)
-            center_panel.addWidget(canvas)
-            self.canvas = canvas
-
+            canvas = QMessageBox()
+            canvas.setIcon(QMessageBox.Critical)
+            canvas.setText("Error")
+            canvas.setInformativeText('Loaded file has errors')
+            canvas.setWindowTitle("Error")
+            canvas.exec_()
+            return
+        center_panel.removeWidget(self.canvas)
+        self.canvas.setParent(None)
+        center_panel.addWidget(canvas)
+        self.canvas = canvas
 
     def compute_sil(self, ipts, mupulses, ignore_negative_ipts=False):
         # Manage exception of no firings
@@ -276,7 +286,11 @@ class MUAnalysisFunc:
     extras=None,
     ignore_negative_ipts=False,
     ):
-        mat_file = loadmat(filepath, simplify_cells=True)
+        try:
+            mat_file = loadmat(filepath, simplify_cells=True)
+        except:
+            return None
+
         # Check if a valid version has been specified
         valid_versions = [
             "1.5.3.0",
@@ -370,6 +384,7 @@ class MUAnalysisFunc:
         }
 
         self.file = emgfile
+        return 1
 
     def plot_idr(self,
     emgfile,
@@ -399,9 +414,11 @@ class MUAnalysisFunc:
 
         # Use the subplot function to allow for the use of twinx()
         figname = 'aditi_unique_name'
+        plt.close()  
         fig, ax1 = plt.subplots(
             figsize=(figsize[0] / 2.54, figsize[1] / 2.54), num=figname,
         )
+
 
         # Check if we have a single MU or a list of MUs to plot.
         if isinstance(munumber, int):

@@ -4,22 +4,14 @@ from PyQt5.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
-    QGridLayout,
     QPushButton,
     QLabel,
     QFrame,
-    QCheckBox,
-    QComboBox,
-    QSpacerItem,
-    QSizePolicy,
     QStyle,
-    QGraphicsDropShadowEffect,
-    QScrollArea,
     QMainWindow,
 )
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
-import traceback
 from app.MUAnalysisFunc import MUAnalysisFunc
 from app.ExportResults import ExportResultsWindow
 
@@ -149,6 +141,11 @@ class MUAnalysis(QWidget):
         center = QFrame()
         center.setObjectName("centerContent")
         center_layout = QVBoxLayout(center)
+        load = QLabel("Press Load File to View Data")
+        load.setFont(QFont("Arial", 32, QFont.Bold))
+        load.setStyleSheet(f"color: red; margin-right: 100%;")
+        center_layout.addWidget(load)
+        self.mu.set_canvas(load)
         self.center = center_layout
         return center
 
