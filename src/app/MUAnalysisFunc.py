@@ -15,15 +15,22 @@ import copy
 import itertools
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
+# This class holds all the functions used for file uploading
 class MUAnalysisFunc:
+
     def __init__(self):
+        # file holds emg file instance which is used in openHdemg code
         self.file = None
+        # canvas hold whatever the widget in the center area is (graph or message saying to load file)
         self.canvas = None
 
+    # setter for UI to give reference to center layout current widget which will need to be replaced by graph
     def set_canvas(self,canvas):
         self.canvas = canvas
 
-        
+    # Triggerd of file upload button: opens file explorer
+    # Checks if file is valid or not
+    # passes to import_data to set center screen
     def select_file_button_pushed(self,center_panel):
         """Open file dialog to select file for editing and automatically import it."""
         self.file = None
@@ -31,9 +38,12 @@ class MUAnalysisFunc:
         file_path, _ = file_dialog.getOpenFileName(None, "Select file", "", "MAT Files (*.mat);;All Files (*.*)")
 
         if file_path:
+            # this is where self. file gets set (inside emg_from_otb)
             valid = self.emg_from_otb(file_path)
             self.import_data(file_path, center_panel, valid)
 
+    # If file is not valid it displays an error message
+    # else it removes anything in center layour and replaces with new graph
     def import_data(self, filepath, center_panel, valid):
         if valid:
             fig = self.plot_idr(self.file)
@@ -51,6 +61,7 @@ class MUAnalysisFunc:
         center_panel.addWidget(canvas)
         self.canvas = canvas
 
+    # OPENHDEMG
     def compute_sil(self, ipts, mupulses, ignore_negative_ipts=False):
         # Manage exception of no firings
         if len(mupulses) == 0:
@@ -159,7 +170,7 @@ class MUAnalysisFunc:
 
             return pd.DataFrame(columns=[0])
 
-
+    # OPENHDEMG
     def get_otb_decomposition(self, df):
         # Extract the IPTS and rename columns progressively
         IPTS = df.filter(regex="Source for decomposition")
@@ -181,7 +192,7 @@ class MUAnalysisFunc:
 
         return IPTS, BINARY_MUS_FIRING
 
-
+    # OPENHDEMG
     def get_otb_ied(self, df):
         OTBelectrodes_ied = {
             "GR04MM1305": 4,
@@ -208,7 +219,7 @@ class MUAnalysisFunc:
         )
         return np.nan
 
-
+    # OPENHDEMG
     def get_otb_rawsignal(self, df, extras_regex):
         # Drop all the known columns different from the raw EMG signal.
         # This is a workaround since the OTBiolab+ software does not export a
@@ -254,7 +265,7 @@ class MUAnalysisFunc:
                 "\nFailure in searching the raw signal, please check that it is present in the .mat file and that only the accepted parameters have been included\n"
             )
 
-
+    # OPENHDEMG
     def get_otb_extras(self, df, extras):
         if extras is None:
             return pd.DataFrame(columns=[0])
@@ -278,6 +289,8 @@ class MUAnalysisFunc:
 
         return MUPULSES
 
+    # OPENHDEMG: edited
+    # I will put my intials (AC) next to edited code
     def emg_from_otb(self,
     filepath,
     ext_factor=8,
@@ -286,6 +299,7 @@ class MUAnalysisFunc:
     extras=None,
     ignore_negative_ipts=False,
     ):
+        # AC : if the file is invalid we return early and let import_data know to show error
         try:
             mat_file = loadmat(filepath, simplify_cells=True)
         except:
@@ -383,9 +397,12 @@ class MUAnalysisFunc:
             "EXTRAS": EXTRAS,
         }
 
+        # AC : we set file to the emgfile object and return 1 to indicate it is valid
         self.file = emgfile
         return 1
 
+    # OPENHDEMG: edited
+    # I will put my intials (AC) next to edited code throughout this
     def plot_idr(self,
     emgfile,
     munumber="all",
@@ -413,7 +430,9 @@ class MUAnalysisFunc:
             munumber = munumber[0]
 
         # Use the subplot function to allow for the use of twinx()
+        # AC : Probably should change this, use for debugging
         figname = 'aditi_unique_name'
+        # AC : This is to stop plots from overlaying repeateadly. plt has some strange behaviour so watch out for this in future work
         plt.close()  
         fig, ax1 = plt.subplots(
             figsize=(figsize[0] / 2.54, figsize[1] / 2.54), num=figname,
@@ -493,6 +512,7 @@ class MUAnalysisFunc:
 
         return fig
 
+    # OPENHDEMG
     def compute_idr(self, emgfile):
         # Compute the instantaneous discharge rate (IDR) from the MUPULSES
         if isinstance(emgfile["MUPULSES"], list):
@@ -534,6 +554,7 @@ class MUAnalysisFunc:
                 "MUPULSES is probably absent or it is not contained in a list"
             )
 
+    # OPENHDEMG
     def min_max_scaling(self, data=None, series_or_df=None, col_by_col=False):
         # Create a deepcopy of the original data
         if data is not None:

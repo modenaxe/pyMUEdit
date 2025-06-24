@@ -15,6 +15,7 @@ from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from app.MUAnalysisFunc import MUAnalysisFunc
 from app.ExportResults import ExportResultsWindow
 
+# legacy code
 def get_icon(standard_icon):
     """Helper function to get standard icons safely."""
     return QApplication.style().standardIcon(getattr(QStyle, standard_icon))  # type:ignore
@@ -25,6 +26,8 @@ class MUAnalysis(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        # setting instance of function class from src/app/MUAnalysisFunc
         self.mu = MUAnalysisFunc()
 
         self.colors = {
@@ -58,6 +61,7 @@ class MUAnalysis(QWidget):
         self.content_layout.addWidget(self._create_right_sidebar(), stretch=2)
         self.widget_layout.addLayout(self.content_layout)  # Add main content below top bar
 
+    # legacy code
     def request_return_to_dashboard(self):
         """Emits a signal to tell the main window to switch views."""
         print("Widget: Requesting return to dashboard")
@@ -65,6 +69,7 @@ class MUAnalysis(QWidget):
 
     # --- UI Creation Methods ---
 
+    # legacy code
     def _create_top_bar(self):
         top_bar = QFrame()
         top_bar.setObjectName("topBar")
@@ -129,6 +134,7 @@ class MUAnalysis(QWidget):
             print("ERROR: request_return_to_dashboard method missing!")
         return top_bar
 
+    # currently empty left sidebar
     def _create_left_sidebar(self):
         sidebar = QFrame()
         sidebar.setObjectName("leftSidebar")
@@ -137,6 +143,9 @@ class MUAnalysis(QWidget):
         sidebar_layout.setSpacing(10)
         return sidebar
 
+    # center area where graph is initally loaded
+    # starts with a message widget stating file needs to be loaded
+    # this prop is passed to mu class as it needs the reference to remove it
     def _create_center_area(self):
         center = QFrame()
         center.setObjectName("centerContent")
@@ -149,6 +158,10 @@ class MUAnalysis(QWidget):
         self.center = center_layout
         return center
 
+    # side bar with load file button
+    # has style sheet of button: feel free to change
+    # when button is clicked it calls mu class method, passing instance of the center layout as it needs
+    # the reference to make changes to it (see line 203)
     def _create_right_sidebar(self):
         print("--- DEBUG: _create_right_sidebar called ---")
         sidebar = QFrame()
@@ -193,6 +206,7 @@ class MUAnalysis(QWidget):
         return sidebar
 
 # --- Main execution block (for testing) ---
+# legacy code
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     analysis_widget = MUAnalysis()
