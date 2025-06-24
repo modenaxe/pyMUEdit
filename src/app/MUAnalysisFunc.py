@@ -18,26 +18,26 @@ class MUAnalysisFunc:
         self.file = None
         self.canvas = None
 
-    def select_file_button_pushed(self,a):
+    def select_file_button_pushed(self,center_panel):
         """Open file dialog to select file for editing and automatically import it."""
         file_dialog = QFileDialog()
         file_path, _ = file_dialog.getOpenFileName(None, "Select file", "", "MAT Files (*.mat);;All Files (*.*)")
 
         if file_path:
             self.emg_from_otb(file_path)
-            self.import_data(file_path, a)
+            self.import_data(file_path, center_panel)
 
 
-    def import_data(self, filepath, a):
+    def import_data(self, filepath, center_panel):
         if self.canvas:
             fig = self.plot_idr(self.file)
             canvas = FigureCanvas(fig)
-            a.replaceWidget(self.canvas, canvas)
+            center_panel.replaceWidget(self.canvas, canvas)
             self.canvas = canvas
         else:
             fig = self.plot_idr(self.file)
             canvas = FigureCanvas(fig)
-            a.addWidget(canvas)
+            center_panel.addWidget(canvas)
             self.canvas = canvas
 
 
