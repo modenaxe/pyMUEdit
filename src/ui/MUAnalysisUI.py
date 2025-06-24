@@ -23,7 +23,6 @@ import traceback
 from app.MUAnalysisFunc import MUAnalysisFunc
 from app.ExportResults import ExportResultsWindow
 
-
 def get_icon(standard_icon):
     """Helper function to get standard icons safely."""
     return QApplication.style().standardIcon(getattr(QStyle, standard_icon))  # type:ignore
@@ -42,19 +41,13 @@ class MUAnalysis(QWidget):
             "bg_sidebar": "#f8f9fa",
             "bg_topbar": "#ffffff",
             "border_light": "#e9ecef",
-            "border_medium": "#dee2e6",
             "shadow": QColor(0, 0, 0, 25),
             "text_primary": "#212529",
             "text_secondary": "#6c757d",
             "text_title": "#343a40",
-            "placeholder_bg": "#e9ecef",
             "button_dark_bg": "#343a40",
-            "button_dark_text": "#ffffff",
             "button_dark_hover": "#495057",
             "button_grey_bg": "#e9ecee",
-            "button_grey_text": "#495057",
-            "button_grey_border": "#ced4da",
-            "button_grey_hover": "#dee2e6",
             "checkbox_bg": "#f1f3f5",
         }
 
@@ -150,31 +143,6 @@ class MUAnalysis(QWidget):
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setContentsMargins(0, 0, 0, 0)
         sidebar_layout.setSpacing(10)
-        sidebar.setStyleSheet(
-            f"""
-            #leftSidebar QLabel {{
-                color: {self.colors['text_primary']};
-                font-size: 10pt;
-                font-weight: bold;
-                border: none;
-            }}
-            #leftSidebar QCheckBox {{
-                background-color: {self.colors['checkbox_bg']};
-                color: {self.colors['text_primary']};
-                padding: 8px 12px;
-                border-radius: 4px;
-                border: 1px solid {self.colors['border_light']};
-                font-size: 9pt;
-            }}
-            #leftSidebar QCheckBox::indicator {{
-                width: 13px;
-                height: 13px;
-            }}
-            #leftSidebar QCheckBox:hover {{
-                background-color: {self.colors['border_light']};
-            }}
-        """
-        )
         return sidebar
 
     def _create_center_area(self):
@@ -188,57 +156,37 @@ class MUAnalysis(QWidget):
         print("--- DEBUG: _create_right_sidebar called ---")
         sidebar = QFrame()
         sidebar.setObjectName("rightSidebar")
-        sidebar_layout = QVBoxLayout(sidebar)
-        sidebar_layout.setContentsMargins(0, 0, 0, 0)
-        # sidebar_layout.setSpacing(15) 
         sidebar.setStyleSheet(
             f"""
-            #rightSidebar > QLabel#sidebarTitle {{
-                color: {self.colors['text_primary']};
-                font-size: 10pt;
-                font-weight: bold;
-                border: none;
-                background: transparent;
+            #rightSidebar {{
+                background-color: {self.colors['button_dark_bg']};
+                border-bottom: 1px solid {self.colors['border_light']};
             }}
-            QFrame#summaryItem {{
-                background-color: {self.colors['checkbox_bg']};
-                border-radius: 4px;
-                border: 1px solid {self.colors['border_light']};
-                padding: 8px 10px;
-            }}
-            QLabel#summaryLabel {{
-                color: {self.colors['text_secondary']};
-                font-size: 8pt;
-                border: none;
-                background: transparent;
-            }}
-            QLabel#summaryValue {{
-                color: {self.colors['text_primary']};
-                font-size: 10pt;
-                font-weight: bold;
-                border: none;
-                background: transparent;
-            }}
+
         """
         )
-        title_label = QLabel("File Details")
+        sidebar_layout = QVBoxLayout(sidebar)
+        title_label = QLabel("File")
+        title_label.setStyleSheet(f"color: {self.colors['button_grey_bg']}; border: none")
+        title_label.setFont(QFont("Arial", 14, QFont.Bold))
         title_label.setObjectName("sidebarTitle")
         sidebar_layout.addWidget(title_label)
         browse_btn = QPushButton("Load File")
-        browse_btn.setMinimumHeight(36)
-        browse_btn.setFont(QFont("Arial", 9, QFont.Bold))
         browse_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         browse_btn.setStyleSheet(
             f"""
             QPushButton {{
-                background-color: {self.colors['button_dark_bg']};
-                color: {self.colors['button_dark_text']};
+                background-color: {self.colors['button_dark_hover']};
+                color: {self.colors['button_grey_bg']};
                 border: none;
+                height: 40%;
+                max-width: 100%;
                 border-radius: 4px;
-                padding: 8px 10px;
+                margin-right: 50%;
             }}
             QPushButton:hover {{
-                background-color: {self.colors['button_dark_hover']};
+                background-color: {self.colors['button_grey_bg']};
+                color: {self.colors['button_dark_hover']};
             }}
         """
         )
