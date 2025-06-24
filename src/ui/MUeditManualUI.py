@@ -59,6 +59,9 @@ def setup_ui(main_window):
     # Set up keyboard shortcuts
     main_window.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
+#   新增悬浮save块
+    _add_floating_save_btn(main_window)
+
 
 def setup_control_panel(main_window):
     """Set up the control panel with all controls using modern UI components."""
@@ -137,6 +140,9 @@ def setup_control_panel(main_window):
 
     save_group.add_field(main_window.save_btn)
     control_layout.addWidget(save_group)
+
+    # 隐藏原来的save
+    save_group.hide() 
 
     # Set the control panel as the scroll area's widget
     scroll_area.setWidget(control_panel_widget)
@@ -529,3 +535,35 @@ def create_mu_checkbox(main_window, array_idx, mu_idx, text, sil_value, is_check
     checkbox.stateChanged.connect(main_window.mu_checkbox_state_changed)
 
     return checkbox
+
+# === 追加到 MUeditManualUI.py 末尾（或放在本文件任意位置，只要能被 import） =========
+def _add_floating_save_btn(main_window):
+    """
+    在窗口右上角放一个悬浮 Save 按钮，点击后仍调用 main_window.save_button_pushed。
+    不动侧边栏里的原有 Save。
+    """
+    from ui.components import ActionButton   # 项目里已有的按钮类
+
+    btn = ActionButton("Save", primary=True, parent=main_window)
+    btn.setFixedSize(80, 30)
+    btn.clicked.connect(main_window.save_button_pushed)
+
+    # ---- 把按钮固定在右上角 ----------------------------------------
+    margin = 16
+    def _reposition():
+        x = main_window.width() - btn.width() - margin
+        y = margin
+        btn.move(x, y)
+    _reposition()                 # 初始化时摆一次
+
+    # 在窗口 resize 时保持位置
+    old_resize = main_window.resizeEvent
+    def new_resize(ev):
+        if callable(old_resize):
+            old_resize(ev)        # 保留原本逻辑
+        _reposition()
+    main_window.resizeEvent = new_resize
+
+    # 可选：把引用挂到 main_window，方便别处 hide()/show()
+    main_window.floating_save_btn = btn
+# ===================================================================
