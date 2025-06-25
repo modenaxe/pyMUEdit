@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QApplication, QScrollArea
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QApplication, QScrollArea, QStackedWidget
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtSvg import QSvgWidget
@@ -139,6 +139,7 @@ def create_dropzone_card(import_window):
     return dropzone_card
 
 
+# NOTE: Creates 'Signal Preview' window
 def create_preview_section(import_window):
     """Create the signal preview section."""
     preview_card = CleanCard()
@@ -168,14 +169,20 @@ def create_preview_section(import_window):
     )
     preview_frame.setMinimumHeight(220)
 
+    # Create stacked widget to display either the label or the visualisation of the file
+    import_window.preview_stacked_frame = QStackedWidget()
+
     # Create preview message
     import_window.preview_message = QLabel("No file selected. Import a file to see a preview.")
     import_window.preview_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
     import_window.preview_message.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
 
+    # Add preview message to stacked frame as an active widget
+    import_window.preview_stacked_frame.addWidget(import_window.preview_message)
+    
     # Add message to preview frame
     preview_frame_layout = QVBoxLayout(preview_frame)
-    preview_frame_layout.addWidget(import_window.preview_message)
+    preview_frame_layout.addWidget(import_window.preview_stacked_frame)
 
     # Add preview frame to layout
     preview_layout.addWidget(preview_frame)
