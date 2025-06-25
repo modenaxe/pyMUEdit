@@ -14,6 +14,9 @@ from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from app.MUAnalysisFunc import MUAnalysisFunc
 from app.ExportResults import ExportResultsWindow
+from ui.components.FileSidebar.FileSection import FileSection
+# from ui.components.FileButton import FileButton
+
 
 # legacy code
 def get_icon(standard_icon):
@@ -175,34 +178,7 @@ class MUAnalysis(QWidget):
 
         """
         )
-        sidebar_layout = QVBoxLayout(sidebar)
-        title_label = QLabel("File")
-        title_label.setStyleSheet(f"color: {self.colors['button_grey_bg']}; border: none")
-        title_label.setFont(QFont("Arial", 14, QFont.Bold))
-        title_label.setObjectName("sidebarTitle")
-        sidebar_layout.addWidget(title_label)
-        browse_btn = QPushButton("Load File")
-        browse_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        browse_btn.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {self.colors['button_dark_hover']};
-                color: {self.colors['button_grey_bg']};
-                border: none;
-                height: 40%;
-                max-width: 100%;
-                border-radius: 4px;
-                margin-right: 50%;
-            }}
-            QPushButton:hover {{
-                background-color: {self.colors['button_grey_bg']};
-                color: {self.colors['button_dark_hover']};
-            }}
-        """
-        )
-        browse_btn.clicked.connect(lambda: self.mu.select_file_button_pushed(self.center))
-        sidebar_layout.addWidget(browse_btn)
-        sidebar_layout.addStretch(1)
+        sidebar_layout = FileSection(sidebar, self.mu, self.center)
         return sidebar
 
 # --- Main execution block (for testing) ---
