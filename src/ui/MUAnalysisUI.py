@@ -202,6 +202,27 @@ class MUAnalysis(QWidget):
         )
         browse_btn.clicked.connect(lambda: self.mu.select_file_button_pushed(self.center))
         sidebar_layout.addWidget(browse_btn)
+        test = QPushButton("Test")
+        test.setCursor(Qt.CursorShape.PointingHandCursor)
+        test.setStyleSheet(
+            f"""
+            QPushButton {{
+                background-color: {self.colors['button_dark_hover']};
+                color: {self.colors['button_grey_bg']};
+                border: none;
+                height: 40%;
+                max-width: 100%;
+                border-radius: 4px;
+                margin-right: 50%;
+            }}
+            QPushButton:hover {{
+                background-color: {self.colors['button_grey_bg']};
+                color: {self.colors['button_dark_hover']};
+            }}
+        """
+        )
+        test.clicked.connect(self.mu.testing_points)
+        sidebar_layout.addWidget(test)
         sidebar_layout.addStretch(1)
         return sidebar
 
