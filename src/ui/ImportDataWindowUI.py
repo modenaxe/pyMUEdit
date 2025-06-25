@@ -2,9 +2,17 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, Q
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtSvg import QSvgWidget
+import pyqtgraph as pg
 
 # Import custom components
-from ui.components import CleanTheme, CleanCard, ActionButton, SectionHeader, Sidebar
+from ui.components import (
+    CleanTheme, 
+    CleanCard, 
+    ActionButton, 
+    SectionHeader, 
+    Sidebar, 
+    VisualizationPanel
+)
 
 
 def setup_ui(import_window):
@@ -179,10 +187,22 @@ def create_preview_section(import_window):
 
     # Add preview message to stacked frame as an active widget
     import_window.preview_stacked_frame.addWidget(import_window.preview_message)
+
+    # Create visualization panel to preview the data in a selected file
+    import_window.preview_plot = pg.PlotWidget()
+    import_window.preview_plot.setBackground("w")  # White background
+    import_window.preview_plot.setLabel("left", "Amplitude")
+    import_window.preview_plot.setLabel("bottom", "Time (s)")
+    import_window.preview_plot.showGrid(x=True, y=True)
+    import_window.preview_plot.setMinimumHeight(250)
+
+    signal_panel = VisualizationPanel(plot_widget=import_window.preview_plot)
+    import_window.preview_stacked_frame.addWidget(signal_panel)
+    import_window.preview_stacked_frame.setCurrentIndex(0)
     
     # Add message to preview frame
     preview_frame_layout = QVBoxLayout(preview_frame)
-    preview_frame_layout.addWidget(import_window.preview_stacked_frame)
+    preview_frame_layout.addWidget(import_window.preview_stacked_frame, stretch=3)
 
     # Add preview frame to layout
     preview_layout.addWidget(preview_frame)
