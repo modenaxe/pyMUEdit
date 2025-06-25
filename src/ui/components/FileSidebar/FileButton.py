@@ -6,6 +6,7 @@ from PyQt5.QtCore import Qt, QSize
 
 class FileButton(QPushButton):
 
+# all file actions button styling
     def __init__(self, text):
       super().__init__(text )
       # self.setFont(QFont("Segoe UI", 9))

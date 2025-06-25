@@ -162,9 +162,7 @@ class MUAnalysis(QWidget):
         return center
 
     # side bar with load file button
-    # has style sheet of button: feel free to change
-    # when button is clicked it calls mu class method, passing instance of the center layout as it needs
-    # the reference to make changes to it (see line 203)
+    # loaded from FileSection class
     def _create_right_sidebar(self):
         print("--- DEBUG: _create_right_sidebar called ---")
         sidebar = QFrame()

@@ -6,6 +6,9 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont
 
+# class containing the file section of the right sidebar
+# when button is clicked it calls mu class method, passing instance of the center layout as it needs
+
 class FileSection(QVBoxLayout):
       def __init__(self, sidebar, mu, center):
         super().__init__(sidebar)
