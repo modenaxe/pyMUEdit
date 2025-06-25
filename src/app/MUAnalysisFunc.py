@@ -23,10 +23,36 @@ class MUAnalysisFunc:
         self.file = None
         # canvas hold whatever the widget in the center area is (graph or message saying to load file)
         self.canvas = None
+        self.coords = []
+        self.cid = None
 
     # setter for UI to give reference to center layout current widget which will need to be replaced by graph
     def set_canvas(self,canvas):
         self.canvas = canvas
+
+    def onclick(self, event):
+        if len(self.coords) == 1:
+            self.canvas.mpl_disconnect(self.cid)
+            # print(self.coords)
+            # self.coords = []
+        self.coords.append(event.xdata)
+        print(self.coords)
+
+
+    def testing_points(self):
+        self.cid = self.canvas.mpl_connect('button_press_event', self.onclick)
+        # global ix, iy
+        # ix, iy = event.xdata, event.ydata
+        # print (f'x = {ix}, y = {iy}')
+
+        # global coords
+        # coords.append((ix, iy))
+
+        # if len(coords) == 2:
+        #     fig.canvas.mpl_disconnect(cid)
+
+        # return coords
+
 
     # Triggerd of file upload button: opens file explorer
     # Checks if file is valid or not
