@@ -239,7 +239,8 @@ def setup_center_panel(main_window, parent_layout):
     controls_layout.addWidget(main_window.start_button)
 
     center_layout.addLayout(controls_layout)
-
+    
+    # NOTE: Code for window to replicate for preview
     # Create and setup signal processing visualization with PyQtGraph
     main_window.ui_plot_reference = pg.PlotWidget()
     main_window.ui_plot_reference.setBackground("w")  # White background

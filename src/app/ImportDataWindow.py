@@ -184,6 +184,8 @@ class ImportDataWindow(QWidget):
                     self.save_mat_in_background(savename, {"signal": signal}, True)
 
                 # Update the UI
+                # TODO: Change this part to create a preview and show it in the window instead of the message
+                # NOTE: This should still save the original component/label somewhere else, to display in case of error.
                 self.preview_message.setText(
                     f"Successfully loaded {file}\nFile contains EMG data with {signal['data'].shape[0]} channels"
                 )
