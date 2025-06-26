@@ -9,11 +9,13 @@ from PyQt5.QtWidgets import (
     QFrame,
     QStyle,
     QMainWindow,
+    QComboBox,
 )
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from app.MUAnalysisFunc import MUAnalysisFunc
 from app.ExportResults import ExportResultsWindow
+from ui.muanalysis.AdvancedTools import AdvancedTools
 
 # legacy code
 def get_icon(standard_icon):
@@ -134,13 +136,34 @@ class MUAnalysis(QWidget):
             print("ERROR: request_return_to_dashboard method missing!")
         return top_bar
 
-    # currently empty left sidebar
+    # dropdown order for matrix code
+    # the border on the right sidebar 
+    # the dropdown names 
+    # global styling
     def _create_left_sidebar(self):
         sidebar = QFrame()
         sidebar.setObjectName("leftSidebar")
+        sidebar.setStyleSheet(
+            f"""
+            #leftSidebar {{
+                background-color: {self.colors['button_dark_bg']};
+            }}
+        """
+        )
         sidebar_layout = QVBoxLayout(sidebar)
-        sidebar_layout.setContentsMargins(0, 0, 0, 0)
-        sidebar_layout.setSpacing(10)
+
+        # title
+        title_label = QLabel("Analysis")
+        title_label.setObjectName("analysisTitle")
+        title_label.setStyleSheet(f"color: {self.colors['button_grey_bg']}")
+        title_label.setFont(QFont("Arial", 14, QFont.Bold))
+        sidebar_layout.addWidget(title_label)
+
+        # advanced tools
+        advanced_tools = AdvancedTools(parent=self)
+        sidebar_layout.addWidget(advanced_tools)
+
+        sidebar_layout.addStretch(1)
         return sidebar
 
     # center area where graph is initally loaded
@@ -170,7 +193,6 @@ class MUAnalysis(QWidget):
             f"""
             #rightSidebar {{
                 background-color: {self.colors['button_dark_bg']};
-                border-bottom: 1px solid {self.colors['border_light']};
             }}
 
         """
