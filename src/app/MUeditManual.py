@@ -1363,8 +1363,55 @@ class MUeditManual(QMainWindow):
                 
                 # Flag MU for deletion
                 self.MUedition["edition"]["Flag"][array_idx][mu_idx] = 1
-                                
-                checkbox.setText(f"{mu_text} (SIL: {sil_value:.4f}) - FLAGGED")
+                
+                self.MUedition["edition"]["Flag"][array_idx][mu_idx] = 0
+                origin_name = "_".join(mu_text.split("_")[-2:])                
+                checkbox.setText(f"FLAGGED - {origin_name} (SIL: {sil_value:.4f})")
+
+        # Update the display
+        self.mu_checkbox_state_changed()
+    
+    
+    def unflag_mu_for_deletion_button_pushed(self):
+        """UnFlag the selected motor units for deletion."""
+        if not self.MUedition:
+            return
+        # Find all checked MUs
+        for checkbox in self.mu_checkboxes:
+            if checkbox.isChecked():
+                mu_text = checkbox.objectName()
+                parts = mu_text.split("_")
+
+                if len(parts) < 4:
+                    continue
+
+                array_idx = int(parts[1]) - 1
+                mu_idx = int(parts[3]) - 1
+
+                # Store current state for undo (only for the last MU - limitation)
+                self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
+                self.Backup["Dischargetimes"] = (
+                    self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
+                )
+
+                # Extract the sampling frequency as a scalar
+                if self.MUedition["signal"]["fsamp"].ndim > 1:
+                    fsamp = float(self.MUedition["signal"]["fsamp"][0, 0])
+                else:
+                    fsamp = float(self.MUedition["signal"]["fsamp"][0])
+
+                # # Set pulse train to zeros and minimal discharge times
+                # self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = 0
+                # self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = np.array([1, fsamp])
+
+                # # Update SIL in checkbox text  
+                sil_value = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
+                
+                # Flag MU for deletion
+                self.MUedition["edition"]["Flag"][array_idx][mu_idx] = 0
+                origin_name = "_".join(mu_text.split("_")[-2:])
+
+                checkbox.setText(f"{origin_name} (SIL: {sil_value:.4f})")
 
         # Update the display
         self.mu_checkbox_state_changed()
