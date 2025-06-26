@@ -116,7 +116,7 @@ class AdvancedTools(QWidget):
         )
 
     def show_analysis(self):
-        QMessage.information( # doesn't have to be QMessage
+        QMessageBox.information( # doesn't have to be QMessage
             self,
             "Motor Unit Tracking",
             "TODO, task 32 (Seb)",
