@@ -12,6 +12,7 @@ from .ChannelViewer import ChannelViewer
 class VisualisationPage(QWidget):
     def __init__(self, emg_data, parent=None):
         super().__init__(parent)
+        self.emg_data = emg_data
 
         # left panel
         left_container = QWidget()
@@ -23,16 +24,17 @@ class VisualisationPage(QWidget):
         left_layout.setContentsMargins(15, 15, 15, 15)
         left_layout.setSpacing(15)
 
-        # signal range panel
+        # signal range dropdown panel (in groups of 8)
         signal_range_group = SettingsGroup("Select Signal Range")
-        signal_range_field = FormDropdown("Select Reference Signal", ["EMG Signals 1-8", "EMG Signals 9-16", "EMG Signals 17-24"])
-        signal_range_group.add_field(signal_range_field)
+        self.range_dropdown = FormDropdown("Select Reference Signal", self.generate_channel_groups())
+        signal_range_group.add_field(self.range_dropdown)
         left_layout.addWidget(signal_range_group)
 
-        # main plot panel
-        viewer = ChannelViewer(emg_data)
-        viewer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        vis_panel = VisualizationPanel(title="EMG Channel Viewer", plot_widget=viewer)
+        # main panel (signal graphs)
+        self.viewer = ChannelViewer(emg_data)
+        self.viewer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        vis_panel = VisualizationPanel(title="EMG Channel Viewer", plot_widget=self.viewer)
         vis_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # combine panels in layout
@@ -44,3 +46,21 @@ class VisualisationPage(QWidget):
         main_layout.addWidget(vis_panel, stretch=1)
         self.setLayout(main_layout)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        self.range_dropdown.dropdown.currentIndexChanged.connect(self.channel_group_change)
+        self.channel_group_change(0)
+
+    def generate_channel_groups(self):
+        total_num_channels = self.emg_data.shape[0]
+        groups = []
+        for start in range(0, total_num_channels + 1, 8):
+            end = min(start + 8, total_num_channels)
+            groups.append(f"Channels {start + 1}-{end}")
+
+        return groups
+
+    def channel_group_change(self, index):
+        start = index * 8
+        end = min(start + 8, self.emg_data.shape[0])
+        indices = list(range(start, end))
+        self.viewer.set_channel_range(indices)
