@@ -9,11 +9,16 @@ from PyQt5.QtWidgets import (
     QFrame,
     QStyle,
     QMainWindow,
+    QComboBox,
 )
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from app.MUAnalysisFunc import MUAnalysisFunc
 from app.ExportResults import ExportResultsWindow
+from ui.muanalysis.AdvancedTools import AdvancedTools
+from ui.components.FileSidebar.FileSection import FileSection
+# from ui.components.FileButton import FileButton
+
 
 # legacy code
 def get_icon(standard_icon):
@@ -134,13 +139,34 @@ class MUAnalysis(QWidget):
             print("ERROR: request_return_to_dashboard method missing!")
         return top_bar
 
-    # currently empty left sidebar
+    # dropdown order for matrix code
+    # the border on the right sidebar 
+    # the dropdown names 
+    # global styling
     def _create_left_sidebar(self):
         sidebar = QFrame()
         sidebar.setObjectName("leftSidebar")
+        sidebar.setStyleSheet(
+            f"""
+            #leftSidebar {{
+                background-color: {self.colors['button_dark_bg']};
+            }}
+        """
+        )
         sidebar_layout = QVBoxLayout(sidebar)
-        sidebar_layout.setContentsMargins(0, 0, 0, 0)
-        sidebar_layout.setSpacing(10)
+
+        # title
+        title_label = QLabel("Analysis")
+        title_label.setObjectName("analysisTitle")
+        title_label.setStyleSheet(f"color: {self.colors['button_grey_bg']}")
+        title_label.setFont(QFont("Arial", 14, QFont.Bold))
+        sidebar_layout.addWidget(title_label)
+
+        # advanced tools
+        advanced_tools = AdvancedTools(parent=self)
+        sidebar_layout.addWidget(advanced_tools)
+
+        sidebar_layout.addStretch(1)
         return sidebar
 
     # center area where graph is initally loaded
@@ -159,9 +185,7 @@ class MUAnalysis(QWidget):
         return center
 
     # side bar with load file button
-    # has style sheet of button: feel free to change
-    # when button is clicked it calls mu class method, passing instance of the center layout as it needs
-    # the reference to make changes to it (see line 203)
+    # loaded from FileSection class
     def _create_right_sidebar(self):
         print("--- DEBUG: _create_right_sidebar called ---")
         sidebar = QFrame()
@@ -170,60 +194,11 @@ class MUAnalysis(QWidget):
             f"""
             #rightSidebar {{
                 background-color: {self.colors['button_dark_bg']};
-                border-bottom: 1px solid {self.colors['border_light']};
             }}
 
         """
         )
-        sidebar_layout = QVBoxLayout(sidebar)
-        title_label = QLabel("File")
-        title_label.setStyleSheet(f"color: {self.colors['button_grey_bg']}; border: none")
-        title_label.setFont(QFont("Arial", 14, QFont.Bold))
-        title_label.setObjectName("sidebarTitle")
-        sidebar_layout.addWidget(title_label)
-        browse_btn = QPushButton("Load File")
-        browse_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        browse_btn.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {self.colors['button_dark_hover']};
-                color: {self.colors['button_grey_bg']};
-                border: none;
-                height: 40%;
-                max-width: 100%;
-                border-radius: 4px;
-                margin-right: 50%;
-            }}
-            QPushButton:hover {{
-                background-color: {self.colors['button_grey_bg']};
-                color: {self.colors['button_dark_hover']};
-            }}
-        """
-        )
-        browse_btn.clicked.connect(lambda: self.mu.select_file_button_pushed(self.center))
-        sidebar_layout.addWidget(browse_btn)
-        test = QPushButton("Test")
-        test.setCursor(Qt.CursorShape.PointingHandCursor)
-        test.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {self.colors['button_dark_hover']};
-                color: {self.colors['button_grey_bg']};
-                border: none;
-                height: 40%;
-                max-width: 100%;
-                border-radius: 4px;
-                margin-right: 50%;
-            }}
-            QPushButton:hover {{
-                background-color: {self.colors['button_grey_bg']};
-                color: {self.colors['button_dark_hover']};
-            }}
-        """
-        )
-        test.clicked.connect(self.mu.testing_points)
-        sidebar_layout.addWidget(test)
-        sidebar_layout.addStretch(1)
+        sidebar_layout = FileSection(sidebar, self.mu, self.center)
         return sidebar
 
 # --- Main execution block (for testing) ---
