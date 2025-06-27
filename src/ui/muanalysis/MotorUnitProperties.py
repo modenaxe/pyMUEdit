@@ -1,15 +1,16 @@
 from PyQt5.QtWidgets import (
     QWidget, 
     QLabel, 
-    QVBoxLayout, 
+    QVBoxLayout,
+    QHBoxLayout, 
     QPushButton, 
     QLineEdit,
-    QDialog
+    QDialog,
 )
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal
 from ui.components.CleanTheme import CleanTheme
-
+from ui.components.FileSidebar.FileButton import FileButton
 
 class MotorUnitPropertiesDialog(QDialog):
     # Dialog for entering Motor Unit Properties including MVC value
@@ -40,11 +41,35 @@ class MotorUnitPropertiesDialog(QDialog):
         mvc_label.setFont(QFont("Arial", 12, QFont.Bold))
         mvc_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
         layout.addWidget(mvc_label)
-        self.mvc_input = QLineEdit()
-        self.mvc_input.setMinimumHeight(32)
-        self.mvc_input.setPlaceholderText("Enter Maximum Voluntary Contraction value...")
-        self.mvc_input.setFont(QFont("Arial", 11))
-        self.mvc_input.setStyleSheet(f"""
+        self.mvc_input = PropertiesInnerDialogText("Enter Maximum Voluntary Contraction value...")
+        if self.current_mvc is not None:
+            self.mvc_input.setText(str(self.current_mvc))
+            print
+        layout.addWidget(self.mvc_input)
+
+        x = MotorUnitPropertiesBasic()
+        layout.addLayout(x)
+
+    def save_mvc(self):
+        pass
+
+class MotorUnitPropertiesBasic(QHBoxLayout):
+      def __init__(self, parent=None):
+        super().__init__(parent)
+        button = PropertiesInnerDialogButton('Basic Properties')
+        self.addWidget(button)
+        rec_input = PropertiesInnerDialogText('Firings at Rec')
+        steady_input = PropertiesInnerDialogText('Firings at Start/End Steady')
+        self.addWidget(rec_input)
+        self.addWidget(steady_input)
+
+class PropertiesInnerDialogText(QLineEdit):
+    def __init__(self, text):
+        super().__init__()
+        self.setMinimumHeight(32)
+        self.setPlaceholderText(text)
+        self.setFont(QFont("Arial", 11))
+        self.setStyleSheet(f"""
             QLineEdit {{
                 padding: 10px;
                 border: 2px solid {CleanTheme.BORDER};
@@ -57,12 +82,30 @@ class MotorUnitPropertiesDialog(QDialog):
                 border-color: {CleanTheme.ANALYSIS_BG_BUTTON};
             }}
         """)
-        if self.current_mvc is not None:
-            self.mvc_input.setText(str(self.current_mvc))
-        layout.addWidget(self.mvc_input)
 
-    def save_mvc(self):
-        pass
+class PropertiesInnerDialogButton(QPushButton):
+    def __init__(self, text):
+        super().__init__(text )
+        self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setStyleSheet(
+            f"""
+            QPushButton {{
+                background-color: #495057;
+                color: #e9ecee;
+                border: none;
+                height: 40%;
+                max-width: 100%;
+                border-radius: 4px;
+            }}
+            QPushButton:hover {{
+                background-color: #4a5672;
+            }}
+        """
+        )
+
+
+
 
 
 class MotorUnitPropertiesButton(QWidget):
