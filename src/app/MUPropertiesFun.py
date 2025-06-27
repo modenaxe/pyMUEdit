@@ -44,46 +44,30 @@ class MUPropertiesFunc:
         canvas.exec_()
         return
       self.showselect(FileUploadFunc.file)
-      # print()
-    
-    def showselect(self,emgfile, how="ref_signal", title="", titlesize=12, nclic=2):
-      plt.close()
-      if how == "ref_signal":
-          data_to_plot = emgfile["REF_SIGNAL"][0]
-          y_label = "Reference signal"
-      elif how == "mean_emg":
-          data_to_plot = emgfile["RAW_SIGNAL"].mean(axis=1)
-          y_label = "Mean EMG signal"
-      else:
-          raise ValueError(
-              "Wrong argument in showselect(). how can only be 'ref_signal' or "
-              + f"'mean_emg'. {how} was passed instead."
-          )
 
+    
+    def showselect(self,emgfile, how="ref_signal"):
+      plt.close()
+      data_to_plot = emgfile["REF_SIGNAL"][0]
       fig,ax = plt.subplots()
       ax.plot(data_to_plot)
       ax.set_xlabel("samples")
-      ax.set_ylabel(y_label)
+      ax.set_ylabel('Reference signal')
+      ax.set_title('Click start and end range. Press q to save.')
       plt.show()
-      # plt.figure()
-      # plt.plot(data_to_plot)
-      # plt.xlabel("Samples")
-      # plt.ylabel(y_label)
-      # plt.title(title, fontweight="bold", fontsize=titlesize)
+      coords = []
+      while len(coords) < 2:
+        pts = plt.ginput(1)
+        coords.append(pts[0][0])
+        ax.axvline(x=pts[0][0], color='r')
+        plt.pause(0.05)
 
-      # ginput_res = plt.ginput(n=-1, timeout=0, mouse_add=False, show_clicks=True)
-
-      # plt.close()
-
-      # points = [round(point[0]) for point in ginput_res]
-      # points.sort()
-
-      # if nclic > 0 and nclic != len(points):
-      #     raise ValueError("Wrong number of inputs, read the title")
+      points = [round(point) for point in coords]
+      points.sort()
       
-      # print(points)
+      print(points)
 
-      # return points
+      return points
       
 
 
