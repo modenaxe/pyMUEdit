@@ -52,6 +52,7 @@ class VisualisationPage(QWidget):
 
         # done button
         done_button = ActionButton("Done", primary=True)
+        done_button.clicked.connect(self.doneClicked)
         left_layout.addWidget(done_button)
 
         # main panel (signal graphs)
@@ -120,6 +121,10 @@ class VisualisationPage(QWidget):
     def rightClicked(self):
         self.channel_group_change(min(self.channel_group_index + 1, self.max_index))
 
+    def doneClicked(self):
+        # TODO: Update data with omitted data removed
+        self.close()
+
     def keyPressEvent(self, a0):
         if a0 is None:
             return
@@ -128,5 +133,7 @@ class VisualisationPage(QWidget):
             self.leftClicked()
         elif a0.key() == Qt.Key.Key_Right:
             self.rightClicked()
+        elif a0.key() == Qt.Key.Key_Return:
+            self.doneClicked()
         else:
             super().keyPressEvent(a0)
