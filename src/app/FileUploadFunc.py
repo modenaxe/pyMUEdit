@@ -17,10 +17,11 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
 # This class holds all the functions used for file uploading
 class FileUploadFunc:
+    file = None
 
     def __init__(self):
         # file holds emg file instance which is used in openHdemg code
-        self.file = None
+        # self.file = None
         # canvas hold whatever the widget in the center area is (graph or message saying to load file)
         self.canvas = None
         self.coords = []
@@ -31,13 +32,13 @@ class FileUploadFunc:
     # setter for UI to give reference to center layout current widget which will need to be replaced by graph
     def set_canvas(self,canvas):
         self.canvas = canvas
-        
+
     # Triggerd of file upload button: opens file explorer
     # Checks if file is valid or not
     # passes to import_data to set center screen
     def select_file_button_pushed(self,center_panel):
         """Open file dialog to select file for editing and automatically import it."""
-        self.file = None
+        FileUploadFunc.file = None
         file_dialog = QFileDialog()
         file_path, _ = file_dialog.getOpenFileName(None, "Select file", "", "MAT Files (*.mat);;All Files (*.*)")
 
@@ -50,7 +51,7 @@ class FileUploadFunc:
     # else it removes anything in center layour and replaces with new graph
     def import_data(self, filepath, center_panel, valid):
         if valid:
-            fig = self.plot_idr(self.file)
+            fig = self.plot_idr(FileUploadFunc.file)
             canvas = FigureCanvas(fig)
         else:
             canvas = QMessageBox()
@@ -402,7 +403,7 @@ class FileUploadFunc:
         }
 
         # AC : we set file to the emgfile object and return 1 to indicate it is valid
-        self.file = emgfile
+        FileUploadFunc.file = emgfile
         return 1
 
     # OPENHDEMG: edited
