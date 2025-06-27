@@ -223,7 +223,13 @@ def create_mu_selection_tab(main_window):
     # Add flag button in the MU selection tab
     main_window.flag_mu_btn = ActionButton("Flag selected MU(s) for deletion", primary=False)
     main_window.flag_mu_btn.clicked.connect(main_window.flag_mu_for_deletion_button_pushed)
+    
+    # Add unflag button in the MU selection tab
+    main_window.unflag_mu_btn = ActionButton("UnFlag selected MU(s) for deletion", primary=False)
+    main_window.unflag_mu_btn.clicked.connect(main_window.unflag_mu_for_deletion_button_pushed)
+    
     mu_layout.addWidget(main_window.flag_mu_btn)
+    mu_layout.addWidget(main_window.unflag_mu_btn)
 
     return mu_tab
 
