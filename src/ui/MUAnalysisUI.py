@@ -20,7 +20,6 @@ from ui.muanalysis.AdvancedTools import AdvancedTools
 from ui.muanalysis.MotorUnitProperties import MotorUnitPropertiesButton
 from ui.components.FileSidebar.FileSection import FileSection
 
-# from ui.components.FileButton import FileButton
 
 
 # legacy code
