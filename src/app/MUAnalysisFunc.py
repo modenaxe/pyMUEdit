@@ -23,10 +23,47 @@ class MUAnalysisFunc:
         self.file = None
         # canvas hold whatever the widget in the center area is (graph or message saying to load file)
         self.canvas = None
+        # MVC value for calculations
+        self.mvc_value = None
 
     # setter for UI to give reference to center layout current widget which will need to be replaced by graph
     def set_canvas(self,canvas):
         self.canvas = canvas
+
+    # MVC value management
+    def set_mvc(self, mvc_value):
+        """Set the Maximum Voluntary Contraction value"""
+        self.mvc_value = mvc_value
+        print(f"MVC set to: {mvc_value} N")
+
+    def get_mvc(self):
+        """Get the current MVC value"""
+        return self.mvc_value
+
+    def calculate_mvc_based_statistics(self, force_data):
+        """Calculate summary statistics based on MVC value"""
+        if self.mvc_value is None:
+            print("Warning: MVC value not set. Cannot calculate MVC-based statistics.")
+            return None
+        
+        if force_data is None or len(force_data) == 0:
+            print("Warning: No force data available for MVC-based calculations.")
+            return None
+        
+        # Convert force data to percentage of MVC
+        force_percentage = (force_data / self.mvc_value) * 100
+        
+        # Calculate summary statistics
+        stats = {
+            'mvc_value': self.mvc_value,
+            'mean_force_percentage': np.mean(force_percentage),
+            'max_force_percentage': np.max(force_percentage),
+            'min_force_percentage': np.min(force_percentage),
+            'std_force_percentage': np.std(force_percentage),
+            'force_percentage_data': force_percentage
+        }
+        
+        return stats
 
     # Triggerd of file upload button: opens file explorer
     # Checks if file is valid or not
