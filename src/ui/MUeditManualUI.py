@@ -119,6 +119,8 @@ def setup_control_panel(main_window):
 
     control_layout.addWidget(file_group)
 
+    file_group.setVisible(False) #隐藏原select组件
+
     # Create tab widget for sections
     main_window.tabs = create_tab_widget()
 
@@ -354,12 +356,79 @@ def setup_display_panel(main_window):
     """Set up the display panel with all controls and plots using modern UI components."""
     # Use a VisualizationPanel instead of a basic CleanCard for better semantics
     main_window.display_panel = VisualizationPanel("EMG Signal Analysis")
+    title_lbl = main_window.display_panel.title_label   # ← 直接拿到 QLabel
+
+    font = title_lbl.font()
+    font.setPointSize(25)         # 修改想要的字号
+    font.setBold(True)            # 加粗
+    title_lbl.setFont(font)
+    #  新建按钮
+    main_window.select_file_title_btn = ActionButton("Press here to select file", primary=False)
+    main_window.select_file_title_btn.setFixedHeight(28)
+
+    main_window.select_file_title_btn.clicked.connect(
+        main_window.select_file_button_pushed
+    )
+    header = None
+    if hasattr(main_window.display_panel, "_header"):
+        header = main_window.display_panel._header.layout() 
+
+    if header:                            
+        header.addStretch(1)               
+        header.addWidget(main_window.select_file_title_btn)
+    else:                             
+        from PyQt5.QtWidgets import QLabel
+        title_lbl = main_window.display_panel.findChild(QLabel)
+        
+        def _repos():
+            if title_lbl is not None:  
+                # x = title_lbl.geometry().right()
+                fm = title_lbl.fontMetrics()
+                text_w = fm.horizontalAdvance(title_lbl.text())
+                x = title_lbl.geometry().left() + text_w + 40
+            else:                                           
+                x = 10
+            main_window.select_file_title_btn.move(x, 10)  
+
+        main_window.select_file_title_btn.setParent(main_window.display_panel)
+        _repos()                                                # 初始摆放
+
+        old_resize = main_window.display_panel.resizeEvent
+        def new_resize(ev):
+            if callable(old_resize):
+                old_resize(ev)
+            _repos()                                    
+        main_window.display_panel.resizeEvent = new_resize
+
 
     # Create main container for all visualization elements
     display_widget = QWidget()
     display_layout = QVBoxLayout(display_widget)
     display_layout.setContentsMargins(0, 0, 0, 0)
     display_layout.setSpacing(15)
+
+    main_window.undo_title_btn = ActionButton("Undo", primary=False)
+    main_window.undo_title_btn.setFixedHeight(28)
+    main_window.undo_title_btn.clicked.connect(main_window.undo_button_pushed)
+    
+    # ★★ 新增：顶部缩放按钮（沿用现有槽函数）
+    main_window.zoom_in_top_btn  = ActionButton("Zoom in",  primary=False)
+    main_window.zoom_out_top_btn = ActionButton("Zoom out", primary=False)
+    for b in (main_window.zoom_in_top_btn, main_window.zoom_out_top_btn):
+        b.setFixedHeight(28)              # 与 Undo 行高保持一致
+    main_window.zoom_in_top_btn.clicked.connect(main_window.zoom_in_button_pushed)
+    main_window.zoom_out_top_btn.clicked.connect(main_window.zoom_out_button_pushed)
+    
+    undo_row = QWidget(parent=display_widget)                 # ★★ parent 指定为 display_widget
+    undo_layout = QHBoxLayout(undo_row)
+    undo_layout.setContentsMargins(0, 6, 0, 6)
+    undo_layout.setSpacing(8) 
+
+    undo_layout.addWidget(main_window.undo_title_btn)
+    undo_layout.addStretch(1)
+    undo_layout.addWidget(main_window.zoom_in_top_btn) # 右侧 Zoom in
+    undo_layout.addWidget(main_window.zoom_out_top_btn)# 右侧 Zoom out
+    display_layout.addWidget(undo_row)                        # ★★ 只 add 一次
 
     # SIL info display
     main_window.sil_info = QLineEdit()
@@ -486,6 +555,12 @@ def setup_display_panel(main_window):
     # Add all visualization elements to the panel
     main_window.display_panel.set_plot_widget(display_widget)
 
+    # === 旧 Undo / Zoom 控件统一隐藏 =============================
+    for attr in ("undo_btn", "zoom_in_btn", "zoom_out_btn"):
+        btn = getattr(main_window, attr, None)
+        if btn is not None:          # 确认按钮确实存在
+            btn.hide()               # 或者：btn.setVisible(False)
+    # =============================================================
 
 def create_plot_widget(y_label, x_label=""):
     """Create a standardized plot widget with consistent styling."""

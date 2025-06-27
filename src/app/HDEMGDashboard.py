@@ -124,7 +124,15 @@ class HDEMGDashboard(QMainWindow):
 
             # Set window flags to make it a widget instead of a window
             manual_edit_app.setWindowFlags(Qt.WindowType.Widget)
-
+            # -------------- 2. ★★ 只加下面这一小段 ★★ --------------
+            # 把 control_panel 挪到左侧子面板
+            if (hasattr(self, "mu_edit_subpanel") and           # 子面板已在 _create_left_sidebar 里创建
+                hasattr(manual_edit_app, "control_panel")):     # MUeditManual 内部生成的那列
+                # 先从原父布局拆下来
+                manual_edit_app.control_panel.setParent(None)
+                # 加到侧边子面板布局
+                self.mu_edit_subpanel.layout().addWidget(manual_edit_app.control_panel)
+            # ------------------------------------------------------
             # Connect return signal if available
             if hasattr(manual_edit_app, "return_to_dashboard_requested"):
                 manual_edit_app.return_to_dashboard_requested.connect(self.show_dashboard_view)

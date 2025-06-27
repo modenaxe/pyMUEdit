@@ -31,7 +31,7 @@ class VisualizationPanel(CleanCard):
         # Create header
         self.header = SectionHeader(title)
         self.panel_layout.addWidget(self.header)
-
+        self.title_label = self.header.title_label
         # Add plot widget if provided
         if plot_widget:
             self.plot_widget = plot_widget
