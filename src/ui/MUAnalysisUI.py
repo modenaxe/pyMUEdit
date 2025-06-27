@@ -16,6 +16,7 @@ from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from app.MUAnalysisFunc import MUAnalysisFunc
 from app.ExportResults import ExportResultsWindow
 from ui.muanalysis.AdvancedTools import AdvancedTools
+from ui.muanalysis.MotorUnitProperties import MotorUnitPropertiesButton
 from ui.components.FileSidebar.FileSection import FileSection
 # from ui.components.FileButton import FileButton
 
@@ -161,6 +162,12 @@ class MUAnalysis(QWidget):
         title_label.setStyleSheet(f"color: {self.colors['button_grey_bg']}")
         title_label.setFont(QFont("Arial", 14, QFont.Bold))
         sidebar_layout.addWidget(title_label)
+
+        # motor unit properties
+        motor_unit_properties = MotorUnitPropertiesButton(parent=self)
+        motor_unit_properties.mvc_updated.connect(self.mu.set_mvc)
+        sidebar_layout.addWidget(motor_unit_properties)
+        self.motor_unit_properties = motor_unit_properties
 
         # advanced tools
         advanced_tools = AdvancedTools(parent=self)
