@@ -157,7 +157,6 @@ def _create_left_sidebar(main_window):
                 if hasattr(main_window, "show_manual_editing_view")
                 else lambda: None
             )
-
     return sidebar
 
 
