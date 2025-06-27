@@ -37,6 +37,6 @@ class ChannelViewer(QWidget):
                 # hide x-axis label (except for the last one)
                 ax.set_xticklabels([])
 
-        ax.set_title(f"Channels {self.channel_indices[0]}-{self.channel_indices[7]}")
+        ax.set_title(f"Channels {self.channel_indices[0]}-{self.channel_indices[len(self.channel_indices) - 1]}")
         ax.set_xlabel("Time")
         self.canvas.draw()
