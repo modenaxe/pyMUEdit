@@ -21,6 +21,8 @@ from app.MUPropertiesFun import MUPropertiesFunc
 from app.ExportResults import ExportResultsWindow
 from ui.muanalysis.AdvancedTools import AdvancedTools
 from ui.muanalysis.MotorUnitProperties import MotorUnitPropertiesButton
+from ui.muanalysis.SignalEditing import SignalEditing
+from ui.components.AnalysisText import AnalysisText 
 from ui.components.FileSidebar.FileSection import FileSection
 
 from ui.components.ResultsPanel import ResultsPanel
@@ -173,11 +175,12 @@ class MUAnalysis(QWidget):
         sidebar_layout = QVBoxLayout(sidebar)
 
         # title
-        title_label = QLabel("Analysis")
-        title_label.setObjectName("analysisTitle")
-        title_label.setStyleSheet(f"color: {self.colors['text_title']}")
-        title_label.setFont(QFont("Arial", 14, QFont.Bold))
+        title_label = AnalysisText("Analysis")
         sidebar_layout.addWidget(title_label)
+
+        # signal editing 
+        signal_editing = SignalEditing(parent=self)
+        sidebar_layout.addWidget(signal_editing)
 
         # motor unit properties
         motor_unit_properties = MotorUnitPropertiesButton(parent=self)
