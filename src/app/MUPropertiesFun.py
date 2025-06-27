@@ -29,7 +29,9 @@ class MUPropertiesFunc:
 
     def get_mvc(self):
         """Get the current MVC value"""
+        print(self.mvc_value)
         return self.mvc_value
+
 
     def calculate_mvc_based_statistics(self, force_data):
         """Calculate summary statistics based on MVC value"""

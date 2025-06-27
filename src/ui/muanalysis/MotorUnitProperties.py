@@ -11,6 +11,7 @@ from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal
 from ui.components.CleanTheme import CleanTheme
 from ui.components.FileSidebar.FileButton import FileButton
+from app.MUPropertiesFun import MUPropertiesFunc
 
 class MotorUnitPropertiesDialog(QDialog):
     # Dialog for entering Motor Unit Properties including MVC value
@@ -20,9 +21,9 @@ class MotorUnitPropertiesDialog(QDialog):
     def __init__(self, parent=None, current_mvc=None):
         super().__init__(parent)
         self.current_mvc = current_mvc
-        self.init_ui()
+        self.init_ui(MUPropertiesFunc())
 
-    def init_ui(self):
+    def init_ui(self, func):
         self.setWindowTitle("Motor Unit Properties")
         self.setMinimumWidth(550)
         self.setModal(True)
@@ -44,19 +45,20 @@ class MotorUnitPropertiesDialog(QDialog):
         self.mvc_input = PropertiesInnerDialogText("Enter Maximum Voluntary Contraction value...")
         if self.current_mvc is not None:
             self.mvc_input.setText(str(self.current_mvc))
-            print
+            print(str(self.current_mvc))
         layout.addWidget(self.mvc_input)
 
-        x = MotorUnitPropertiesBasic()
-        layout.addLayout(x)
+        basic_prop = MotorUnitPropertiesBasic(func)
+        layout.addLayout(basic_prop)
 
     def save_mvc(self):
         pass
 
 class MotorUnitPropertiesBasic(QHBoxLayout):
-      def __init__(self, parent=None):
-        super().__init__(parent)
+      def __init__(self, func):
+        super().__init__()
         button = PropertiesInnerDialogButton('Basic Properties')
+        button.clicked.connect(lambda: func.get_mvc())
         self.addWidget(button)
         rec_input = PropertiesInnerDialogText('Firings at Rec')
         steady_input = PropertiesInnerDialogText('Firings at Start/End Steady')
