@@ -1,4 +1,7 @@
 import sys
+import time
+import random
+import pandas as pd
 from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
@@ -20,6 +23,8 @@ from ui.muanalysis.MotorUnitProperties import MotorUnitPropertiesButton
 from ui.components.FileSidebar.FileSection import FileSection
 from ui.components.ResultsPanel import ResultsPanel
 # from ui.components.FileButton import FileButton
+from core.AnalysisResultsHist import AnalysisResultsHist
+from ui.components.ResultsTable import ResultsTable
 
 # legacy code
 def get_icon(standard_icon):
@@ -35,6 +40,8 @@ class MUAnalysis(QWidget):
 
         # setting instance of function class from src/app/MUAnalysisFunc
         self.mu = MUAnalysisFunc()
+        self.data = AnalysisResultsHist()
+        self.results_table = ResultsTable(self.data.get_analysis_hist())
 
         self.colors = {
             "bg_main": "#f8f9fa",
@@ -66,6 +73,8 @@ class MUAnalysis(QWidget):
         self.content_layout.addWidget(self._create_center_area(), stretch=5)
         self.content_layout.addWidget(self._create_right_sidebar(), stretch=3)
         self.widget_layout.addLayout(self.content_layout)  # Add main content below top bar
+        
+        
 
     # legacy code
     def request_return_to_dashboard(self):
@@ -188,6 +197,38 @@ class MUAnalysis(QWidget):
         load.setFont(QFont("Arial", 27, QFont.Bold))
         load.setStyleSheet(f"color: #6c757d; margin-right: 50%;")
         center_layout.addWidget(load)
+        
+        
+        # code to test the result table
+        # can be refered to when implimenting real data
+        dummy_button = QPushButton("Dummy")
+        dummy_button.setStyleSheet(
+            f"""
+            QPushButton {{
+                background-color: {self.colors['button_grey_bg']};
+                border-radius: 15px;
+                padding: 0px;
+                height: 40%;
+                
+            }}
+            QPushButton:hover {{
+                background-color: {self.colors['button_dark_hover']};
+            }}
+        """
+        )
+        
+        def calc_result():
+            table = {
+                "col": random.randint(1, 20),
+                "timestamp": time.time()
+            }
+            self.data.append_analysis_hist(f"Test {table['col']}", [table])
+            print(self.data.get_analysis_hist()) 
+            self.results_table.update_dataframe(self.data.get_analysis_hist())       
+            
+        dummy_button.clicked.connect(calc_result)
+        center_layout.addWidget(dummy_button)
+        
         self.mu.set_canvas(load)
         self.center = center_layout
         return center
@@ -207,9 +248,8 @@ class MUAnalysis(QWidget):
         """
         )
         file_section = FileSection(sidebar, self.mu, self.center)
-        results_section = ResultsPanel(sidebar)
+        results_section = ResultsPanel(sidebar, self.results_table)
         
-        print(isinstance(results_section, QWidget))
         
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.addWidget(file_section, stretch=1)
