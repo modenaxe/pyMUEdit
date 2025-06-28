@@ -25,6 +25,7 @@ from ui.components.ResultsPanel import ResultsPanel
 # from ui.components.FileButton import FileButton
 from core.AnalysisResultsHist import AnalysisResultsHist
 from ui.components.ResultsTable import ResultsTable
+from ui.components.ResultSelection import ResultSelection
 
 # legacy code
 def get_icon(standard_icon):
@@ -42,6 +43,7 @@ class MUAnalysis(QWidget):
         self.mu = MUAnalysisFunc()
         self.data = AnalysisResultsHist()
         self.results_table = ResultsTable(self.data.get_analysis_hist())
+        self.result_combo = ResultSelection(self.data.get_analysis_hist(), self.results_table)
 
         self.colors = {
             "bg_main": "#f8f9fa",
@@ -217,16 +219,14 @@ class MUAnalysis(QWidget):
         """
         )
         
-        def calc_result():
-            table = {
-                "col": random.randint(1, 20),
-                "timestamp": time.time()
-            }
-            self.data.append_analysis_hist(f"Test {table['col']}", [table])
-            print(self.data.get_analysis_hist()) 
-            self.results_table.update_dataframe(self.data.get_analysis_hist())       
-            
-        dummy_button.clicked.connect(calc_result)
+        # result need to be an list of dictionaries with consistent keys
+        # refer to the code below to append the results
+        table = {
+            "col": 42,
+            "timestamp": time.time()
+        }
+        title = "table " 
+        dummy_button.clicked.connect(lambda: self.calc_result(title, [table]))
         center_layout.addWidget(dummy_button)
         
         self.mu.set_canvas(load)
@@ -248,13 +248,18 @@ class MUAnalysis(QWidget):
         """
         )
         file_section = FileSection(sidebar, self.mu, self.center)
-        results_section = ResultsPanel(sidebar, self.results_table)
+        results_section = ResultsPanel(sidebar, self.result_combo, self.results_table)
         
         
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.addWidget(file_section, stretch=1)
         sidebar_layout.addWidget(results_section, stretch=4)
         return sidebar
+    
+    def calc_result(self, title="title", data=[{}]):
+        self.data.append_analysis_hist(title, data)
+        self.results_table.update_dataframe(self.data.get_analysis_hist())       
+        self.result_combo.update_combo_from_df(self.data.get_analysis_hist())
 
 # --- Main execution block (for testing) ---
 # legacy code
