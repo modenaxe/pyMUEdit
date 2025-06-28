@@ -1,6 +1,7 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QComboBox
+from PyQt5.QtWidgets import QWidget, QVBoxLayout
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+import matplotlib.cm as cm
 
 class ChannelViewer(QWidget):
     def __init__(self, emg_data, parent=None):
@@ -29,7 +30,7 @@ class ChannelViewer(QWidget):
 
     def update_plot(self):
         self.figure.clear()
-        colours = ["red", "sienna", "olive", "limegreen", "lightseagreen", "royalblue", "blueviolet", "mediumorchid"]
+        colours = get_n_colours(self.num_indices)
 
         # Create one subplot for each channel in the index range
         n = len(self.channel_indices)
@@ -49,3 +50,7 @@ class ChannelViewer(QWidget):
 
         ax.set_xlabel("Time", fontsize=20, labelpad=15)
         self.canvas.draw()
+
+def get_n_colours(n):
+    cmap = cm.get_cmap('hsv')
+    return [cmap(i / n) for i in range(n)]
