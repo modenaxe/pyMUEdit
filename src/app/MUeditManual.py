@@ -592,7 +592,7 @@ class MUeditManual(QMainWindow):
                 self.sil_plot.setVisible(False)
 
             # Show and update spike train plot
-            self.plots_layout.addWidget(self.spiketrain_plot, stretch=1)
+            self.plots_layout.addWidget(self.spiketrain_plot, stretch=2)
             self.spiketrain_plot.clear()
             time_vector = self.MUedition["edition"]["time"]
 
@@ -646,7 +646,7 @@ class MUeditManual(QMainWindow):
                     self.spiketrain_plot.addItem(scatter)
 
             # Show and update discharge rate plot
-            self.plots_layout.addWidget(self.dr_plot, stretch=1)
+            self.plots_layout.addWidget(self.dr_plot, stretch=2)
             self.dr_plot.clear()
 
             if len(discharge_times) > 1:
