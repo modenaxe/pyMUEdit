@@ -1,28 +1,25 @@
 import sys
+import csv
 from PyQt5.QtWidgets import (
-    QWidget,
     QVBoxLayout,
     QHBoxLayout,
     QPushButton,
     QLabel,
     QFrame,
-    QStyle,
-    QMainWindow,
-    QTableWidget,
-    QTableWidgetItem,
-    QTableView
+    QTableView, 
+    QFileDialog
 )
 from PyQt5.QtGui import QFont, QColor
-from PyQt5.QtCore import Qt, QSize, pyqtSignal
-from .ResultsTable import ResultsTable
+from PyQt5.QtCore import Qt
 from .CleanTheme import CleanTheme
 
+
 class ResultsPanel(QFrame):
-    def __init__(self, parent = None, model = {}):
+    def __init__(self, parent, combo, model = {}):
         super().__init__(parent)
         
         self.model = model
-        
+
         self.colors = {
             "bg_main": "#f8f9fa",
             "bg_card": "#ffffff",
@@ -70,15 +67,12 @@ class ResultsPanel(QFrame):
         """
         )
         
-        # table
-        # self.table = QTableWidget()
-        # self.table.setStyleSheet(
-        #     f"background-color: {self.colors['bg_main']}"
-        # )
-        
-        # self.model = ResultsTable(self.df)
-        table_view = QTableView()
-        table_view.setModel(self.model)
+        save_button.clicked.connect(lambda: self.save_results())
+
+        self.combo_box = combo
+
+        self.table_view = QTableView()
+        self.table_view.setModel(self.model)
         
         # title
         title = QLabel("Results")
@@ -94,12 +88,22 @@ class ResultsPanel(QFrame):
         
         self.layout = QVBoxLayout(self)
         self.layout.addLayout(top_layout, stretch=1)
-        # self.layout.addWidget(self.table, stretch=3)
-        self.layout.addWidget(table_view, stretch = 3)
+        self.layout.addWidget(self.combo_box, stretch=1)
+        self.layout.addWidget(self.table_view, stretch = 3)
+
+    def save_results(self):
+        results = self.model.get_cur_results()
+        res_dialog = QFileDialog()
+        file_path, _ = res_dialog.getSaveFileName(self, "Save CSV", "", "CSV Files (*.csv)")
         
-    def tableUpdate(self, model):
-        self.model = model
-        self.table_view = QTableView()
-        self.table_view.setModel(self.model)
-        self.layout.addWidget(self.table_view)
-        
+        if file_path:
+            try:
+                headers = self.model.columns
+                with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
+                    writer = csv.DictWriter(csvfile, fieldnames=headers)
+                    writer.writeheader()
+                    writer.writerows(results)
+
+                print(f"Data saved to {file_path}")
+            except Exception as e:
+                print(f"Error saving file: {e}")

@@ -1,33 +1,26 @@
-import pandas as pd
-from PyQt5.QtWidgets import QTableView
 from PyQt5.QtCore import QAbstractTableModel, Qt
 
 class ResultsTable(QAbstractTableModel):
     def __init__(self, df):
         super().__init__()
         if df.empty:
-            print('hi1')
             self.df = df
             self._data = []
             self.columns = []
         else:
-            print('bye1')
             self.df = df
             self._data = self.df.loc[-1, 'table']         
             self.columns = list(self._data[0].keys())   
 
     def _updateData(self, df):
         if df.empty:
-            print('hi2')
             self.df = df
             self._data = []
             self.columns = []
         else:
-            print('bye2')
             self.df = df
             self._data = self.df.iloc[-1]['table']    
             self.columns = list(self._data[0].keys())    
-            print(self._data)
     
     def rowCount(self, parent=None):
         return len(self._data)
@@ -55,3 +48,12 @@ class ResultsTable(QAbstractTableModel):
         self.beginResetModel()
         self._updateData(new_df)
         self.endResetModel()    
+        
+    def select_result(self, index):
+        if index < len(self.df):
+            self.beginResetModel()
+            self._data = self.df.iloc[index]['table']
+            self.endResetModel() 
+    
+    def get_cur_results(self):
+        return self._data
