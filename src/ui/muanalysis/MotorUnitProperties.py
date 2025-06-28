@@ -21,6 +21,7 @@ class MotorUnitPropertiesDialog(QDialog):
     def __init__(self, parent=None, current_mvc=None):
         super().__init__(parent)
         self.current_mvc = current_mvc
+        # passing instance of MUPropertiesFunc to be used in parts of dialog
         self.init_ui(MUPropertiesFunc())
 
     def init_ui(self, func):
@@ -46,6 +47,8 @@ class MotorUnitPropertiesDialog(QDialog):
         if self.current_mvc is not None:
             self.mvc_input.setText(str(self.current_mvc))
             print(str(self.current_mvc))
+        
+        #basic properties
         layout.addWidget(self.mvc_input)
         func.set_mvc(self.mvc_input)
         basic_prop = MotorUnitPropertiesBasic(func, self)
@@ -54,6 +57,9 @@ class MotorUnitPropertiesDialog(QDialog):
     def save_mvc(self):
         pass
 
+# basic properties section
+# has firing at rec, firing at start/end input and basic properties button
+# button leads to functions found in app.MUPropertiesFun
 class MotorUnitPropertiesBasic(QHBoxLayout):
       def __init__(self, func, over):
         super().__init__()
@@ -65,6 +71,7 @@ class MotorUnitPropertiesBasic(QHBoxLayout):
         self.addWidget(rec_input)
         self.addWidget(steady_input)
 
+# general class for any inner inputs inside dialog
 class PropertiesInnerDialogText(QLineEdit):
     def __init__(self, text):
         super().__init__()
@@ -85,6 +92,7 @@ class PropertiesInnerDialogText(QLineEdit):
             }}
         """)
 
+# general class for any buttons inside dialog
 class PropertiesInnerDialogButton(QPushButton):
     def __init__(self, text):
         super().__init__(text )
