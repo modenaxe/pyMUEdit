@@ -241,12 +241,16 @@ class MUeditManual(QMainWindow):
         for panel in self.mu_panels:
             panel.deleteLater()
         self.mu_panels = []
+        
+        
 
         # Clear any existing widgets
-        for i in reversed(range(self.mu_checkbox_layout.count())):
-            item = self.mu_checkbox_layout.itemAt(i)
-            if item and item.widget():
-                item.widget().deleteLater()
+        self.clear_layout(self.mu_checkbox_layout)
+        
+        # for i in reversed(range(self.mu_checkbox_layout.count())):
+        #     item = self.mu_checkbox_layout.itemAt(i)
+        #     if item and item.widget():
+        #         item.widget().deleteLater()
 
         # Add checkboxes for each MU
         if not self.MUedition or len(self.MUedition["edition"]["Pulsetrain"]) == 0:
@@ -1384,7 +1388,6 @@ class MUeditManual(QMainWindow):
                 # Flag MU for deletion
                 self.MUedition["edition"]["Flag"][array_idx][mu_idx] = 1
                 
-                self.MUedition["edition"]["Flag"][array_idx][mu_idx] = 0
                 origin_name = "_".join(mu_text.split("_")[-2:])                
                 checkbox.setText(f"FLAGGED - {origin_name} (SIL: {sil_value:.4f})")
 
@@ -1688,7 +1691,6 @@ class MUeditManual(QMainWindow):
             else:
                 # Add empty array if all MUs are flagged
                 clean_pulsetrain.append(np.zeros((0, array_pulse_train.shape[1])))
-
         progress.setValue(100)
 
         # Update the data
@@ -2119,6 +2121,16 @@ class MUeditManual(QMainWindow):
         from PyQt5.QtWidgets import QMessageBox
 
         QMessageBox.information(self, "Save Complete", f"Data saved to {savename}", QMessageBox.Ok)
+    
+    def clear_layout(self, layout):
+        while layout.count():
+            item = layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+            elif item.layout():
+                self.clear_layout(item.layout())
+            elif item.spacerItem():
+                pass
 
 
 if __name__ == "__main__":
