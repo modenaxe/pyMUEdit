@@ -9,16 +9,19 @@ from PyQt5.QtWidgets import (
     QStyle,
     QMainWindow,
     QTableWidget,
-    QTableWidgetItem
+    QTableWidgetItem,
+    QTableView
 )
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
-
+from .ResultsTable import ResultsTable
 from .CleanTheme import CleanTheme
 
 class ResultsPanel(QFrame):
-    def __init__(self, parent = None):
+    def __init__(self, parent = None, model = {}):
         super().__init__(parent)
+        
+        self.model = model
         
         self.colors = {
             "bg_main": "#f8f9fa",
@@ -68,10 +71,14 @@ class ResultsPanel(QFrame):
         )
         
         # table
-        self.table = QTableWidget()
-        self.table.setStyleSheet(
-            f"background-color: {self.colors['bg_main']}"
-        )
+        # self.table = QTableWidget()
+        # self.table.setStyleSheet(
+        #     f"background-color: {self.colors['bg_main']}"
+        # )
+        
+        # self.model = ResultsTable(self.df)
+        table_view = QTableView()
+        table_view.setModel(self.model)
         
         # title
         title = QLabel("Results")
@@ -85,7 +92,14 @@ class ResultsPanel(QFrame):
         top_layout.addWidget(save_button, stretch=3)
         top_layout.addStretch(1)
         
-        layout = QVBoxLayout(self)
-        layout.addLayout(top_layout, stretch=1)
-        layout.addWidget(self.table, stretch=3)
+        self.layout = QVBoxLayout(self)
+        self.layout.addLayout(top_layout, stretch=1)
+        # self.layout.addWidget(self.table, stretch=3)
+        self.layout.addWidget(table_view, stretch = 3)
+        
+    def tableUpdate(self, model):
+        self.model = model
+        self.table_view = QTableView()
+        self.table_view.setModel(self.model)
+        self.layout.addWidget(self.table_view)
         
