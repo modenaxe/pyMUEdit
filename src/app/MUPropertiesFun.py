@@ -70,7 +70,7 @@ class MUPropertiesFunc:
         points = [round(point) for point in coords]
         points.sort()
         
-        dataframe = self.basic_mus_properties(emgfile,start_steady=points[0],end_steady=points[1])
+        dataframe = self.basic_mus_properties(emgfile,n_firings_RecDerec=int(self.convert(rec)), n_firings_steady=int(self.convert(start)), start_steady=points[0],end_steady=points[1])
 
   
     def basic_mus_properties(self,
