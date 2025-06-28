@@ -4,6 +4,7 @@ import numpy as np
 import scipy.io as sio
 import pyqtgraph as pg
 from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import (
     QDialog,
     QVBoxLayout,
@@ -148,16 +149,29 @@ class MUeditManual(QMainWindow):
         if not self.filename or not self.pathname:
             return
 
+        # Wrong Format
+        if not self.filename.lower().endswith(".mat"):
+            QMessageBox.critical(self, "File Format Error","Selected file is not a valid .mat file.\nPlease choose a .mat file.")
+            return
+
         try:
             filepath = os.path.join(self.pathname, self.filename)
             files = sio.loadmat(filepath)
 
+            #check the data with "signal" and "Pulsetrain"
+            if "signal" not in files or (
+                    "Pulsetrain" not in files["signal"].dtype.names
+                    and "Pulsetrain" not in files  # 有些是顶层字段
+            ):
+                raise KeyError("Missing 'signal' or 'Pulsetrain'")
+
             # Initialize the MUedition data structure
             self.MUedition = {"edition": {}, "signal": {}, "parameters": {}}
+            #edition contains all the data to be edit
 
-            if "edited" in self.filename:
+            if "edited" in self.filename:   #edited file, recover edition
                 self.import_edited_file(files)
-            else:
+            else:   #new file
                 self.import_decomposed_file(files)
 
             # Calculate array numbers for each channel
@@ -193,11 +207,17 @@ class MUeditManual(QMainWindow):
             self.graphend = self.MUedition["edition"]["time"][-1]
             self.update_plot_limits()
 
+        except KeyError as ke:
+            QMessageBox.critical(self, "Missing Field", f"The .mat file is missing required fields:\n{ke}")
         except Exception as e:
-            import traceback
+            QMessageBox.critical(self, "Import Error", f"Failed to load the file:\n{str(e)}")
 
-            print(f"Error importing data: {e}")
-            traceback.print_exc()
+        #origial error print
+        # except Exception as e:
+        #     import traceback
+        #
+        #     print(f"Error importing data: {e}")
+        #     traceback.print_exc()
 
     def update_mu_checkboxes(self):
         """Update the MU checkboxes based on loaded data using collapsible panels."""
