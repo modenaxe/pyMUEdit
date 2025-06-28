@@ -90,12 +90,6 @@ class VisualisationPage(QWidget):
         self.range_dropdown.dropdown.clear()
         self.range_dropdown.dropdown.addItems(new_ranges)
 
-        # Set index
-        if cur_index < len(new_ranges):
-            # If current index isn't out-of-bounds, keep the current index
-            self.range_dropdown.dropdown.setCurrentIndex(cur_index)
-            self.channel_group_change(cur_index)
-        else:
-            # Else, reset to the 0th index (first index)
-            self.range_dropdown.dropdown.setCurrentIndex(0)
-            self.channel_group_change(0)
+        # Reset index to the first range index
+        self.range_dropdown.dropdown.setCurrentIndex(0)
+        self.channel_group_change(0)
