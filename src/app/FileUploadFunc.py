@@ -18,6 +18,7 @@ from app.commonOpenFunc import OpenFunct
 
 # This class holds all the functions used for file uploading
 class FileUploadFunc:
+    # made file a class var, to be accessed via FileUploadFunc.file, so that it can be used across other classes
     file = None
 
     def __init__(self):

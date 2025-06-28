@@ -18,6 +18,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from app.FileUploadFunc import FileUploadFunc
 from app.commonOpenFunc import OpenFunct
 
+# class for functions required for the MU properties dialog
 class MUPropertiesFunc:
     def __init__(self):
         # MVC value for calculations
@@ -28,14 +29,17 @@ class MUPropertiesFunc:
         """Set the Maximum Voluntary Contraction value"""
         self.mvc_value = mvc_value
 
-
+    # turns mcv input text into a string to be used
     def get_mvc(self):
         """Get the current MVC value"""
         return str(self.mvc_value.text())
     
+    # general function to turn input text into usable string
     def convert(self, value):
         return str(value.text())
     
+    # used for basic properties
+    # errors if no file or missing inputs
     def basic_prop(self, rec, start, over):
         file = FileUploadFunc.file
         if (len(self.convert(self.mvc_value)) == 0 or len(self.convert(rec)) == 0 or len(self.convert(start)) == 0 or file == None):
@@ -49,6 +53,8 @@ class MUPropertiesFunc:
         over.close()
         self.showselect(file, rec, start)
 
+    # used for basic properties
+    # user selects starting and ending points for calculation
     def showselect(self,emgfile, rec, start, how="ref_signal"):
         plt.close()
         data_to_plot = emgfile["REF_SIGNAL"][0]
@@ -59,8 +65,10 @@ class MUPropertiesFunc:
         ax.set_title('Click start and end range. Exit to see results.')
         fig.set_figheight(5)
         fig.set_figwidth(5)
-        # plt.show()
+
         coords = []
+        # user selects two points, a line is drawn to clearly mark selection
+        # MISSING: need to allow removal of points
         while len(coords) < 2:
           pts = plt.ginput(1)
           coords.append(pts[0][0])
@@ -72,7 +80,8 @@ class MUPropertiesFunc:
         
         dataframe = self.basic_mus_properties(emgfile,n_firings_RecDerec=int(self.convert(rec)), n_firings_steady=int(self.convert(start)), start_steady=points[0],end_steady=points[1])
 
-  
+    # OPENHDEMG
+    # adapted parts labelled with AC
     def basic_mus_properties(self,
     emgfile,
     n_firings_rt_dert=1,
@@ -89,6 +98,9 @@ class MUPropertiesFunc:
         # Collect the information to export
         # First: create a dataframe that contains all the output
         exportable_df = []
+
+        # AC get mvc from dialog
+        # AC I removed their version of show select and did it above
         mvc = int(self.get_mvc())
         exportable_df.append({"MVC": mvc})
         exportable_df = pd.DataFrame(exportable_df)
@@ -236,7 +248,8 @@ class MUPropertiesFunc:
         print(exportable_df)
         return exportable_df
 
-
+    # OPEN
+    # AC: removed their version of show select code
     def compute_thresholds(self,
       emgfile,
       event_="rt_dert",
@@ -481,6 +494,8 @@ class MUPropertiesFunc:
 
         return mus_dr
 
+    # OPEN
+    # AC: removed their version of show select code
     def compute_covisi(self,
     emgfile,
     n_firings_RecDerec=4,
@@ -607,12 +622,15 @@ class MUPropertiesFunc:
 
         return covisi
 
+    # OPEN
+    # AC: removed their version of show select code
     def compute_covsteady(self, emgfile, start_steady=-1, end_steady=-1):
         ref = emgfile["REF_SIGNAL"].loc[start_steady:end_steady]
         covsteady = (ref.std() / ref.mean()) * 100
 
         return covsteady[0]
 
+    # not sure what this for, from Finn's
         # def calculate_mvc_based_statistics(self, force_data):
         #     """Calculate summary statistics based on MVC value"""
         #     if self.mvc_value is None:

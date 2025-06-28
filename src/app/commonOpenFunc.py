@@ -14,11 +14,12 @@ import os
 import copy
 import itertools
 
+# class to hold any open functions that are being repeated
 class OpenFunct():
     def __init__(self):
         pass
     
-        # OPENHDEMG
+    # OPENHDEMG
     def compute_idr(self, emgfile):
         # Compute the instantaneous discharge rate (IDR) from the MUPULSES
         if isinstance(emgfile["MUPULSES"], list):
