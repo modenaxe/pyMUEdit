@@ -48,19 +48,19 @@ class MotorUnitPropertiesDialog(QDialog):
             print(str(self.current_mvc))
         layout.addWidget(self.mvc_input)
         func.set_mvc(self.mvc_input)
-        basic_prop = MotorUnitPropertiesBasic(func)
+        basic_prop = MotorUnitPropertiesBasic(func, self)
         layout.addLayout(basic_prop)
 
     def save_mvc(self):
         pass
 
 class MotorUnitPropertiesBasic(QHBoxLayout):
-      def __init__(self, func):
+      def __init__(self, func, over):
         super().__init__()
         button = PropertiesInnerDialogButton('Basic Properties')
         rec_input = PropertiesInnerDialogText('Firings at Rec')
         steady_input = PropertiesInnerDialogText('Firings at Start/End Steady')
-        button.clicked.connect(lambda: func.test(rec_input, steady_input))
+        button.clicked.connect(lambda: func.basic_prop(rec_input, steady_input, over))
         self.addWidget(button)
         self.addWidget(rec_input)
         self.addWidget(steady_input)
