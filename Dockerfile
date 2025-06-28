@@ -53,8 +53,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project files
 COPY . .
 
+WORKDIR /app/src
+
 # Ensure scripts are executable
-RUN chmod +x /app/src/main.py
+RUN chmod +x main.py
 
 # Setup supervisord configuration
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
