@@ -14,6 +14,7 @@ import os
 import copy
 import itertools
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from app.commonOpenFunc import OpenFunct
 
 # This class holds all the functions used for file uploading
 class FileUploadFunc:
@@ -421,7 +422,8 @@ class FileUploadFunc:
     showimmediately=False,
     ):
         # Compute the IDR
-        idr = self.compute_idr(emgfile=emgfile)
+        common = OpenFunct()
+        idr = common.compute_idr(emgfile=emgfile)
 
         # Check if all the MUs have to be plotted
         if isinstance(munumber, str):
@@ -516,48 +518,6 @@ class FileUploadFunc:
             ax1.patch.set_alpha(0)
 
         return fig
-
-    # OPENHDEMG
-    def compute_idr(self, emgfile):
-        # Compute the instantaneous discharge rate (IDR) from the MUPULSES
-        if isinstance(emgfile["MUPULSES"], list):
-            # Empty dict to fill with dataframes containing the MUPULSES
-            # information
-            idr = {x: np.nan**2 for x in range(emgfile["NUMBER_OF_MUS"])}
-
-            for mu in range(emgfile["NUMBER_OF_MUS"]):
-                # Manage the exception of a single MU and add MUPULSES in column 0
-                df = pd.DataFrame(
-                    emgfile["MUPULSES"][mu]
-                    if emgfile["NUMBER_OF_MUS"] > 1
-                    else np.transpose(np.array(emgfile["MUPULSES"]))
-                )
-
-                # Calculate difference in MUPULSES and add it in column 1
-                df[1] = df[0].diff()
-                # Calculate time in seconds and add it in column 2
-                df[2] = df[0] / emgfile["FSAMP"]
-                # Calculate the idr and add it in column 3
-                df[3] = emgfile["FSAMP"] / df[1]
-
-                df = df.rename(
-                    columns={
-                        0: "mupulses",
-                        1: "diff_mupulses",
-                        2: "timesec",
-                        3: "idr",
-                    },
-                )
-
-                # Add the idr to the idr dict
-                idr[mu] = df
-
-            return idr
-
-        else:
-            raise Exception(
-                "MUPULSES is probably absent or it is not contained in a list"
-            )
 
     # OPENHDEMG
     def min_max_scaling(self, data=None, series_or_df=None, col_by_col=False):
