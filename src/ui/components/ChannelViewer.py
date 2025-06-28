@@ -46,7 +46,7 @@ class ChannelViewer(QWidget):
 
             # Add title for first plot only
             if i == 0:
-                ax.set_title(f"Channels {self.channel_indices[0]}-{self.channel_indices[7]}", fontsize=20, pad=15)
+                ax.set_title(f"Channels {self.channel_indices[0]}-{self.channel_indices[n - 1]}", fontsize=20, pad=15)
 
         ax.set_xlabel("Time", fontsize=20, labelpad=15)
         self.canvas.draw()
