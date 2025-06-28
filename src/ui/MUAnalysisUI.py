@@ -20,6 +20,7 @@ from ui.muanalysis.AdvancedTools import AdvancedTools
 from ui.muanalysis.MotorUnitProperties import MotorUnitPropertiesButton
 from ui.components.FileSidebar.FileSection import FileSection
 
+from ui.components.ResultsPanel import ResultsPanel
 
 
 # legacy code
@@ -66,7 +67,7 @@ class MUAnalysis(QWidget):
         self.center = None
         self.content_layout.addWidget(self._create_left_sidebar(), stretch=1)
         self.content_layout.addWidget(self._create_center_area(), stretch=5)
-        self.content_layout.addWidget(self._create_right_sidebar(), stretch=2)
+        self.content_layout.addWidget(self._create_right_sidebar(), stretch=3)
         self.widget_layout.addLayout(self.content_layout)  # Add main content below top bar
 
     # legacy code
@@ -152,8 +153,9 @@ class MUAnalysis(QWidget):
         sidebar.setStyleSheet(
             f"""
             #leftSidebar {{
-                background-color: {self.colors['button_dark_bg']};
+                background-color: {self.colors['bg_sidebar']};
             }}
+
         """
         )
         sidebar_layout = QVBoxLayout(sidebar)
@@ -161,7 +163,7 @@ class MUAnalysis(QWidget):
         # title
         title_label = QLabel("Analysis")
         title_label.setObjectName("analysisTitle")
-        title_label.setStyleSheet(f"color: {self.colors['button_grey_bg']}")
+        title_label.setStyleSheet(f"color: {self.colors['text_title']}")
         title_label.setFont(QFont("Arial", 14, QFont.Bold))
         sidebar_layout.addWidget(title_label)
 
@@ -186,8 +188,8 @@ class MUAnalysis(QWidget):
         center.setObjectName("centerContent")
         center_layout = QVBoxLayout(center)
         load = QLabel("Press Load File to View Data")
-        load.setFont(QFont("Arial", 32, QFont.Bold))
-        load.setStyleSheet(f"color: red; margin-right: 100%;")
+        load.setFont(QFont("Arial", 27, QFont.Bold))
+        load.setStyleSheet(f"color: #6c757d; margin-right: 50%;")
         center_layout.addWidget(load)
         self.mu.set_canvas(load)
         self.center = center_layout
@@ -202,12 +204,19 @@ class MUAnalysis(QWidget):
         sidebar.setStyleSheet(
             f"""
             #rightSidebar {{
-                background-color: {self.colors['button_dark_bg']};
+                background-color: {self.colors['bg_sidebar']};
             }}
 
         """
         )
-        sidebar_layout = FileSection(sidebar, self.mu, self.center)
+        file_section = FileSection(sidebar, self.mu, self.center)
+        results_section = ResultsPanel(sidebar)
+        
+        print(isinstance(results_section, QWidget))
+        
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.addWidget(file_section, stretch=1)
+        sidebar_layout.addWidget(results_section, stretch=4)
         return sidebar
 
 # --- Main execution block (for testing) ---
