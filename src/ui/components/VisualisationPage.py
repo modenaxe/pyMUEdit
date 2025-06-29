@@ -100,6 +100,8 @@ class VisualisationPage(QWidget):
         # connect the num signals input change to the num_signal_display_change function
         self.num_signals_input_box.spinbox.valueChanged.connect(self.num_signal_display_change)
 
+        self.setFocus()
+
     # Create the dropdown channel range options
     def generate_channel_groups(self):
         total_num_channels = self.emg_data.shape[0]
