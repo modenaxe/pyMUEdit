@@ -1,42 +1,325 @@
+import copy
+from scipy import signal
 from PyQt5.QtWidgets import (
     QWidget, 
+    QFrame,
     QVBoxLayout, 
-    QMessageBox,
+    QHBoxLayout,
     QDialog,
+    QMessageBox,
 )
 from ui.components.CleanTheme import CleanTheme
 from ui.components.AnalysisButton import AnalysisButton
 from ui.components.AnalysisText import AnalysisText
+from ui.components.AnalysisInput import AnalysisInput
+from ui.components.AnalysisButton import AnalysisButton
+from ui.components.AnalysisDropdown import AnalysisDropdown
 
-
+"""
+All the code responsible for filtering the plot. This includes:
+ - the button on the dashboard and the popup
+ - the functionality behind the buttons you press inside the popup that filter the plot 
+"""
 class SignalEditing(QWidget):
-    def __init__(self, items=None, parent=None):
+    """
+    args:
+        mu (instance of MUAnalysisFunc): 
+    """
+    def __init__(self, mu, center, parent=None):
         super().__init__(parent)
+
+        self.mu = mu
+        self.center = center
 
         layout = QVBoxLayout(self)
         btn = AnalysisButton("Signal Editing", lambda: self.show_window(), parent=self)
         layout.addWidget(btn, stretch=1)
 
+    # the popup
     def show_window(self):
         window = QDialog()
-
         window.setWindowTitle("Signal Editing Window")
+        window.setStyleSheet(
+            f"""
+            background-color: {CleanTheme.ANALYSIS_BG_SIDEBAR};
+            """
+        )
         window_layout = QVBoxLayout()
         window.setLayout(window_layout)
+        window_layout.setSpacing(10)
 
         # title
         title = AnalysisText.create_title("Signal Editing") 
         window_layout.addWidget(title)
 
+        # spacing 
+        window_layout.addSpacing(10)
+
+        # FILTER EMG 
         # subtitle 
-        emg_subtitle = AnalysisText.create_subtitle("EMG Signal")
-        window_layout.addWidget(emg_subtitle)
+        emg_sig_subtitle = AnalysisText.create_heading("EMG Signal")
+        window_layout.addWidget(emg_sig_subtitle)
 
+        # filter emg signal row
+        filter_emg = QFrame()
+        window_layout.addWidget(filter_emg)
 
+        filter_emg_layout = QHBoxLayout(filter_emg)
+        filter_emg_layout.setContentsMargins(0, 0, 0, 0)
+
+        filter_emg_order = AnalysisInput("Filter Order", parent=window)
+        filter_emg_order.set("2")
+        filter_emg_layout.addWidget(filter_emg_order)
+        self.filter_emg_order = filter_emg_order
+
+        filter_emg_freq = AnalysisInput("BandPass Freq", parent=window)
+        filter_emg_freq.set("20-500")
+        filter_emg_layout.addWidget(filter_emg_freq)
+        self.filter_emg_freq = filter_emg_freq
+
+        # adding a new container to make sure the button is aligned with the bottom 
+        filter_v_emg = QFrame()
+        filter_v_emg_layout = QVBoxLayout(filter_v_emg)
+        filter_v_emg_layout.setContentsMargins(0, 0, 0, 0)
+        filter_v_emg_layout.addStretch()
+
+        filter_emg_btn = AnalysisButton("Filter EMG signal", lambda: self.filter_emg_signal(), parent=self)
+        filter_v_emg_layout.addWidget(filter_emg_btn)
+        filter_emg_layout.addWidget(filter_v_emg, stretch=1)
+
+        # spacing 
+        window_layout.addSpacing(10)
+
+        # REFERENCE SIGNAL
         # another subtitle 
-        reference_subtitle = AnalysisText.create_subtitle("Reference Signal")
-        window_layout.addWidget(reference_subtitle)
+        refsig_subtitle = AnalysisText.create_heading("Reference Signal")
+        window_layout.addWidget(refsig_subtitle)
 
+        # filter reference signal row  
+        filter_refsig = QFrame()
+        window_layout.addWidget(filter_refsig)
+        filter_refsig_layout = QHBoxLayout(filter_refsig)
+        filter_refsig_layout.setContentsMargins(0, 0, 0, 0)
+
+        filter_refsig_order = AnalysisInput("Filter Order", parent=window)
+        filter_refsig_order.set("4")
+        filter_refsig_layout.addWidget(filter_refsig_order)
+        self.filter_refsig_order = filter_refsig_order 
+
+        filter_refsig_freq = AnalysisInput("Cutoff Freq", parent=window)
+        filter_refsig_freq.set("15")
+        filter_refsig_layout.addWidget(filter_refsig_freq)
+        self.filter_refsig_freq = filter_refsig_freq
+
+        # adding a new container to make sure the button is aligned with the bottom 
+        filter_v_refsig = QFrame()
+        filter_v_refsig_layout = QVBoxLayout(filter_v_refsig)
+        filter_v_refsig_layout.setContentsMargins(0, 0, 0, 0)
+        filter_v_refsig_layout.addStretch()
+
+        filter_refsig_btn = AnalysisButton("Filter Refsig", lambda: self.filter_refsig(), parent=self)
+        filter_v_refsig_layout.addWidget(filter_refsig_btn)
+        filter_refsig_layout.addWidget(filter_v_refsig, stretch=1)
+
+        # remove offset row  
+        remove_offset = QFrame()
+        window_layout.addWidget(remove_offset)
+        remove_offset_layout = QHBoxLayout(remove_offset)
+        remove_offset_layout.setContentsMargins(0, 0, 0, 0)
+
+        remove_offset_value = AnalysisInput("Offset Value", parent=window)
+        remove_offset_value.set("4")
+        remove_offset_layout.addWidget(remove_offset_value)
+        self.remove_offset_value = remove_offset_value
+
+        remove_auto_offset = AnalysisInput("Automatic Offset", parent=window)
+        remove_auto_offset.set("0")
+        remove_offset_layout.addWidget(remove_auto_offset)
+        self.remove_auto_offset = remove_auto_offset
+
+        # aligning button to bottom
+        remove_v_offset = QFrame()
+        remove_v_offset_layout = QVBoxLayout(remove_v_offset)
+        remove_v_offset_layout.setContentsMargins(0, 0, 0, 0)
+        remove_v_offset_layout.addStretch()
+
+        remove_offset_btn = AnalysisButton("Remove Offset", lambda: self.remove_offset(), parent=self)
+        remove_v_offset_layout.addWidget(remove_offset_btn)
+        remove_offset_layout.addWidget(remove_v_offset, stretch=1)
+
+
+        # convert row 
+        convert = QFrame()
+        convert.setStyleSheet(f"padding: 0px")
+        window_layout.addWidget(convert)
+        convert_layout = QHBoxLayout(convert)
+        convert_layout.setContentsMargins(0, 0, 0, 0)
+
+        convert_operator = AnalysisDropdown.labeled_dropdown(
+            "Operator", 
+            ["Multiply", "Divide"], 
+            parent=self
+        )
+        convert_layout.addWidget(convert_operator)
+        self.convert_operator = convert_operator
+
+        convert_factor = AnalysisInput("Factor", parent=window)
+        convert_factor.set("2.5")
+        convert_layout.addWidget(convert_factor)
+        self.convert_factor = convert_factor
+
+        # aligning button to bottom
+        convert_v = QFrame()
+        convert_v_layout = QVBoxLayout(convert_v)
+        convert_v_layout.setContentsMargins(0, 0, 0, 0)
+        convert_v_layout.addStretch()
+
+        convert_btn = AnalysisButton("Convert", lambda: self.convert(), parent=self)
+        convert_v_layout.addWidget(convert_btn)
+        convert_layout.addWidget(convert_v, stretch=1)
+
+
+        # percent row 
+        percent = QFrame()
+        window_layout.addWidget(percent)
+        percent_layout = QHBoxLayout(percent)
+        percent_layout.setContentsMargins(0, 0, 0, 0)
+
+        percent_mvc_value = AnalysisInput("MVC Value", parent=window)
+        percent_mvc_value.set("0.0")
+        percent_layout.addWidget(percent_mvc_value)
+        self.percent_mvc_value = percent_mvc_value
+
+        # aligning button to bottom
+        percent_v = QFrame()
+        percent_v_layout = QVBoxLayout(percent_v)
+        percent_v_layout.setContentsMargins(0, 0, 0, 0)
+        percent_v_layout.addStretch()
+
+        percent_btn = AnalysisButton("To Percent", lambda: self.to_percent(), parent=self)
+        percent_v_layout.addWidget(percent_btn)
+        percent_layout.addWidget(percent_v, stretch=1)
+
+
+        window_layout.addStretch()
         window.exec()
+        
+    # displays a popup warning 
+    def display_warning(self, label="", text=""):
+        QMessageBox.warning(
+            self,
+            label,
+            text,
+        )
 
+    # returns boolean value based on whethere or not there's a valid file loaded
+    def valid_file(self):
+        if not self.mu.file:
+            self.display_warning("Invalid File", "Please upload a file to edit signals")
+            return False 
+        return True 
 
+    # given a string, checks if it's a valid int 
+    # if true, return the int + 1 (to make validation a little easier) 
+    # if false, return false
+    def is_int(self, n):
+        try:
+            v = int(n) 
+            return v + 1
+        except ValueError:
+            return False
+
+    # filtering emg signals 
+    def filter_emg_signal(self):
+        if not self.valid_file(): 
+            return
+
+        print("filtering emg signals")
+
+        # determining if values are valid 
+        order = self.is_int(self.filter_emg_order.get())
+        lo, hi = map(self.is_int, self.filter_emg_freq.get().split("-", maxsplit=1))
+        print(lo, hi)
+        if not order or order - 1 < 0:
+            self.display_warning("Invalid Input", "EMG signal filter order must be a non-negative integer")
+            return 
+        elif not lo or not hi or lo - 1 <= 0 or hi - 1<= 0 or lo >= hi:
+            self.display_warning(
+                "Invalid Input", 
+                "EMG signal bandpass frequencies must be non-zero positive integers written in the form `x-y` where the left limit must be smaller than the right limit."
+            )
+            return
+
+        # main code (copied over from openhdemg)
+        # haven't checked if this actually works, it doesn't seem to change anything regardless of the input
+        filtered_file = copy.deepcopy(self.mu.file)
+
+        # Calculate the components of the filter and apply them with filtfilt to
+        # obtain Zero-lag filtering. sos should be preferred over filtfilt as
+        # second-order sections have fewer numerical problems.
+        sos = signal.butter(
+            N=order,
+            Wn=[lo, hi],
+            btype="bandpass",
+            output="sos",
+            fs=filtered_file["FSAMP"],
+        )
+        for col in filtered_file["RAW_SIGNAL"]:
+            filtered_file["RAW_SIGNAL"][col] = signal.sosfiltfilt(
+                sos,
+                x=filtered_file["RAW_SIGNAL"][col],
+            )
+
+        self.mu.plot_idr(filtered_file, self.center)
+
+    # filtering and plotting reference signals 
+    def filter_refsig(self):
+        if not self.valid_file(): 
+            return
+        
+        print("filtering refsig")
+
+        # determining if values are valid 
+        order = self.is_int(self.filter_refsig_order.get())
+        cutoff = self.is_int(self.filter_refsig_freq.get())
+        if not order or order - 1 < 0:
+            self.display_warning("Invalid Input", "Reference signal filter order must be a non-negative integer.")
+            return
+        elif not cutoff or cutoff - 1 <= 0:
+            self.display_warning("Invalid Input", "Reference signal filter cutoff frequency must be a non-zero positive integer.")
+            return
+
+        # main code (copied from openhdemg)
+        filtered_file = copy.deepcopy(self.mu.file)
+
+        sos = signal.butter(
+            N=order,
+            Wn=cutoff,
+            btype="lowpass",
+            output="sos",
+            fs=filtered_file["FSAMP"],
+        )
+        filtered_file["REF_SIGNAL"][0] = signal.sosfiltfilt(
+            sos,
+            x=filtered_file["REF_SIGNAL"][0],
+        )
+
+        self.mu.plot_refsig(filtered_file, self.center)
+
+    def remove_offset(self):
+        if not self.valid_file(): 
+            return
+        
+        print("removing offset")
+
+    def convert(self):
+        if not self.valid_file(): 
+            return
+        
+        print("converting")
+
+    def to_percent(self):
+        if not self.valid_file(): 
+            return
+        
+        print("to percenting")
