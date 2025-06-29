@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt
 from .CleanTheme import CleanTheme
+from core.AnalysisResultsHist import store
 
 
 class ResultsPanel(QFrame):
@@ -47,7 +48,7 @@ class ResultsPanel(QFrame):
         )    
         
         # save results button
-        save_button = QPushButton("Save Results")
+        save_button = QPushButton("Save")
         save_button.setCursor(Qt.CursorShape.PointingHandCursor)
         save_button.setStyleSheet(
             f"""
@@ -68,6 +69,29 @@ class ResultsPanel(QFrame):
         )
         
         save_button.clicked.connect(lambda: self.save_results())
+        
+        # save results button
+        clear_button = QPushButton("Clear")
+        clear_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        clear_button.setStyleSheet(
+            f"""
+            QPushButton {{
+                background-color: {self.colors['button_dark_hover']};
+                color: {self.colors['button_grey_bg']};
+                border: none;
+                height: 40%;
+                max-width: 100%;
+                border-radius: 4px;
+                min-width: 100px;
+            }}
+            QPushButton:hover {{
+                background-color: {self.colors['button_grey_bg']};
+                color: {self.colors['button_dark_hover']};
+            }}
+        """
+        )
+        
+        clear_button.clicked.connect(lambda: self.clear_results())
 
         self.combo_box = combo
 
@@ -89,7 +113,8 @@ class ResultsPanel(QFrame):
         self.layout = QVBoxLayout(self)
         self.layout.addLayout(top_layout, stretch=1)
         self.layout.addWidget(self.combo_box, stretch=1)
-        self.layout.addWidget(self.table_view, stretch = 3)
+        self.layout.addWidget(self.table_view, stretch=3)
+        self.layout.addWidget(clear_button, stretch=1)
 
     def save_results(self):
         results = self.model.get_cur_results()
@@ -107,3 +132,6 @@ class ResultsPanel(QFrame):
                 print(f"Data saved to {file_path}")
             except Exception as e:
                 print(f"Error saving file: {e}")
+                
+    def clear_results(self):
+        store.clear_results()
