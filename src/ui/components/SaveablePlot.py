@@ -86,8 +86,8 @@ class SaveablePlot(QWidget):
         # Create save button
         self.save_button = QPushButton()
         self.save_button.setIcon(self._get_save_icon())
-        self.save_button.setIconSize(QSize(14, 14))
-        self.save_button.setFixedSize(28, 28)
+        self.save_button.setIconSize(QSize(18, 18))
+        self.save_button.setFixedSize(36, 36)
         self.save_button.setToolTip("Save plot as image")
         self.save_button.setStyleSheet("""
             QPushButton {
@@ -111,7 +111,7 @@ class SaveablePlot(QWidget):
         self.save_button.raise_()  # Bring to front
         
         # Set position (top right corner with small margin)
-        self.save_button.move(self.canvas_container.width() - 35, 5)
+        self.save_button.move(self.canvas_container.width() - 42, 8)
         
         # Make sure button stays visible when canvas is resized
         self.canvas_container.resizeEvent = self._on_canvas_resize
@@ -119,7 +119,7 @@ class SaveablePlot(QWidget):
     def _on_canvas_resize(self, event):
         """Handle canvas resize to keep save button in correct position."""
         if hasattr(self, 'save_button'):
-            self.save_button.move(self.canvas_container.width() - 35, 5)
+            self.save_button.move(self.canvas_container.width() - 42, 8)
         event.accept()
     
     def save_plot(self):
