@@ -16,6 +16,7 @@ import copy
 import itertools
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from ui.components.ConfirmationDialog import ConfirmationDialog
+from ui.components.SaveablePlot import SaveablePlot
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from app.commonOpenFunc import OpenFunct
@@ -62,7 +63,8 @@ class FileUploadFunc:
     def import_data(self, filepath, center_panel, valid):
         if valid:
             fig = self.plot_idr(FileUploadFunc.file)
-            canvas = FigureCanvas(fig)
+            # Use SaveablePlot instead of plain FigureCanvas
+            canvas = SaveablePlot(fig)
         else:
             canvas = QMessageBox()
             canvas.setIcon(QMessageBox.Critical)
