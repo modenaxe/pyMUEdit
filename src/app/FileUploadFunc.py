@@ -2,7 +2,8 @@ import sys
 from PyQt5.QtWidgets import (
     QFileDialog,
     QLabel,
-    QMessageBox
+    QMessageBox,
+    QDialog
 )
 from scipy.io import loadmat
 import pandas as pd
@@ -14,6 +15,9 @@ import os
 import copy
 import itertools
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from ui.components.ConfirmationDialog import ConfirmationDialog
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
 from app.commonOpenFunc import OpenFunct
 
 # This class holds all the functions used for file uploading
@@ -22,6 +26,8 @@ class FileUploadFunc:
     file = None
 
     def __init__(self):
+        # Store the original file path for reset functionality
+        self.original_file_path = None
         # file holds emg file instance which is used in openHdemg code
         # self.file = None
         # canvas hold whatever the widget in the center area is (graph or message saying to load file)
@@ -47,6 +53,8 @@ class FileUploadFunc:
         if file_path:
             # this is where self. file gets set (inside emg_from_otb)
             valid = self.emg_from_otb(file_path)
+            # Store the original file path for reset functionality
+            self.original_file_path = file_path
             self.import_data(file_path, center_panel, valid)
 
     # If file is not valid it displays an error message
@@ -597,3 +605,51 @@ class FileUploadFunc:
                 "data must be one of pd.series, pd.dataframe or np.ndarray. " +
                 f"{type(data)} was passed instead."
             )
+
+
+    def handle_reset_workflow(self, center_panel):
+        """
+        Handles the full workflow for resetting analysis data, including confirmation.
+        """
+        # Check if there's a file loaded to reset
+        if self.original_file_path is None:
+            print("No file loaded to reset.")
+            return
+            
+        dialog = ConfirmationDialog(
+            "This will reset the current analysis.",
+            "Confirm Reset"
+        )
+        if dialog.exec_() == QDialog.Accepted:
+            # User clicked 'Reset'
+            self.reset_analysis_data(center_panel)
+
+    def reset_analysis_data(self, center_panel):
+        """
+        Resets the analysis data by reloading the original file, clearing any transformations.
+        """
+        if self.original_file_path is None:
+            print("No original file path stored. Cannot reset.")
+            return
+            
+        print("--- DEBUG: Resetting analysis data by reloading original file ---")
+        
+        # Clear any transformation data (MVC value, etc.)
+        self.mvc_value = None
+        # Add any other transformation data clearing logic here
+        
+        # Reload the original file to reset any transformations
+        valid = self.emg_from_otb(self.original_file_path)
+        if valid:
+            # Re-import the data to refresh the display
+            self.import_data(self.original_file_path, center_panel, valid)
+            print("File successfully reloaded, transformations cleared.")
+        else:
+            print("Error reloading file during reset.")
+            # If reload fails, show error but keep the original file path
+            error_dialog = QMessageBox()
+            error_dialog.setIcon(QMessageBox.Critical)
+            error_dialog.setText("Reset Error")
+            error_dialog.setInformativeText('Failed to reload the original file')
+            error_dialog.setWindowTitle("Error")
+            error_dialog.exec_()
