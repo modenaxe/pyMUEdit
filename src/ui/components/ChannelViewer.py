@@ -15,8 +15,9 @@ class ChannelViewer(QWidget):
         self.layout = QVBoxLayout()
 
         # Matplotlib canvas for plotting
-        self.figure = Figure(figsize=(8, 3))
+        self.figure = Figure(figsize=(8, 3), dpi=100)
         self.canvas = FigureCanvas(self.figure)
+        self.figure.tight_layout()
 
         self.layout.addWidget(self.canvas)
         self.setLayout(self.layout)
@@ -46,7 +47,7 @@ class ChannelViewer(QWidget):
 
             # Add title for first plot only
             if i == 0:
-                ax.set_title(f"Channels {self.channel_indices[0]}-{self.channel_indices[n - 1]}", fontsize=20, pad=15)
+                ax.set_title(f"Channels {self.channel_indices[0] + 1}-{self.channel_indices[len(self.channel_indices) - 1] + 1}", fontsize=20, pad=15)
 
         ax.set_xlabel("Time", fontsize=20, labelpad=15)
         self.canvas.draw()
