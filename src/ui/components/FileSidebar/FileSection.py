@@ -30,12 +30,12 @@ class FileSection(QFrame):
 
         browse_btn = FileButton('Load File')
         browse_btn.clicked.connect(lambda: mu.select_file_button_pushed(center))
-        browse_btn.setMinimumWidth(120)
-        browse_btn.setMinimumHeight(40)
+        browse_btn.setFixedWidth(120)
+        browse_btn.setFixedHeight(40)
 
         self.reset_btn = ResetButton('Reset')
-        self.reset_btn.setMinimumWidth(120)
-        self.reset_btn.setMinimumHeight(40)
+        self.reset_btn.setFixedWidth(120)
+        self.reset_btn.setFixedHeight(40)
 
         button_row.addWidget(browse_btn)
         button_row.addWidget(self.reset_btn)
