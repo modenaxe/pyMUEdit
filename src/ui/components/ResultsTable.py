@@ -1,16 +1,16 @@
 from PyQt5.QtCore import QAbstractTableModel, Qt
+from core.AnalysisResultsHist import store
 
 class ResultsTable(QAbstractTableModel):
-    def __init__(self, df):
+    def __init__(self):
         super().__init__()
-        if df.empty:
-            self.df = df
-            self._data = []
-            self.columns = []
-        else:
-            self.df = df
-            self._data = self.df.loc[-1, 'table']         
-            self.columns = list(self._data[0].keys())   
+        
+        store.data_changed.connect(self.update_dataframe)
+        store.data_cleared.connect(self.clear_results)
+
+        self._data = [] # list of dictionaries 
+        self.columns = [] 
+
 
     def _updateData(self, df):
         if df.empty:
@@ -53,7 +53,12 @@ class ResultsTable(QAbstractTableModel):
         if index < len(self.df):
             self.beginResetModel()
             self._data = self.df.iloc[index]['table']
+            self.columns = list(self._data[0].keys()) 
+            print(self.columns)
             self.endResetModel() 
     
     def get_cur_results(self):
         return self._data
+    
+    def clear_results(self):
+        self.update_dataframe(store.get_analysis_hist())
