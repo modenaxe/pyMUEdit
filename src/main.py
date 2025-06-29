@@ -7,6 +7,9 @@ sys.path.insert(0, project_root)
 from app.HDEMGDashboard import HDEMGDashboard
 from PyQt5.QtWidgets import QApplication
 
+import warnings
+warnings.filterwarnings("ignore") #ignore warning
+
 
 def main():
     """

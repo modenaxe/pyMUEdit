@@ -1137,7 +1137,6 @@ class MUeditManual(QMainWindow):
 
         mu_text = checked_mus[0]
         parts = mu_text.split("_")
-
         if len(parts) < 4:
             return
 
@@ -1160,8 +1159,17 @@ class MUeditManual(QMainWindow):
 
         # Get EMG data for the current array and view
         emg_data = self.MUedition["signal"]["data"][self.MUedition["edition"]["arraynb"] == array_idx, :]
-        emg_mask = self.MUedition["signal"]["EMGmask"][array_idx]
-        emg_data = emg_data[emg_mask == 0, :]  # Use only non-rejected channels
+        emg_mask = self.MUedition["signal"]["EMGmask"][0]
+        emg_mask = emg_mask[array_idx].squeeze()
+        #emg_data = emg_data[(emg_mask == 0).squeeze(), :]  # Use only non-rejected channels
+
+        #get EMG type
+        emg_type = "surface"
+        if(self.MUedition["signal"]["emgtype"][0,array_idx]==2):
+            emg_type = "intra"
+
+        #get fsamp
+        fsamp = self.MUedition["signal"]["fsamp"][0][0]
 
         # Get the MUAP templates using extendfilter
         old_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
@@ -1173,8 +1181,8 @@ class MUeditManual(QMainWindow):
             self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :],
             self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx],
             idx,
-            self.MUedition["signal"]["fsamp"],
-            self.MUedition["signal"]["emgtype"][array_idx],
+            fsamp,
+            emg_type,
         )
 
         # Handle spike locking

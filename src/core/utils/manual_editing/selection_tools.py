@@ -8,7 +8,8 @@ class SelectionTool:
     """
     Tool for drawing selection rectangles on PyQtGraph plots.
     """
-
+    import os
+    os.environ["OMP_NUM_THREADS"] = "1"
     def __init__(self, plot_widget, action_type, callback):
         self.plot_widget = plot_widget
         self.action_type = action_type
