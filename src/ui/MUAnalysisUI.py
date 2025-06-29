@@ -25,7 +25,7 @@ from ui.components.FileSidebar.FileSection import FileSection
 
 from ui.components.ResultsPanel import ResultsPanel
 # from ui.components.FileButton import FileButton
-from core.AnalysisResultsHist import AnalysisResultsHist
+from core.AnalysisResultsHist import store
 from ui.components.ResultsTable import ResultsTable
 from ui.components.ResultSelection import ResultSelection
 
@@ -41,9 +41,10 @@ class MUAnalysis(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.data = AnalysisResultsHist()
-        self.results_table = ResultsTable(self.data.get_analysis_hist())
-        self.result_combo = ResultSelection(self.data.get_analysis_hist(), self.results_table)
+        self.data = store
+        print(id(self.data))
+        self.results_table = ResultsTable()
+        self.result_combo = ResultSelection(self.results_table)
         # setting instance of function class from src/app/FileUploadFunc
         self.mu = FileUploadFunc()
         self.prop = MUPropertiesFunc()
@@ -257,7 +258,6 @@ class MUAnalysis(QWidget):
         )
         results_section = ResultsPanel(sidebar, self.result_combo, self.results_table)
         
-        
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.addWidget(file_section, stretch=1)
         sidebar_layout.addWidget(results_section, stretch=4)
@@ -265,8 +265,6 @@ class MUAnalysis(QWidget):
     
     def calc_result(self, title="title", data=[{}]):
         self.data.append_analysis_hist(title, data)
-        self.results_table.update_dataframe(self.data.get_analysis_hist())       
-        self.result_combo.update_combo_from_df(self.data.get_analysis_hist())
 
 # --- Main execution block (for testing) ---
 # legacy code
