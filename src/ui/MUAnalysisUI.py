@@ -251,6 +251,10 @@ class MUAnalysis(QWidget):
         """
         )
         file_section = FileSection(sidebar, self.mu, self.center)
+        # Connect the reset button's signal to the MUAnalysisFunc method
+        file_section.reset_btn.reset_requested.connect(
+            lambda: self.mu.handle_reset_workflow(self.center)
+        )
         results_section = ResultsPanel(sidebar, self.result_combo, self.results_table)
         
         
