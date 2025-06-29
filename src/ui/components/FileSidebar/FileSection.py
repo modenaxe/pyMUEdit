@@ -1,4 +1,4 @@
-from app.MUAnalysisFunc import MUAnalysisFunc
+from app.FileUploadFunc import FileUploadFunc
 from ui.components.FileSidebar.FileButton import FileButton
 from PyQt5.QtWidgets import (
     QVBoxLayout,
