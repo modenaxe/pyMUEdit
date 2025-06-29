@@ -9,7 +9,6 @@ class FileButton(QPushButton):
 # all file actions button styling
     def __init__(self, text):
       super().__init__(text )
-      # self.setFont(QFont("Segoe UI", 9))
       self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
       self.setCursor(Qt.CursorShape.PointingHandCursor)
       self.setStyleSheet(
