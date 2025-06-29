@@ -1,5 +1,7 @@
 import pandas as pd
 import time
+import random
+from PyQt5.QtCore import QObject, pyqtSignal
 
 # singleton object that stores all calculated historical tabulated results within the current instance of the application
 # fields:
@@ -7,14 +9,18 @@ import time
 # - timestamp
 # - table as 2d arry
 
-class AnalysisResultsHist():
+class AnalysisResultsHist(QObject):
     _instance = None
+    data_changed = pyqtSignal(object)
+    data_cleared = pyqtSignal()
     
     def __new__(cls):
+        print(f"Called {random.randint(1, 10)}!!!!!!")
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance.df = pd.DataFrame()
-            return cls._instance
+            QObject.__init__(cls._instance)
+        return cls._instance
         
     def set_analysis_hist(self, df):
         self.df = df
@@ -26,8 +32,8 @@ class AnalysisResultsHist():
             'timestamp': timestamp,
             'table': table
         }])
-        print(f"new row: {row}")
         self.df = pd.concat([self.df, row])
+        self.data_changed.emit(self.df)
         
     def get_analysis_hist(self):
         return self.df
@@ -39,3 +45,10 @@ class AnalysisResultsHist():
     
     def is_empty(self):
         return self.df.empty
+    
+    def clear_results(self):
+        self.df = pd.DataFrame()
+        self.data_cleared.emit()
+    
+    
+store = AnalysisResultsHist()

@@ -17,12 +17,15 @@ import itertools
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from app.FileUploadFunc import FileUploadFunc
 from app.commonOpenFunc import OpenFunct
+from core.AnalysisResultsHist import store
 
 # class for functions required for the MU properties dialog
 class MUPropertiesFunc:
     def __init__(self):
         # MVC value for calculations
         self.mvc_value = None
+        self.results = store
+        print(id(self.results))
 
   # MVC value management
     def set_mvc(self, mvc_value):
@@ -246,6 +249,7 @@ class MUPropertiesFunc:
         covsteady = pd.DataFrame([{"COV_steady": covsteady}])
         exportable_df = pd.concat([exportable_df, covsteady], axis=1)
         print(exportable_df)
+        self.results.append_analysis_hist("Basic Properties", exportable_df.to_dict('records'))
         return exportable_df
 
     # OPEN
