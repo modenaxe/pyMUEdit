@@ -4,6 +4,8 @@ import traceback
 from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent
+import numpy as np
+import pyqtgraph as pg
 
 # Import UI setup function
 from ui.ImportDataWindowUI import setup_ui
@@ -18,6 +20,11 @@ sys.path.append(current_dir)
 from core.utils.config_and_input.open_otb import open_otb
 from core.EmgDecomposition import offline_EMG as EMG_offline_EMG
 from workers.SaveMatWorker import SaveMatWorker
+from enum import Enum
+
+class PreviewElement(Enum):
+    LABEL = 0
+    GRAPH = 1
 
 
 class ImportDataWindow(QWidget):
@@ -32,7 +39,7 @@ class ImportDataWindow(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-
+        self.parent_window = parent
         # Initialize file loading variables
         self.filename = None
         self.pathname = None
@@ -183,10 +190,33 @@ class ImportDataWindow(QWidget):
                 if signal:
                     self.save_mat_in_background(savename, {"signal": signal}, True)
 
-                # Update the UI
-                self.preview_message.setText(
-                    f"Successfully loaded {file}\nFile contains EMG data with {signal['data'].shape[0]} channels"
-                )
+                # Load file data into the plot
+                if "data" in signal and "fsamp" in signal:
+                    try:
+                        # Create a time vector
+                        fsamp = signal["fsamp"]
+                        nsamples = signal["data"].shape[1]
+                        time = np.arange(nsamples) / fsamp
+
+                        # Plot first channel as preview
+                        self.preview_plot.clear()
+
+                        # Plot the first few channels for preview
+                        num_preview_channels = min(3, signal["data"].shape[0])
+                        colors = ["b", "g", "r", "c", "m", "y"]
+
+                        for i in range(num_preview_channels):
+                            self.preview_plot.plot(
+                                time, signal["data"][i, :], pen=pg.mkPen(color=colors[i % len(colors)], width=1)
+                            )
+
+                        self.preview_plot.setTitle(f"Signal Preview ({num_preview_channels} channels)")
+                    except Exception as e:
+                        print(f"Error creating preview plot: {e}")
+                
+                # Resize app window to show the plot properly, then display the plot in the preview pane
+                self.parent_window.resize(1300, 800)
+                self.preview_stacked_frame.setCurrentIndex(PreviewElement.GRAPH.value)
                 self.next_btn.setEnabled(True)
 
                 # Signal that we've imported a file with more details
@@ -200,11 +230,13 @@ class ImportDataWindow(QWidget):
                 self.fileImported.emit(file_info)
 
             except Exception as e:
+                self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
                 self.preview_message.setText(f"Error loading file: {str(e)}")
                 print(f"Error loading OTB+ file: {e}")
                 traceback.print_exc()
                 self.next_btn.setEnabled(False)
         else:
+            self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
             self.preview_message.setText(f"File type {ext} not supported in this demo.\nPlease select an OTB+ file.")
             self.next_btn.setEnabled(False)
 

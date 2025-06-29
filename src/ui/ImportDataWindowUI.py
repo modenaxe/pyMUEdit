@@ -1,10 +1,18 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QApplication, QScrollArea
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QApplication, QScrollArea, QStackedWidget
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtSvg import QSvgWidget
+import pyqtgraph as pg
 
 # Import custom components
-from ui.components import CleanTheme, CleanCard, ActionButton, SectionHeader, Sidebar
+from ui.components import (
+    CleanTheme, 
+    CleanCard, 
+    ActionButton, 
+    SectionHeader, 
+    Sidebar, 
+    VisualizationPanel
+)
 
 
 def setup_ui(import_window):
@@ -139,6 +147,7 @@ def create_dropzone_card(import_window):
     return dropzone_card
 
 
+# NOTE: Creates 'Signal Preview' window
 def create_preview_section(import_window):
     """Create the signal preview section."""
     preview_card = CleanCard()
@@ -168,14 +177,32 @@ def create_preview_section(import_window):
     )
     preview_frame.setMinimumHeight(220)
 
+    # Create stacked widget to display either the label or the visualisation of the file
+    import_window.preview_stacked_frame = QStackedWidget()
+
     # Create preview message
     import_window.preview_message = QLabel("No file selected. Import a file to see a preview.")
     import_window.preview_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
     import_window.preview_message.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
 
+    # Add preview message to stacked frame as an active widget
+    import_window.preview_stacked_frame.addWidget(import_window.preview_message)
+
+    # Create visualization panel to preview the data in a selected file
+    import_window.preview_plot = pg.PlotWidget()
+    import_window.preview_plot.setBackground("w")  # White background
+    import_window.preview_plot.setLabel("left", "Amplitude")
+    import_window.preview_plot.setLabel("bottom", "Time (s)")
+    import_window.preview_plot.showGrid(x=True, y=True)
+    import_window.preview_plot.setMinimumHeight(250)
+
+    signal_panel = VisualizationPanel(plot_widget=import_window.preview_plot)
+    import_window.preview_stacked_frame.addWidget(signal_panel)
+    import_window.preview_stacked_frame.setCurrentIndex(0)
+    
     # Add message to preview frame
     preview_frame_layout = QVBoxLayout(preview_frame)
-    preview_frame_layout.addWidget(import_window.preview_message)
+    preview_frame_layout.addWidget(import_window.preview_stacked_frame, stretch=3)
 
     # Add preview frame to layout
     preview_layout.addWidget(preview_frame)
