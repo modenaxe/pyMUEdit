@@ -77,8 +77,9 @@ class MUAnalysis(QWidget):
         self.content_layout.setContentsMargins(15, 15, 15, 15)
         self.content_layout.setSpacing(20)
         self.center = None
+        center_area = self._create_center_area() # doing it pre-emptively to set self.center for left sidebar 
         self.content_layout.addWidget(self._create_left_sidebar(), stretch=1)
-        self.content_layout.addWidget(self._create_center_area(), stretch=5)
+        self.content_layout.addWidget(center_area, stretch=5)
         self.content_layout.addWidget(self._create_right_sidebar(), stretch=3)
         self.widget_layout.addLayout(self.content_layout)  # Add main content below top bar
         
@@ -175,11 +176,11 @@ class MUAnalysis(QWidget):
         sidebar_layout = QVBoxLayout(sidebar)
 
         # title
-        title_label = AnalysisText("Analysis")
+        title_label = AnalysisText.create_title("Analysis")
         sidebar_layout.addWidget(title_label)
 
         # signal editing 
-        signal_editing = SignalEditing(parent=self)
+        signal_editing = SignalEditing(self.mu, self.center, parent=sidebar)
         sidebar_layout.addWidget(signal_editing)
 
         # motor unit properties
@@ -189,7 +190,7 @@ class MUAnalysis(QWidget):
         self.motor_unit_properties = motor_unit_properties
 
         # advanced tools
-        advanced_tools = AdvancedTools(parent=self)
+        advanced_tools = AdvancedTools(parent=sidebar)
         sidebar_layout.addWidget(advanced_tools)
 
         sidebar_layout.addStretch(1)

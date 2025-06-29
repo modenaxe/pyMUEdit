@@ -19,8 +19,9 @@ class AnalysisButton(QPushButton):
             QPushButton {{
                 background-color: {CleanTheme.ANALYSIS_BG_BUTTON};
                 color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
-                height: 40px;
                 border-radius: 4px;
+                padding: 0px 10px;
+                height: 40px;
             }}
             QPushButton:hover {{
                 background-color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
