@@ -16,11 +16,13 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
-from app.MUAnalysisFunc import MUAnalysisFunc
+from app.FileUploadFunc import FileUploadFunc
+from app.MUPropertiesFun import MUPropertiesFunc
 from app.ExportResults import ExportResultsWindow
 from ui.muanalysis.AdvancedTools import AdvancedTools
 from ui.muanalysis.MotorUnitProperties import MotorUnitPropertiesButton
 from ui.components.FileSidebar.FileSection import FileSection
+
 from ui.components.ResultsPanel import ResultsPanel
 # from ui.components.FileButton import FileButton
 from core.AnalysisResultsHist import AnalysisResultsHist
@@ -39,11 +41,12 @@ class MUAnalysis(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        # setting instance of function class from src/app/MUAnalysisFunc
-        self.mu = MUAnalysisFunc()
         self.data = AnalysisResultsHist()
         self.results_table = ResultsTable(self.data.get_analysis_hist())
         self.result_combo = ResultSelection(self.data.get_analysis_hist(), self.results_table)
+        # setting instance of function class from src/app/FileUploadFunc
+        self.mu = FileUploadFunc()
+        self.prop = MUPropertiesFunc()
 
         self.colors = {
             "bg_main": "#f8f9fa",
@@ -177,7 +180,7 @@ class MUAnalysis(QWidget):
 
         # motor unit properties
         motor_unit_properties = MotorUnitPropertiesButton(parent=self)
-        motor_unit_properties.mvc_updated.connect(self.mu.set_mvc)
+        motor_unit_properties.mvc_updated.connect(self.prop.set_mvc)
         sidebar_layout.addWidget(motor_unit_properties)
         self.motor_unit_properties = motor_unit_properties
 

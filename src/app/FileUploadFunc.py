@@ -14,15 +14,20 @@ import os
 import copy
 import itertools
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from app.commonOpenFunc import OpenFunct
 
 # This class holds all the functions used for file uploading
-class MUAnalysisFunc:
+class FileUploadFunc:
+    # made file a class var, to be accessed via FileUploadFunc.file, so that it can be used across other classes
+    file = None
 
     def __init__(self):
         # file holds emg file instance which is used in openHdemg code
-        self.file = None
+        # self.file = None
         # canvas hold whatever the widget in the center area is (graph or message saying to load file)
         self.canvas = None
+        self.coords = []
+        self.cid = None
         # MVC value for calculations
         self.mvc_value = None
 
@@ -30,47 +35,12 @@ class MUAnalysisFunc:
     def set_canvas(self,canvas):
         self.canvas = canvas
 
-    # MVC value management
-    def set_mvc(self, mvc_value):
-        """Set the Maximum Voluntary Contraction value"""
-        self.mvc_value = mvc_value
-        print(f"MVC set to: {mvc_value} N")
-
-    def get_mvc(self):
-        """Get the current MVC value"""
-        return self.mvc_value
-
-    def calculate_mvc_based_statistics(self, force_data):
-        """Calculate summary statistics based on MVC value"""
-        if self.mvc_value is None:
-            print("Warning: MVC value not set. Cannot calculate MVC-based statistics.")
-            return None
-        
-        if force_data is None or len(force_data) == 0:
-            print("Warning: No force data available for MVC-based calculations.")
-            return None
-        
-        # Convert force data to percentage of MVC
-        force_percentage = (force_data / self.mvc_value) * 100
-        
-        # Calculate summary statistics
-        stats = {
-            'mvc_value': self.mvc_value,
-            'mean_force_percentage': np.mean(force_percentage),
-            'max_force_percentage': np.max(force_percentage),
-            'min_force_percentage': np.min(force_percentage),
-            'std_force_percentage': np.std(force_percentage),
-            'force_percentage_data': force_percentage
-        }
-        
-        return stats
-
     # Triggerd of file upload button: opens file explorer
     # Checks if file is valid or not
     # passes to import_data to set center screen
     def select_file_button_pushed(self,center_panel):
         """Open file dialog to select file for editing and automatically import it."""
-        self.file = None
+        FileUploadFunc.file = None
         file_dialog = QFileDialog()
         file_path, _ = file_dialog.getOpenFileName(None, "Select file", "", "MAT Files (*.mat);;All Files (*.*)")
 
@@ -83,7 +53,7 @@ class MUAnalysisFunc:
     # else it removes anything in center layour and replaces with new graph
     def import_data(self, filepath, center_panel, valid):
         if valid:
-            fig = self.plot_idr(self.file)
+            fig = self.plot_idr(FileUploadFunc.file)
             canvas = FigureCanvas(fig)
         else:
             canvas = QMessageBox()
@@ -435,7 +405,7 @@ class MUAnalysisFunc:
         }
 
         # AC : we set file to the emgfile object and return 1 to indicate it is valid
-        self.file = emgfile
+        FileUploadFunc.file = emgfile
         return 1
 
     # OPENHDEMG: edited
@@ -453,7 +423,8 @@ class MUAnalysisFunc:
     showimmediately=False,
     ):
         # Compute the IDR
-        idr = self.compute_idr(emgfile=emgfile)
+        common = OpenFunct()
+        idr = common.compute_idr(emgfile=emgfile)
 
         # Check if all the MUs have to be plotted
         if isinstance(munumber, str):
@@ -548,48 +519,6 @@ class MUAnalysisFunc:
             ax1.patch.set_alpha(0)
 
         return fig
-
-    # OPENHDEMG
-    def compute_idr(self, emgfile):
-        # Compute the instantaneous discharge rate (IDR) from the MUPULSES
-        if isinstance(emgfile["MUPULSES"], list):
-            # Empty dict to fill with dataframes containing the MUPULSES
-            # information
-            idr = {x: np.nan**2 for x in range(emgfile["NUMBER_OF_MUS"])}
-
-            for mu in range(emgfile["NUMBER_OF_MUS"]):
-                # Manage the exception of a single MU and add MUPULSES in column 0
-                df = pd.DataFrame(
-                    emgfile["MUPULSES"][mu]
-                    if emgfile["NUMBER_OF_MUS"] > 1
-                    else np.transpose(np.array(emgfile["MUPULSES"]))
-                )
-
-                # Calculate difference in MUPULSES and add it in column 1
-                df[1] = df[0].diff()
-                # Calculate time in seconds and add it in column 2
-                df[2] = df[0] / emgfile["FSAMP"]
-                # Calculate the idr and add it in column 3
-                df[3] = emgfile["FSAMP"] / df[1]
-
-                df = df.rename(
-                    columns={
-                        0: "mupulses",
-                        1: "diff_mupulses",
-                        2: "timesec",
-                        3: "idr",
-                    },
-                )
-
-                # Add the idr to the idr dict
-                idr[mu] = df
-
-            return idr
-
-        else:
-            raise Exception(
-                "MUPULSES is probably absent or it is not contained in a list"
-            )
 
     # OPENHDEMG
     def min_max_scaling(self, data=None, series_or_df=None, col_by_col=False):
