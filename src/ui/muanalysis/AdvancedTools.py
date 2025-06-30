@@ -11,7 +11,7 @@ from PyQt5.QtCore import Qt
 from ui.components.CleanTheme import CleanTheme
 from ui.components.AnalysisDropdown import AnalysisDropdown
 
-
+from app.MotorUnitTrackingDialog import MotorUnitTrackingDialog
 class AdvancedTools(QWidget):
     def __init__(self, items=None, parent=None):
         super().__init__(parent)
@@ -115,11 +115,24 @@ class AdvancedTools(QWidget):
             message,
         )
 
+
+
+
+
     def show_analysis(self):
-        QMessageBox.information( # doesn't have to be QMessage
-            self,
-            "Motor Unit Tracking",
-            "TODO, task 32 (Seb)",
-        )
+            selected_tool = self.analysis_tools_dropdown.currentText()
+
+
+            if selected_tool == "Motor Unit Tracking":
+                dialog = MotorUnitTrackingDialog(self)
+                dialog.exec_()
+            elif selected_tool == "Conduction Velocity Estimation":
+                QMessageBox.information(self, "Coming Soon", "Conduction Velocity Estimation is not implemented yet.")
+            elif selected_tool == "Persistent Inward Currents":
+                QMessageBox.information(self, "Coming Soon", "Persistent Inward Currents is not implemented yet.")
+            else:
+                QMessageBox.warning(self, "Invalid Selection", "Unknown analysis tool.")
+
+
 
 
