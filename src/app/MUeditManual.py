@@ -1140,6 +1140,11 @@ class MUeditManual(QMainWindow):
         if len(parts) < 4:
             return
 
+        from PyQt5.QtWidgets import QApplication
+        from PyQt5.QtCore import Qt
+        # 设置鼠标为等待（沙漏/转圈）
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+
         array_idx = int(parts[1]) - 1
         mu_idx = int(parts[3]) - 1
 
@@ -1208,6 +1213,8 @@ class MUeditManual(QMainWindow):
             self.mu_checkbox_state_changed(pluse_train_color="#8ACD69")
         else:
             self.mu_checkbox_state_changed(pluse_train_color="#698CCD")
+        
+        QApplication.restoreOverrideCursor()
         
         QMessageBox.information(
             self,
