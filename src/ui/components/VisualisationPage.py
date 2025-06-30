@@ -11,6 +11,7 @@ from ui.components.FormSpinBox import FormSpinBox
 from .VisualizationPanel import VisualizationPanel
 from .ChannelViewer import ChannelViewer
 
+import math
 
 class VisualisationPage(QWidget):
     def __init__(self, emg_data, parent=None):
@@ -112,7 +113,7 @@ class VisualisationPage(QWidget):
         for start in range(0, total_num_channels + 1, increment):
             end = min(start + increment, total_num_channels)
             groups.append(f"Channels {start + 1}-{end}")
-        self.max_index = int((total_num_channels - (total_num_channels % 8)) / 8)
+        self.max_index = int((total_num_channels - (total_num_channels % increment)) / increment)
         return groups
 
     # Update the channel viewer based on channel range option selected
@@ -140,9 +141,6 @@ class VisualisationPage(QWidget):
     # Update the number of plots displayed depending on input
     def num_signal_display_change(self, n):
         self.viewer.num_indices = n
-
-        # Save current index
-        cur_index = self.range_dropdown.dropdown.currentIndex()
 
         # Update the dropdown to reflect new index ranges
         new_ranges = self.generate_channel_groups()
