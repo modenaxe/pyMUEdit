@@ -2,7 +2,8 @@ import sys
 from PyQt5.QtWidgets import (
     QFileDialog,
     QLabel,
-    QMessageBox
+    QMessageBox,
+    QDialog
 )
 from scipy.io import loadmat
 import pandas as pd
@@ -14,15 +15,26 @@ import os
 import copy
 import itertools
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from ui.components.ConfirmationDialog import ConfirmationDialog
+from ui.components.SaveablePlot import SaveablePlot
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
+from app.commonOpenFunc import OpenFunct
 
 # This class holds all the functions used for file uploading
-class MUAnalysisFunc:
+class FileUploadFunc:
+    # made file a class var, to be accessed via FileUploadFunc.file, so that it can be used across other classes
+    file = None
 
     def __init__(self):
+        # Store the original file path for reset functionality
+        self.original_file_path = None
         # file holds emg file instance which is used in openHdemg code
-        self.file = None
+        # self.file = None
         # canvas hold whatever the widget in the center area is (graph or message saying to load file)
         self.canvas = None
+        self.coords = []
+        self.cid = None
         # MVC value for calculations
         self.mvc_value = None
 
@@ -30,61 +42,29 @@ class MUAnalysisFunc:
     def set_canvas(self,canvas):
         self.canvas = canvas
 
-    # MVC value management
-    def set_mvc(self, mvc_value):
-        """Set the Maximum Voluntary Contraction value"""
-        self.mvc_value = mvc_value
-        print(f"MVC set to: {mvc_value} N")
-
-    def get_mvc(self):
-        """Get the current MVC value"""
-        return self.mvc_value
-
-    def calculate_mvc_based_statistics(self, force_data):
-        """Calculate summary statistics based on MVC value"""
-        if self.mvc_value is None:
-            print("Warning: MVC value not set. Cannot calculate MVC-based statistics.")
-            return None
-        
-        if force_data is None or len(force_data) == 0:
-            print("Warning: No force data available for MVC-based calculations.")
-            return None
-        
-        # Convert force data to percentage of MVC
-        force_percentage = (force_data / self.mvc_value) * 100
-        
-        # Calculate summary statistics
-        stats = {
-            'mvc_value': self.mvc_value,
-            'mean_force_percentage': np.mean(force_percentage),
-            'max_force_percentage': np.max(force_percentage),
-            'min_force_percentage': np.min(force_percentage),
-            'std_force_percentage': np.std(force_percentage),
-            'force_percentage_data': force_percentage
-        }
-        
-        return stats
-
     # Triggerd of file upload button: opens file explorer
     # Checks if file is valid or not
     # passes to import_data to set center screen
     def select_file_button_pushed(self,center_panel):
         """Open file dialog to select file for editing and automatically import it."""
-        self.file = None
+        FileUploadFunc.file = None
         file_dialog = QFileDialog()
         file_path, _ = file_dialog.getOpenFileName(None, "Select file", "", "MAT Files (*.mat);;All Files (*.*)")
 
         if file_path:
             # this is where self. file gets set (inside emg_from_otb)
             valid = self.emg_from_otb(file_path)
+            # Store the original file path for reset functionality
+            self.original_file_path = file_path
             self.import_data(file_path, center_panel, valid)
 
     # If file is not valid it displays an error message
     # else it removes anything in center layour and replaces with new graph
     def import_data(self, filepath, center_panel, valid):
         if valid:
-            fig = self.plot_idr(self.file)
-            canvas = FigureCanvas(fig)
+            fig = self.plot_idr(FileUploadFunc.file)
+            # Use SaveablePlot instead of plain FigureCanvas
+            canvas = SaveablePlot(fig)
         else:
             canvas = QMessageBox()
             canvas.setIcon(QMessageBox.Critical)
@@ -435,7 +415,7 @@ class MUAnalysisFunc:
         }
 
         # AC : we set file to the emgfile object and return 1 to indicate it is valid
-        self.file = emgfile
+        FileUploadFunc.file = emgfile
         return 1
 
     # OPENHDEMG: edited
@@ -453,7 +433,8 @@ class MUAnalysisFunc:
     showimmediately=False,
     ):
         # Compute the IDR
-        idr = self.compute_idr(emgfile=emgfile)
+        common = OpenFunct()
+        idr = common.compute_idr(emgfile=emgfile)
 
         # Check if all the MUs have to be plotted
         if isinstance(munumber, str):
@@ -550,48 +531,6 @@ class MUAnalysisFunc:
         return fig
 
     # OPENHDEMG
-    def compute_idr(self, emgfile):
-        # Compute the instantaneous discharge rate (IDR) from the MUPULSES
-        if isinstance(emgfile["MUPULSES"], list):
-            # Empty dict to fill with dataframes containing the MUPULSES
-            # information
-            idr = {x: np.nan**2 for x in range(emgfile["NUMBER_OF_MUS"])}
-
-            for mu in range(emgfile["NUMBER_OF_MUS"]):
-                # Manage the exception of a single MU and add MUPULSES in column 0
-                df = pd.DataFrame(
-                    emgfile["MUPULSES"][mu]
-                    if emgfile["NUMBER_OF_MUS"] > 1
-                    else np.transpose(np.array(emgfile["MUPULSES"]))
-                )
-
-                # Calculate difference in MUPULSES and add it in column 1
-                df[1] = df[0].diff()
-                # Calculate time in seconds and add it in column 2
-                df[2] = df[0] / emgfile["FSAMP"]
-                # Calculate the idr and add it in column 3
-                df[3] = emgfile["FSAMP"] / df[1]
-
-                df = df.rename(
-                    columns={
-                        0: "mupulses",
-                        1: "diff_mupulses",
-                        2: "timesec",
-                        3: "idr",
-                    },
-                )
-
-                # Add the idr to the idr dict
-                idr[mu] = df
-
-            return idr
-
-        else:
-            raise Exception(
-                "MUPULSES is probably absent or it is not contained in a list"
-            )
-
-    # OPENHDEMG
     def min_max_scaling(self, data=None, series_or_df=None, col_by_col=False):
         # Create a deepcopy of the original data
         if data is not None:
@@ -668,3 +607,51 @@ class MUAnalysisFunc:
                 "data must be one of pd.series, pd.dataframe or np.ndarray. " +
                 f"{type(data)} was passed instead."
             )
+
+
+    def handle_reset_workflow(self, center_panel):
+        """
+        Handles the full workflow for resetting analysis data, including confirmation.
+        """
+        # Check if there's a file loaded to reset
+        if self.original_file_path is None:
+            print("No file loaded to reset.")
+            return
+            
+        dialog = ConfirmationDialog(
+            "This will reset the current analysis.",
+            "Confirm Reset"
+        )
+        if dialog.exec_() == QDialog.Accepted:
+            # User clicked 'Reset'
+            self.reset_analysis_data(center_panel)
+
+    def reset_analysis_data(self, center_panel):
+        """
+        Resets the analysis data by reloading the original file, clearing any transformations.
+        """
+        if self.original_file_path is None:
+            print("No original file path stored. Cannot reset.")
+            return
+            
+        print("--- DEBUG: Resetting analysis data by reloading original file ---")
+        
+        # Clear any transformation data (MVC value, etc.)
+        self.mvc_value = None
+        # Add any other transformation data clearing logic here
+        
+        # Reload the original file to reset any transformations
+        valid = self.emg_from_otb(self.original_file_path)
+        if valid:
+            # Re-import the data to refresh the display
+            self.import_data(self.original_file_path, center_panel, valid)
+            print("File successfully reloaded, transformations cleared.")
+        else:
+            print("Error reloading file during reset.")
+            # If reload fails, show error but keep the original file path
+            error_dialog = QMessageBox()
+            error_dialog.setIcon(QMessageBox.Critical)
+            error_dialog.setText("Reset Error")
+            error_dialog.setInformativeText('Failed to reload the original file')
+            error_dialog.setWindowTitle("Error")
+            error_dialog.exec_()

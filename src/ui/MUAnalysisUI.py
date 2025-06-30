@@ -1,4 +1,7 @@
 import sys
+import time
+import random
+import pandas as pd
 from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
@@ -13,13 +16,18 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
-from app.MUAnalysisFunc import MUAnalysisFunc
+from app.FileUploadFunc import FileUploadFunc
+from app.MUPropertiesFun import MUPropertiesFunc
 from app.ExportResults import ExportResultsWindow
 from ui.muanalysis.AdvancedTools import AdvancedTools
 from ui.muanalysis.MotorUnitProperties import MotorUnitPropertiesButton
 from ui.components.FileSidebar.FileSection import FileSection
-# from ui.components.FileButton import FileButton
 
+from ui.components.ResultsPanel import ResultsPanel
+# from ui.components.FileButton import FileButton
+from core.AnalysisResultsHist import store
+from ui.components.ResultsTable import ResultsTable
+from ui.components.ResultSelection import ResultSelection
 
 # legacy code
 def get_icon(standard_icon):
@@ -33,8 +41,13 @@ class MUAnalysis(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        # setting instance of function class from src/app/MUAnalysisFunc
-        self.mu = MUAnalysisFunc()
+        self.data = store
+        print(id(self.data))
+        self.results_table = ResultsTable()
+        self.result_combo = ResultSelection(self.results_table)
+        # setting instance of function class from src/app/FileUploadFunc
+        self.mu = FileUploadFunc()
+        self.prop = MUPropertiesFunc()
 
         self.colors = {
             "bg_main": "#f8f9fa",
@@ -64,8 +77,10 @@ class MUAnalysis(QWidget):
         self.center = None
         self.content_layout.addWidget(self._create_left_sidebar(), stretch=1)
         self.content_layout.addWidget(self._create_center_area(), stretch=5)
-        self.content_layout.addWidget(self._create_right_sidebar(), stretch=2)
+        self.content_layout.addWidget(self._create_right_sidebar(), stretch=3)
         self.widget_layout.addLayout(self.content_layout)  # Add main content below top bar
+        
+        
 
     # legacy code
     def request_return_to_dashboard(self):
@@ -150,8 +165,9 @@ class MUAnalysis(QWidget):
         sidebar.setStyleSheet(
             f"""
             #leftSidebar {{
-                background-color: {self.colors['button_dark_bg']};
+                background-color: {self.colors['bg_sidebar']};
             }}
+
         """
         )
         sidebar_layout = QVBoxLayout(sidebar)
@@ -159,13 +175,13 @@ class MUAnalysis(QWidget):
         # title
         title_label = QLabel("Analysis")
         title_label.setObjectName("analysisTitle")
-        title_label.setStyleSheet(f"color: {self.colors['button_grey_bg']}")
+        title_label.setStyleSheet(f"color: {self.colors['text_title']}")
         title_label.setFont(QFont("Arial", 14, QFont.Bold))
         sidebar_layout.addWidget(title_label)
 
         # motor unit properties
         motor_unit_properties = MotorUnitPropertiesButton(parent=self)
-        motor_unit_properties.mvc_updated.connect(self.mu.set_mvc)
+        motor_unit_properties.mvc_updated.connect(self.prop.set_mvc)
         sidebar_layout.addWidget(motor_unit_properties)
         self.motor_unit_properties = motor_unit_properties
 
@@ -184,9 +200,39 @@ class MUAnalysis(QWidget):
         center.setObjectName("centerContent")
         center_layout = QVBoxLayout(center)
         load = QLabel("Press Load File to View Data")
-        load.setFont(QFont("Arial", 32, QFont.Bold))
-        load.setStyleSheet(f"color: red; margin-right: 100%;")
+        load.setFont(QFont("Arial", 27, QFont.Bold))
+        load.setStyleSheet(f"color: #6c757d; margin-right: 50%;")
         center_layout.addWidget(load)
+        
+        
+        # code to test the result table
+        # can be refered to when implimenting real data
+        dummy_button = QPushButton("Dummy")
+        dummy_button.setStyleSheet(
+            f"""
+            QPushButton {{
+                background-color: {self.colors['button_grey_bg']};
+                border-radius: 15px;
+                padding: 0px;
+                height: 40%;
+                
+            }}
+            QPushButton:hover {{
+                background-color: {self.colors['button_dark_hover']};
+            }}
+        """
+        )
+        
+        # result need to be an list of dictionaries with consistent keys
+        # refer to the code below to append the results
+        table = {
+            "col": 42,
+            "timestamp": time.time()
+        }
+        title = "table " 
+        dummy_button.clicked.connect(lambda: self.calc_result(title, [table]))
+        center_layout.addWidget(dummy_button)
+        
         self.mu.set_canvas(load)
         self.center = center_layout
         return center
@@ -200,13 +246,25 @@ class MUAnalysis(QWidget):
         sidebar.setStyleSheet(
             f"""
             #rightSidebar {{
-                background-color: {self.colors['button_dark_bg']};
+                background-color: {self.colors['bg_sidebar']};
             }}
 
         """
         )
-        sidebar_layout = FileSection(sidebar, self.mu, self.center)
+        file_section = FileSection(sidebar, self.mu, self.center)
+        # Connect the reset button's signal to the MUAnalysisFunc method
+        file_section.reset_btn.reset_requested.connect(
+            lambda: self.mu.handle_reset_workflow(self.center)
+        )
+        results_section = ResultsPanel(sidebar, self.result_combo, self.results_table)
+        
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.addWidget(file_section, stretch=1)
+        sidebar_layout.addWidget(results_section, stretch=4)
         return sidebar
+    
+    def calc_result(self, title="title", data=[{}]):
+        self.data.append_analysis_hist(title, data)
 
 # --- Main execution block (for testing) ---
 # legacy code
