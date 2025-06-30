@@ -95,7 +95,6 @@ class VisualisationPage(QWidget):
 
         # connect the range input change to the channel_group_change function
         self.range_dropdown.dropdown.currentIndexChanged.connect(self.channel_group_change)
-        self.channel_group_change(0)
 
         # connect the num signals input change to the num_signal_display_change function
         self.num_signals_input_box.spinbox.valueChanged.connect(self.num_signal_display_change)
@@ -140,9 +139,6 @@ class VisualisationPage(QWidget):
     # Update the number of plots displayed depending on input
     def num_signal_display_change(self, n):
         self.viewer.num_indices = n
-
-        # Save current index
-        cur_index = self.range_dropdown.dropdown.currentIndex()
 
         # Update the dropdown to reflect new index ranges
         new_ranges = self.generate_channel_groups()
