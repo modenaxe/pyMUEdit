@@ -74,7 +74,7 @@ class VisualisationPage(QWidget):
         vis_panel = VisualizationPanel(plot_widget=self.viewer)
         vis_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        # Setup main alyout
+        # Setup main layout
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(15, 15, 15, 15)
         main_layout.setSpacing(15)

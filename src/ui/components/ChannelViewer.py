@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QCheckBox, QHBoxLayout
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QCheckBox, QHBoxLayout, QSizePolicy
 from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -20,12 +20,13 @@ class ChannelViewer(QWidget):
         self.figure = Figure(figsize=(8, 3), dpi=100)
         self.canvas = FigureCanvas(self.figure)
         self.figure.tight_layout()
-        self.layout.addWidget(self.canvas)
+        self.layout.addWidget(self.canvas, stretch=4)
 
         # Create checkbox list
         self.checkBoxList = []
         self.checkbox_layout = QVBoxLayout()
-        self.layout.addLayout(self.checkbox_layout)
+        self.checkbox_layout.setContentsMargins(0, 55, 0, 55)
+        self.layout.addLayout(self.checkbox_layout, stretch=1)
 
         self.setLayout(self.layout)
 
@@ -61,8 +62,8 @@ class ChannelViewer(QWidget):
             checkbox = QCheckBox()
             checkbox.setStyleSheet("QCheckBox::indicator"
                                    "{"
-                                   "width: 25px;"
-                                   "height: 25px;"
+                                   "width: 40px;"
+                                   "height: 40px;"
                                    "}")
 
             # Handle persistance (if box was previously unchecked, remain unchecked)
