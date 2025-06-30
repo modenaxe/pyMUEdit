@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QCheckBox, QHBoxLayout, QSizePolicy
+from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.cm as cm
@@ -11,15 +12,22 @@ class ChannelViewer(QWidget):
         self.channel_indices = list(range(0, 8))
         # Default number of channels to display is 8
         self.num_indices = 8
+        self.rejected_channels = []
 
-        self.layout = QVBoxLayout()
+        self.layout = QHBoxLayout()
 
         # Matplotlib canvas for plotting
         self.figure = Figure(figsize=(8, 3), dpi=100)
         self.canvas = FigureCanvas(self.figure)
         self.figure.tight_layout()
+        self.layout.addWidget(self.canvas, stretch=4)
 
-        self.layout.addWidget(self.canvas)
+        # Create checkbox list
+        self.checkBoxList = []
+        self.checkbox_layout = QVBoxLayout()
+        self.checkbox_layout.setContentsMargins(0, 55, 0, 55)
+        self.layout.addLayout(self.checkbox_layout, stretch=1)
+
         self.setLayout(self.layout)
 
         # Display initial plot
@@ -31,6 +39,7 @@ class ChannelViewer(QWidget):
 
     def update_plot(self):
         self.figure.clear()
+        self.clear_checkbox()
         colours = get_n_colours(self.num_indices)
 
         # Create one subplot for each channel in the index range
@@ -49,8 +58,39 @@ class ChannelViewer(QWidget):
             if i == 0:
                 ax.set_title(f"Channels {self.channel_indices[0] + 1}-{self.channel_indices[len(self.channel_indices) - 1] + 1}", fontsize=20, pad=15)
 
+            # Add a corresponding checkbox
+            checkbox = QCheckBox()
+            checkbox.setStyleSheet("QCheckBox::indicator"
+                                   "{"
+                                   "width: 40px;"
+                                   "height: 40px;"
+                                   "}")
+
+            # Handle persistance (if box was previously unchecked, remain unchecked)
+            if index not in self.rejected_channels:
+                checkbox.setChecked(True)
+            self.checkbox_layout.addWidget(checkbox)
+            self.checkBoxList.append(checkbox)
+            # Connect the checkbox state change to the checkbox_change function
+            checkbox.stateChanged.connect(lambda state, idx=index: self.checkbox_change(state, idx))
+
         ax.set_xlabel("Time", fontsize=20, labelpad=15)
         self.canvas.draw()
+
+    def clear_checkbox(self):
+        for checkbox in self.checkBoxList:
+            self.checkbox_layout.removeWidget(checkbox)
+
+        self.checkBoxList.clear()
+
+    def checkbox_change(self, state, index):
+        # TODO ensure the rejected_channels gets reflected in the decomposition algorithm
+        if state == Qt.Checked:
+            if index in self.rejected_channels:
+                self.rejected_channels.remove(index)
+        else:
+            # Add the channel index to the rejected_channels array
+            self.rejected_channels.append(index)
 
 def get_n_colours(n):
     cmap = cm.get_cmap('hsv')
