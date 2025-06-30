@@ -330,7 +330,7 @@ class MUeditManual(QMainWindow):
         if self.mu_checkboxes:
             self.mu_checkboxes[0].setChecked(True)
 
-    def mu_checkbox_state_changed(self):
+    def mu_checkbox_state_changed(self, _state=None, *, pluse_train_color="#D95535"):
         """Handle changes in MU checkbox selection."""
         # Get all checked MUs
         checked_mus = []
@@ -346,7 +346,7 @@ class MUeditManual(QMainWindow):
             return
 
         # Update the display based on selection
-        self.display_selected_mus(checked_mus)
+        self.display_selected_mus(checked_mus, pluse_train_color)
 
     def update_array_checkboxes(self):
         """Update the state of "Check All" checkboxes based on individual MU selections."""
@@ -513,7 +513,7 @@ class MUeditManual(QMainWindow):
                 checkbox.setText(f"MU_{mu_idx+1} (SIL: {sil_value:.4f})")
                 break
 
-    def display_selected_mus(self, checked_mus):
+    def display_selected_mus(self, checked_mus, pluse_train_color="#D95535"):
         """Display the currently selected motor units."""
         if not self.MUedition:
             return
@@ -642,7 +642,7 @@ class MUeditManual(QMainWindow):
                             y_values.append(pulse_train[local_max_idx])
 
                 if len(x_values) > 0:
-                    scatter.addPoints(x=x_values, y=y_values, pen=None, brush=pg.mkBrush("#D95535"), size=10)
+                    scatter.addPoints(x=x_values, y=y_values, pen=None, brush=pg.mkBrush(pluse_train_color), size=10)
                     self.spiketrain_plot.addItem(scatter)
 
             # Show and update discharge rate plot
@@ -1202,8 +1202,18 @@ class MUeditManual(QMainWindow):
         # Recalculate SIL values
         self.calculate_silval(array_idx, mu_idx)
 
+        new_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
         # Update the display
-        self.mu_checkbox_state_changed()
+        if(new_sil >= old_sil):
+            self.mu_checkbox_state_changed(pluse_train_color="#8ACD69")
+        else:
+            self.mu_checkbox_state_changed(pluse_train_color="#698CCD")
+        
+        QMessageBox.information(
+            self,
+            "Success",
+            "Update filter successfully!"
+        )
 
     def extend_mu_filter_button_pushed(self):
         """Extend the motor unit filter to the entire signal."""
