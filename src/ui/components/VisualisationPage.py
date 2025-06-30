@@ -75,7 +75,7 @@ class VisualisationPage(QWidget):
         vis_panel = VisualizationPanel(plot_widget=self.viewer)
         vis_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        # Setup main alyout
+        # Setup main layout
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(15, 15, 15, 15)
         main_layout.setSpacing(15)
@@ -96,7 +96,6 @@ class VisualisationPage(QWidget):
 
         # connect the range input change to the channel_group_change function
         self.range_dropdown.dropdown.currentIndexChanged.connect(self.channel_group_change)
-        self.channel_group_change(0)
 
         # connect the num signals input change to the num_signal_display_change function
         self.num_signals_input_box.spinbox.valueChanged.connect(self.num_signal_display_change)
