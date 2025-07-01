@@ -22,6 +22,8 @@ from app.ExportResults import ExportResultsWindow
 from ui.muanalysis.AdvancedTools import AdvancedTools
 from ui.muanalysis.MotorUnitProperties import MotorUnitPropertiesButton
 from ui.muanalysis.PlotEMG import PlotEMGButton
+from ui.muanalysis.SignalEditing import SignalEditing
+from ui.components.AnalysisText import AnalysisText 
 from ui.components.FileSidebar.FileSection import FileSection
 
 from ui.components.ResultsPanel import ResultsPanel
@@ -76,8 +78,9 @@ class MUAnalysis(QWidget):
         self.content_layout.setContentsMargins(15, 15, 15, 15)
         self.content_layout.setSpacing(20)
         self.center = None
+        center_area = self._create_center_area() # doing it pre-emptively to set self.center for left sidebar 
         self.content_layout.addWidget(self._create_left_sidebar(), stretch=1)
-        self.content_layout.addWidget(self._create_center_area(), stretch=5)
+        self.content_layout.addWidget(center_area, stretch=5)
         self.content_layout.addWidget(self._create_right_sidebar(), stretch=3)
         self.widget_layout.addLayout(self.content_layout)  # Add main content below top bar
         
@@ -174,11 +177,12 @@ class MUAnalysis(QWidget):
         sidebar_layout = QVBoxLayout(sidebar)
 
         # title
-        title_label = QLabel("Analysis")
-        title_label.setObjectName("analysisTitle")
-        title_label.setStyleSheet(f"color: {self.colors['text_title']}")
-        title_label.setFont(QFont("Arial", 14, QFont.Bold))
+        title_label = AnalysisText.create_title("Analysis")
         sidebar_layout.addWidget(title_label)
+
+        # signal editing 
+        signal_editing = SignalEditing(self.mu, self.center, parent=sidebar)
+        sidebar_layout.addWidget(signal_editing)
 
         # motor unit properties
         motor_unit_properties = MotorUnitPropertiesButton(parent=self)
@@ -192,7 +196,7 @@ class MUAnalysis(QWidget):
         self.plot_emg_tools = plot_emg_tools
 
         # advanced tools
-        advanced_tools = AdvancedTools(parent=self)
+        advanced_tools = AdvancedTools(parent=sidebar)
         sidebar_layout.addWidget(advanced_tools)
 
         sidebar_layout.addStretch(1)

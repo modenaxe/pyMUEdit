@@ -62,9 +62,8 @@ class FileUploadFunc:
     # else it removes anything in center layour and replaces with new graph
     def import_data(self, filepath, center_panel, valid):
         if valid:
-            fig = self.plot_idr(FileUploadFunc.file)
-            # Use SaveablePlot instead of plain FigureCanvas
-            canvas = SaveablePlot(fig)
+            # immediately plots it
+            self.plot_idr(self.file, center_panel)
         else:
             canvas = QMessageBox()
             canvas.setIcon(QMessageBox.Critical)
@@ -72,11 +71,6 @@ class FileUploadFunc:
             canvas.setInformativeText('Loaded file has errors')
             canvas.setWindowTitle("Error")
             canvas.exec_()
-            return
-        center_panel.removeWidget(self.canvas)
-        self.canvas.setParent(None)
-        center_panel.addWidget(canvas)
-        self.canvas = canvas
 
     # OPENHDEMG
     def compute_sil(self, ipts, mupulses, ignore_negative_ipts=False):
@@ -422,6 +416,7 @@ class FileUploadFunc:
     # I will put my intials (AC) next to edited code throughout this
     def plot_idr(self,
     emgfile,
+    center_panel,
     munumber="all",
     addrefsig=True,
     timeinseconds=True,
@@ -528,7 +523,12 @@ class FileUploadFunc:
             ax1.set_zorder(1)
             ax1.patch.set_alpha(0)
 
-        return fig
+        # TL : Immediately plots the fig, instead of passing the figure on
+        canvas = SaveablePlot(fig)
+        center_panel.removeWidget(self.canvas)
+        self.canvas.setParent(None)
+        center_panel.addWidget(canvas)
+        self.canvas = canvas
 
     # OPENHDEMG
     def min_max_scaling(self, data=None, series_or_df=None, col_by_col=False):
@@ -608,7 +608,6 @@ class FileUploadFunc:
                 f"{type(data)} was passed instead."
             )
 
-
     def handle_reset_workflow(self, center_panel):
         """
         Handles the full workflow for resetting analysis data, including confirmation.
@@ -655,3 +654,54 @@ class FileUploadFunc:
             error_dialog.setInformativeText('Failed to reload the original file')
             error_dialog.setWindowTitle("Error")
             error_dialog.exec_()
+
+    # OPENHDEMG: Edited 
+    def plot_refsig(
+        self,
+        emgfile,
+        center_panel,
+        timeinseconds=True,
+        figsize=[20, 15],
+        tight_layout=True,
+        line2d_kwargs_ax1=None,
+        axes_kwargs=None,
+        showimmediately=False,
+    ):
+        """
+        Plots the refsig graph 
+        """
+
+        # Check to have the REF_SIGNAL in a pandas dataframe
+        if isinstance(emgfile["REF_SIGNAL"], pd.DataFrame):
+            refsig = emgfile["REF_SIGNAL"]
+        else:
+            raise TypeError(
+                "REF_SIGNAL is probably absent or it is not contained in a " +
+                "dataframe"
+            )
+
+        # Here we produce an x axis in seconds or samples
+        if timeinseconds:
+            x_axis = refsig.index / emgfile["FSAMP"]
+        else:
+            x_axis = refsig.index
+
+        # TL : just did this because aditi seemed to do it too  
+        figname = "troy_unique_name" 
+        plt.close() # TL : taking aditi's advice from earlier on
+        fig, ax1 = plt.subplots(
+            figsize=(figsize[0] / 2.54, figsize[1] / 2.54),
+            num=figname,
+        )
+
+        ax1.plot(x_axis, refsig[0])
+
+        ax1.set_ylabel("MVC")
+        ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
+
+        # the actual plotting 
+        canvas = SaveablePlot(fig)
+        center_panel.removeWidget(self.canvas)
+        self.canvas.setParent(None)
+        center_panel.addWidget(canvas)
+        self.canvas = canvas
