@@ -23,7 +23,7 @@ class CleanTheme:
     ################################################################
     ANALYSIS_BG_MAIN = "#f8f9fa"
     ANALYSIS_BG_CARD = "#ffffff"
-    ANALYSIS_BG_SIDEBAR = "#f8f9fa"
+    ANALYSIS_BG_SIDEBAR = "#343a40"
     ANALYSIS_BG_TOPBAR = "#ffffff"
     ANALYSIS_BG_DROPDOWN = "#394150"
     ANALYSIS_BG_BUTTON = "#495057"
