@@ -21,6 +21,7 @@ from app.MUPropertiesFun import MUPropertiesFunc
 from app.ExportResults import ExportResultsWindow
 from ui.muanalysis.AdvancedTools import AdvancedTools
 from ui.muanalysis.MotorUnitProperties import MotorUnitPropertiesButton
+from ui.muanalysis.PlotEMG import PlotEMGButton
 from ui.components.FileSidebar.FileSection import FileSection
 
 from ui.components.ResultsPanel import ResultsPanel
@@ -184,6 +185,11 @@ class MUAnalysis(QWidget):
         motor_unit_properties.mvc_updated.connect(self.prop.set_mvc)
         sidebar_layout.addWidget(motor_unit_properties)
         self.motor_unit_properties = motor_unit_properties
+        
+        # plot emg button
+        plot_emg_tools = PlotEMGButton(parent=self)
+        sidebar_layout.addWidget(plot_emg_tools)
+        self.plot_emg_tools = plot_emg_tools
 
         # advanced tools
         advanced_tools = AdvancedTools(parent=self)
