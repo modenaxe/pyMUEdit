@@ -7,6 +7,8 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QDialog,
     QMessageBox,
+    QCheckBox,
+    QComboBox,
 )
 from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal
@@ -41,44 +43,100 @@ class PlotEMGToolDialog(QDialog):
         title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
         layout.addWidget(title_label)
         
-        # Add input + button
-        input_layout = QHBoxLayout()
-        
+        # --- Filter Section Layout ---
+        filter_row_layout = QHBoxLayout()
+        filter_row_layout.setSpacing(20)
+
+        # Left: Checkboxes (vertical)
+        checkbox_col = QVBoxLayout()
+        checkbox_col.setSpacing(10)
+        self.ref_signal_checkbox = QCheckBox("Reference signal")
+        self.ref_signal_checkbox.setFont(QFont("Arial", 11))
+        self.ref_signal_checkbox.setStyleSheet(f"""
+            QCheckBox {{ color: {CleanTheme.TEXT_PRIMARY}; spacing: 8px; }}
+            QCheckBox::indicator {{ width: 16px; height: 16px; border: 2px solid #ced4da; border-radius: 3px; background-color: #ffffff; }}
+            QCheckBox::indicator:checked {{ background-color: {CleanTheme.ANALYSIS_BG_BUTTON}; border-color: {CleanTheme.ANALYSIS_BG_BUTTON}; }}
+        """)
+        checkbox_col.addWidget(self.ref_signal_checkbox)
+        self.time_seconds_checkbox = QCheckBox("Time in seconds")
+        self.time_seconds_checkbox.setFont(QFont("Arial", 11))
+        self.time_seconds_checkbox.setStyleSheet(f"""
+            QCheckBox {{ color: {CleanTheme.TEXT_PRIMARY}; spacing: 8px; }}
+            QCheckBox::indicator {{ width: 16px; height: 16px; border: 2px solid #ced4da; border-radius: 3px; background-color: #ffffff; }}
+            QCheckBox::indicator:checked {{ background-color: {CleanTheme.ANALYSIS_BG_BUTTON}; border-color: {CleanTheme.ANALYSIS_BG_BUTTON}; }}
+        """)
+        checkbox_col.addWidget(self.time_seconds_checkbox)
+        filter_row_layout.addLayout(checkbox_col)
+
+        # Right: Dropdowns (vertical)
+        dropdown_col = QVBoxLayout()
+        dropdown_col.setSpacing(10)
+        matrix_label = QLabel("Matrix Code")
+        matrix_label.setFont(QFont("Arial", 11, QFont.Bold))
+        matrix_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+        dropdown_col.addWidget(matrix_label)
+        self.matrix_code_dropdown = QComboBox()
+        self.matrix_code_dropdown.addItem("Matrix Code", "")
+        self.matrix_code_dropdown.addItem("GR08MM1305", "GR08MM1305")
+        self.matrix_code_dropdown.addItem("GR08MM1308", "GR08MM1308")
+        self.matrix_code_dropdown.addItem("None", "None")
+        self.matrix_code_dropdown.setFont(QFont("Arial", 11))
+        self.matrix_code_dropdown.setMinimumHeight(32)
+        self.matrix_code_dropdown.setStyleSheet("""
+            QComboBox { padding: 8px; border: 2px solid #ced4da; border-radius: 6px; background-color: #232e33; color: #f8f9fa; }
+            QComboBox::drop-down { border: none; width: 20px; }
+            QComboBox::down-arrow { image: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid #6c757d; }
+        """)
+        dropdown_col.addWidget(self.matrix_code_dropdown)
+        orientation_label = QLabel("Orientation")
+        orientation_label.setFont(QFont("Arial", 11, QFont.Bold))
+        orientation_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+        dropdown_col.addWidget(orientation_label)
+        self.orientation_dropdown = QComboBox()
+        self.orientation_dropdown.addItem("Orientation", "")
+        self.orientation_dropdown.addItem("0", "0")
+        self.orientation_dropdown.addItem("180", "180")
+        self.orientation_dropdown.setFont(QFont("Arial", 11))
+        self.orientation_dropdown.setMinimumHeight(32)
+        self.orientation_dropdown.setStyleSheet("""
+            QComboBox { padding: 8px; border: 2px solid #ced4da; border-radius: 6px; background-color: #232e33; color: #f8f9fa; }
+            QComboBox::drop-down { border: none; width: 20px; }
+            QComboBox::down-arrow { image: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid #6c757d; }
+        """)
+        dropdown_col.addWidget(self.orientation_dropdown)
+        filter_row_layout.addLayout(dropdown_col)
+        layout.addLayout(filter_row_layout)
+
+        # --- Plot EMGsig Button and Channel Input (side by side) ---
+        emg_row_layout = QHBoxLayout()
+        emgsig_btn = QPushButton("Plot EMGsig")
+        emgsig_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        emgsig_btn.setStyleSheet("""
+            QPushButton { background-color: #f8f9fa; color: #232e33; border: 1px solid #232e33; border-radius: 4px; padding: 6px 12px; }
+            QPushButton:hover { background-color: #e9ecee; }
+        """)
+        emgsig_btn.clicked.connect(self.handle_emgsig_clicked)
+        emg_row_layout.addWidget(emgsig_btn)
         self.channel_input = QLineEdit()
         self.channel_input.setPlaceholderText("Channel Number (e.g. 1-3,5,7)")
         self.channel_input.setFont(QFont("Arial", 11))
         self.channel_input.setMinimumHeight(32)
         self.channel_input.setStyleSheet("""
-            QLineEdit {
-                padding: 8px;
-                border: 2px solid #ced4da;
-                border-radius: 6px;
-                background-color: #ffffff;
-                color: #212529;
-            }
+            QLineEdit { padding: 8px; border: 2px solid #ced4da; border-radius: 6px; background-color: #ffffff; color: #212529; }
         """)
-        
-        emgsig_btn = QPushButton("EMGsig")
-        emgsig_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        emgsig_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #343a40;
-                color: #f8f9fa;
-                border: none;
-                border-radius: 4px;
-                padding: 6px 12px;
-            }
-            QPushButton:hover {
-                background-color: #495057;
-            }
-        """)
-        emgsig_btn.clicked.connect(self.handle_emgsig_clicked)
-        
-        input_layout.addWidget(emgsig_btn)
-        input_layout.addWidget(self.channel_input)
-        layout.addLayout(input_layout)
+        emg_row_layout.addWidget(self.channel_input)
+        layout.addLayout(emg_row_layout)
+
+    def has_invalid_filter_inputs(self):
+        # Returns True if either dropdown is not at its placeholder
+        matrix_code_selected = self.matrix_code_dropdown.currentIndex() != 0
+        orientation_selected = self.orientation_dropdown.currentIndex() != 0
+        return matrix_code_selected or orientation_selected
 
     def handle_emgsig_clicked(self):
+        if self.has_invalid_filter_inputs():
+            QMessageBox.warning(self, "Invalid filter inputs", "Invalid filter inputs")
+            return
         raw_text = self.channel_input.text()
         emgfile = FileUploadFunc.file
 
@@ -87,19 +145,23 @@ class PlotEMGToolDialog(QDialog):
             return
 
         try:
+            # Get the checkbox states for filter options
+            time_in_seconds = self.time_seconds_checkbox.isChecked()
+            add_ref_signal = self.ref_signal_checkbox.isChecked()
+            
             # Pass the raw text string directly to plot_emgsig for validation
             plot_emgsig(
                 emgfile=emgfile,
                 channels=raw_text,  # Pass as string for validation
                 manual_offset=0,
-                addrefsig=False,
-                timeinseconds=True,
+                addrefsig=add_ref_signal,  # Use checkbox state
+                timeinseconds=time_in_seconds,  # Use checkbox state
                 figsize=[20, 15],
                 tight_layout=True,
                 showimmediately=False,
             )
             # Show the plot in a dialog
-            dialog = EMGsigResultDialog(raw_text)
+            dialog = EMGsigResultDialog(raw_text, time_in_seconds, add_ref_signal)
             dialog.exec_()
         except ValueError as e:
             QMessageBox.warning(self, "Invalid Input", f"Invalid channel input: {str(e)}")
@@ -109,11 +171,13 @@ class PlotEMGToolDialog(QDialog):
 
 
 class EMGsigResultDialog(QDialog):
-    def __init__(self, channels, parent=None):
+    def __init__(self, channels, time_in_seconds, add_ref_signal, parent=None):
         super().__init__(parent)
         self.setWindowTitle("EMG Signal Plot")
         self.channels = channels  # This is now the raw text string
         self.emgfile = FileUploadFunc.file
+        self.time_in_seconds = time_in_seconds
+        self.add_ref_signal = add_ref_signal
         self.resize(1000, 700)
         self.init_ui()
 
@@ -126,8 +190,8 @@ class EMGsigResultDialog(QDialog):
             emgfile=self.emgfile,
             channels=self.channels,  # Pass the raw text string
             manual_offset=0,
-            addrefsig=False,
-            timeinseconds=True,
+            addrefsig=self.add_ref_signal,
+            timeinseconds=self.time_in_seconds,
             figsize=[20, 15],
             tight_layout=True,
             showimmediately=False
