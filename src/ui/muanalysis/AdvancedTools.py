@@ -10,6 +10,8 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 from ui.components.CleanTheme import CleanTheme
 from ui.components.AnalysisDropdown import AnalysisDropdown
+from ui.components.AnalysisButton import AnalysisButton
+from ui.components.AnalysisText import AnalysisText
 
 from app.MotorUnitTrackingDialog import MotorUnitTrackingDialog
 class AdvancedTools(QWidget):
@@ -19,15 +21,7 @@ class AdvancedTools(QWidget):
         adv_layout = QVBoxLayout(self)
 
         # the title 
-        advanced_label = QLabel("ADVANCED TOOLS")
-        advanced_label.setObjectName("advancedToolsSubTitle")
-        advanced_label.setStyleSheet(
-            f"""
-            color: {CleanTheme.ANALYSIS_TEXT_TERTIARY};
-            margin: 0px;
-            """
-        )
-        advanced_label.setFont(QFont("Arial", 10, QFont.Bold))
+        advanced_label = AnalysisText.create_subtitle("ADVANCED TOOLS")
         adv_layout.addWidget(advanced_label)
 
         # declaring the dropdown options 
@@ -79,23 +73,11 @@ class AdvancedTools(QWidget):
         self.matrix_code_dropdown = matrix_code_dropdown
 
         # advanced analysis button
-        advanced_analysis_btn = QPushButton("Advanced Analysis")
-        advanced_analysis_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        advanced_analysis_btn.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {CleanTheme.ANALYSIS_BG_BUTTON};
-                color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
-                height: 40px;
-                border-radius: 4px;
-            }}
-            QPushButton:hover {{
-                background-color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
-                color: {CleanTheme.ANALYSIS_BG_BUTTON};
-            }}
-        """
+        advanced_analysis_btn = AnalysisButton(
+            "Advanced Analysis", 
+            lambda: self.show_popup(), 
+            parent=self
         )
-        advanced_analysis_btn.clicked.connect(lambda: self.show_popup())
         adv_layout.addWidget(advanced_analysis_btn, stretch=1)
 
     def show_popup(self):
@@ -132,7 +114,6 @@ class AdvancedTools(QWidget):
                 QMessageBox.information(self, "Coming Soon", "Persistent Inward Currents is not implemented yet.")
             else:
                 QMessageBox.warning(self, "Invalid Selection", "Unknown analysis tool.")
-
 
 
 
