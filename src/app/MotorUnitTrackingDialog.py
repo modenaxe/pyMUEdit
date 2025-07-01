@@ -98,9 +98,6 @@ class MotorUnitTrackingDialog(QDialog):
         self.include_btn = QPushButton("Include/Exclude")
         self.include_btn.clicked.connect(self.toggle_inclusion)
         controls_layout.addWidget(self.include_btn)
-        self.copy_btn = QPushButton("Copy results")
-        self.copy_btn.clicked.connect(self.copy_results)
-        controls_layout.addWidget(self.copy_btn)
         controls_layout.addStretch()
         main_layout.addLayout(controls_layout)
 
@@ -336,14 +333,6 @@ class MotorUnitTrackingDialog(QDialog):
             self.inclusion_label.setStyleSheet(
                 "color: green; font-weight: bold;" if self.inclusion_status[idx] == "Included" else "color: red; font-weight: bold;"
             )
-
-    def copy_results(self):
-        import pyperclip
-        rows = []
-        for i, (ch1, ch2, score) in enumerate(self.results):
-            rows.append(f"{ch1}\t{ch2}\t{score:.3f}\t{self.inclusion_status[i]}")
-        text = "MU_file1\tMU_file2\tXCC\tInclusion\n" + "\n".join(rows)
-        pyperclip.copy(text)
 
     def plot_idr(self, file, mu_index, ax, canvas, color='blue'):
         from app.commonOpenFunc import OpenFunct
