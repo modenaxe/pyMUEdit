@@ -135,7 +135,9 @@ class MotorUnitTrackingDialog(QDialog):
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.itemSelectionChanged.connect(self.on_table_selection_changed)
-        main_layout.addWidget(self.table)
+        self.table.setMinimumHeight(100)
+        self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        main_layout.addWidget(self.table, stretch=2)
 
         self.setLayout(main_layout)
 
@@ -303,7 +305,10 @@ class MotorUnitTrackingDialog(QDialog):
             axs[r][c].plot(muaps[ch, :], color='orange')
             axs[r][c].set_xticks([])
             axs[r][c].set_yticks([])
-            axs[r][c].set_title(f"Ch {ch}", fontsize=8)
+            axs[r][c].spines['top'].set_visible(False)
+            axs[r][c].spines['right'].set_visible(False)
+            axs[r][c].spines['bottom'].set_visible(False)
+            axs[r][c].spines['left'].set_visible(False)
         for i in range(n_rows * n_cols):
             if i >= n_channels:
                 r, c = divmod(i, n_cols)
