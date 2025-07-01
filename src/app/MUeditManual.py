@@ -31,7 +31,7 @@ from core.utils.decomposition.remove_duplicates import remove_duplicates
 from core.utils.decomposition.remove_duplicates_between_arrays import remove_duplicates_between_arrays
 from core.utils.decomposition.extend_emg import extend_emg
 from core.utils.decomposition.whiten_emg import whiten_emg
-
+from ui.components.WarningDialog import WarningDialog
 
 class MUeditManual(QMainWindow):
     """
@@ -1142,7 +1142,7 @@ class MUeditManual(QMainWindow):
 
         from PyQt5.QtWidgets import QApplication
         from PyQt5.QtCore import Qt
-        # 设置鼠标为等待（沙漏/转圈）
+        # 设置鼠标为等待
         QApplication.setOverrideCursor(Qt.WaitCursor)
 
         array_idx = int(parts[1]) - 1

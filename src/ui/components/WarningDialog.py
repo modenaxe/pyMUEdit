@@ -1,0 +1,88 @@
+from PyQt5.QtWidgets import (
+    QDialog, QLabel, QPushButton, QVBoxLayout,
+    QHBoxLayout, QCheckBox, QStyle
+)
+from PyQt5.QtWidgets import QToolButton
+from PyQt5.QtCore import Qt
+
+class WarningDialog(QDialog):
+    def __init__(self, title="Warning", text="This is a warning Pop-up box. "
+                         "Please change text.\n"
+                         "Are you sure you want to continue?", enableCheckBox=True, checkBoxText="Don't ask again",
+                         enableHelpButton=True, HelpButtonTip="Click for help"):
+        super().__init__()
+        self.setWindowTitle("Warning")
+        self.setFixedSize(350, 290)
+        self.setWindowFlags(Qt.Dialog | Qt.MSWindowsFixedSizeDialogHint)
+
+        # Layout
+        layout = QVBoxLayout()
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+
+        #add help button
+        if(enableHelpButton):
+            help_row = QHBoxLayout()
+            help_row.addStretch()
+            help_button = QToolButton()
+            help_button.setText("?")
+            help_button.setFixedSize(24, 24)
+            help_button.setStyleSheet("""
+                QToolButton {
+                    font-weight: bold;
+                    font-size: 16px;
+                    border: 1px solid #ccc;
+                    border-radius: 12px;
+                    background-color: #eee;
+                }
+                QToolButton:hover {
+                    background-color: #ddd;
+                }
+            """)
+            help_button.setToolTip(HelpButtonTip)
+            help_row.addWidget(help_button)
+            layout.addLayout(help_row)
+
+        # ⚠️ icon
+        icon_label = QLabel()
+        icon = self.style().standardIcon(QStyle.SP_MessageBoxWarning)
+        icon_label.setPixmap(icon.pixmap(48, 48))
+        icon_label.setAlignment(Qt.AlignHCenter)
+        layout.addWidget(icon_label)
+
+        #title
+        title = QLabel("Warning")
+        title.setStyleSheet("font-weight: bold; font-size: 18px;")
+        title.setAlignment(Qt.AlignHCenter)
+        layout.addWidget(title)
+
+        # Description text
+        message = QLabel(text)
+        message.setWordWrap(True)
+        message.setStyleSheet("font-size: 13px; color: #333;")
+        message.setAlignment(Qt.AlignHCenter)
+        layout.addWidget(message)
+
+        # Yes button
+        yes_button = QPushButton("Yes")
+        yes_button.setFixedHeight(30)
+        yes_button.setStyleSheet("background-color: #007aff; color: white; border-radius: 6px; font-weight: bold;")
+        yes_button.clicked.connect(self.accept)
+        layout.addWidget(yes_button)
+
+        # “Don't ask again” checkbox
+        if(enableCheckBox):
+            self.checkbox = QCheckBox(checkBoxText)
+            checkbox_layout = QHBoxLayout()
+            checkbox_layout.addStretch()
+            checkbox_layout.addWidget(self.checkbox)
+            checkbox_layout.addStretch()
+            layout.addLayout(checkbox_layout)
+
+        self.setLayout(layout)
+
+        self.exec_()
+
+
+
+
