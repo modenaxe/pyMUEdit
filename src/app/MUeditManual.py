@@ -32,6 +32,8 @@ from core.utils.decomposition.remove_duplicates_between_arrays import remove_dup
 from core.utils.decomposition.extend_emg import extend_emg
 from core.utils.decomposition.whiten_emg import whiten_emg
 from ui.components.WarningDialog import WarningDialog
+from ui.components.SuccessDialog import SuccessDialog
+from ui.components.ErrorDialog import ErrorDialog
 
 class MUeditManual(QMainWindow):
     """
@@ -1123,8 +1125,9 @@ class MUeditManual(QMainWindow):
     def update_mu_filter_button_pushed(self):
         """Update the motor unit filter using the current discharge times."""
         if not self.MUedition:
+            ErrorDialog(text="Please import file first!")
             return
-
+    
         # Get the first checked MU
         checked_mus = []
         for checkbox in self.mu_checkboxes:
@@ -1133,11 +1136,13 @@ class MUeditManual(QMainWindow):
                 break
 
         if not checked_mus:
+            ErrorDialog(text="Please select a MU first!")
             return
 
         mu_text = checked_mus[0]
         parts = mu_text.split("_")
         if len(parts) < 4:
+            ErrorDialog(text="Data loading error!")
             return
 
         from PyQt5.QtWidgets import QApplication
@@ -1145,82 +1150,84 @@ class MUeditManual(QMainWindow):
         # 设置鼠标为等待
         QApplication.setOverrideCursor(Qt.WaitCursor)
 
-        array_idx = int(parts[1]) - 1
-        mu_idx = int(parts[3]) - 1
+        try:
+            array_idx = int(parts[1]) - 1
+            mu_idx = int(parts[3]) - 1
 
-        # Store current state for undo
-        self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
-        self.Backup["Dischargetimes"] = (
-            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
-        )
-
-        # Get the indices for the current view
-        idx = np.where(
-            (self.MUedition["edition"]["time"] > self.graphstart) & (self.MUedition["edition"]["time"] < self.graphend)
-        )[0]
-
-        if len(idx) == 0:
-            return
-
-        # Get EMG data for the current array and view
-        emg_data = self.MUedition["signal"]["data"][self.MUedition["edition"]["arraynb"] == array_idx, :]
-        emg_mask = self.MUedition["signal"]["EMGmask"][0]
-        emg_mask = emg_mask[array_idx].squeeze()
-        #emg_data = emg_data[(emg_mask == 0).squeeze(), :]  # Use only non-rejected channels
-
-        #get EMG type
-        emg_type = "surface"
-        if(self.MUedition["signal"]["emgtype"][0,array_idx]==2):
-            emg_type = "intra"
-
-        #get fsamp
-        fsamp = self.MUedition["signal"]["fsamp"][0][0]
-
-        # Get the MUAP templates using extendfilter
-        old_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
-
-        # Apply filter update
-        updated_pulse_train, updated_discharge_times = extendfilter(
-            emg_data,
-            emg_mask,
-            self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :],
-            self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx],
-            idx,
-            fsamp,
-            emg_type,
-        )
-
-        # Handle spike locking
-        if self.Backup["lock"] == 1:
-            self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = updated_pulse_train
-
-            # Reset the lock
-            self.Backup["lock"] = 0
-            self.lock_spikes_btn.setStyleSheet(
-                "color: #f0f0f0; background-color: #262626; font-family: 'Poppins'; font-size: 18pt;"
+            # Store current state for undo
+            self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
+            self.Backup["Dischargetimes"] = (
+                self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
             )
-        else:
-            # Update both pulse train and discharge times
-            self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = updated_pulse_train
-            self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = updated_discharge_times
 
-        # Recalculate SIL values
-        self.calculate_silval(array_idx, mu_idx)
+            # Get the indices for the current view
+            idx = np.where(
+                (self.MUedition["edition"]["time"] > self.graphstart) & (self.MUedition["edition"]["time"] < self.graphend)
+            )[0]
 
-        new_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
-        # Update the display
-        if(new_sil >= old_sil):
-            self.mu_checkbox_state_changed(pluse_train_color="#8ACD69")
-        else:
-            self.mu_checkbox_state_changed(pluse_train_color="#698CCD")
-        
-        QApplication.restoreOverrideCursor()
-        
-        QMessageBox.information(
-            self,
-            "Success",
-            "Update filter successfully!"
-        )
+            if len(idx) == 0:
+                return
+
+            # Get EMG data for the current array and view
+            emg_data = self.MUedition["signal"]["data"][self.MUedition["edition"]["arraynb"] == array_idx, :]
+            emg_mask = self.MUedition["signal"]["EMGmask"][0]
+            emg_mask = emg_mask[array_idx].squeeze()
+            #emg_data = emg_data[(emg_mask == 0).squeeze(), :]  # Use only non-rejected channels
+
+            #get EMG type
+            emg_type = "surface"
+            if(self.MUedition["signal"]["emgtype"][0,array_idx]==2):
+                emg_type = "intra"
+
+            #get fsamp
+            fsamp = self.MUedition["signal"]["fsamp"][0][0]
+
+            # Get the MUAP templates using extendfilter
+            old_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
+
+            # Apply filter update
+            updated_pulse_train, updated_discharge_times = extendfilter(
+                emg_data,
+                emg_mask,
+                self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :],
+                self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx],
+                idx,
+                fsamp,
+                emg_type,
+            )
+
+            # Handle spike locking
+            if self.Backup["lock"] == 1:
+                self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = updated_pulse_train
+
+                # Reset the lock
+                self.Backup["lock"] = 0
+                self.lock_spikes_btn.setStyleSheet(
+                    "color: #f0f0f0; background-color: #262626; font-family: 'Poppins'; font-size: 18pt;"
+                )
+            else:
+                # Update both pulse train and discharge times
+                self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = updated_pulse_train
+                self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = updated_discharge_times
+
+            # Recalculate SIL values
+            self.calculate_silval(array_idx, mu_idx)
+
+            new_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
+            # Update the display
+            if(new_sil >= old_sil):
+                self.mu_checkbox_state_changed(pluse_train_color="#8ACD69")
+            else:
+                self.mu_checkbox_state_changed(pluse_train_color="#698CCD")
+            
+            QApplication.restoreOverrideCursor()
+            
+            SuccessDialog(text="Update filter successfully!\nGreen means SIL improve. Blue means SIL decrease.")
+        except Exception as e:
+            QApplication.restoreOverrideCursor()
+            
+            ErrorDialog(text="Fail to update filter.")
+            
 
     def extend_mu_filter_button_pushed(self):
         """Extend the motor unit filter to the entire signal."""
