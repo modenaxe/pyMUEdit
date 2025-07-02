@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
     QDialog, QLabel, QPushButton, QVBoxLayout,
-    QHBoxLayout, QCheckBox, QToolButton
+    QHBoxLayout, QCheckBox, QToolButton, QStyle
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
@@ -47,14 +47,19 @@ class WarningDialog(QDialog):
         # ⚠️ icon
         icon_label = QLabel()
         current_dir = os.path.dirname(__file__)
-        icon_path = os.path.join(current_dir, "../../public/warningIcon.png")
-        pixmap = QPixmap(icon_path).scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        icon_label.setPixmap(pixmap)
-        icon_label.setPixmap(pixmap)
+        icon_path = os.path.join(current_dir, "../../public/warning_icon.png")
+        pixmap = QPixmap(icon_path)
+        if not os.path.exists(icon_path) or not pixmap or pixmap.isNull():
+            icon = self.style().standardIcon(QStyle.SP_MessageBoxWarning)
+            icon_label.setPixmap(icon.pixmap(48, 48))
+            print("⚠️ Image not found")
+        else:
+            icon_label.setPixmap(pixmap.scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+
         icon_label.setAlignment(Qt.AlignHCenter)
         layout.addWidget(icon_label)
 
-        #title
+        # title
         title = QLabel("Warning")
         title.setStyleSheet("font-weight: bold; font-size: 18px;")
         title.setAlignment(Qt.AlignHCenter)
