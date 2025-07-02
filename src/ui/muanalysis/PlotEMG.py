@@ -17,6 +17,7 @@ from ui.components.FileSidebar.FileButton import FileButton
 from app.PlotEMGFunc import parse_channel_input, plot_emgsig
 from app.FileUploadFunc import FileUploadFunc
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from ui.components.AnalysisDropdown import AnalysisDropdown
 
 
 class PlotEMGToolDialog(QDialog):
@@ -71,38 +72,17 @@ class PlotEMGToolDialog(QDialog):
         # Right: Dropdowns (vertical)
         dropdown_col = QVBoxLayout()
         dropdown_col.setSpacing(10)
-        matrix_label = QLabel("Matrix Code")
-        matrix_label.setFont(QFont("Arial", 11, QFont.Bold))
-        matrix_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
-        dropdown_col.addWidget(matrix_label)
-        self.matrix_code_dropdown = QComboBox()
-        self.matrix_code_dropdown.addItem("Matrix Code", "")
-        self.matrix_code_dropdown.addItem("GR08MM1305", "GR08MM1305")
-        self.matrix_code_dropdown.addItem("GR08MM1308", "GR08MM1308")
-        self.matrix_code_dropdown.addItem("None", "None")
-        self.matrix_code_dropdown.setFont(QFont("Arial", 11))
-        self.matrix_code_dropdown.setMinimumHeight(32)
-        self.matrix_code_dropdown.setStyleSheet("""
-            QComboBox { padding: 8px; border: 2px solid #ced4da; border-radius: 6px; background-color: #232e33; color: #f8f9fa; }
-            QComboBox::drop-down { border: none; width: 20px; }
-            QComboBox::down-arrow { image: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid #6c757d; }
-        """)
+        self.matrix_code_dropdown = AnalysisDropdown(
+            "Matrix Code",
+            items=["GR08MM1305", "GR08MM1308", "None"],
+            parent=self
+        )
         dropdown_col.addWidget(self.matrix_code_dropdown)
-        orientation_label = QLabel("Orientation")
-        orientation_label.setFont(QFont("Arial", 11, QFont.Bold))
-        orientation_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
-        dropdown_col.addWidget(orientation_label)
-        self.orientation_dropdown = QComboBox()
-        self.orientation_dropdown.addItem("Orientation", "")
-        self.orientation_dropdown.addItem("0", "0")
-        self.orientation_dropdown.addItem("180", "180")
-        self.orientation_dropdown.setFont(QFont("Arial", 11))
-        self.orientation_dropdown.setMinimumHeight(32)
-        self.orientation_dropdown.setStyleSheet("""
-            QComboBox { padding: 8px; border: 2px solid #ced4da; border-radius: 6px; background-color: #232e33; color: #f8f9fa; }
-            QComboBox::drop-down { border: none; width: 20px; }
-            QComboBox::down-arrow { image: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid #6c757d; }
-        """)
+        self.orientation_dropdown = AnalysisDropdown(
+            "Orientation",
+            items=["0", "180"],
+            parent=self
+        )
         dropdown_col.addWidget(self.orientation_dropdown)
         filter_row_layout.addLayout(dropdown_col)
         layout.addLayout(filter_row_layout)
@@ -129,8 +109,8 @@ class PlotEMGToolDialog(QDialog):
 
     def has_invalid_filter_inputs(self):
         # Returns True if either dropdown is not at its placeholder
-        matrix_code_selected = self.matrix_code_dropdown.currentIndex() != 0
-        orientation_selected = self.orientation_dropdown.currentIndex() != 0
+        matrix_code_selected = self.matrix_code_dropdown.currentIndex() != -1 and self.matrix_code_dropdown.currentIndex() != 0
+        orientation_selected = self.orientation_dropdown.currentIndex() != -1 and self.orientation_dropdown.currentIndex() != 0
         return matrix_code_selected or orientation_selected
 
     def handle_emgsig_clicked(self):
