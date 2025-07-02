@@ -1,9 +1,10 @@
 from PyQt5.QtWidgets import (
     QDialog, QLabel, QPushButton, QVBoxLayout,
-    QHBoxLayout, QCheckBox, QStyle
+    QHBoxLayout, QCheckBox, QToolButton
 )
-from PyQt5.QtWidgets import QToolButton
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap
+import os
 
 class WarningDialog(QDialog):
     def __init__(self, title="Warning", text="This is a warning Pop-up box. "
@@ -45,8 +46,11 @@ class WarningDialog(QDialog):
 
         # ⚠️ icon
         icon_label = QLabel()
-        icon = self.style().standardIcon(QStyle.SP_MessageBoxWarning)
-        icon_label.setPixmap(icon.pixmap(48, 48))
+        current_dir = os.path.dirname(__file__)
+        icon_path = os.path.join(current_dir, "../../public/warningIcon.png")
+        pixmap = QPixmap(icon_path).scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        icon_label.setPixmap(pixmap)
+        icon_label.setPixmap(pixmap)
         icon_label.setAlignment(Qt.AlignHCenter)
         layout.addWidget(icon_label)
 
