@@ -139,6 +139,49 @@ class SelectionTool:
         self.plot_widget.setCursor(self.cursor_original)
 
 
+def find_peaks_with_padding(signal_original, combined_mask,
+                            y_min, fsamp, pad=5):
+    """
+    Detect peaks within a masked region of a 1D signal by padding each selected point to ensure that find_peaks can reliably identify local maxima.
+    Args:
+    - signal_original : The original signal
+    - combined_mask   : Boolean array, same length as signal_original, True for selected points
+    - y_min           : Minimum peak height
+    - fsamp           : Sampling rate
+    - pad             : Number of points to extend before and after each selected point
+
+    Returns:
+    - peaks_final     : Array of indices in the original signal where peaks were found and that also fall within the original mask
+    """
+    N = len(signal_original)
+    sel_idx = np.where(combined_mask)[0]
+    if len(sel_idx) == 0:
+        return np.array([], dtype=int)
+
+    # Build a padded mask: extend a small window around each selected point
+    mask_padded = np.zeros(N, dtype=bool)
+    for idx in sel_idx:
+        start = max(0, idx - pad)
+        end   = min(N, idx + pad + 1)
+        mask_padded[start:end] = True
+
+    # Extract the padded signal segment
+    signal_masked = signal_original[mask_padded]
+    distance = round(0.005 * fsamp)
+
+    # Detect peaks within the padded segment
+    peaks_rel, _ = find_peaks(signal_masked, height=y_min, distance=distance)
+
+    # Map relative indices back to global indices in the original signal
+    idx_padded = np.where(mask_padded)[0]
+    peaks_global = idx_padded[peaks_rel]
+
+    # Keep only the peaks that also fall within the original selection region
+    peaks_final = peaks_global[combined_mask[peaks_global]]
+    return peaks_final
+
+
+
 def process_selection(MUedition, action_type, array_idx, mu_idx, x_min, x_max, y_min, y_max):
     """
     Process the selection rectangle based on the action type.
@@ -170,24 +213,33 @@ def process_selection(MUedition, action_type, array_idx, mu_idx, x_min, x_max, y
         combined_mask = time_mask & amp_mask
 
         # Find peaks in the selected region
-        peaks, _ = find_peaks(pulse_train[combined_mask], height=y_min, distance=round(0.005 * fsamp))
-
+        peaks = find_peaks_with_padding(pulse_train, combined_mask, y_min, fsamp, pad=5)
+        # peaks, _ = find_peaks(pulse_train[combined_mask], height=y_min, distance=round(0.005 * fsamp))
+        print("---------------------------------------------------")
+        print(f"max pluse: {np.max(pulse_train)}")
+        print(f"x_min: {x_min} x_max: {x_max}, y_min: {y_min}, y_max: {y_max}")
+        print(f"time_mask: {np.where(time_mask)}\namp_mask: {np.where(amp_mask)}\ncombined_mask: {np.where(combined_mask)}\n")
+        print(len(combined_mask))
         # Convert peak indices to original signal indices
         if len(peaks) > 0:
-            original_indices = np.where(combined_mask)[0][peaks]
+            
+            # original_indices = np.where(combined_mask)[0][peaks]
 
             # Add new peaks to discharge times
             if (array_idx, mu_idx) not in MUedition["edition"]["Dischargetimes"]:
                 MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = np.array([], dtype=int)
 
             MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = np.append(
-                MUedition["edition"]["Dischargetimes"][array_idx, mu_idx], original_indices
+                MUedition["edition"]["Dischargetimes"][array_idx, mu_idx], peaks
             )
 
             # Sort and remove duplicates
             MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = np.unique(
                 MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]
             )
+            print(f"FOUND PEAKS: {peaks}, original_indices: {peaks}")
+        else:
+            print(f"NO FOUND PEAKS!!!!!!!!!!!!!!!!!!!!!!")
 
     elif action_type == "delete_spikes":
         # Delete spikes in the selected region
