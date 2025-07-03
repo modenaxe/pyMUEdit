@@ -57,6 +57,8 @@ class MUeditManual(QMainWindow):
         self.roi = None
         self.current_selection = None
         self.mu_checkboxes = []  # Initialize the mu_checkboxes list
+        self.plot_display_mode = 0  # 0 for Single MU Seleted 
+        self.update_plot_setRange = False
 
         # Set up the UI
         setup_ui(self)
@@ -346,7 +348,11 @@ class MUeditManual(QMainWindow):
         # If none are checked, don't update display
         if not checked_mus:
             return
-
+        if len(checked_mus) > 1:
+            self.plot_display_mode = 1
+        else:
+            self.plot_display_mode = 0
+            
         # Update the display based on selection
         self.display_selected_mus(checked_mus, pluse_train_color)
 
@@ -527,6 +533,7 @@ class MUeditManual(QMainWindow):
                 widget = item.widget()
                 if widget:
                     widget.setParent(None)
+                    
 
         # If only one MU is selected, show pulse train and discharge rate
         if len(checked_mus) == 1:
@@ -670,6 +677,18 @@ class MUeditManual(QMainWindow):
                 if len(dr) > 0:
                     dr_max = np.max(dr)
                     self.dr_plot.setYRange(0, dr_max * 1.5)
+                    
+            def on_xrange_changed(_, ranges):
+                if self.update_plot_setRange:
+                    return
+                self.graphstart, self.graphend = ranges
+                
+            self.dr_plot.setXLink(self.spiketrain_plot)
+                
+            self.dr_plot.getViewBox().sigXRangeChanged.connect(on_xrange_changed, type=Qt.UniqueConnection) 
+            self.spiketrain_plot.getViewBox().sigXRangeChanged.connect(on_xrange_changed, type=Qt.UniqueConnection)
+            
+
 
         else:
             # Multiple MUs selected - show only pulse trains stacked vertically
@@ -896,23 +915,26 @@ class MUeditManual(QMainWindow):
         if self.graphstart is None or self.graphend is None:
             return
 
-        # For single MU view (standard plots)
-        self.spiketrain_plot.setXRange(self.graphstart, self.graphend)
-        self.dr_plot.setXRange(self.graphstart, self.graphend)
-        self.spiketrain_plot.setYRange(-0.05, 1.5)
+        
+        if self.plot_display_mode == 0:
+            # For single MU view (standard plots)
+            self.update_plot_setRange = True
+            self.spiketrain_plot.setXRange(self.graphstart, self.graphend)
+            self.dr_plot.setXRange(self.graphstart, self.graphend)
+            self.update_plot_setRange = False 
 
-        if self.sil_checkbox.isChecked():
-            self.sil_plot.setXRange(self.graphstart, self.graphend)
-
-        # For multiple MU view (plots in scroll area)
-        for i in range(self.plots_layout.count()):
-            item = self.plots_layout.itemAt(i)
-            if item:
-                widget = item.widget()
-                if isinstance(widget, pg.PlotWidget):
-                    widget.setXRange(self.graphstart, self.graphend)
-                    if widget != self.sil_plot and widget != self.dr_plot:
-                        widget.setYRange(-0.05, 1.5)
+            if self.sil_checkbox.isChecked():
+                self.sil_plot.setXRange(self.graphstart, self.graphend)
+        else:
+            # For multiple MU view (plots in scroll area)
+            for i in range(self.plots_layout.count()):
+                item = self.plots_layout.itemAt(i)
+                if item:
+                    widget = item.widget()
+                    if isinstance(widget, pg.PlotWidget):
+                        widget.setXRange(self.graphstart, self.graphend)
+                        if widget != self.sil_plot and widget != self.dr_plot:
+                            widget.setYRange(-0.05, 1.5)
 
     # Editing actions
     def disable_action_buttons(self):
