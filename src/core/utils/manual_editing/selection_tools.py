@@ -215,7 +215,7 @@ def process_selection(MUedition, action_type, array_idx, mu_idx, x_min, x_max, y
         # Find peaks in the selected region
         peaks = find_peaks_with_padding(pulse_train, combined_mask, y_min, fsamp, pad=5)
         # peaks, _ = find_peaks(pulse_train[combined_mask], height=y_min, distance=round(0.005 * fsamp))
-        print("---------------------------------------------------")
+        print("------------------------ADD---------------------------")
         print(f"max pluse: {np.max(pulse_train)}")
         print(f"x_min: {x_min} x_max: {x_max}, y_min: {y_min}, y_max: {y_max}")
         print(f"time_mask: {np.where(time_mask)}\namp_mask: {np.where(amp_mask)}\ncombined_mask: {np.where(combined_mask)}\n")
@@ -224,7 +224,6 @@ def process_selection(MUedition, action_type, array_idx, mu_idx, x_min, x_max, y
         if len(peaks) > 0:
             
             # original_indices = np.where(combined_mask)[0][peaks]
-
             # Add new peaks to discharge times
             if (array_idx, mu_idx) not in MUedition["edition"]["Dischargetimes"]:
                 MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = np.array([], dtype=int)
@@ -242,6 +241,24 @@ def process_selection(MUedition, action_type, array_idx, mu_idx, x_min, x_max, y
             print(f"NO FOUND PEAKS!!!!!!!!!!!!!!!!!!!!!!")
 
     elif action_type == "delete_spikes":
+        
+        def find_local_maxima(dt):
+            # Find local maxima around each discharge time.
+            # This logic comes from MUeditManual.display_selected_mus.
+            # The pulse train values corresponding to discharge_times cannot be used directly.
+
+            window_size = 10
+
+            if 0 <= dt < len(pulse_train):
+                start = int(max(0, dt - window_size))
+                end = int(min(len(pulse_train), dt + window_size + 1))
+
+                window = pulse_train[start:end]
+                if len(window) > 0:
+                    local_max_idx = start + np.argmax(window)
+                    return pulse_train[local_max_idx]
+            return -1
+                        
         # Delete spikes in the selected region
         if (array_idx, mu_idx) in MUedition["edition"]["Dischargetimes"]:
             discharge_times = MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]
@@ -250,10 +267,20 @@ def process_selection(MUedition, action_type, array_idx, mu_idx, x_min, x_max, y
             # Create masks for time and amplitude ranges
             time_mask = (time[discharge_times] >= x_min) & (time[discharge_times] <= x_max)
             pulse_train = MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :]
-            amp_mask = (pulse_train[discharge_times] >= y_min) & (pulse_train[discharge_times] <= y_max)
+            local_peaks = np.array([find_local_maxima(dt) for dt in discharge_times])
+            amp_mask = (local_peaks >= y_min) & (local_peaks <= y_max)
+            # amp_mask = (pulse_train[discharge_times] >= y_min) & (pulse_train[discharge_times] <= y_max)
+            
 
             # Combine masks to find spikes to delete
             delete_mask = time_mask & amp_mask
+            print("------------------------DEL---------------------------")
+            print("pulse_train[discharge_times]:", pulse_train[discharge_times])
+            print("max pulse_train[discharge_times]:", max(pulse_train[discharge_times]))
+            print(f"max pluse: {np.max(pulse_train)}")
+            print(f"x_min: {x_min} x_max: {x_max}, y_min: {y_min}, y_max: {y_max}")
+            print(f"time_mask: {np.where(time_mask)}\namp_mask: {np.where(amp_mask)}\ndelete_mask: {np.where(delete_mask)}\n")
+            print(len(delete_mask))
 
             if np.any(delete_mask):
                 # Keep only spikes that are not in the delete mask
