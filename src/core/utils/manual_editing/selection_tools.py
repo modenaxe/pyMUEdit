@@ -2,11 +2,12 @@ import pyqtgraph as pg
 from PyQt5.QtCore import Qt
 import numpy as np
 from scipy.signal import find_peaks
+from PyQt5 import QtWidgets, QtCore
 
 
 class SelectionTool:
     """
-    Tool for drawing selection rectangles on PyQtGraph plots.
+    Tool for drawing selection rectangles or Click selection on PyQtGraph plots.
     """
     import os
     os.environ["OMP_NUM_THREADS"] = "1"
@@ -34,7 +35,7 @@ class SelectionTool:
         # Visual feedback to show this mode is active
         self.cursor_original = plot_widget.cursor()
         # Use the proper cursor enum value
-        plot_widget.setCursor(Qt.CursorShape.CrossCursor)
+        self.plot_widget.setCursor(Qt.CursorShape.CrossCursor)
 
         # Add text item to guide the user
         self.guide_text = pg.TextItem(
@@ -78,6 +79,7 @@ class SelectionTool:
             and self.start_point is not None
             and self.selection_rect is not None
         ):
+            
             # Get current position in scene coordinates
             mouse_point = self.plot_widget.getViewBox().mapSceneToView(event.pos())
             self.current_point = mouse_point
@@ -109,6 +111,29 @@ class SelectionTool:
             x_max = max(self.start_point.x(), self.current_point.x())
             y_min = min(self.start_point.y(), self.current_point.y())
             y_max = max(self.start_point.y(), self.current_point.y())
+            
+            # If the size of rectangle is too small, then work as click
+            x_range = self.plot_widget.getViewBox().viewRange()[0]
+            x_length = x_range[1] - x_range[0]
+            
+            # Auto rectangle size
+            x_ratio = 0.002
+            
+            if x_max - x_min < 2 * x_ratio:
+                items = self.plot_widget.listDataItems()
+                all_y = []
+                for item in items:
+                    x, y = item.getData()
+                    if y is not None:
+                        all_y.extend(y)
+                if all_y:
+                    y_length = max(all_y) - min(all_y)
+                    
+                # Calculate final rectangle
+                x_min = self.start_point.x() - x_length * x_ratio
+                x_max = self.start_point.x() + x_length * x_ratio
+                y_min = self.start_point.y() - y_length * 0.1
+                y_max = self.start_point.y() + y_length * 1
 
             # Call the callback with the selection bounds
             self.cleanup()

@@ -520,11 +520,23 @@ class MUeditManual(QMainWindow):
                 sil_value = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
                 checkbox.setText(f"MU_{mu_idx+1} (SIL: {sil_value:.4f})")
                 break
+            
+    def safe_set_range(self, plot, xrange=None, yrange=None):
+        if not plot:
+            return
+        self.update_plot_setRange = True
+        if xrange:
+            plot.setXRange(xrange[0], xrange[1])
+        if yrange:
+            plot.setYRange(yrange[0], yrange[1])
+        self.update_plot_setRange = False    
+            
 
     def display_selected_mus(self, checked_mus, pluse_train_color="#D95535"):
         """Display the currently selected motor units."""
         if not self.MUedition:
             return
+        print("display_selected_mus ")
 
         # Clear existing plots in the container
         for i in reversed(range(self.plots_layout.count())):
@@ -604,14 +616,15 @@ class MUeditManual(QMainWindow):
             self.plots_layout.addWidget(self.spiketrain_plot, stretch=2)
             self.spiketrain_plot.clear()
             time_vector = self.MUedition["edition"]["time"]
-
             if isinstance(time_vector, np.ndarray) and isinstance(pulse_train, np.ndarray):
                 self.spiketrain_plot.plot(
                     time_vector,
                     pulse_train,
                     pen=pg.mkPen(color="#333333", width=1),
                 )
-
+                
+                self.safe_set_range(self.spiketrain_plot, yrange=[min(pulse_train)*1.2, max(pulse_train)*1.2])
+                
                 # Plot reference signal if available
                 if "target" in self.MUedition["signal"] and self.MUedition["signal"]["target"].size > 0:
                     target_data = self.MUedition["signal"]["target"]
@@ -627,7 +640,7 @@ class MUeditManual(QMainWindow):
                                 target_normalized,
                                 pen=pg.mkPen(color="#4CAF50", width=1, style=Qt.PenStyle.DashLine),
                             )
-
+            self.spiketrain_plot.getViewBox().enableAutoRange('xy', False)
             # Plot discharge times
             discharge_times = self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
             if len(discharge_times) > 0:
@@ -676,8 +689,9 @@ class MUeditManual(QMainWindow):
                 # Set y-axis range with margin
                 if len(dr) > 0:
                     dr_max = np.max(dr)
-                    self.dr_plot.setYRange(0, dr_max * 1.5)
-                    
+                    self.safe_set_range(self.dr_plot, yrange=[0, dr_max * 1.5])
+                    # self.dr_plot.setYRange(0, dr_max * 1.5)
+
             def on_xrange_changed(_, ranges):
                 if self.update_plot_setRange:
                     return
@@ -688,7 +702,6 @@ class MUeditManual(QMainWindow):
             self.dr_plot.getViewBox().sigXRangeChanged.connect(on_xrange_changed, type=Qt.UniqueConnection) 
             self.spiketrain_plot.getViewBox().sigXRangeChanged.connect(on_xrange_changed, type=Qt.UniqueConnection)
             
-
 
         else:
             # Multiple MUs selected - show only pulse trains stacked vertically
@@ -914,14 +927,14 @@ class MUeditManual(QMainWindow):
         """Update the limits of all plots to match the current view."""
         if self.graphstart is None or self.graphend is None:
             return
-
         
+        print("update_plot_limits:", self.graphstart, self.graphend)
         if self.plot_display_mode == 0:
             # For single MU view (standard plots)
-            self.update_plot_setRange = True
-            self.spiketrain_plot.setXRange(self.graphstart, self.graphend)
-            self.dr_plot.setXRange(self.graphstart, self.graphend)
-            self.update_plot_setRange = False 
+            self.safe_set_range(self.spiketrain_plot, xrange=[self.graphstart, self.graphend])
+            self.safe_set_range(self.dr_plot, xrange=[self.graphstart, self.graphend])
+            # self.spiketrain_plot.setXRange(self.graphstart, self.graphend)
+            # self.dr_plot.setXRange(self.graphstart, self.graphend)
 
             if self.sil_checkbox.isChecked():
                 self.sil_plot.setXRange(self.graphstart, self.graphend)
@@ -958,6 +971,7 @@ class MUeditManual(QMainWindow):
         if not self.MUedition:
             return
 
+        print("add_spikes_button_pushed")
         # Get the first checked MU
         checked_mus = []
         for checkbox in self.mu_checkboxes:
@@ -983,7 +997,6 @@ class MUeditManual(QMainWindow):
             self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
         )
 
-        # Create selection tool
         self.selection_tool = SelectionTool(
             self.spiketrain_plot,
             "add_spikes",
@@ -991,6 +1004,7 @@ class MUeditManual(QMainWindow):
                 "add_spikes", array_idx, mu_idx, x_min, x_max, y_min, y_max
             ),
         )
+        
 
     def delete_spikes_button_pushed(self):
         """Delete spikes by drawing a selection rectangle."""
