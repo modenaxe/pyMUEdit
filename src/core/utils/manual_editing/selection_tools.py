@@ -221,6 +221,20 @@ def process_selection(MUedition, action_type, array_idx, mu_idx, x_min, x_max, y
     if not MUedition:
         return
 
+    def find_local_maxima(dt): 
+        # Find local maxima around each discharge time. 
+        # This logic comes from MUeditManual.display_selected_mus.
+        # The pulse train values corresponding to discharge_times cannot be used directly.
+        window_size = 10 
+        if 0 <= dt < len(pulse_train): 
+            start = int(max(0, dt - window_size)) 
+            end = int(min(len(pulse_train), dt + window_size + 1)) 
+            window = pulse_train[start:end] 
+            if len(window) > 0: 
+                local_max_idx = start + np.argmax(window) 
+                return pulse_train[local_max_idx] 
+        return -1
+    
     # Extract the sampling frequency as a scalar
     if MUedition["signal"]["fsamp"].ndim > 1:
         fsamp = float(MUedition["signal"]["fsamp"][0, 0])
@@ -258,31 +272,31 @@ def process_selection(MUedition, action_type, array_idx, mu_idx, x_min, x_max, y
             )
 
             # Sort and remove duplicates
-            MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = np.unique(
-                MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]
-            )
+            dts = MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]
+            real_unique_dts = []
+            seen_maxima = set()
+            
+            # remove duplicate dt base on local_maxima
+            for dt in dts:
+                local_maxima = find_local_maxima(dt)
+                if local_maxima == -1:
+                    continue
+                if local_maxima not in seen_maxima:
+                    seen_maxima.add(local_maxima)
+                    real_unique_dts.append(dt)
+            
+            MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = np.array(real_unique_dts, dtype=int)
+            
+            # MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = np.unique(
+            #     MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]
+            # )
+                
             print(f"FOUND PEAKS: {peaks}, original_indices: {peaks}")
         else:
             print(f"NO FOUND PEAKS!!!!!!!!!!!!!!!!!!!!!!")
 
     elif action_type == "delete_spikes":
         
-        def find_local_maxima(dt):
-            # Find local maxima around each discharge time.
-            # This logic comes from MUeditManual.display_selected_mus.
-            # The pulse train values corresponding to discharge_times cannot be used directly.
-
-            window_size = 10
-
-            if 0 <= dt < len(pulse_train):
-                start = int(max(0, dt - window_size))
-                end = int(min(len(pulse_train), dt + window_size + 1))
-
-                window = pulse_train[start:end]
-                if len(window) > 0:
-                    local_max_idx = start + np.argmax(window)
-                    return pulse_train[local_max_idx]
-            return -1
                         
         # Delete spikes in the selected region
         if (array_idx, mu_idx) in MUedition["edition"]["Dischargetimes"]:
