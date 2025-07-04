@@ -1725,6 +1725,9 @@ class MUeditManual(QMainWindow):
             
             # Create a mask for non-flagged MUs
             keep_mask = np.ones(array_pulse_train.shape[0], dtype=bool)
+            
+            # Create a flag for checking if remaining MU is empty
+            array_empty_flag = True
 
             # Check each MU
             for mu_idx in range(array_pulse_train.shape[0]):
@@ -1743,7 +1746,9 @@ class MUeditManual(QMainWindow):
 
             # Keep only non-flagged MUs
             if np.any(keep_mask):
+                array_empty_flag = False
                 clean_pulsetrain.append(array_pulse_train[keep_mask])
+                
 
                 # Keep corresponding discharge times and SIL values
                 for mu_idx, new_idx in enumerate(np.where(keep_mask)[0]):
@@ -1761,6 +1766,10 @@ class MUeditManual(QMainWindow):
                 # Add empty array if all MUs are flagged
                 clean_pulsetrain.append(np.zeros((0, array_pulse_train.shape[1])))
         progress.setValue(100)
+        
+        if array_empty_flag:
+            WarningDialog(text="You Are Trying to Remove All MUs!\nPlease Check Your Flagged MU.")
+            return
 
         # Update the data
         self.MUedition["edition"]["Pulsetrain"] = clean_pulsetrain
