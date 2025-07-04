@@ -702,6 +702,9 @@ class MUeditManual(QMainWindow):
             self.dr_plot.getViewBox().sigXRangeChanged.connect(on_xrange_changed, type=Qt.UniqueConnection) 
             self.spiketrain_plot.getViewBox().sigXRangeChanged.connect(on_xrange_changed, type=Qt.UniqueConnection)
             
+            # Ensure shortcut key responsiveness after plot creation 
+            self.spiketrain_plot.setFocus()
+
 
         else:
             # Multiple MUs selected - show only pulse trains stacked vertically
@@ -928,7 +931,6 @@ class MUeditManual(QMainWindow):
         if self.graphstart is None or self.graphend is None:
             return
         
-        print("update_plot_limits:", self.graphstart, self.graphend)
         if self.plot_display_mode == 0:
             # For single MU view (standard plots)
             self.safe_set_range(self.spiketrain_plot, xrange=[self.graphstart, self.graphend])
@@ -971,7 +973,6 @@ class MUeditManual(QMainWindow):
         if not self.MUedition:
             return
 
-        print("add_spikes_button_pushed")
         # Get the first checked MU
         checked_mus = []
         for checkbox in self.mu_checkboxes:
