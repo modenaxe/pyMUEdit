@@ -75,6 +75,7 @@ class offline_EMG(EMG):
         self.signal_dict: Dict[str, Any] = {}
         self.decomp_dict: Dict[str, Any] = {}
         self.mu_dict: Dict[str, Any] = {}
+        self.rejected_channel_indices = []
         self.rejected_channels: List[np.ndarray] = []
         self.coordinates: List[np.ndarray] = []
         self.chans_per_electrode: List[int] = []
@@ -115,21 +116,28 @@ class offline_EMG(EMG):
         return electrode_formatter(self)
 
     def manual_rejection(self):
-        """Manual rejection for channels with noise/artificats by inspecting plots of the electrode channels"""
-        print("Starting manual channel rejection")
-        print("Automatic channel acceptance - no channels will be rejected")
-
+        """Manual rejection for channels with noise/artificats (as configured in the Channel Viewer)"""
+        print("Starting channel rejection")
+        prev_chans_per_electrode = 0
+        total_chans_rejected = 0
         for i in range(self.signal_dict["nelectrodes"]):
-            # Make sure rejected_channels is initialized
+            num_channels = self.chans_per_electrode[i]
+            # Initialise the boolean array for each electrode (if it doesn't exist)
             if len(self.rejected_channels) <= i:
-                self.rejected_channels.append(np.zeros(self.chans_per_electrode[i] + 1))
-            else:
-                # Reset any previously rejected channels to zero
-                self.rejected_channels[i][:] = 0
+                self.rejected_channels.append(np.zeros([num_channels]))
 
-            self.rejected_channels[i] = self.rejected_channels[i][1:]
+            for j in range(num_channels):
+                # If the channel index is rejected, boolean array should be 1 for the
+                # corresponding channel
+                if j + prev_chans_per_electrode in self.rejected_channel_indices:
+                    self.rejected_channels[i][j] = 1
+                    total_chans_rejected += 1
+                else:
+                    self.rejected_channels[i][j] = 0
 
-        print("Channel rejection completed - all channels accepted")
+            prev_chans_per_electrode += num_channels
+
+        print(f"Channel rejection completed - {total_chans_rejected} channels rejected")
 
     def batch_w_target(self):
         print("Starting signal batching with target")
@@ -198,8 +206,7 @@ class offline_EMG(EMG):
                     start_idx:end_idx,
                 ]
 
-                rejected_channels_slice = self.rejected_channels[i] == 1
-
+                rejected_channels_slice = np.ravel(self.rejected_channels[i]) == 1
                 # Remove rejected channels
                 batched_data[tracker] = np.delete(data_slice, rejected_channels_slice, 0)
                 tracker += 1
