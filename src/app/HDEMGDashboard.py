@@ -68,6 +68,10 @@ class HDEMGDashboard(QMainWindow):
         # Start on dashboard view
         self.show_dashboard_view()
 
+    def select_mu_edit_subpage(self, index:int):
+        if hasattr(self, "mu_edit_stack"):
+            self.mu_edit_stack.setCurrentIndex(index)
+
     def initialize_external_widgets(self):
         """Initialize external widgets if their modules are available."""
         # Initialize MU Analysis page
@@ -133,6 +137,7 @@ class HDEMGDashboard(QMainWindow):
                 # 加到侧边子面板布局
                 self.mu_edit_subpanel.layout().addWidget(manual_edit_app.control_panel)
             # ------------------------------------------------------
+            self.mu_edit_tabs = manual_edit_app.tabs
             # Connect return signal if available
             if hasattr(manual_edit_app, "return_to_dashboard_requested"):
                 manual_edit_app.return_to_dashboard_requested.connect(self.show_dashboard_view)
