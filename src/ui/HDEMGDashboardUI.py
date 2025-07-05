@@ -108,7 +108,8 @@ def _create_left_sidebar(main_window):
     """Creates the improved left sidebar with SVG icons."""
     # Create sidebar with app title
     sidebar = Sidebar("HDEMG App")
-
+    SIDEBAR_WIDTH = 500      
+    sidebar.setFixedWidth(SIDEBAR_WIDTH)
     # Define icon names
     icons = {
         "dashboard": "dashboard_icon",
@@ -126,6 +127,8 @@ def _create_left_sidebar(main_window):
         "manual_edit": "MU Editing",
         "mu_analysis": "MU Analysis",
     }
+
+    mu_edit_btn = None 
 
     # Add buttons to sidebar and store references
     for key, display_name in menu_items.items():
@@ -151,12 +154,73 @@ def _create_left_sidebar(main_window):
             button.clicked.connect(
                 main_window.show_decomposition_view if hasattr(main_window, "show_decomposition_view") else lambda: None
             )
+        # elif key == "manual_edit":
+        #     button.clicked.connect(
+        #         main_window.show_manual_editing_view
+        #         if hasattr(main_window, "show_manual_editing_view")
+        #         else lambda: None
+        #     )
         elif key == "manual_edit":
-            button.clicked.connect(
-                main_window.show_manual_editing_view
-                if hasattr(main_window, "show_manual_editing_view")
-                else lambda: None
-            )
+            mu_edit_btn = button
+        
+    sidebar.layout.addStretch(1)     # Sidebar 类自带 main_layout
+
+    # ----------- MU-Editing 子面板（默认隐藏）-----------
+    subpanel = QWidget()
+    subpanel.setVisible(False)
+    subpanel.setFixedWidth(sidebar.width())        # 宽度与侧栏一致
+    sub_lay = QVBoxLayout(subpanel)
+    sub_lay.setContentsMargins(12, 6, 12, 6)
+    sub_lay.setSpacing(6)
+
+    sub_btns = []
+    def _sub_btn(text, idx):
+        b = ActionButton(text, primary=False)
+        b.setFixedHeight(28)
+        b.clicked.connect(lambda _, i=idx: _switch(i))
+        sub_lay.addWidget(b)
+        sub_btns.append(b)
+        return b    
+    _sub_btn("MU Selection",    0)
+    _sub_btn("Batch Processing",1)
+    _sub_btn("Visualization",   2)
+
+    sidebar.layout.addWidget(subpanel)        # 添到最底
+
+    # 把子面板引用挂到 main_window，后面可用
+    main_window.mu_edit_subpanel = subpanel  
+
+
+    def _switch(idx:int):
+        if hasattr(main_window, "mu_edit_tabs"):
+            main_window.mu_edit_tabs.setCurrentIndex(idx)
+        for i, btn in enumerate(sub_btns):
+            if i == idx:        # 当前被选中的按钮
+                btn.setStyleSheet("""
+                    background:#1976D2;      /* 背景蓝色 */
+                    color:white;             /* 字体改成白色 */
+                    border-radius:4px;       /* 可选：圆角 */
+                """)
+            else:               # 其余按钮
+                btn.setStyleSheet("""
+                    background:transparent;
+                    color:#555555;           /* 灰色文字 */
+                """)
+    # ★ 4. 重绑 MU-Editing 一级按钮
+    if mu_edit_btn:
+        try:   mu_edit_btn.clicked.disconnect()
+        except TypeError: pass
+        def _on_mu_edit():
+            update_sidebar_selection(main_window,"manual_edit")
+            subpanel.setVisible(True)
+            main_window.show_manual_editing_view()
+            _switch(0)
+        mu_edit_btn.clicked.connect(_on_mu_edit)
+
+    # 其它一级按钮点击 → 隐藏子面板
+    for k, btn in main_window.sidebar_buttons.items():
+        if k != "manual_edit":
+            btn.clicked.connect(lambda: subpanel.setVisible(False))   
     return sidebar
 
 

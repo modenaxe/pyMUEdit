@@ -129,10 +129,14 @@ def setup_control_panel(main_window):
     batch_tab = create_batch_processing_tab(main_window)
     viz_tab = create_visualization_tab(main_window)
 
+    main_window.tabs.tabBar().setVisible(False)
+
     main_window.tabs.addTab(mu_tab, "MU Selection")
     main_window.tabs.addTab(batch_tab, "Batch Processing")
     main_window.tabs.addTab(viz_tab, "Visualization")
     control_layout.addWidget(main_window.tabs)
+
+    main_window.mu_edit_tabs = main_window.tabs
 
     # Save section using SettingsGroup
     save_group = SettingsGroup("Save the Edition")
