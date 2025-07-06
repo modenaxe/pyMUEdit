@@ -117,7 +117,7 @@ class SelectionTool:
             x_length = x_range[1] - x_range[0]
             
             # Auto rectangle size
-            x_ratio = 0.002
+            x_ratio = 0.005
             
             if x_max - x_min < 2 * x_ratio:
                 items = self.plot_widget.listDataItems()
