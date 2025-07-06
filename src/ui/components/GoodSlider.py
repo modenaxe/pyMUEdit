@@ -10,6 +10,7 @@ class GoodSlider(QWidget):
                  minimum=0,
                  maximum=100,
                  default=50,
+                 display_value = True,
                  on_value_changed=None,
                  parent=None):
         """
@@ -20,11 +21,13 @@ class GoodSlider(QWidget):
             minimum (int): Minimum slider value
             maximum (int): Maximum slider value
             default (int): Initial slider value
+            display_value (bool): Display slider value
             on_value_changed (Callable[[int]], optional): Callback function when value changes
             parent (QWidget, optional): Parent widget
         """
         super().__init__(parent)
         self.callback = on_value_changed
+        self.display_value = not display_value
         # self.setFixedSize(350, 80)
         self.setMinimumWidth(350)
         self.setMinimumHeight(60)
@@ -86,6 +89,7 @@ class GoodSlider(QWidget):
         self.value_label.setFixedWidth(50)
         self.value_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         layout.addWidget(self.value_label, alignment=Qt.AlignVCenter)
+        self.value_label.setHidden(self.display_value)
         
         self.setLayout(layout)
 
@@ -98,3 +102,5 @@ class GoodSlider(QWidget):
     def set_slider_value(self, val):
         self.slider.setValue(val)
         
+    def display_value(self, display_value):
+        self.value_label.setHidden(not display_value)

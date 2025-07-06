@@ -431,7 +431,7 @@ def setup_display_panel(main_window):
     main_window.zoom_out_top_btn.clicked.connect(main_window.zoom_out_button_pushed)
     
     # Zoom Silder
-    main_window.zoom_slider = GoodSlider(default=0, on_value_changed=main_window.slider_value_changed)
+    main_window.zoom_slider = GoodSlider(default=0, on_value_changed=main_window.slider_value_changed, display_value=False)
     
     undo_row = QWidget(parent=display_widget)                 # ★★ parent 指定为 display_widget
     undo_layout = QHBoxLayout(undo_row)
