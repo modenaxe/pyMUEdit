@@ -80,6 +80,7 @@ class GoodSlider(QWidget):
                 border-color: #0056b3;
             }
         """)
+
         layout.addWidget(self.slider)
         self.value_label = QLabel(f"{default}", self)
         self.value_label.setStyleSheet("""
@@ -101,6 +102,7 @@ class GoodSlider(QWidget):
     
     def set_slider_value(self, val):
         self.slider.setValue(val)
-        
+    
+    # show or hide the slider value
     def display_value(self, display_value):
         self.value_label.setHidden(not display_value)
