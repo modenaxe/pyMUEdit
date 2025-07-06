@@ -32,9 +32,14 @@ from core.utils.decomposition.remove_duplicates import remove_duplicates
 from core.utils.decomposition.remove_duplicates_between_arrays import remove_duplicates_between_arrays
 from core.utils.decomposition.extend_emg import extend_emg
 from core.utils.decomposition.whiten_emg import whiten_emg
-from ui.components.WarningDialog import WarningDialog
-from ui.components.SuccessDialog import SuccessDialog
-from ui.components.ErrorDialog import ErrorDialog
+
+# Import custom components
+from ui.components import (
+    WarningDialog,
+    SuccessDialog,
+    ErrorDialog,
+)
+
 
 class MUeditManual(QMainWindow):
     """
@@ -345,6 +350,7 @@ class MUeditManual(QMainWindow):
 
         # Update "Check All" checkboxes based on individual selections
         self.update_array_checkboxes()
+        self.zoom_slider.set_slider_value(0)
 
         # If none are checked, don't update display
         if not checked_mus:
@@ -892,6 +898,18 @@ class MUeditManual(QMainWindow):
             self.graphend = center + duration / 2
 
         self.update_plot_limits()
+    
+    # Navigation actions
+    def slider_value_changed(self, value):
+        if not self.MUedition or not self.graphend or not self.graphstart:
+            return
+        max_len = self.MUedition["edition"]["time"][-1] - self.MUedition["edition"]["time"][0]
+        center = (self.graphend + self.graphstart) / 2
+        len_scaled = (max_len / 100.0) * (100 ** ((100 - value)/100))
+        self.graphstart = center - len_scaled / 2
+        self.graphend = center + len_scaled / 2
+        self.update_plot_limits()
+        
 
     def scroll_left_button_pushed(self):
         """Scroll left on the time axis."""
