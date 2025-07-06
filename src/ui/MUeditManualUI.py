@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import (
     QTabWidget,
     QFrame,
     QComboBox,
+    QListView, # moy
 )
 
 # Import custom components
@@ -27,6 +28,24 @@ from ui.components import (
     GoodSlider,
 )
 
+class FixedPopupComboBox(QComboBox): # set a new class for dropout moy
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        popup_view = QListView(self) # set xuanting
+        popup_view.setStyleSheet("""
+            QListView::item:hover,
+            QListView::item:selected { background: #E0E0E0; color: black; }
+        """)
+        self.setView(popup_view)
+
+    def showPopup(self): # use the bar location and move the dropdown under it
+        super().showPopup()
+        popup = self.view().window()
+        geo   = popup.geometry()
+        geo.moveTopLeft(self.mapToGlobal(
+            self.rect().bottomLeft()
+        ))
+        popup.setGeometry(geo)
 
 def setup_ui(main_window):
     """Setup the modern UI components for the MUedit Manual application."""
@@ -304,7 +323,7 @@ def create_visualization_tab(main_window):
     reference_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
 
     # Create a dropdown for reference selection
-    main_window.reference_dropdown = QComboBox()
+    main_window.reference_dropdown = FixedPopupComboBox() # change to new class moy
     main_window.reference_dropdown.setStyleSheet(
         f"""
         QComboBox {{

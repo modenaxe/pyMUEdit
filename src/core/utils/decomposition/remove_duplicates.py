@@ -84,6 +84,12 @@ def remove_duplicates(pulse_trains, discharge_times, discharge_times2, mu_filter
         # Clean the spike and pulse train arrays based on identified duplicates
         spike_trains = np.delete(spike_trains, duplicates, axis=0)
         pulse_trains = np.delete(pulse_trains, duplicates, axis=0)
+
+         # just return if nothing need to be changed moy
+        if mu_filters.size == 0 or duplicates.size == 0:
+            return discharge_times, pulse_trains, mu_filters
+        # ────────────────────────────
+        
         mu_filters = np.delete(mu_filters, duplicates, axis=0)
 
         i += 1
