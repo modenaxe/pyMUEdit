@@ -340,7 +340,7 @@ class MUeditManual(QMainWindow):
         if self.mu_checkboxes:
             self.mu_checkboxes[0].setChecked(True)
 
-    def mu_checkbox_state_changed(self, _state=None, *, pluse_train_color="#D95535"):
+    def mu_checkbox_state_changed(self, _state=None, *, pluse_train_color="#D95535", zoom_reset = True):
         """Handle changes in MU checkbox selection."""
         # Get all checked MUs
         checked_mus = []
@@ -350,7 +350,8 @@ class MUeditManual(QMainWindow):
 
         # Update "Check All" checkboxes based on individual selections
         self.update_array_checkboxes()
-        self.zoom_slider.set_slider_value(0)
+        if zoom_reset:
+            self.zoom_slider.set_slider_value(0)
 
         # If none are checked, don't update display
         if not checked_mus:
@@ -1114,7 +1115,7 @@ class MUeditManual(QMainWindow):
             if checkbox.objectName() == f"Array_{array_idx+1}_MU_{mu_idx+1}":
                 if checkbox.isChecked():
                     # If the MU is currently checked, update the display
-                    self.mu_checkbox_state_changed()
+                    self.mu_checkbox_state_changed(zoom_reset=False)
                 break
 
     def lock_spikes_button_pushed(self):
