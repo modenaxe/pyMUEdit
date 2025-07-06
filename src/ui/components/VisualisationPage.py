@@ -14,9 +14,10 @@ from .ChannelViewer import ChannelViewer
 import math
 
 class VisualisationPage(QWidget):
-    def __init__(self, emg_data, parent=None):
+    def __init__(self, emg_obj, parent=None):
         super().__init__(parent)
-        self.emg_data = emg_data
+        self.emg_obj = emg_obj
+        self.emg_data = emg_obj.signal_dict["data"]
         self.channel_group_index = 0
         self.max_index = 0
 
@@ -32,7 +33,7 @@ class VisualisationPage(QWidget):
         left_layout.setSpacing(15)
 
         # main panel (signal graphs)
-        self.viewer = ChannelViewer(emg_data)
+        self.viewer = ChannelViewer(self.emg_data)
         self.viewer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # signal range dropdown panel
@@ -69,7 +70,7 @@ class VisualisationPage(QWidget):
         left_layout.addWidget(done_button)
 
         # main panel (signal graphs)
-        self.viewer = ChannelViewer(emg_data)
+        self.viewer = ChannelViewer(self.emg_data)
         self.viewer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         vis_panel = VisualizationPanel(plot_widget=self.viewer)
@@ -157,7 +158,8 @@ class VisualisationPage(QWidget):
         self.channel_group_change(min(self.channel_group_index + 1, self.max_index))
 
     def doneClicked(self):
-        # TODO: Update data with omitted data removed
+        # Update the omitted channels
+        self.emg_obj.rejected_channel_indices = self.viewer.rejected_channels
         self.close()
 
     def keyPressEvent(self, a0):
