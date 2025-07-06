@@ -24,6 +24,7 @@ from ui.components import (
     SettingsGroup,
     SectionHeader,
     CleanScrollBar,
+    GoodSlider,
 )
 
 
@@ -429,6 +430,9 @@ def setup_display_panel(main_window):
     main_window.zoom_in_top_btn.clicked.connect(main_window.zoom_in_button_pushed)
     main_window.zoom_out_top_btn.clicked.connect(main_window.zoom_out_button_pushed)
     
+    # Zoom Silder
+    main_window.zoom_slider = GoodSlider(default=0, on_value_changed=main_window.slider_value_changed)
+    
     undo_row = QWidget(parent=display_widget)                 # ★★ parent 指定为 display_widget
     undo_layout = QHBoxLayout(undo_row)
     undo_layout.setContentsMargins(0, 6, 0, 6)
@@ -438,6 +442,9 @@ def setup_display_panel(main_window):
     undo_layout.addStretch(1)
     undo_layout.addWidget(main_window.zoom_in_top_btn) # 右侧 Zoom in
     undo_layout.addWidget(main_window.zoom_out_top_btn)# 右侧 Zoom out
+    
+    undo_layout.addWidget(main_window.zoom_slider)
+    
     display_layout.addWidget(undo_row)                        # ★★ 只 add 一次
 
     # SIL info display
