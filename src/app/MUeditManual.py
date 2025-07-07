@@ -1156,6 +1156,7 @@ class MUeditManual(QMainWindow):
     def remove_outliers_button_pushed(self):
         """Remove outliers from the current motor unit."""
         if not self.MUedition:
+            ErrorDialog(text="Please import file first!")
             return
 
         # Get the first checked MU
@@ -1163,49 +1164,48 @@ class MUeditManual(QMainWindow):
         for checkbox in self.mu_checkboxes:
             if checkbox.isChecked():
                 checked_mus.append(checkbox.objectName())
-                break
-
+                
         if not checked_mus:
+            ErrorDialog(text="Please select a MU first!")
             return
+        removal_summary = {}
+        for mu_text in checked_mus:
+            parts = mu_text.split("_")
+            if len(parts) < 4:
+                continue
 
-        mu_text = checked_mus[0]
-        parts = mu_text.split("_")
+            array_idx = int(parts[1]) - 1
+            mu_idx = int(parts[3]) - 1
 
-        if len(parts) < 4:
-            return
+            # Store state for undo
+            self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
+            self.Backup["Dischargetimes"] = (
+                self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
+            )
 
-        array_idx = int(parts[1]) - 1
-        mu_idx = int(parts[3]) - 1
+            if (array_idx, mu_idx) not in self.MUedition["edition"]["Dischargetimes"] or len(
+                self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]) <= 1:
+                continue
 
-        # Store current state for undo
-        self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
-        self.Backup["Dischargetimes"] = (
-            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
-        )
+            # Prepare input for remove_outliers
+            pulse_trains = np.zeros((1, self.MUedition["edition"]["Pulsetrain"][array_idx].shape[1]))
+            pulse_trains[0, :] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :]
+            distime_list = [self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]]
 
-        # Get discharge times
-        if (array_idx, mu_idx) not in self.MUedition["edition"]["Dischargetimes"] or len(
-            self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]
-        ) <= 1:
-            return
+            # Call the function
+            filtered_distime, removal_dict = remove_outliers(
+                pulse_trains, distime_list, self.MUedition["signal"]["fsamp"], [mu_text]
+            )
 
-        # Create dummy PulseT and Distime arrays for remoutliers function
-        pulse_trains = np.zeros((1, self.MUedition["edition"]["Pulsetrain"][array_idx].shape[1]))
-        pulse_trains[0, :] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :]
-
-        distime_list = [self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]]
-
-        # Apply remoutliers
-        filtered_distime = remove_outliers(
-            pulse_trains, distime_list, 0.3, self.MUedition["signal"]["fsamp"]  # Threshold for CoV of Discharge rate
-        )
-
-        # Update discharge times
-        if filtered_distime and len(filtered_distime) > 0:
             self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = filtered_distime[0]
-
-            # Update the display
             self.mu_checkbox_state_changed()
+
+            removal_summary.update(removal_dict)
+        if removal_summary:
+            summary_lines = [f"{mu}: Removed {cnt} outliers" for mu, cnt in removal_summary.items()]
+            SuccessDialog(text="Remove outlier successfully!\n\n" + "\n".join(summary_lines))
+        else:
+            SuccessDialog(text="No outliers were removed.")
 
     def update_mu_filter_button_pushed(self):
         """Update the motor unit filter using the current discharge times."""
@@ -1561,7 +1561,7 @@ class MUeditManual(QMainWindow):
         """Remove outliers from all motor units."""
         if not self.MUedition:
             return
-
+        removal_summary = {}
         # Create a progress dialog
         from PyQt5.QtWidgets import QProgressDialog
         from PyQt5.QtCore import QTimer
@@ -1597,11 +1597,12 @@ class MUeditManual(QMainWindow):
 
                 # Apply remoutliers if there are discharge times
                 if len(distime_list[0]) > 1:
-                    filtered_distime = remove_outliers(
+                    mu_name = f"Array_{array_idx+1}_MU_{mu_idx+1}"
+                    filtered_distime, removal_dict = remove_outliers(
                         pulse_trains,
                         distime_list,
-                        0.3,  # Threshold for CoV of Discharge rate
                         self.MUedition["signal"]["fsamp"],
+                        [mu_name]
                     )
 
                     # Update discharge times
@@ -1617,7 +1618,7 @@ class MUeditManual(QMainWindow):
                 break
 
         progress.setValue(100)
-
+        SuccessDialog(text="All motor unit outliers have been removed successfully.")
         # Update the current MU display
         self.mu_checkbox_state_changed()
 
