@@ -18,6 +18,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from app.FileUploadFunc import FileUploadFunc
 from app.commonOpenFunc import OpenFunct
 from core.AnalysisResultsHist import store
+from ui.components.ErrorDialog import ErrorDialog
 
 # class for functions required for the MU properties dialog
 class MUPropertiesFunc:
@@ -45,14 +46,12 @@ class MUPropertiesFunc:
     # errors if no file or missing inputs
     def basic_prop(self, rec, start, over):
         file = FileUploadFunc.file
-        if (len(self.convert(self.mvc_value)) == 0 or len(self.convert(rec)) == 0 or len(self.convert(start)) == 0 or file == None):
-          canvas = QMessageBox()
-          canvas.setIcon(QMessageBox.Critical)
-          canvas.setText("Error")
-          canvas.setInformativeText('Missing Inputs')
-          canvas.setWindowTitle("Error")
-          canvas.exec_()
-          return
+        if (file == None):
+            ErrorDialog('No file has been loaded', 'Error').exec_()
+            return
+        if (len(self.convert(self.mvc_value)) == 0 or len(self.convert(rec)) == 0 or len(self.convert(start)) == 0):
+            ErrorDialog('You are missing Inputs', 'Error').exec_()
+            return
         over.close()
         self.showselect(file, rec, start)
 

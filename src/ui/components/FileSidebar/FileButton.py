@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QPushButton
 from PyQt5.QtGui import QFont, QIcon, QCursor
 from PyQt5.QtCore import Qt, QSize
+from ui.components.CleanTheme import CleanTheme
 
 
 
@@ -14,16 +15,16 @@ class FileButton(QPushButton):
       self.setStyleSheet(
           f"""
           QPushButton {{
-              background-color: #495057;
-              color: #e9ecee;
-              border: none;
-              height: 40%;
-              max-width: 100%;
-              border-radius: 4px;
+            background-color: {CleanTheme.ANALYSIS_BG_BUTTON};
+            color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
+            border: none;
+            height: 40%;
+            max-width: 100%;
+            border-radius: 4px;
           }}
           QPushButton:hover {{
-              background-color: #e9ecee;
-              color: #495057;
+            background-color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
+            color: {CleanTheme.ANALYSIS_BG_BUTTON};
           }}
       """
       )

@@ -25,6 +25,7 @@ from ui.muanalysis.PlotEMG import PlotEMGButton
 from ui.muanalysis.SignalEditing import SignalEditing
 from ui.components.AnalysisText import AnalysisText 
 from ui.components.FileSidebar.FileSection import FileSection
+from ui.components.CleanTheme import CleanTheme
 
 from ui.components.ResultsPanel import ResultsPanel
 # from ui.components.FileButton import FileButton
@@ -177,7 +178,8 @@ class MUAnalysis(QWidget):
         sidebar_layout = QVBoxLayout(sidebar)
 
         # title
-        title_label = AnalysisText.create_title("Analysis")
+        title_label = QLabel("Analysis")
+        title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY}; border: none")
         sidebar_layout.addWidget(title_label)
 
         # signal editing 
