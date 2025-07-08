@@ -92,7 +92,7 @@ class AdvancedTools(QWidget):
             self.show_analysis()
 
     def show_error(self, message=""):
-        ErrorDialog('Invalid advanced analysis selection', 'Error').exec_()
+        ErrorDialog(message, 'Error').exec_()
 
 
 
