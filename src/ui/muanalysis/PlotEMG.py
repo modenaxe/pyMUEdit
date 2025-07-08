@@ -12,15 +12,15 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal
-from ui.components.CleanTheme import CleanTheme
-from ui.components.FileSidebar.FileButton import FileButton
-from app.PlotEMGFunc import parse_channel_input, plot_emgsig
-from app.FileUploadFunc import FileUploadFunc
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.FileSidebar.FileButton import FileButton
+from app.muAnalysisFunctions.PlotEMGFunc import parse_channel_input, plot_emgsig
+from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-from ui.components.AnalysisDropdown import AnalysisDropdown
-from ui.components.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.muanalysis.MotorUnitProperties import PropertiesInnerDialogButton
-from ui.components.ErrorDialog import ErrorDialog
+from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
 
 class PlotEMGToolDialog(QDialog):

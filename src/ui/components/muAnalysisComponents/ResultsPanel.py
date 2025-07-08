@@ -11,8 +11,8 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt
-from ui.components.CleanTheme import CleanTheme
-from core.AnalysisResultsHist import store
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from core.muAnalysisCore.AnalysisResultsHist import store
 
 
 class ResultsPanel(QFrame):

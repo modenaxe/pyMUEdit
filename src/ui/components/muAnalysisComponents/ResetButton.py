@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QPushButton
 from PyQt5.QtGui import QFont, QIcon, QCursor
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
-from ui.components.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
 class ResetButton(QPushButton):
     """A reset button component that emits a signal when clicked"""
