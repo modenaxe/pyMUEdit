@@ -12,6 +12,7 @@ from ui.components.CleanTheme import CleanTheme
 from ui.components.AnalysisDropdown import AnalysisDropdown
 from ui.components.AnalysisButton import AnalysisButton
 from ui.components.AnalysisText import AnalysisText
+from ui.components.ErrorDialog import ErrorDialog
 
 from app.MotorUnitTrackingDialog import MotorUnitTrackingDialog
 class AdvancedTools(QWidget):
@@ -91,11 +92,7 @@ class AdvancedTools(QWidget):
             self.show_analysis()
 
     def show_error(self, message=""):
-        QMessageBox.warning(
-            self,
-            "Invalid advanced analysis selection",
-            message,
-        )
+        ErrorDialog('Invalid advanced analysis selection', 'Error').exec_()
 
 
 
@@ -103,8 +100,6 @@ class AdvancedTools(QWidget):
 
     def show_analysis(self):
             selected_tool = self.analysis_tools_dropdown.currentText()
-
-
             if selected_tool == "Motor Unit Tracking":
                 dialog = MotorUnitTrackingDialog(self)
                 dialog.exec_()
@@ -113,7 +108,6 @@ class AdvancedTools(QWidget):
             elif selected_tool == "Persistent Inward Currents":
                 QMessageBox.information(self, "Coming Soon", "Persistent Inward Currents is not implemented yet.")
             else:
-                QMessageBox.warning(self, "Invalid Selection", "Unknown analysis tool.")
-
+                ErrorDialog('Unknown analysis tool.', 'Error').exec_()
 
 

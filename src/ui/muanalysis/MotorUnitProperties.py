@@ -38,7 +38,9 @@ class MotorUnitPropertiesDialog(QDialog):
         title_label.setFont(QFont("Arial", 16, QFont.Bold))
         title_label.setStyleSheet(f"color: {CleanTheme.ANALYSIS_BG_CARD};")
         layout.addWidget(title_label)
+
         # MVC Input Section
+        box = QHBoxLayout()
         mvc_label = QLabel("Enter MVC [N]:")
         mvc_label.setFont(QFont("Arial", 12, QFont.Bold))
         mvc_label.setStyleSheet(f"color: {CleanTheme.ANALYSIS_BG_CARD};")
@@ -46,10 +48,11 @@ class MotorUnitPropertiesDialog(QDialog):
         if self.current_mvc is not None:
             self.mvc_input.setText(str(self.current_mvc))
             print(str(self.current_mvc))
-        
+        box.addWidget(mvc_label)
+        box.addWidget(self.mvc_input)
+
         #basic properties
-        layout.addWidget(mvc_label)
-        layout.addWidget(self.mvc_input)
+        layout.addLayout(box)
         func.set_mvc(self.mvc_input)
         basic_prop = MotorUnitPropertiesBasic(func, self)
         layout.addLayout(basic_prop)
