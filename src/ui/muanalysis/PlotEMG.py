@@ -18,6 +18,9 @@ from app.PlotEMGFunc import parse_channel_input, plot_emgsig
 from app.FileUploadFunc import FileUploadFunc
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from ui.components.AnalysisDropdown import AnalysisDropdown
+from ui.components.AnalysisText import AnalysisText
+from ui.muanalysis.MotorUnitProperties import PropertiesInnerDialogButton
+from ui.components.ErrorDialog import ErrorDialog
 
 
 class PlotEMGToolDialog(QDialog):
@@ -32,16 +35,14 @@ class PlotEMGToolDialog(QDialog):
         self.setWindowFlags(
             Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint
         )
-        self.setStyleSheet(f"background-color: {CleanTheme.ANALYSIS_BG_CARD};")
+        self.setStyleSheet(f"background-color: {CleanTheme.ANALYSIS_BG_SIDEBAR};")
 
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
         layout.setContentsMargins(30, 20, 30, 20)
 
         # Title
-        title_label = QLabel("Plot EMG Tools")
-        title_label.setFont(QFont("Arial", 16, QFont.Bold))
-        title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+        title_label = AnalysisText.create_title("Plot Emg Tool") 
         layout.addWidget(title_label)
         
         # --- Filter Section Layout ---
@@ -54,7 +55,7 @@ class PlotEMGToolDialog(QDialog):
         self.ref_signal_checkbox = QCheckBox("Reference signal")
         self.ref_signal_checkbox.setFont(QFont("Arial", 11))
         self.ref_signal_checkbox.setStyleSheet(f"""
-            QCheckBox {{ color: {CleanTheme.TEXT_PRIMARY}; spacing: 8px; }}
+            QCheckBox {{ color: {CleanTheme.ANALYSIS_TEXT_BUTTON}; spacing: 8px; }}
             QCheckBox::indicator {{ width: 16px; height: 16px; border: 2px solid #ced4da; border-radius: 3px; background-color: #ffffff; }}
             QCheckBox::indicator:checked {{ background-color: {CleanTheme.ANALYSIS_BG_BUTTON}; border-color: {CleanTheme.ANALYSIS_BG_BUTTON}; }}
         """)
@@ -62,7 +63,7 @@ class PlotEMGToolDialog(QDialog):
         self.time_seconds_checkbox = QCheckBox("Time in seconds")
         self.time_seconds_checkbox.setFont(QFont("Arial", 11))
         self.time_seconds_checkbox.setStyleSheet(f"""
-            QCheckBox {{ color: {CleanTheme.TEXT_PRIMARY}; spacing: 8px; }}
+            QCheckBox {{ color: {CleanTheme.ANALYSIS_TEXT_BUTTON}; spacing: 8px; }}
             QCheckBox::indicator {{ width: 16px; height: 16px; border: 2px solid #ced4da; border-radius: 3px; background-color: #ffffff; }}
             QCheckBox::indicator:checked {{ background-color: {CleanTheme.ANALYSIS_BG_BUTTON}; border-color: {CleanTheme.ANALYSIS_BG_BUTTON}; }}
         """)
@@ -89,12 +90,7 @@ class PlotEMGToolDialog(QDialog):
 
         # --- Plot EMGsig Button and Channel Input (side by side) ---
         emg_row_layout = QHBoxLayout()
-        emgsig_btn = QPushButton("Plot EMGsig")
-        emgsig_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        emgsig_btn.setStyleSheet("""
-            QPushButton { background-color: #f8f9fa; color: #232e33; border: 1px solid #232e33; border-radius: 4px; padding: 6px 12px; }
-            QPushButton:hover { background-color: #e9ecee; }
-        """)
+        emgsig_btn = PropertiesInnerDialogButton('Plot EMGsig')
         emgsig_btn.clicked.connect(self.handle_emgsig_clicked)
         emg_row_layout.addWidget(emgsig_btn)
         self.channel_input = QLineEdit()
@@ -115,13 +111,13 @@ class PlotEMGToolDialog(QDialog):
 
     def handle_emgsig_clicked(self):
         if self.has_invalid_filter_inputs():
-            QMessageBox.warning(self, "Invalid filter inputs", "Invalid filter inputs")
+            ErrorDialog('Invalid filter inputs', 'Error').exec_()
             return
         raw_text = self.channel_input.text()
         emgfile = FileUploadFunc.file
 
         if emgfile is None:
-            QMessageBox.warning(self, "No File", "No EMG file is currently loaded.")
+            ErrorDialog('No file has been loaded', 'Error').exec_()
             return
 
         try:
@@ -144,9 +140,9 @@ class PlotEMGToolDialog(QDialog):
             dialog = EMGsigResultDialog(raw_text, time_in_seconds, add_ref_signal)
             dialog.exec_()
         except ValueError as e:
-            QMessageBox.warning(self, "Invalid Input", f"Invalid channel input: {str(e)}")
+            ErrorDialog('Invalid channel input', 'Error').exec_()
         except Exception as e:
-            QMessageBox.warning(self, "Error", f"Error plotting EMG: {str(e)}")
+            ErrorDialog('Error plotting EMG', 'Error').exec_()
 
 
 
@@ -201,29 +197,6 @@ class PropertiesInnerDialogText(QLineEdit):
                 border-color: {CleanTheme.ANALYSIS_BG_BUTTON};
             }}
         """)
-
-# general class for any buttons inside dialog
-class PropertiesInnerDialogButton(QPushButton):
-    def __init__(self, text):
-        super().__init__(text )
-        self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: #495057;
-                color: #e9ecee;
-                border: none;
-                height: 40%;
-                max-width: 100%;
-                border-radius: 4px;
-            }}
-            QPushButton:hover {{
-                background-color: #4a5672;
-            }}
-        """
-        )
-
 
 class PlotEMGButton(QWidget):
     """Button widget for opening Motor Unit Properties dialog"""

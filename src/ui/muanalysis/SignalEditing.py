@@ -213,7 +213,7 @@ class SignalEditing(QWidget):
     # returns boolean value based on whethere or not there's a valid file loaded
     def valid_file(self):
         if not self.mu.file:
-            self.display_warning("Invalid File", "Please upload a file to edit signals")
+            self.display_warning("Invalid File", "No file has been loaded")
             return False 
         return True 
 
