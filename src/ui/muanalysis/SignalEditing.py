@@ -8,13 +8,13 @@ from PyQt5.QtWidgets import (
     QDialog,
     QMessageBox,
 )
-from ui.components.CleanTheme import CleanTheme
-from ui.components.AnalysisButton import AnalysisButton
-from ui.components.AnalysisText import AnalysisText
-from ui.components.AnalysisInput import AnalysisInput
-from ui.components.AnalysisButton import AnalysisButton
-from ui.components.AnalysisDropdown import AnalysisDropdown
-from ui.components.ErrorDialog import ErrorDialog
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.AnalysisButton import AnalysisButton
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
+from ui.components.muAnalysisComponents.AnalysisButton import AnalysisButton
+from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
+from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
 """
 All the code responsible for filtering the plot. This includes:

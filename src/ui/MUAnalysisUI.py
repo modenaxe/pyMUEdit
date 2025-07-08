@@ -16,22 +16,22 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
-from app.FileUploadFunc import FileUploadFunc
-from app.MUPropertiesFun import MUPropertiesFunc
+from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
+from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
 from app.ExportResults import ExportResultsWindow
 from ui.muanalysis.AdvancedTools import AdvancedTools
 from ui.muanalysis.MotorUnitProperties import MotorUnitPropertiesButton
 from ui.muanalysis.PlotEMG import PlotEMGButton
 from ui.muanalysis.SignalEditing import SignalEditing
-from ui.components.AnalysisText import AnalysisText 
-from ui.components.FileSidebar.FileSection import FileSection
-from ui.components.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText 
+from ui.components.muAnalysisComponents.FileSidebar.FileSection import FileSection
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
-from ui.components.ResultsPanel import ResultsPanel
-# from ui.components.FileButton import FileButton
-from core.AnalysisResultsHist import store
-from ui.components.ResultsTable import ResultsTable
-from ui.components.ResultSelection import ResultSelection
+from ui.components.muAnalysisComponents.ResultsPanel import ResultsPanel
+
+from core.muAnalysisCore.AnalysisResultsHist import store
+from ui.components.muAnalysisComponents.ResultsTable import ResultsTable
+from ui.components.muAnalysisComponents.ResultSelection import ResultSelection
 
 # legacy code
 def get_icon(standard_icon):
@@ -49,7 +49,7 @@ class MUAnalysis(QWidget):
         print(id(self.data))
         self.results_table = ResultsTable()
         self.result_combo = ResultSelection(self.results_table)
-        # setting instance of function class from src/app/FileUploadFunc
+        # setting instance of function class from src/app.muAnalysisFunctions.FileUploadFunc
         self.mu = FileUploadFunc()
         self.prop = MUPropertiesFunc()
 

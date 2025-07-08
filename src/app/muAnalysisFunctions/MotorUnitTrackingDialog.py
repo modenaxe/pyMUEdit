@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
-from ui.components.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 import numpy as np
 from scipy.spatial.distance import cosine
 import os
@@ -13,8 +13,9 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 from scipy.io import loadmat
 import pandas as pd
-from app.FileUploadFunc import FileUploadFunc
-from ui.components.ErrorDialog import ErrorDialog
+from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
+from app.muAnalysisFunctions.commonOpenFunc import commonOpenFunc
+from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
 def load_otb_data(filepath):
     file_handler = FileUploadFunc()
@@ -342,8 +343,7 @@ class MotorUnitTrackingDialog(QDialog):
             )
 
     def plot_idr(self, file, mu_index, ax, canvas, color='blue'):
-        from app.commonOpenFunc import OpenFunct
-        common = OpenFunct()
+        common = commonOpenFunc()
         idr = common.compute_idr(file)
 
         ax.clear()

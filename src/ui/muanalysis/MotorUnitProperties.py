@@ -9,9 +9,9 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal
-from ui.components.CleanTheme import CleanTheme
-from ui.components.FileSidebar.FileButton import FileButton
-from app.MUPropertiesFun import MUPropertiesFunc
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.FileSidebar.FileButton import FileButton
+from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
 
 class MotorUnitPropertiesDialog(QDialog):
     # Dialog for entering Motor Unit Properties including MVC value
@@ -64,7 +64,7 @@ class MotorUnitPropertiesDialog(QDialog):
 # has firing at rec, firing at start/end input and basic properties button
 # button leads to functions found in app.MUPropertiesFun
 class MotorUnitPropertiesBasic(QHBoxLayout):
-      def __init__(self, func, over):
+    def __init__(self, func, over):
         super().__init__()
         button = PropertiesInnerDialogButton('Basic Properties')
         rec_input = PropertiesInnerDialogText('Firings at Rec')

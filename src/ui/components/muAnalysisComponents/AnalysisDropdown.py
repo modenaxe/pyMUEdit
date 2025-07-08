@@ -5,8 +5,8 @@ from PyQt5.QtWidgets import (
     QLabel,
 )
 from PyQt5.QtCore import Qt
-from ui.components.CleanTheme import CleanTheme
-from ui.components.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 
 
 # For dropdown inputs for the analysis tab (factory method)
