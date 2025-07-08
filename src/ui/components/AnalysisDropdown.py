@@ -37,7 +37,8 @@ class AnalysisDropdown(QComboBox):
                 subcontrol-origin: padding;
                 subcontrol-position: center right;
                 border: 0px;
-                padding: 0px 10px;
+                width: fit-content;
+                padding: 0px 20px;
             }}
             QComboBox::down-arrow {{
                 image: url(src/public/down_arrow_white_icon.svg);
@@ -76,6 +77,7 @@ class AnalysisDropdown(QComboBox):
 
         # the dropdown, taken from init
         dropdown_dropdown = AnalysisDropdown("", items=items)
+        dropdown_dropdown.adjustSize()
         dropdown_dropdown.setPlaceholderText("")
         box.dropdown = dropdown_dropdown
         box_layout.addWidget(dropdown_dropdown)

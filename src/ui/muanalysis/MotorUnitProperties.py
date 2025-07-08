@@ -29,26 +29,26 @@ class MotorUnitPropertiesDialog(QDialog):
         self.setMinimumWidth(550)
         self.setModal(True)
         self.setWindowFlags(Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
-        self.setStyleSheet(f"background-color: {CleanTheme.ANALYSIS_BG_CARD};")
+        self.setStyleSheet(f"background-color: {CleanTheme.ANALYSIS_BG_SIDEBAR};")
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
         layout.setContentsMargins(30, 20, 30, 20)
         # Title
         title_label = QLabel("Motor Unit Properties")
         title_label.setFont(QFont("Arial", 16, QFont.Bold))
-        title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+        title_label.setStyleSheet(f"color: {CleanTheme.ANALYSIS_BG_CARD};")
         layout.addWidget(title_label)
         # MVC Input Section
         mvc_label = QLabel("Enter MVC [N]:")
         mvc_label.setFont(QFont("Arial", 12, QFont.Bold))
-        mvc_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
-        layout.addWidget(mvc_label)
+        mvc_label.setStyleSheet(f"color: {CleanTheme.ANALYSIS_BG_CARD};")
         self.mvc_input = PropertiesInnerDialogText("Enter Maximum Voluntary Contraction value...")
         if self.current_mvc is not None:
             self.mvc_input.setText(str(self.current_mvc))
             print(str(self.current_mvc))
         
         #basic properties
+        layout.addWidget(mvc_label)
         layout.addWidget(self.mvc_input)
         func.set_mvc(self.mvc_input)
         basic_prop = MotorUnitPropertiesBasic(func, self)

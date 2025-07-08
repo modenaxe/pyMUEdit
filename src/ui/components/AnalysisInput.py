@@ -26,7 +26,7 @@ class AnalysisInput(QWidget):
         input.setStyleSheet(
             f"""
             QLineEdit {{
-                background-color: {CleanTheme.ANALYSIS_BG_DROPDOWN};
+                background-color: {CleanTheme.ANALYSIS_BG_CARD};
                 color: {CleanTheme.ANALYSIS_TEXT_SECONDARY};
                 border-radius: 4px;
                 padding-left: 10px;

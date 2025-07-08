@@ -7,8 +7,7 @@ class ConfirmationDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setModal(True)
-        self.setFixedSize(400, 180)
-
+        self.setFixedSize(400, 120)
         self.colors = {
             "bg_card": "#ffffff",
             "border": "#e0e0e0",
@@ -21,11 +20,9 @@ class ConfirmationDialog(QDialog):
         }
 
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(20, 20, 20, 20)
         main_layout.setSpacing(15)
-
         message_label = QLabel(message)
-        message_label.setFont(QFont("Arial", 10))
+        message_label.setFont(QFont("Arial", 18))
         message_label.setStyleSheet(f"color: {self.colors['text_primary']};")
         message_label.setAlignment(Qt.AlignCenter)
         message_label.setWordWrap(True)
@@ -38,7 +35,6 @@ class ConfirmationDialog(QDialog):
         buttons_layout.setAlignment(Qt.AlignCenter)
 
         cancel_button = QPushButton("Cancel")
-        cancel_button.setFont(QFont("Arial", 10))
         cancel_button.setStyleSheet(
             f"""
             QPushButton {{
@@ -56,7 +52,6 @@ class ConfirmationDialog(QDialog):
         cancel_button.clicked.connect(self.reject)
 
         reset_button = QPushButton("Reset")
-        reset_button.setFont(QFont("Arial", 10, QFont.Bold))
         reset_button.setStyleSheet(
             f"""
             QPushButton {{
