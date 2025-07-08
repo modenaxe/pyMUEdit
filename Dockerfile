@@ -6,6 +6,7 @@ ENV PYTHONUNBUFFERED=1
 ENV DISPLAY=:1
 ENV HOME=/app
 ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONPATH=/usr/lib/python3/dist-packages
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -30,8 +31,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-numpy \
     python3-scipy \
     python3-matplotlib \
+    python3-pandas \
+    python3-sklearn \
     python3-pyqt5 \
     python3-pyqt5.qtsvg \
+    python3-seaborn \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -48,7 +52,7 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --break-system-packages -r requirements.txt
 
 # Copy project files
 COPY . .
