@@ -16,6 +16,7 @@ import copy
 import itertools
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from app.FileUploadFunc import FileUploadFunc
+from ui.components.SaveablePlot import SaveablePlot
 from app.commonOpenFunc import OpenFunct
 from core.AnalysisResultsHist import store
 
@@ -43,45 +44,78 @@ class MUPropertiesFunc:
     
     # used for basic properties
     # errors if no file or missing inputs
-    def basic_prop(self, rec, start, over):
+    def basic_prop(self, analysis_plot, rec, start, over):
         file = FileUploadFunc.file
         if (len(self.convert(self.mvc_value)) == 0 or len(self.convert(rec)) == 0 or len(self.convert(start)) == 0 or file == None):
           canvas = QMessageBox()
           canvas.setIcon(QMessageBox.Critical)
           canvas.setText("Error")
-          canvas.setInformativeText('Missing Inputs')
+          canvas.setInformativeText('Ensure that all inputs are filled and a file is loaded')
           canvas.setWindowTitle("Error")
           canvas.exec_()
           return
         over.close()
-        self.showselect(file, rec, start)
+       
+        self.showselect(file, analysis_plot, rec, start)
 
     # used for basic properties
     # user selects starting and ending points for calculation
-    def showselect(self,emgfile, rec, start, how="ref_signal"):
+    def showselect(self, emgfile, analysis_plot, rec, start, how="ref_signal"):
         plt.close()
         data_to_plot = emgfile["REF_SIGNAL"][0]
-        fig,ax = plt.subplots()
-        ax.plot(data_to_plot)
-        ax.set_xlabel("samples")
-        ax.set_ylabel('Reference signal')
-        ax.set_title('Click start and end range. Exit to see results.')
-        fig.set_figheight(5)
-        fig.set_figwidth(5)
+        self.fig, self.ax = plt.subplots()
 
-        coords = []
-        # user selects two points, a line is drawn to clearly mark selection
-        # MISSING: need to allow removal of points
-        while len(coords) < 2:
-          pts = plt.ginput(1)
-          coords.append(pts[0][0])
-          ax.axvline(x=pts[0][0], color='r')
-          plt.pause(0.05)
+        self.ax.plot(data_to_plot)
+        self.ax.set_xlabel("Samples")
+        self.ax.set_ylabel('Reference signal')
+        self.ax.set_title('Click start and end range')
 
-        points = [round(point) for point in coords]
-        points.sort()
-        
-        dataframe = self.basic_mus_properties(emgfile,n_firings_RecDerec=int(self.convert(rec)), n_firings_steady=int(self.convert(start)), start_steady=points[0],end_steady=points[1])
+        self.fig.set_figheight(5)
+        self.fig.set_figwidth(5)
+
+        self.coords = []
+
+        self.fig.canvas.mpl_connect('button_press_event', lambda event: self.on_click(event, rec, start, emgfile))
+        # self.fig.canvas.mpl_connect('key_press_event', lambda event: self.on_press(event, rec, start, emgfile))
+
+        # the actual plotting 
+        canvas = SaveablePlot(self.fig)
+        analysis_plot.display_fig(canvas)
+
+    # helper function for showselect. Displays the red boundaries in the graph 
+    def on_click(self, event, rec, start, emgfile):
+        # only want to process clicks within the plot 
+        if event.inaxes != self.ax:
+            return
+
+        if event.button == 1 and len(self.coords) < 2:
+            x = event.xdata
+            self.coords.append(x)
+            
+            self.ax.axvline(x=x, color='r')
+            
+            if len(self.coords) == 2:
+                # self.ax.set_title("Press enter to see results")
+
+                points = [round(point) for point in self.coords]
+                points.sort()
+
+                dataframe = self.basic_mus_properties(emgfile, n_firings_RecDerec=int(self.convert(rec)), n_firings_steady=int(self.convert(start)), start_steady=points[0],end_steady=points[1])
+
+            self.fig.canvas.draw()
+
+    # user has to press enter before computing range. Allows for editing, but that hasn't been implemented yet
+    # THIS DOESN'T WORK. This doesn't trigger for some reason, so I've disabled it for now, and move the functionality
+    # into on_click
+    # def on_press(self, event, rec, start, emgfile):
+    #     print("this is happening")
+    #     if event.key == 'enter' and len(self.coords) == 2:
+    #         print("pressing enter")
+    #         points = [round(point) for point in self.coords]
+    #         points.sort()
+    #
+    #         dataframe = self.basic_mus_properties(emgfile, n_firings_RecDerec=int(self.convert(rec)), n_firings_steady=int(self.convert(start)), start_steady=points[0],end_steady=points[1])
+
 
     # OPENHDEMG
     # adapted parts labelled with AC
