@@ -1345,10 +1345,7 @@ class MUeditManual(QMainWindow):
             mu_idx = int(parts[3]) - 1
 
             # Store current state for undo
-            self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
-            self.Backup["Dischargetimes"] = (
-                self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
-            )
+            self._push_undo(array_idx, mu_idx)
 
             # Get EMG data for the current array
             emg_data = self.MUedition["signal"]["data"][self.MUedition["edition"]["arraynb"] == array_idx, :]
