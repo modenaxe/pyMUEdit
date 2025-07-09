@@ -547,14 +547,39 @@ class DecompositionApp(QMainWindow):
 
         self.motor_units_label.setText(f"Motor Units: {total_mus}")
 
+        # Plot the reference signal
+        try:
+            if "auxiliary" in self.decomposition_result and "fsamp" in self.decomposition_result:
+                # First auxiliary signal
+                reference_signal = self.decomposition_result["auxiliary"][0, :]
+                fsamp = self.decomposition_result["fsamp"]
+                time_vector = np.arange(reference_signal.shape[0]) / fsamp
+
+                # Clear signal preview plot
+                self.ui_plot_reference.clear()
+                # Plot new reference signal
+                self.ui_plot_reference.plot(time_vector, reference_signal, pen=pg.mkPen(color="#E40000", width=2))
+
+                # Adjust the plot title
+                if "auxiliaryname" in self.decomposition_result:
+                    name_array = self.decomposition_result["auxiliaryname"]
+                    name = name_array[0, 0] if isinstance(name_array[0, 0], str) else str(name_array[0, 0][0])
+                    self.ui_plot_reference.setTitle(f"Reference Signal: {name}")
+                else:
+                    self.ui_plot_reference.setTitle("Reference Signal")
+            else:
+                print("No reference signal found to plot.")
+        except Exception as e:
+            print(f"Error plotting reference signal after decomposition: {e}")
+
         # Save the decomposition state
         try:
             # Import the DecompositionState class
             from core.utils.decomposition_state import DecompositionState
-            
+
             # Save the state and get metadata
             state_meta = DecompositionState.save_state(self)
-            
+
             # Add to dashboard's recent visualizations if parent exists
             if hasattr(self, 'parent') and callable(self.parent):
                 parent = self.parent()
@@ -619,24 +644,6 @@ class DecompositionApp(QMainWindow):
                 time = np.arange(len(target))
             elif isinstance(time, np.ndarray) and time.ndim > 1:
                 time = time.flatten()
-
-            # Clear previous plots
-            self.ui_plot_reference.clear()
-
-            # Plot reference signal with plateau markers
-            self.ui_plot_reference.plot(
-                time, target, pen=pg.mkPen(color="#000000", width=2, style=Qt.PenStyle.DashLine)
-            )
-
-            # Plot plateau markers if available
-            if plateau_coords is not None and len(plateau_coords) >= 2:
-                try:
-                    if len(time) > max(plateau_coords):
-                        for coord in plateau_coords[:2]:  # Just plot the first two markers
-                            line = pg.InfiniteLine(pos=time[coord], angle=90, pen=pg.mkPen(color="#FF0000", width=2))
-                            self.ui_plot_reference.addItem(line)
-                except (IndexError, TypeError) as e:
-                    print(f"Warning: Error plotting plateau markers: {e}")
 
             # Plot decomposition results if available
             if icasig is not None:
