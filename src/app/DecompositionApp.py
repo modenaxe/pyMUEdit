@@ -616,7 +616,7 @@ class DecompositionApp(QMainWindow):
         if progress is not None and isinstance(progress, (int, float)):
             self.status_progress.setValue(int(progress * 100))
 
-    def update_plots(self, time, target, plateau_coords, icasig=None, spikes=None, time2=None, sil=None, cov=None):
+    def update_plots(self, icasig=None, spikes=None, time2=None, sil=None, cov=None):
         """Update plot displays during decomposition using PyQtGraph"""
         try:
             self.iteration_counter += 1
@@ -629,21 +629,6 @@ class DecompositionApp(QMainWindow):
             # Only update plots every 5 iterations to reduce UI overhead
             if self.iteration_counter % 5 != 0 and self.iteration_counter > 1:
                 return
-
-            if target is None:
-                return
-
-            # Ensure arrays are 1D
-            if isinstance(target, np.ndarray) and target.ndim > 1:
-                target = target.flatten()
-
-            # Check if time array is compatible with target array
-            if time is None or (isinstance(time, np.ndarray) and (time.size == 1 or time.shape != target.shape)):
-                # Create a synthetic time array that matches target's length
-                print(f"Creating synthetic time array to match target shape {target.shape}")
-                time = np.arange(len(target))
-            elif isinstance(time, np.ndarray) and time.ndim > 1:
-                time = time.flatten()
 
             # Plot decomposition results if available
             if icasig is not None:
