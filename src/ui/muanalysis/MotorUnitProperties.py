@@ -11,6 +11,8 @@ from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal
 from ui.components.CleanTheme import CleanTheme
 from ui.components.FileSidebar.FileButton import FileButton
+from ui.components.AnalysisText import AnalysisText
+from ui.components.AnalysisButton import AnalysisButton
 from app.MUPropertiesFun import MUPropertiesFunc
 
 class MotorUnitPropertiesDialog(QDialog):
@@ -18,13 +20,13 @@ class MotorUnitPropertiesDialog(QDialog):
 
     mvc_updated = pyqtSignal(float)  # Signal emitted when MVC is updated
 
-    def __init__(self, parent=None, current_mvc=None):
+    def __init__(self, parent=None, analysis_plot=None, current_mvc=None):
         super().__init__(parent)
         self.current_mvc = current_mvc
         # passing instance of MUPropertiesFunc to be used in parts of dialog
-        self.init_ui(MUPropertiesFunc())
+        self.init_ui(analysis_plot, MUPropertiesFunc())
 
-    def init_ui(self, func):
+    def init_ui(self, analysis_plot, func):
         self.setWindowTitle("Motor Unit Properties")
         self.setMinimumWidth(550)
         self.setModal(True)
@@ -51,7 +53,7 @@ class MotorUnitPropertiesDialog(QDialog):
         #basic properties
         layout.addWidget(self.mvc_input)
         func.set_mvc(self.mvc_input)
-        basic_prop = MotorUnitPropertiesBasic(func, self)
+        basic_prop = MotorUnitPropertiesBasic(analysis_plot, func, self)
         layout.addLayout(basic_prop)
 
     def save_mvc(self):
@@ -61,12 +63,12 @@ class MotorUnitPropertiesDialog(QDialog):
 # has firing at rec, firing at start/end input and basic properties button
 # button leads to functions found in app.MUPropertiesFun
 class MotorUnitPropertiesBasic(QHBoxLayout):
-      def __init__(self, func, over):
+      def __init__(self, analysis_plot, func, over):
         super().__init__()
         button = PropertiesInnerDialogButton('Basic Properties')
         rec_input = PropertiesInnerDialogText('Firings at Rec')
         steady_input = PropertiesInnerDialogText('Firings at Start/End Steady')
-        button.clicked.connect(lambda: func.basic_prop(rec_input, steady_input, over))
+        button.clicked.connect(lambda: func.basic_prop(analysis_plot, rec_input, steady_input, over))
         self.addWidget(button)
         self.addWidget(rec_input)
         self.addWidget(steady_input)
@@ -120,24 +122,17 @@ class MotorUnitPropertiesButton(QWidget):
     
     mvc_updated = pyqtSignal(float)  # Signal emitted when MVC is updated
     
-    def __init__(self, parent=None):
+    def __init__(self, analysis_plot, parent=None):
         super().__init__(parent)
         self.current_mvc = None
-        self.init_ui()
+        self.init_ui(analysis_plot)
         
-    def init_ui(self):
+    def init_ui(self, analysis_plot):
         layout = QVBoxLayout(self)
         
         # Subtitle
-        subtitle_label = QLabel("MOTOR UNIT ANALYSIS")
+        subtitle_label = AnalysisText.create_subtitle("MOTOR UNIT ANALYSIS")
         subtitle_label.setObjectName("motorUnitAnalysisSubTitle")
-        subtitle_label.setStyleSheet(
-            f"""
-            color: {CleanTheme.ANALYSIS_TEXT_TERTIARY};
-            margin: 0px;
-            """
-        )
-        subtitle_label.setFont(QFont("Arial", 10, QFont.Bold))
         layout.addWidget(subtitle_label)
         
         # Motor Unit Properties button
@@ -157,13 +152,13 @@ class MotorUnitPropertiesButton(QWidget):
             }}
         """
         )
-        mu_properties_btn.clicked.connect(self.open_mu_properties)
+        mu_properties_btn.clicked.connect(lambda: self.open_mu_properties(analysis_plot))
         layout.addWidget(mu_properties_btn)
         layout.setAlignment(mu_properties_btn, Qt.AlignTop)
         
-    def open_mu_properties(self):
+    def open_mu_properties(self, analysis_plot):
         # Open the Motor Unit Properties dialog
-        dialog = MotorUnitPropertiesDialog(self, self.current_mvc)
+        dialog = MotorUnitPropertiesDialog(self, analysis_plot, self.current_mvc)
         dialog.mvc_updated.connect(self.update_mvc)
         dialog.exec_()
         

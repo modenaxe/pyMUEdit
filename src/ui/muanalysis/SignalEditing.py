@@ -25,11 +25,11 @@ class SignalEditing(QWidget):
     args:
         mu (instance of MUAnalysisFunc): 
     """
-    def __init__(self, mu, center, parent=None):
+    def __init__(self, mu, analysis_plot, parent=None):
         super().__init__(parent)
 
         self.mu = mu
-        self.center = center
+        self.analysis_plot = analysis_plot
 
         layout = QVBoxLayout(self)
         btn = AnalysisButton("Signal Editing", lambda: self.show_window(), parent=self)
@@ -239,7 +239,6 @@ class SignalEditing(QWidget):
         # determining if values are valid 
         order = self.is_int(self.filter_emg_order.get())
         lo, hi = map(self.is_int, self.filter_emg_freq.get().split("-", maxsplit=1))
-        print(lo, hi)
         if not order or order - 1 < 0:
             self.display_warning("Invalid Input", "EMG signal filter order must be a non-negative integer")
             return 
@@ -253,6 +252,11 @@ class SignalEditing(QWidget):
         # main code (copied over from openhdemg)
         # haven't checked if this actually works, it doesn't seem to change anything regardless of the input
         filtered_file = copy.deepcopy(self.mu.file)
+
+        # subtracting 1 to account for is_int() 
+        order -= 1 
+        lo -= 1 
+        hi -= 1
 
         # Calculate the components of the filter and apply them with filtfilt to
         # obtain Zero-lag filtering. sos should be preferred over filtfilt as
@@ -270,7 +274,7 @@ class SignalEditing(QWidget):
                 x=filtered_file["RAW_SIGNAL"][col],
             )
 
-        self.mu.plot_idr(filtered_file, self.center)
+        self.mu.plot_idr(filtered_file, self.analysis_plot)
 
     # filtering and plotting reference signals 
     def filter_refsig(self):
@@ -292,6 +296,10 @@ class SignalEditing(QWidget):
         # main code (copied from openhdemg)
         filtered_file = copy.deepcopy(self.mu.file)
 
+        # subtracting 1 to account for is_int() 
+        order -= 1
+        cutoff -= 1
+
         sos = signal.butter(
             N=order,
             Wn=cutoff,
@@ -304,7 +312,7 @@ class SignalEditing(QWidget):
             x=filtered_file["REF_SIGNAL"][0],
         )
 
-        self.mu.plot_refsig(filtered_file, self.center)
+        self.mu.plot_refsig(filtered_file, self.analysis_plot)
 
     def remove_offset(self):
         if not self.valid_file(): 
