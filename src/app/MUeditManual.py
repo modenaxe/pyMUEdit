@@ -40,7 +40,7 @@ from ui.components import (
     SuccessDialog,
     ErrorDialog,
 )
-
+import json
 
 class MUeditManual(QMainWindow):
     """
@@ -433,8 +433,39 @@ class MUeditManual(QMainWindow):
 
         # Copy structured data from MATLAB file
         edition_data = files["edition"][0, 0]
+        #恢复"Dischargetimes", "silval", "silvalcon"这三个字典
         for field in edition_data.dtype.names:
-            self.MUedition["edition"][field] = edition_data[field]
+            val = edition_data[field]
+            # 检查是不是json字符串
+            if field in ("Dischargetimes", "silval", "silvalcon") and isinstance(val, np.ndarray) and val.dtype.kind in {'U','S','O'}:
+                # 这里val是一个长度为1的array，里面是string
+                str_val = str(val.item())
+                try:
+                    raw_dict = json.loads(str_val)
+                    # key从"[i,j]"字符串恢复为tuple
+                    new_dict = {}
+                    for k, v in raw_dict.items():
+                        idx = tuple(json.loads(k.replace("'", '"')))  # 将"[i, j]" -> (i, j)
+                        # value如果是list，转回np.array；如果是float/int，直接用
+                        if isinstance(v, list):
+                            new_dict[idx] = np.array(v)
+                        else:
+                            new_dict[idx] = v
+                    self.MUedition["edition"][field] = new_dict
+                except Exception as e:
+                    print(f"Error loading field {field}: {e}")
+                    self.MUedition["edition"][field] = {}
+            elif field == "Pulsetrain" and isinstance(val, np.ndarray): #处理pulsetrain
+                self.MUedition["edition"][field] = [x for x in val.flatten()]
+            elif field == "Flag" and isinstance(val, np.ndarray):   #处理flag
+                self.MUedition["edition"][field] = [x.tolist()[0] if isinstance(x, np.ndarray) else list(x) for x in
+                                   val.flatten()]
+            elif field == "time" and isinstance(val, np.ndarray):   #处理time
+                self.MUedition["edition"][field] = val.flatten()
+            elif field == "arraynb" and isinstance(val, np.ndarray):    #处理arraynb
+                self.MUedition["edition"][field] = val.flatten()
+            else:
+                self.MUedition["edition"][field] = val
 
         signal_data = files["signal"][0, 0]
         for field in signal_data.dtype.names:
@@ -2256,6 +2287,21 @@ class MUeditManual(QMainWindow):
         signal = self.MUedition["signal"]
         parameters = self.MUedition.get("parameters", {})
         edition = self.MUedition["edition"]
+
+        for field in ("Dischargetimes", "silval", "silvalcon"): #将这三个字典转为字符串存储
+            if field in edition and isinstance(edition[field], dict):
+                # tuple key转str
+                safe_dict = {}
+                for k, v in edition[field].items():
+                    # key: (i,j) -> "[i,j]"
+                    k_str = str(list(k))
+                    # value: ndarray/list/float
+                    if isinstance(v, np.ndarray):
+                        v_ = v.tolist()
+                    else:
+                        v_ = v
+                    safe_dict[k_str] = v_
+                edition[field] = json.dumps(safe_dict)
 
         # Save the data
         sio.savemat(savename, {"signal": signal, "parameters": parameters, "edition": edition})
