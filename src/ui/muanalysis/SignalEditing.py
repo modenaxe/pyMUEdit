@@ -8,12 +8,13 @@ from PyQt5.QtWidgets import (
     QDialog,
     QMessageBox,
 )
-from ui.components.CleanTheme import CleanTheme
-from ui.components.AnalysisButton import AnalysisButton
-from ui.components.AnalysisText import AnalysisText
-from ui.components.AnalysisInput import AnalysisInput
-from ui.components.AnalysisButton import AnalysisButton
-from ui.components.AnalysisDropdown import AnalysisDropdown
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.AnalysisButton import AnalysisButton
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
+from ui.components.muAnalysisComponents.AnalysisButton import AnalysisButton
+from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
+from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
 """
 All the code responsible for filtering the plot. This includes:
@@ -153,8 +154,8 @@ class SignalEditing(QWidget):
         convert.setStyleSheet(f"padding: 0px")
         window_layout.addWidget(convert)
         convert_layout = QHBoxLayout(convert)
-        convert_layout.setContentsMargins(0, 0, 0, 0)
-
+        convert_layout.setContentsMargins(5, 0, 0, 0)
+        # ficing dropdown
         convert_operator = AnalysisDropdown.labeled_dropdown(
             "Operator", 
             ["Multiply", "Divide"], 
@@ -206,16 +207,13 @@ class SignalEditing(QWidget):
         
     # displays a popup warning 
     def display_warning(self, label="", text=""):
-        QMessageBox.warning(
-            self,
-            label,
-            text,
-        )
+        ErrorDialog(text, 'Error').exec_()
+
 
     # returns boolean value based on whethere or not there's a valid file loaded
     def valid_file(self):
         if not self.mu.file:
-            self.display_warning("Invalid File", "Please upload a file to edit signals")
+            self.display_warning("Invalid File", "No file has been loaded")
             return False 
         return True 
 
