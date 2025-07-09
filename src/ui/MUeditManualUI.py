@@ -440,6 +440,9 @@ def setup_display_panel(main_window):
     main_window.undo_title_btn = ActionButton("Undo", primary=False)
     main_window.undo_title_btn.setFixedHeight(28)
     main_window.undo_title_btn.clicked.connect(main_window.undo_button_pushed)
+    main_window.redo_title_btn = ActionButton("Redo", primary=False) # new redo btn moy
+    main_window.redo_title_btn.setFixedHeight(28)
+    main_window.redo_title_btn.clicked.connect(main_window.redo_button_pushed)
     
     # ★★ 新增：顶部缩放按钮（沿用现有槽函数）
     main_window.zoom_in_top_btn  = ActionButton("Zoom in",  primary=False)
@@ -458,6 +461,7 @@ def setup_display_panel(main_window):
     undo_layout.setSpacing(8) 
 
     undo_layout.addWidget(main_window.undo_title_btn)
+    undo_layout.addWidget(main_window.redo_title_btn) # new redo btn moy
     undo_layout.addStretch(1)
     undo_layout.addWidget(main_window.zoom_in_top_btn) # 右侧 Zoom in
     undo_layout.addWidget(main_window.zoom_out_top_btn)# 右侧 Zoom out

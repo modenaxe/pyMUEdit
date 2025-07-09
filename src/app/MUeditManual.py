@@ -1,5 +1,6 @@
 import os
 import sys
+import copy # moy
 import numpy as np
 import scipy.io as sio
 import pyqtgraph as pg
@@ -59,6 +60,8 @@ class MUeditManual(QMainWindow):
         self.pathname = None
         self.MUedition = None
         self.Backup = {"lock": 0, "Pulsetrain": None, "Dischargetimes": None}
+        self.undo_stack = [] # add undo stack moy
+        self.redo_stack = []
         self.graphstart = None
         self.graphend = None
         self.roi = None
@@ -73,6 +76,16 @@ class MUeditManual(QMainWindow):
         # Add back button if needed when used in embedded mode
         if parent:
             self.add_back_button()
+
+    def _push_undo(self, array_idx: int, mu_idx: int): # moy
+        """Push the current MU state into the undo stack and clear the redo stack."""
+        self.undo_stack.append({
+            "array": array_idx,
+            "mu":    mu_idx,
+            "pulse": copy.deepcopy( self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :]),
+            "times": copy.deepcopy( self.MUedition["edition"]["Dischargetimes"][(array_idx, mu_idx)]),
+        })
+        self.redo_stack.clear() # Any new edits will invalidate the redo history
 
     def _run_with_progress(self, title, task_fn): # add pop-up window moy
 
@@ -1041,10 +1054,7 @@ class MUeditManual(QMainWindow):
         mu_idx = int(parts[3]) - 1
 
         # Store current state for undo
-        self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
-        self.Backup["Dischargetimes"] = (
-            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
-        )
+        self._push_undo(array_idx, mu_idx)
 
         self.selection_tool = SelectionTool(
             self.spiketrain_plot,
@@ -1080,10 +1090,7 @@ class MUeditManual(QMainWindow):
         mu_idx = int(parts[3]) - 1
 
         # Store current state for undo
-        self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
-        self.Backup["Dischargetimes"] = (
-            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
-        )
+        self._push_undo(array_idx, mu_idx)
 
         # Create selection tool
         self.selection_tool = SelectionTool(
@@ -1119,10 +1126,7 @@ class MUeditManual(QMainWindow):
         mu_idx = int(parts[3]) - 1
 
         # Store current state for undo
-        self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
-        self.Backup["Dischargetimes"] = (
-            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
-        )
+        self._push_undo(array_idx, mu_idx)
 
         # Create selection tool
         self.selection_tool = SelectionTool(
@@ -1178,10 +1182,7 @@ class MUeditManual(QMainWindow):
             mu_idx = int(parts[3]) - 1
 
             # Store state for undo
-            self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
-            self.Backup["Dischargetimes"] = (
-                self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
-            )
+            self._push_undo(array_idx, mu_idx)
 
             if (array_idx, mu_idx) not in self.MUedition["edition"]["Dischargetimes"] or len(
                 self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]) <= 1:
@@ -1240,10 +1241,7 @@ class MUeditManual(QMainWindow):
             mu_idx = int(parts[3]) - 1
 
             # Store current state for undo
-            self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
-            self.Backup["Dischargetimes"] = (
-                self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
-            )
+            self._push_undo(array_idx, mu_idx)
 
             # Get the indices for the current view
             idx = np.where(
@@ -1339,10 +1337,7 @@ class MUeditManual(QMainWindow):
         mu_idx = int(parts[3]) - 1
 
         # Store current state for undo
-        self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
-        self.Backup["Dischargetimes"] = (
-            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
-        )
+        self._push_undo(array_idx, mu_idx)
 
         # Get EMG data for the current array
         emg_data = self.MUedition["signal"]["data"][self.MUedition["edition"]["arraynb"] == array_idx, :]
@@ -1433,38 +1428,52 @@ class MUeditManual(QMainWindow):
         # Final display update
         self.mu_checkbox_state_changed()
 
-    def undo_button_pushed(self):
-        """Undo the last edit."""
-        if not self.MUedition or self.Backup["Pulsetrain"] is None:
+    def undo_button_pushed(self): # moy
+        if not self.undo_stack:
+            WarningDialog(text="Nothing left to undo.")
             return
 
-        # Get the first checked MU
-        checked_mus = []
-        for checkbox in self.mu_checkboxes:
-            if checkbox.isChecked():
-                checked_mus.append(checkbox.objectName())
-                break
+        last = self.undo_stack.pop()
+        a, m = last["array"], last["mu"]
 
-        if not checked_mus:
+        # push the status quo "before undo" into the redo stack
+        self.redo_stack.append({
+            "array": a,
+            "mu":    m,
+            "pulse": copy.deepcopy( self.MUedition["edition"]["Pulsetrain"][a][m, :]),
+            "times": copy.deepcopy( self.MUedition["edition"]["Dischargetimes"][(a, m)]),
+        })
+
+        # Applying undo snapshots
+        self.MUedition["edition"]["Pulsetrain"][a][m, :] = last["pulse"]
+        self.MUedition["edition"]["Dischargetimes"][(a, m)] = last["times"]
+
+        # Refresh Display
+        self.calculate_silval(a, m)
+        self.mu_checkbox_state_changed()
+
+    def redo_button_pushed(self):
+        if not self.redo_stack:
+            WarningDialog(text="Nothing left to redo.")
             return
+        
+        action = self.redo_stack.pop()
+        a, m = action["array"], action["mu"]
 
-        mu_text = checked_mus[0]
-        parts = mu_text.split("_")
- 
-        if len(parts) < 4:
-            return
+        # The current state is pushed back onto the undo stack
+        self.undo_stack.append({
+            "array": a,
+            "mu":    m,
+            "pulse": copy.deepcopy( self.MUedition["edition"]["Pulsetrain"][a][m, :]),
+            "times": copy.deepcopy( self.MUedition["edition"]["Dischargetimes"][(a, m)]),
+        })
 
-        array_idx = int(parts[1]) - 1
-        mu_idx = int(parts[3]) - 1
+        # ② Applying redo snapshots
+        self.MUedition["edition"]["Pulsetrain"][a][m, :] = action["pulse"]
+        self.MUedition["edition"]["Dischargetimes"][(a, m)] = action["times"]
 
-        # Restore from backup
-        self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = self.Backup["Pulsetrain"].copy()
-        self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = self.Backup["Dischargetimes"].copy()
-
-        # Recalculate SIL
-        self.calculate_silval(array_idx, mu_idx)
-
-        # Update the display
+        # Refresh Display
+        self.calculate_silval(a, m)
         self.mu_checkbox_state_changed()
 
     def flag_mu_for_deletion_button_pushed(self):
