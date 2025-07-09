@@ -1446,9 +1446,9 @@ class MUeditManual(QMainWindow):
 
             # Final display update
             if(new_sil >= old_sil):
-                self.mu_checkbox_state_changed(pluse_train_color="#8ACD69")
+                self.mu_checkbox_state_changed(pluse_train_color="#8ACD69", zoom_reset= False)
             else:
-                self.mu_checkbox_state_changed(pluse_train_color="#698CCD")
+                self.mu_checkbox_state_changed(pluse_train_color="#698CCD", zoom_reset= False)
             QApplication.processEvents()
 
             QApplication.restoreOverrideCursor()
