@@ -80,7 +80,7 @@ class MUPropertiesFunc:
 
         # the actual plotting 
         canvas = SaveablePlot(self.fig)
-        analysis_plot.display_fig(canvas)
+        analysis_plot.display_plot(canvas)
 
     # helper function for showselect. Displays the red boundaries in the graph 
     def on_click(self, event, rec, start, emgfile):

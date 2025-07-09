@@ -24,9 +24,10 @@ class MotorUnitPropertiesDialog(QDialog):
         super().__init__(parent)
         self.current_mvc = current_mvc
         # passing instance of MUPropertiesFunc to be used in parts of dialog
-        self.init_ui(analysis_plot, MUPropertiesFunc())
+        self.analysis_plot = analysis_plot
+        self.init_ui(MUPropertiesFunc())
 
-    def init_ui(self, analysis_plot, func):
+    def init_ui(self, func):
         self.setWindowTitle("Motor Unit Properties")
         self.setMinimumWidth(550)
         self.setModal(True)
@@ -53,7 +54,7 @@ class MotorUnitPropertiesDialog(QDialog):
         #basic properties
         layout.addWidget(self.mvc_input)
         func.set_mvc(self.mvc_input)
-        basic_prop = MotorUnitPropertiesBasic(analysis_plot, func, self)
+        basic_prop = MotorUnitPropertiesBasic(self.analysis_plot, func, self)
         layout.addLayout(basic_prop)
 
     def save_mvc(self):
@@ -125,9 +126,10 @@ class MotorUnitPropertiesButton(QWidget):
     def __init__(self, analysis_plot, parent=None):
         super().__init__(parent)
         self.current_mvc = None
-        self.init_ui(analysis_plot)
+        self.analysis_plot = analysis_plot
+        self.init_ui()
         
-    def init_ui(self, analysis_plot):
+    def init_ui(self):
         layout = QVBoxLayout(self)
         
         # Subtitle
@@ -152,13 +154,13 @@ class MotorUnitPropertiesButton(QWidget):
             }}
         """
         )
-        mu_properties_btn.clicked.connect(lambda: self.open_mu_properties(analysis_plot))
+        mu_properties_btn.clicked.connect(self.open_mu_properties)
         layout.addWidget(mu_properties_btn)
         layout.setAlignment(mu_properties_btn, Qt.AlignTop)
         
-    def open_mu_properties(self, analysis_plot):
+    def open_mu_properties(self):
         # Open the Motor Unit Properties dialog
-        dialog = MotorUnitPropertiesDialog(self, analysis_plot, self.current_mvc)
+        dialog = MotorUnitPropertiesDialog(self, self.analysis_plot, self.current_mvc)
         dialog.mvc_updated.connect(self.update_mvc)
         dialog.exec_()
         
