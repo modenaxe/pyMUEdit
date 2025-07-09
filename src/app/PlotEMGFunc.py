@@ -6,6 +6,7 @@ import warnings
 import copy
 
 from matplotlib.figure import Figure
+from ui.components.SaveablePlot import SaveablePlot
 
 
 def parse_channel_input(raw_text, max_channels=None):
@@ -134,6 +135,7 @@ def min_max_scaling(data=None, series_or_df=None, col_by_col=False):
 #OPENHDEMG
 def plot_emgsig(
     emgfile,
+    analysis_plot,
     channels,
     manual_offset=0,
     addrefsig=False,
@@ -244,5 +246,7 @@ def plot_emgsig(
 
     if showimmediately:
         plt.show()
-        
-    return fig
+    
+    # TL : function now plots it and doesn't return a figure, similar to plot_idr and plog_refsig in MUAnalysisFunc
+    canvas = SaveablePlot(fig)
+    analysis_plot.display_fig(canvas)

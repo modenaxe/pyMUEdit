@@ -34,6 +34,3 @@ class AnalysisPlot(QWidget):
         self.canvas = fig 
         self.layout.addWidget(self.canvas)
 
-    def test(self):
-        print("TEST TEST TEST TEST TEST PLEASE WORK")
-

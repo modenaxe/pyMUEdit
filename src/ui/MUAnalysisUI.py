@@ -192,7 +192,7 @@ class MUAnalysis(QWidget):
         self.motor_unit_properties = motor_unit_properties
         
         # plot emg button
-        plot_emg_tools = PlotEMGButton(parent=self)
+        plot_emg_tools = PlotEMGButton(self.analysis_plot, parent=self)
         sidebar_layout.addWidget(plot_emg_tools)
         self.plot_emg_tools = plot_emg_tools
 
