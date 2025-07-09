@@ -9,9 +9,9 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal
-from ui.components.CleanTheme import CleanTheme
-from ui.components.FileSidebar.FileButton import FileButton
-from app.MUPropertiesFun import MUPropertiesFunc
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.FileSidebar.FileButton import FileButton
+from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
 
 class MotorUnitPropertiesDialog(QDialog):
     # Dialog for entering Motor Unit Properties including MVC value
@@ -29,27 +29,30 @@ class MotorUnitPropertiesDialog(QDialog):
         self.setMinimumWidth(550)
         self.setModal(True)
         self.setWindowFlags(Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
-        self.setStyleSheet(f"background-color: {CleanTheme.ANALYSIS_BG_CARD};")
+        self.setStyleSheet(f"background-color: {CleanTheme.ANALYSIS_BG_SIDEBAR};")
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
         layout.setContentsMargins(30, 20, 30, 20)
         # Title
         title_label = QLabel("Motor Unit Properties")
         title_label.setFont(QFont("Arial", 16, QFont.Bold))
-        title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+        title_label.setStyleSheet(f"color: {CleanTheme.ANALYSIS_BG_CARD};")
         layout.addWidget(title_label)
+
         # MVC Input Section
+        box = QHBoxLayout()
         mvc_label = QLabel("Enter MVC [N]:")
         mvc_label.setFont(QFont("Arial", 12, QFont.Bold))
-        mvc_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
-        layout.addWidget(mvc_label)
+        mvc_label.setStyleSheet(f"color: {CleanTheme.ANALYSIS_BG_CARD};")
         self.mvc_input = PropertiesInnerDialogText("Enter Maximum Voluntary Contraction value...")
         if self.current_mvc is not None:
             self.mvc_input.setText(str(self.current_mvc))
             print(str(self.current_mvc))
-        
+        box.addWidget(mvc_label)
+        box.addWidget(self.mvc_input)
+
         #basic properties
-        layout.addWidget(self.mvc_input)
+        layout.addLayout(box)
         func.set_mvc(self.mvc_input)
         basic_prop = MotorUnitPropertiesBasic(func, self)
         layout.addLayout(basic_prop)
@@ -61,7 +64,7 @@ class MotorUnitPropertiesDialog(QDialog):
 # has firing at rec, firing at start/end input and basic properties button
 # button leads to functions found in app.MUPropertiesFun
 class MotorUnitPropertiesBasic(QHBoxLayout):
-      def __init__(self, func, over):
+    def __init__(self, func, over):
         super().__init__()
         button = PropertiesInnerDialogButton('Basic Properties')
         rec_input = PropertiesInnerDialogText('Firings at Rec')

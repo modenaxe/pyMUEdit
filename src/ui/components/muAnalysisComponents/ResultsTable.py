@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QAbstractTableModel, Qt
-from core.AnalysisResultsHist import store
+from core.muAnalysisCore.AnalysisResultsHist import store
 
 class ResultsTable(QAbstractTableModel):
     def __init__(self):

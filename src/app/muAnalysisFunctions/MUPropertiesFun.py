@@ -15,9 +15,10 @@ import math
 import copy
 import itertools
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-from app.FileUploadFunc import FileUploadFunc
-from app.commonOpenFunc import OpenFunct
-from core.AnalysisResultsHist import store
+from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
+from app.muAnalysisFunctions.commonOpenFunc import commonOpenFunc
+from core.muAnalysisCore.AnalysisResultsHist import store
+from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
 # class for functions required for the MU properties dialog
 class MUPropertiesFunc:
@@ -45,14 +46,12 @@ class MUPropertiesFunc:
     # errors if no file or missing inputs
     def basic_prop(self, rec, start, over):
         file = FileUploadFunc.file
-        if (len(self.convert(self.mvc_value)) == 0 or len(self.convert(rec)) == 0 or len(self.convert(start)) == 0 or file == None):
-          canvas = QMessageBox()
-          canvas.setIcon(QMessageBox.Critical)
-          canvas.setText("Error")
-          canvas.setInformativeText('Missing Inputs')
-          canvas.setWindowTitle("Error")
-          canvas.exec_()
-          return
+        if (file == None):
+            ErrorDialog('No file has been loaded', 'Error').exec_()
+            return
+        if (len(self.convert(self.mvc_value)) == 0 or len(self.convert(rec)) == 0 or len(self.convert(start)) == 0):
+            ErrorDialog('You are missing Inputs', 'Error').exec_()
+            return
         over.close()
         self.showselect(file, rec, start)
 
@@ -368,7 +367,7 @@ class MUPropertiesFunc:
                 f"n_firings_steady must be an integer. {type(n_firings_steady)} was passed instead."
             )
 
-        common = OpenFunct()
+        common = commonOpenFunc()
         idr = common.compute_idr(emgfile=emgfile)
 
         # Filter firings outside the idr_range, if required
@@ -526,7 +525,7 @@ class MUPropertiesFunc:
             )
 
         # We use the idr pd.DataFrame to calculate the COVisi
-        common = OpenFunct()
+        common = commonOpenFunc()
         idr = common.compute_idr(emgfile=emgfile)
 
         # Filter firings outside the idr_range, if required
