@@ -74,11 +74,11 @@ class AnalysisPlot(QWidget):
 
     # used for displaying plots, not figures
     # in this case, plots refer to anything that isn't the usual MU signal graph
-    def display_plot(self, fig=None):
+    def display_plot(self, plot=None):
         # removing current 
         self.remove_canvas()
 
-        self.plot = fig
+        self.plot = plot 
         self.layout.addWidget(self.plot)
 
         self.toggle_btn.show()
