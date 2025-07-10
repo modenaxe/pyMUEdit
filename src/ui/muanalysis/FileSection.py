@@ -1,6 +1,7 @@
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.ResetButton import ResetButton
+from ui.components.muAnalysisComponents.GeneralRedButton import GeneralRedButton
+from  core.muAnalysisCore.ResetButton import ResetButton
 from PyQt5.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
@@ -9,12 +10,14 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from ui.components.muAnalysisComponents.MajorHeading import MajorHeading
 
 # class containing the file section of the right sidebar
 # when button is clicked it calls mu class method, passing instance of the center layout as it needs
 
 class FileSection(QFrame):
+
     def __init__(self, sidebar, mu, center):
         super().__init__(sidebar)
         self.setObjectName("FileSection")
