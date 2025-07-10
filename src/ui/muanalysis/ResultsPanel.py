@@ -18,6 +18,9 @@ from core.muAnalysisCore.AnalysisResultsHist import store
 
 
 class ResultsPanel(QFrame):
+
+    """Results panel where data is displayed on right sidebar"""
+
     def __init__(self, parent, combo, model = {}):
         super().__init__(parent)
         
@@ -36,7 +39,7 @@ class ResultsPanel(QFrame):
         # save results button
         save_button = GeneralButton("Save", lambda: self.save_results())
         
-        # save results button
+        # clear results button
         clear_button = GeneralButton("Clear", lambda: self.clear_results())
 
         self.combo_box = combo

@@ -2,6 +2,9 @@ from PyQt5.QtCore import QAbstractTableModel, Qt
 from core.muAnalysisCore.AnalysisResultsHist import store
 
 class ResultsTable(QAbstractTableModel):
+
+    """Actual data handling within tables that are displayed in results section"""
+
     def __init__(self):
         super().__init__()
         

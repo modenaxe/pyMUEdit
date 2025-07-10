@@ -28,10 +28,10 @@ from ui.components.muAnalysisComponents.MajorHeading import MajorHeading
 from ui.muanalysis.FileSection import FileSection
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
-from ui.components.muAnalysisComponents.ResultsPanel import ResultsPanel
+from ui.muanalysis.ResultsPanel import ResultsPanel
 
 from core.muAnalysisCore.AnalysisResultsHist import store
-from ui.components.muAnalysisComponents.ResultsTable import ResultsTable
+from core.muAnalysisCore.ResultsTable import ResultsTable
 from ui.components.muAnalysisComponents.ResultSelection import ResultSelection
 
 # legacy code

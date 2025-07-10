@@ -15,8 +15,9 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
-
+# legacy code
 class SaveablePlot(QWidget):
+
     """
     A widget that wraps a matplotlib figure with a floating save button in the top right corner.
     """
