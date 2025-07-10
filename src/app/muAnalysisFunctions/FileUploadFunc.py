@@ -19,10 +19,13 @@ from ui.components.muAnalysisComponents.ConfirmationDialog import ConfirmationDi
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
-from app.muAnalysisFunctions.commonOpenFunc import commonOpenFunc
+from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
 
 # This class holds all the functions used for file uploading
 class FileUploadFunc:
+
+    """Methods for handling the emgFile and its intital display to centre"""
+
     # made file a class var, to be accessed via FileUploadFunc.file, so that it can be used across other classes
     file = None
 
@@ -30,7 +33,6 @@ class FileUploadFunc:
         # Store the original file path for reset functionality
         self.original_file_path = None
         # file holds emg file instance which is used in openHdemg code
-        # self.file = None
         # canvas hold whatever the widget in the center area is (graph or message saying to load file)
         self.canvas = None
         self.coords = []
@@ -416,7 +418,7 @@ class FileUploadFunc:
     showimmediately=False,
     ):
         # Compute the IDR
-        common = commonOpenFunc()
+        common = CommonOpenFunc()
         idr = common.compute_idr(emgfile=emgfile)
 
         # Check if all the MUs have to be plotted

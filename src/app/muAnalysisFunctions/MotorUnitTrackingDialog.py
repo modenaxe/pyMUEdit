@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from scipy.io import loadmat
 import pandas as pd
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
-from app.muAnalysisFunctions.commonOpenFunc import commonOpenFunc
+from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
 def load_otb_data(filepath):
@@ -25,6 +25,9 @@ def load_otb_data(filepath):
     return FileUploadFunc.file
 
 class MotorUnitTrackingDialog(QDialog):
+
+    """Motor Unit Tracking Advaced Tool functionality and display"""
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Motor Unit Tracking")
@@ -343,7 +346,7 @@ class MotorUnitTrackingDialog(QDialog):
             )
 
     def plot_idr(self, file, mu_index, ax, canvas, color='blue'):
-        common = commonOpenFunc()
+        common = CommonOpenFunc()
         idr = common.compute_idr(file)
 
         ax.clear()
