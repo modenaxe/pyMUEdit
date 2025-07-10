@@ -13,7 +13,6 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from ui.components.muAnalysisComponents.FileSidebar.FileButton import FileButton
 from app.muAnalysisFunctions.PlotEMGFunc import parse_channel_input, plot_emgsig
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas

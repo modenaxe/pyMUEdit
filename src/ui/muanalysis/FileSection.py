@@ -1,5 +1,5 @@
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
-from ui.components.muAnalysisComponents.FileSidebar.FileButton import FileButton
+from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.ResetButton import ResetButton
 from PyQt5.QtWidgets import (
     QVBoxLayout,
@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.MajorHeading import MajorHeading
 
 # class containing the file section of the right sidebar
 # when button is clicked it calls mu class method, passing instance of the center layout as it needs
@@ -20,7 +21,7 @@ class FileSection(QFrame):
         
         layout = QVBoxLayout(self)
 
-        title_label = QLabel("File")
+        title_label = MajorHeading("File")
         title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY}; border: none")
         title_label.setFont(QFont("Arial", 14, QFont.Bold))
         title_label.setObjectName("sidebarTitle")
@@ -29,8 +30,7 @@ class FileSection(QFrame):
         button_row = QHBoxLayout()
         button_row.setSpacing(10)
 
-        browse_btn = FileButton('Load File')
-        browse_btn.clicked.connect(lambda: mu.select_file_button_pushed(center))
+        browse_btn = GeneralButton('Load File', lambda: mu.select_file_button_pushed(center))
         browse_btn.setFixedWidth(120)
         browse_btn.setFixedHeight(40)
 

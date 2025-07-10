@@ -7,10 +7,12 @@ from PyQt5.QtWidgets import (
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 
-"""
-Returns an input with a label
-"""
 class AnalysisInput(QWidget):
+    
+    """
+    Returns an input with a label
+    """
+
     def __init__(self, label="", parent=None):
         super().__init__(parent)
 
@@ -34,7 +36,6 @@ class AnalysisInput(QWidget):
             }}
         """
         )
-        # input_input.setPlaceholderText("")
         self.input = input
         layout.addWidget(input)
 
