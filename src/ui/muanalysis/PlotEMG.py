@@ -19,7 +19,7 @@ from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.muanalysis.MotorUnitProperties import PropertiesInnerDialogButton
+from ui.components.muAnalysisComponents.AnalysisButton import AnalysisButton 
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
 
@@ -91,9 +91,9 @@ class PlotEMGToolDialog(QDialog):
 
         # --- Plot EMGsig Button and Channel Input (side by side) ---
         emg_row_layout = QHBoxLayout()
-        emgsig_btn = PropertiesInnerDialogButton('Plot EMGsig')
-        emgsig_btn.clicked.connect(self.handle_emgsig_clicked)
+        emgsig_btn = AnalysisButton("Plot EMGsig", self.handle_emgsig_clicked, parent=self)
         emg_row_layout.addWidget(emgsig_btn)
+
         self.channel_input = QLineEdit()
         self.channel_input.setPlaceholderText("Channel Number (e.g. 1-3,5,7)")
         self.channel_input.setFont(QFont("Arial", 11))
@@ -212,37 +212,13 @@ class PlotEMGButton(QWidget):
         layout = QVBoxLayout(self)
         
         # Subtitle
-        subtitle_label = QLabel("PLOT EMG")
+        subtitle_label = AnalysisText.create_subtitle("PLOT EMG")
         subtitle_label.setObjectName("motorUnitAnalysisSubTitle")
-        subtitle_label.setStyleSheet(
-            f"""
-            color: {CleanTheme.ANALYSIS_TEXT_TERTIARY};
-            margin: 0px;
-            """
-        )
-        subtitle_label.setFont(QFont("Arial", 10, QFont.Bold))
         layout.addWidget(subtitle_label)
         
         # Motor Unit Properties button
-        plot_emg_btn = QPushButton("Plot EMG")
-        plot_emg_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        plot_emg_btn.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {CleanTheme.ANALYSIS_BG_BUTTON};
-                color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
-                height: 40px;
-                border-radius: 4px;
-            }}
-            QPushButton:hover {{
-                background-color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
-                color: {CleanTheme.ANALYSIS_BG_BUTTON};
-            }}
-        """
-        )
-        plot_emg_btn.clicked.connect(self.open_plot_emg_btn)
+        plot_emg_btn = AnalysisButton("Plot EMG", self.open_plot_emg_btn, parent=self)
         layout.addWidget(plot_emg_btn)
-        layout.setAlignment(plot_emg_btn, Qt.AlignmentFlag.AlignTop)
         
     def open_plot_emg_btn(self):
         # Open the Motor Unit Properties dialog

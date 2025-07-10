@@ -8,7 +8,8 @@ class AnalysisButton(QPushButton):
 
     parameters:
         label (string): text for the button 
-        action (lambda: action): the thing the button triggers. Make sure you include `lambda:` in param
+        action (action): the thing the button triggers
+            - sometimes you have to put lambda in it, I have no idea how python works
     """
     def __init__(self, label="", action=None, parent=None):
         super().__init__(label, parent)
