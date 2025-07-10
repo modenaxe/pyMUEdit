@@ -10,7 +10,7 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 from ui.components.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
-from ui.components.muAnalysisComponents.AnalysisButton import AnalysisButton
+from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
@@ -75,7 +75,7 @@ class AdvancedTools(QWidget):
         self.matrix_code_dropdown = matrix_code_dropdown
 
         # advanced analysis button
-        advanced_analysis_btn = AnalysisButton(
+        advanced_analysis_btn = GeneralButton(
             "Advanced Analysis", 
             lambda: self.show_popup(), 
             parent=self

@@ -12,6 +12,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
+from ui.components.muAnalysisComponents.MajorHeading import MajorHeading
 from core.muAnalysisCore.AnalysisResultsHist import store
 
 
@@ -20,78 +22,22 @@ class ResultsPanel(QFrame):
         super().__init__(parent)
         
         self.model = model
-
-        self.colors = {
-            "bg_main": "#f8f9fa",
-            "bg_card": "#ffffff",
-            "bg_sidebar": "#f8f9fa",
-            "bg_topbar": "#ffffff",
-            "border_light": "#e9ecef",
-            "shadow": QColor(0, 0, 0, 25),
-            "text_primary": "#212529",
-            "text_secondary": "#6c757d",
-            "text_title": "#343a40",
-            "button_dark_bg": "#343a40",
-            "button_dark_hover": "#495057",
-            "button_grey_bg": "#e9ecee",
-            "checkbox_bg": "#f1f3f5",
-        }
         
         self.setObjectName("ResultsPanel")
         self.setStyleSheet(
             f"""
             #rightSidebar {{
-                background-color: {self.colors['bg_card']};
-                border-bottom: 1px solid {self.colors['border_light']};
+                background-color: {CleanTheme.ANALYSIS_BG_TOPBAR};
+                border-bottom: 1px solid {CleanTheme.ANALYSIS_TEXT_BUTTON};
             }}
         """
         )    
         
         # save results button
-        save_button = QPushButton("Save")
-        save_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        save_button.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {self.colors['button_dark_hover']};
-                color: {self.colors['button_grey_bg']};
-                border: none;
-                height: 40%;
-                max-width: 100%;
-                border-radius: 4px;
-                min-width: 100px;
-            }}
-            QPushButton:hover {{
-                background-color: {self.colors['button_grey_bg']};
-                color: {self.colors['button_dark_hover']};
-            }}
-        """
-        )
-        
-        save_button.clicked.connect(lambda: self.save_results())
+        save_button = GeneralButton("Save", lambda: self.save_results())
         
         # save results button
-        clear_button = QPushButton("Clear")
-        clear_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        clear_button.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {CleanTheme.ANALYSIS_BG_BUTTON};
-                color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
-                border: none;
-                height: 40%;
-                max-width: 100%;
-                border-radius: 4px;
-                min-width: 100px;
-            }}
-            QPushButton:hover {{
-                background-color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
-                color: {CleanTheme.ANALYSIS_BG_BUTTON};
-            }}
-        """
-        )
-        
-        clear_button.clicked.connect(lambda: self.clear_results())
+        clear_button = GeneralButton("Clear", lambda: self.clear_results())
 
         self.combo_box = combo
 
@@ -99,9 +45,7 @@ class ResultsPanel(QFrame):
         self.table_view.setModel(self.model)
         
         # title
-        title = QLabel("Results")
-        title.setFont(QFont("Segoe UI", 14, QFont.Bold))
-        title.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+        title = MajorHeading("Results")
         
         # layout
         top_layout = QHBoxLayout()

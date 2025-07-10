@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QPushButton
 from PyQt5.QtCore import Qt
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
-class AnalysisButton(QPushButton):
+class GeneralButton(QPushButton):
     """
     Button for analysis tab UI 
 

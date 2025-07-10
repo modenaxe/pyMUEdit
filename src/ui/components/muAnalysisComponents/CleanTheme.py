@@ -2,6 +2,7 @@ from PyQt5.QtGui import QColor
 
 
 class CleanTheme:
+    
     """Clean, minimalist color theme for the application"""
 
     # Main backgrounds

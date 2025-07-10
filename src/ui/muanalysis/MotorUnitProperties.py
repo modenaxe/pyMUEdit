@@ -10,7 +10,6 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from ui.components.muAnalysisComponents.FileSidebar.FileButton import FileButton
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
 
 class MotorUnitPropertiesDialog(QDialog):
