@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
-from ui.components.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 import numpy as np
 from scipy.spatial.distance import cosine
 import os
@@ -13,7 +13,9 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 from scipy.io import loadmat
 import pandas as pd
-from app.FileUploadFunc import FileUploadFunc
+from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
+from app.muAnalysisFunctions.commonOpenFunc import commonOpenFunc
+from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
 def load_otb_data(filepath):
     file_handler = FileUploadFunc()
@@ -148,7 +150,8 @@ class MotorUnitTrackingDialog(QDialog):
             try:
                 self.file1 = load_otb_data(file_path)
             except Exception as e:
-                QMessageBox.critical(self, "Load Error", f"Failed to load File 1:\n{str(e)}")
+                ErrorDialog(f"Failed to load File 1:\n{str(e)}", 'Error').exec_()
+                
 
     def load_file2(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Select File 2", "", "MAT Files (*.mat)")
@@ -157,11 +160,11 @@ class MotorUnitTrackingDialog(QDialog):
             try:
                 self.file2 = load_otb_data(file_path)
             except Exception as e:
-                QMessageBox.critical(self, "Load Error", f"Failed to load File 2:\n{str(e)}")
+                ErrorDialog(f"Failed to load File 2:\n{str(e)}", 'Error').exec_()
 
     def on_track(self):
         if self.file1 is None or self.file2 is None:
-            QMessageBox.critical(self, "Invalid Inputs", "Both files must be selected.")
+            ErrorDialog("Both files must be selected", 'Error').exec_()
             return
 
         try:
@@ -169,18 +172,18 @@ class MotorUnitTrackingDialog(QDialog):
             time_window_ms = int(self.window_input.text())
             fsamp = self.file1.get("FSAMP") if isinstance(self.file1, dict) else None
             if not isinstance(fsamp, (int, float)):
-                QMessageBox.critical(self, "Invalid Inputs", "FSAMP is missing or not numeric in File 1.")
+                ErrorDialog("FSAMP is missing or not numeric in File 1.", 'Error').exec_()
                 return
             samples_window = int((time_window_ms / 1000.0) * fsamp)
         except ValueError:
-            QMessageBox.critical(self, "Invalid Inputs", "Threshold and Time Window must be numeric.")
+            ErrorDialog("Threshold and Time Window must be numeric.", 'Error').exec_()
             return
 
         results = []
         file1 = self.file1.get("IPTS") if isinstance(self.file1, dict) else None
         file2 = self.file2.get("IPTS") if isinstance(self.file2, dict) else None
         if not (isinstance(file1, pd.DataFrame) and isinstance(file2, pd.DataFrame)):
-            QMessageBox.critical(self, "Invalid Inputs", "Loaded files do not contain valid IPTS DataFrames.")
+            ErrorDialog("Loaded files do not contain valid IPTS DataFrames.", 'Error').exec_()
             return
         for i in range(file1.shape[1]):
             vec1 = file1.iloc[-samples_window:, i].to_numpy()
@@ -340,8 +343,7 @@ class MotorUnitTrackingDialog(QDialog):
             )
 
     def plot_idr(self, file, mu_index, ax, canvas, color='blue'):
-        from app.commonOpenFunc import OpenFunct
-        common = OpenFunct()
+        common = commonOpenFunc()
         idr = common.compute_idr(file)
 
         ax.clear()

@@ -15,7 +15,7 @@ import copy
 import itertools
 
 # class to hold any open functions that are being repeated
-class OpenFunct():
+class commonOpenFunc():
     def __init__(self):
         pass
     
@@ -26,7 +26,6 @@ class OpenFunct():
             # Empty dict to fill with dataframes containing the MUPULSES
             # information
             idr = {x: np.nan**2 for x in range(emgfile["NUMBER_OF_MUS"])}
-
             for mu in range(emgfile["NUMBER_OF_MUS"]):
                 # Manage the exception of a single MU and add MUPULSES in column 0
                 df = pd.DataFrame(
@@ -34,14 +33,12 @@ class OpenFunct():
                     if emgfile["NUMBER_OF_MUS"] > 1
                     else np.transpose(np.array(emgfile["MUPULSES"]))
                 )
-
                 # Calculate difference in MUPULSES and add it in column 1
                 df[1] = df[0].diff()
                 # Calculate time in seconds and add it in column 2
                 df[2] = df[0] / emgfile["FSAMP"]
                 # Calculate the idr and add it in column 3
                 df[3] = emgfile["FSAMP"] / df[1]
-
                 df = df.rename(
                     columns={
                         0: "mupulses",
@@ -50,12 +47,9 @@ class OpenFunct():
                         3: "idr",
                     },
                 )
-
                 # Add the idr to the idr dict
                 idr[mu] = df
-
             return idr
-
         else:
             raise Exception(
                 "MUPULSES is probably absent or it is not contained in a list"

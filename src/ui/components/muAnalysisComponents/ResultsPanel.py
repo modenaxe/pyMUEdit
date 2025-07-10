@@ -11,8 +11,8 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt
-from .CleanTheme import CleanTheme
-from core.AnalysisResultsHist import store
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from core.muAnalysisCore.AnalysisResultsHist import store
 
 
 class ResultsPanel(QFrame):
@@ -76,8 +76,8 @@ class ResultsPanel(QFrame):
         clear_button.setStyleSheet(
             f"""
             QPushButton {{
-                background-color: {self.colors['button_dark_hover']};
-                color: {self.colors['button_grey_bg']};
+                background-color: {CleanTheme.ANALYSIS_BG_BUTTON};
+                color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
                 border: none;
                 height: 40%;
                 max-width: 100%;
@@ -85,8 +85,8 @@ class ResultsPanel(QFrame):
                 min-width: 100px;
             }}
             QPushButton:hover {{
-                background-color: {self.colors['button_grey_bg']};
-                color: {self.colors['button_dark_hover']};
+                background-color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
+                color: {CleanTheme.ANALYSIS_BG_BUTTON};
             }}
         """
         )
