@@ -69,10 +69,9 @@ class MotorUnitPropertiesDialog(QDialog):
 class MotorUnitPropertiesBasic(QHBoxLayout):
     def __init__(self, analysis_plot, func, over):
         super().__init__()
-        button = PropertiesInnerDialogButton('Basic Properties')
+        button = AnalysisButton("Basic Properties", lambda: func.basic_prop(analysis_plot, rec_input, steady_input, over))
         rec_input = PropertiesInnerDialogText('Firings at Rec')
         steady_input = PropertiesInnerDialogText('Firings at Start/End Steady')
-        button.clicked.connect(lambda: func.basic_prop(analysis_plot, rec_input, steady_input, over))
         self.addWidget(button)
         self.addWidget(rec_input)
         self.addWidget(steady_input)
@@ -98,29 +97,6 @@ class PropertiesInnerDialogText(QLineEdit):
             }}
         """)
 
-# general class for any buttons inside dialog
-class PropertiesInnerDialogButton(QPushButton):
-    def __init__(self, text):
-        super().__init__(text )
-        self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: #495057;
-                color: #e9ecee;
-                border: none;
-                height: 40%;
-                max-width: 100%;
-                border-radius: 4px;
-            }}
-            QPushButton:hover {{
-                background-color: #4a5672;
-            }}
-        """
-        )
-
-
 class MotorUnitPropertiesButton(QWidget):
     """Button widget for opening Motor Unit Properties dialog"""
     
@@ -141,9 +117,8 @@ class MotorUnitPropertiesButton(QWidget):
         layout.addWidget(subtitle_label)
         
         # Motor Unit Properties button
-        mu_properties_btn = AnalysisButton("Motor Unit Properties", lambda: self.open_mu_properties, parent=self)
+        mu_properties_btn = AnalysisButton("Motor Unit Properties", self.open_mu_properties, parent=self)
         layout.addWidget(mu_properties_btn)
-        layout.setAlignment(mu_properties_btn, Qt.AlignTop)
         
     def open_mu_properties(self):
         # Open the Motor Unit Properties dialog
