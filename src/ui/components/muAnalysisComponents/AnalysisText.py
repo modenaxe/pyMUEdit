@@ -9,7 +9,7 @@ class AnalysisText(QLabel):
     (Factory Method)
     Each method returns an instance of different types of text (titles, headings, text etc.)
     """
-
+    
     # for titles 
     def create_title(text=""):
         title = QLabel(text)

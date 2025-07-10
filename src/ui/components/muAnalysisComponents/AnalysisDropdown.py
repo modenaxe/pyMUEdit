@@ -14,11 +14,6 @@ class AnalysisDropdown(QComboBox):
     
     """
     Initialise a dropdown without a label (label is a placeholder)
-
-    Args:
-        label: (string): placeholder text for dropdown
-        items (list of strings, optional): Array of options 
-        parent (QWidget, optional): Parent widget
     """
 
     def __init__(self, label, items=None, parent=None):

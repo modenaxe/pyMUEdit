@@ -3,13 +3,14 @@ from PyQt5.QtCore import Qt
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
 class GeneralButton(QPushButton):
-    """
-    Button for analysis tab UI 
 
+    """
+    General button for sideabars
     parameters:
         label (string): text for the button 
-        action (lambda: action): the thing the button triggers. Make sure you include `lambda:` in param
+        action (lambda: action): the action the button triggers.
     """
+
     def __init__(self, label="", action=None, parent=None):
         super().__init__(label, parent)
 
