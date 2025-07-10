@@ -17,6 +17,9 @@ from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from app.muAnalysisFunctions.MotorUnitTrackingDialog import MotorUnitTrackingDialog
 
 class AdvancedTools(QWidget):
+
+    """Dialog and drops down for advanced tool analysis"""
+
     def __init__(self, items=None, parent=None):
         super().__init__(parent)
 

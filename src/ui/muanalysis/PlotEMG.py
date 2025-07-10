@@ -16,13 +16,17 @@ from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from app.muAnalysisFunctions.PlotEMGFunc import parse_channel_input, plot_emgsig
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.muanalysis.MotorUnitProperties import PropertiesInnerDialogButton
+from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import PropertiesInnerDialogButton
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
 
 class PlotEMGToolDialog(QDialog):
+
+    """Dialog containing options for plotting"""
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.init_ui()
@@ -220,32 +224,12 @@ class PlotEMGButton(QWidget):
         )
         subtitle_label.setFont(QFont("Arial", 10, QFont.Bold))
         layout.addWidget(subtitle_label)
-        
-        # Motor Unit Properties button
-        plot_emg_btn = QPushButton("Plot EMG")
-        plot_emg_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        plot_emg_btn.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {CleanTheme.ANALYSIS_BG_BUTTON};
-                color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
-                height: 40px;
-                border-radius: 4px;
-            }}
-            QPushButton:hover {{
-                background-color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
-                color: {CleanTheme.ANALYSIS_BG_BUTTON};
-            }}
-        """
-        )
-        plot_emg_btn.clicked.connect(self.open_plot_emg_btn)
+
+        plot_emg_btn = GeneralButton("Plot EMG", lambda: self.open_plot_emg_btn())
         layout.addWidget(plot_emg_btn)
         layout.setAlignment(plot_emg_btn, Qt.AlignmentFlag.AlignTop)
-        
-        
         
     def open_plot_emg_btn(self):
         # Open the Motor Unit Properties dialog
         dialog = PlotEMGToolDialog(self)
         dialog.exec_()
-

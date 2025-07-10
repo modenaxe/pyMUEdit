@@ -9,23 +9,20 @@ from PyQt5.QtWidgets import (
     QMessageBox,
 )
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
-"""
-All the code responsible for filtering the plot. This includes:
- - the button on the dashboard and the popup
- - the functionality behind the buttons you press inside the popup that filter the plot 
-"""
 class SignalEditing(QWidget):
+
     """
-    args:
-        mu (instance of MUAnalysisFunc): 
+    All the code responsible for filtering the plot. This includes:
+    - the button on the dashboard and the popup
+    - the functionality behind the buttons you press inside the popup that filter the plot 
     """
+
     def __init__(self, mu, center, parent=None):
         super().__init__(parent)
 

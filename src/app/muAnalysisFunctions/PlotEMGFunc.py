@@ -9,19 +9,6 @@ from matplotlib.figure import Figure
 from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
 
 def parse_channel_input(raw_text, max_channels=None):
-    """
-    Parse the channel input string into a list of integers.
-    Accepts comma-separated and dash ranges, e.g. '1,3,5-7'.
-    Raises ValueError if input is invalid or channels exceed available range.
-    
-    Parameters:
-    -----------
-    raw_text : str
-        The channel input string to parse
-    max_channels : int, optional
-        Maximum number of available channels (0-indexed). If provided, validates
-        that all requested channels are within range [0, max_channels-1].
-    """
     channels = []
     raw_text = raw_text.strip()
     if not raw_text:

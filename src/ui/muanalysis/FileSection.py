@@ -18,6 +18,8 @@ from ui.components.muAnalysisComponents.MajorHeading import MajorHeading
 
 class FileSection(QFrame):
 
+    """Section contianing file handling Load and Reset"""
+
     def __init__(self, sidebar, mu, center):
         super().__init__(sidebar)
         self.setObjectName("FileSection")

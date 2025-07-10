@@ -11,9 +11,12 @@ from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
+from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
+from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import PropertiesInnerDialogButton
 
 class MotorUnitPropertiesDialog(QDialog):
-    # Dialog for entering Motor Unit Properties including MVC value
+
+    """Dialog for entering Motor Unit Properties including MVC value"""
 
     mvc_updated = pyqtSignal(float)  # Signal emitted when MVC is updated
 
@@ -63,6 +66,9 @@ class MotorUnitPropertiesDialog(QDialog):
 # has firing at rec, firing at start/end input and basic properties button
 # button leads to functions found in app.MUPropertiesFun
 class MotorUnitPropertiesBasic(QHBoxLayout):
+
+    """Basic Properties analysis layout"""
+
     def __init__(self, func, over):
         super().__init__()
         button = PropertiesInnerDialogButton('Basic Properties')
@@ -75,6 +81,9 @@ class MotorUnitPropertiesBasic(QHBoxLayout):
 
 # general class for any inner inputs inside dialog
 class PropertiesInnerDialogText(QLineEdit):
+
+    """Inputs within Motor Unit Properties dialogs"""
+
     def __init__(self, text):
         super().__init__()
         self.setMinimumHeight(32)
@@ -94,30 +103,8 @@ class PropertiesInnerDialogText(QLineEdit):
             }}
         """)
 
-# general class for any buttons inside dialog
-class PropertiesInnerDialogButton(QPushButton):
-    def __init__(self, text):
-        super().__init__(text )
-        self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: #495057;
-                color: #e9ecee;
-                border: none;
-                height: 40%;
-                max-width: 100%;
-                border-radius: 4px;
-            }}
-            QPushButton:hover {{
-                background-color: #4a5672;
-            }}
-        """
-        )
-
-
 class MotorUnitPropertiesButton(QWidget):
+
     """Button widget for opening Motor Unit Properties dialog"""
     
     mvc_updated = pyqtSignal(float)  # Signal emitted when MVC is updated
@@ -141,25 +128,8 @@ class MotorUnitPropertiesButton(QWidget):
         )
         subtitle_label.setFont(QFont("Arial", 10, QFont.Bold))
         layout.addWidget(subtitle_label)
-        
-        # Motor Unit Properties button
-        mu_properties_btn = QPushButton("Motor Unit Properties")
-        mu_properties_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        mu_properties_btn.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {CleanTheme.ANALYSIS_BG_BUTTON};
-                color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
-                height: 40px;
-                border-radius: 4px;
-            }}
-            QPushButton:hover {{
-                background-color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
-                color: {CleanTheme.ANALYSIS_BG_BUTTON};
-            }}
-        """
-        )
-        mu_properties_btn.clicked.connect(self.open_mu_properties)
+
+        mu_properties_btn = GeneralButton("Motor Unit Properties", lambda: self.open_mu_properties())
         layout.addWidget(mu_properties_btn)
         layout.setAlignment(mu_properties_btn, Qt.AlignTop)
         
