@@ -16,7 +16,7 @@ import copy
 import itertools
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
-from app.muAnalysisFunctions.commonOpenFunc import commonOpenFunc
+from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
 from core.muAnalysisCore.AnalysisResultsHist import store
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
@@ -367,7 +367,7 @@ class MUPropertiesFunc:
                 f"n_firings_steady must be an integer. {type(n_firings_steady)} was passed instead."
             )
 
-        common = commonOpenFunc()
+        common = CommonOpenFunc()
         idr = common.compute_idr(emgfile=emgfile)
 
         # Filter firings outside the idr_range, if required
@@ -525,7 +525,7 @@ class MUPropertiesFunc:
             )
 
         # We use the idr pd.DataFrame to calculate the COVisi
-        common = commonOpenFunc()
+        common = CommonOpenFunc()
         idr = common.compute_idr(emgfile=emgfile)
 
         # Filter firings outside the idr_range, if required
