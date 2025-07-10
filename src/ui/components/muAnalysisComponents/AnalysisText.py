@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QFont
-from ui.components.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
 """
     (Factory Method)
@@ -12,7 +12,7 @@ class AnalysisText(QLabel):
         title = QLabel(text)
         title.setStyleSheet(
             f"""
-            color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
+            color: {CleanTheme.ANALYSIS_BG_CARD};
             font-family: Arial;
             font-size: 14px;
             font-weight: 500;

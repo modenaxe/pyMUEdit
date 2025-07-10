@@ -1,7 +1,9 @@
 from PyQt5.QtWidgets import QComboBox, QWidget, QVBoxLayout, QLabel
 from PyQt5.QtGui import QFont
-from ui.components.CleanTheme import CleanTheme
-from core.AnalysisResultsHist import store
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from core.muAnalysisCore.AnalysisResultsHist import store
+from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
+
 class ResultSelection(QWidget):
     def __init__(self, model):
         super().__init__()
@@ -11,8 +13,9 @@ class ResultSelection(QWidget):
         self.df = {}
 
         layout = QVBoxLayout(self)
-        self.combo = QComboBox()
+        self.combo = AnalysisDropdown('Results Tab')
         self.combo.addItems(self.titles)
+   
         
         store.data_changed.connect(self.update_combo_from_df)
         store.data_cleared.connect(self.combo.clear)
