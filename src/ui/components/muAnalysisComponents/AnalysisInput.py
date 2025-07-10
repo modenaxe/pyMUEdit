@@ -4,8 +4,8 @@ from PyQt5.QtWidgets import (
     QLabel, 
     QLineEdit,
 )
-from ui.components.CleanTheme import CleanTheme
-from ui.components.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 
 """
 Returns an input with a label
@@ -26,7 +26,7 @@ class AnalysisInput(QWidget):
         input.setStyleSheet(
             f"""
             QLineEdit {{
-                background-color: {CleanTheme.ANALYSIS_BG_DROPDOWN};
+                background-color: {CleanTheme.ANALYSIS_BG_CARD};
                 color: {CleanTheme.ANALYSIS_TEXT_SECONDARY};
                 border-radius: 4px;
                 padding-left: 10px;

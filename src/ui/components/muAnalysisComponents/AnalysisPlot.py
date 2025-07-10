@@ -10,8 +10,8 @@ from PyQt5.QtWidgets import (
     QMainWindow,
     QComboBox,
 )
-from ui.components.AnalysisText import AnalysisText
-from ui.components.AnalysisButton import AnalysisButton
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.AnalysisButton import AnalysisButton
 
 """
 If there's no figure/file, a title appears prompting the user to load a file
