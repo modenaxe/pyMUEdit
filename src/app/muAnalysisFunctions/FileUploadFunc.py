@@ -43,7 +43,8 @@ class FileUploadFunc:
     def select_file_button_pushed(self, analysis_plot):
         """Open file dialog to select file for editing and automatically import it."""
         FileUploadFunc.file = None
-        file_path, _ = QFileDialog.getOpenFileName(None, "Select file", "", "MAT Files (*.mat);;All Files (*.*)")
+        file_dialog = QFileDialog()
+        file_path, _ = file_dialog.getOpenFileName(None, "Select file", "", "MAT Files (*.mat);;All Files (*.*)")
 
         if file_path:
             # this is where self. file gets set (inside emg_from_otb)
