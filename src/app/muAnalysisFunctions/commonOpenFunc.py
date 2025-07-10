@@ -59,7 +59,7 @@ class CommonOpenFunc():
             )
 
     #OPENHDEMG
-    def min_max_scaling(data=None, series_or_df=None, col_by_col=False):
+    def min_max_scaling(self, data=None, series_or_df=None, col_by_col=False):
         # Create a deepcopy of the original data
         if data is not None:
             data = copy.deepcopy(data)
