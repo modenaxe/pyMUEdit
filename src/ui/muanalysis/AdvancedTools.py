@@ -9,11 +9,13 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 from ui.components.CleanTheme import CleanTheme
-from ui.components.AnalysisDropdown import AnalysisDropdown
-from ui.components.AnalysisButton import AnalysisButton
-from ui.components.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
+from ui.components.muAnalysisComponents.AnalysisButton import AnalysisButton
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
-from app.MotorUnitTrackingDialog import MotorUnitTrackingDialog
+from app.muAnalysisFunctions.MotorUnitTrackingDialog import MotorUnitTrackingDialog
+
 class AdvancedTools(QWidget):
     def __init__(self, items=None, parent=None):
         super().__init__(parent)
@@ -91,29 +93,18 @@ class AdvancedTools(QWidget):
             self.show_analysis()
 
     def show_error(self, message=""):
-        QMessageBox.warning(
-            self,
-            "Invalid advanced analysis selection",
-            message,
-        )
-
-
-
-
+        ErrorDialog(message, 'Error').exec_()
 
     def show_analysis(self):
-            selected_tool = self.analysis_tools_dropdown.currentText()
-
-
-            if selected_tool == "Motor Unit Tracking":
-                dialog = MotorUnitTrackingDialog(self)
-                dialog.exec_()
-            elif selected_tool == "Conduction Velocity Estimation":
-                QMessageBox.information(self, "Coming Soon", "Conduction Velocity Estimation is not implemented yet.")
-            elif selected_tool == "Persistent Inward Currents":
-                QMessageBox.information(self, "Coming Soon", "Persistent Inward Currents is not implemented yet.")
-            else:
-                QMessageBox.warning(self, "Invalid Selection", "Unknown analysis tool.")
-
+        selected_tool = self.analysis_tools_dropdown.currentText()
+        if selected_tool == "Motor Unit Tracking":
+            dialog = MotorUnitTrackingDialog(self)
+            dialog.exec_()
+        elif selected_tool == "Conduction Velocity Estimation":
+            QMessageBox.information(self, "Coming Soon", "Conduction Velocity Estimation is not implemented yet.")
+        elif selected_tool == "Persistent Inward Currents":
+            QMessageBox.information(self, "Coming Soon", "Persistent Inward Currents is not implemented yet.")
+        else:
+            ErrorDialog('Unknown analysis tool.', 'Error').exec_()
 
 

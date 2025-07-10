@@ -15,11 +15,11 @@ import os
 import copy
 import itertools
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-from ui.components.ConfirmationDialog import ConfirmationDialog
-from ui.components.SaveablePlot import SaveablePlot
+from ui.components.muAnalysisComponents.ConfirmationDialog import ConfirmationDialog
+from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
-from app.commonOpenFunc import OpenFunct
+from app.muAnalysisFunctions.commonOpenFunc import commonOpenFunc
 
 # This class holds all the functions used for file uploading
 class FileUploadFunc:
@@ -143,16 +143,12 @@ class FileUploadFunc:
                         warnings.warn(
                             "\nALERT! Ref signal greater than 100, did you use values normalised to the MVC?\n"
                         )
-
                     return REF_SIGNAL_SUBSAMPLED
-
                 else:
                     warnings.warn(
                         "\nReference signal not found, it might be necessary for some analyses\n"
                     )
-
                     return pd.DataFrame(columns=[0])
-
             elif refsig[1] == "fullsampled":
                 # Extract the acquired path (raw data)
                 REF_SIGNAL_FULLSAMPLED = df.filter(regex="acquired data")
@@ -166,19 +162,14 @@ class FileUploadFunc:
                         warnings.warn(
                             "\nALERT! Ref signal grater than 100, did you use values normalised to the MVC?\n"
                         )
-
                     return REF_SIGNAL_FULLSAMPLED
-
                 else:
                     warnings.warn(
                         "\nReference signal not found, it might be necessary for some analyses\n"
                     )
-
                     return pd.DataFrame(columns=[0])
-
         else:
             warnings.warn("\nNot searched for reference signal, it might be necessary for some analyses\n")
-
             return pd.DataFrame(columns=[0])
 
     # OPENHDEMG
@@ -191,7 +182,6 @@ class FileUploadFunc:
             raise ValueError(
                 "\nSource for decomposition (IPTS) not found in the .mat file\n"
             )
-
         # Extract the BINARY_MUS_FIRING and rename columns progressively
         BINARY_MUS_FIRING = df.filter(regex="Decomposition of")
         BINARY_MUS_FIRING.columns = np.arange(len(BINARY_MUS_FIRING.columns))
@@ -200,7 +190,6 @@ class FileUploadFunc:
             raise ValueError(
                 "\nDecomposition of (BINARY_MUS_FIRING) not found in the .mat file\n"
             )
-
         return IPTS, BINARY_MUS_FIRING
 
     # OPENHDEMG
@@ -223,7 +212,6 @@ class FileUploadFunc:
                 IED = float(OTBelectrodes_ied[matrix])
 
                 return IED
-
         # If no matrix is found and we exit the loop:
         warnings.warn(
             "OTB recording grid not found, IED could not be inferred"
@@ -428,7 +416,7 @@ class FileUploadFunc:
     showimmediately=False,
     ):
         # Compute the IDR
-        common = OpenFunct()
+        common = commonOpenFunc()
         idr = common.compute_idr(emgfile=emgfile)
 
         # Check if all the MUs have to be plotted
