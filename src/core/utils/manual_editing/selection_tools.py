@@ -254,11 +254,11 @@ def process_selection(MUedition, action_type, array_idx, mu_idx, x_min, x_max, y
         # Find peaks in the selected region
         peaks = find_peaks_with_padding(pulse_train, combined_mask, y_min, fsamp, pad=5)
         # peaks, _ = find_peaks(pulse_train[combined_mask], height=y_min, distance=round(0.005 * fsamp))
-        print("------------------------ADD---------------------------")
-        print(f"max pluse: {np.max(pulse_train)}")
-        print(f"x_min: {x_min} x_max: {x_max}, y_min: {y_min}, y_max: {y_max}")
-        print(f"time_mask: {np.where(time_mask)}\namp_mask: {np.where(amp_mask)}\ncombined_mask: {np.where(combined_mask)}\n")
-        print(len(combined_mask))
+        # print("------------------------ADD---------------------------")
+        # print(f"max pluse: {np.max(pulse_train)}")
+        # print(f"x_min: {x_min} x_max: {x_max}, y_min: {y_min}, y_max: {y_max}")
+        # print(f"time_mask: {np.where(time_mask)}\namp_mask: {np.where(amp_mask)}\ncombined_mask: {np.where(combined_mask)}\n")
+        # print(len(combined_mask))
         # Convert peak indices to original signal indices
         if len(peaks) > 0:
             
@@ -313,13 +313,13 @@ def process_selection(MUedition, action_type, array_idx, mu_idx, x_min, x_max, y
 
             # Combine masks to find spikes to delete
             delete_mask = time_mask & amp_mask
-            print("------------------------DEL---------------------------")
-            print("pulse_train[discharge_times]:", pulse_train[discharge_times])
-            print("max pulse_train[discharge_times]:", max(pulse_train[discharge_times]))
-            print(f"max pluse: {np.max(pulse_train)}")
-            print(f"x_min: {x_min} x_max: {x_max}, y_min: {y_min}, y_max: {y_max}")
-            print(f"time_mask: {np.where(time_mask)}\namp_mask: {np.where(amp_mask)}\ndelete_mask: {np.where(delete_mask)}\n")
-            print(len(delete_mask))
+            # print("------------------------DEL---------------------------")
+            # print("pulse_train[discharge_times]:", pulse_train[discharge_times])
+            # print("max pulse_train[discharge_times]:", max(pulse_train[discharge_times]))
+            # print(f"max pluse: {np.max(pulse_train)}")
+            # print(f"x_min: {x_min} x_max: {x_max}, y_min: {y_min}, y_max: {y_max}")
+            # print(f"time_mask: {np.where(time_mask)}\namp_mask: {np.where(amp_mask)}\ndelete_mask: {np.where(delete_mask)}\n")
+            # print(len(delete_mask))
 
             if np.any(delete_mask):
                 # Keep only spikes that are not in the delete mask
