@@ -32,6 +32,7 @@ class CleanTheme:
     ANALYSIS_TEXT_SECONDARY = "#cccccc"
     ANALYSIS_TEXT_TERTIARY = "#8e8e8e"
     ANALYSIS_TEXT_BUTTON = "#e9ecee"
+    ANALYSIS_TEXT_PROMPT = "#6c757d"
 
     ################################################################
     ########################### DIALOG ###########################

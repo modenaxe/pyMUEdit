@@ -26,9 +26,10 @@ from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 class PlotEMGToolDialog(QDialog):
 
     """Dialog containing options for plotting"""
-
-    def __init__(self, parent=None):
+    
+    def __init__(self, analysis_plot, parent=None):
         super().__init__(parent)
+        self.analysis_plot = analysis_plot
         self.init_ui()
 
     def init_ui(self):
@@ -93,9 +94,9 @@ class PlotEMGToolDialog(QDialog):
 
         # --- Plot EMGsig Button and Channel Input (side by side) ---
         emg_row_layout = QHBoxLayout()
-        emgsig_btn = PropertiesInnerDialogButton('Plot EMGsig')
-        emgsig_btn.clicked.connect(self.handle_emgsig_clicked)
+        emgsig_btn = GeneralButton("Plot EMGsig", self.handle_emgsig_clicked, parent=self)
         emg_row_layout.addWidget(emgsig_btn)
+
         self.channel_input = QLineEdit()
         self.channel_input.setPlaceholderText("Channel Number (e.g. 1-3,5,7)")
         self.channel_input.setFont(QFont("Arial", 11))
@@ -131,6 +132,7 @@ class PlotEMGToolDialog(QDialog):
             # Pass the raw text string directly to plot_emgsig for validation
             plot_emgsig(
                 emgfile=emgfile,
+                analysis_plot=self.analysis_plot,
                 channels=raw_text,  # Pass as string for validation
                 manual_offset=0,
                 addrefsig=add_ref_signal,  # Use checkbox state
@@ -139,46 +141,44 @@ class PlotEMGToolDialog(QDialog):
                 tight_layout=True,
                 showimmediately=False,
             )
-            # Show the plot in a dialog
-            dialog = EMGsigResultDialog(raw_text, time_in_seconds, add_ref_signal)
-            dialog.exec_()
         except ValueError as e:
             ErrorDialog('Invalid channel input', 'Error').exec_()
         except Exception as e:
             ErrorDialog('Error plotting EMG', 'Error').exec_()
 
 
+# TL : useless after W18ABANANA-37-center-plots
+# class EMGsigResultDialog(QDialog):
+#     def __init__(self, channels, time_in_seconds, add_ref_signal, parent=None):
+#         super().__init__(parent)
+#         self.setWindowTitle("EMG Signal Plot")
+#         self.channels = channels  # This is now the raw text string
+#         self.emgfile = FileUploadFunc.file
+#         self.time_in_seconds = time_in_seconds
+#         self.add_ref_signal = add_ref_signal
+#         self.resize(1000, 700)
+#         self.init_ui()
+#
+#     def init_ui(self):
+#         # Create the layout for the dialog
+#         layout = QVBoxLayout(self)
+#
+#         # Get the figure from the plot_emgsig function
+#         fig = plot_emgsig(
+#             emgfile=self.emgfile,
+#             channels=self.channels,  # Pass the raw text string
+#             manual_offset=0,
+#             addrefsig=self.add_ref_signal,
+#             timeinseconds=self.time_in_seconds,
+#             figsize=[20, 15],
+#             tight_layout=True,
+#             showimmediately=False
+#         )
+#
+#         # Create a FigureCanvas and embed it in the dialog
+#         canvas = FigureCanvas(fig)
+#         layout.addWidget(canvas)
 
-class EMGsigResultDialog(QDialog):
-    def __init__(self, channels, time_in_seconds, add_ref_signal, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("EMG Signal Plot")
-        self.channels = channels  # This is now the raw text string
-        self.emgfile = FileUploadFunc.file
-        self.time_in_seconds = time_in_seconds
-        self.add_ref_signal = add_ref_signal
-        self.resize(1000, 700)
-        self.init_ui()
-
-    def init_ui(self):
-        # Create the layout for the dialog
-        layout = QVBoxLayout(self)
-
-        # Get the figure from the plot_emgsig function
-        fig = plot_emgsig(
-            emgfile=self.emgfile,
-            channels=self.channels,  # Pass the raw text string
-            manual_offset=0,
-            addrefsig=self.add_ref_signal,
-            timeinseconds=self.time_in_seconds,
-            figsize=[20, 15],
-            tight_layout=True,
-            showimmediately=False
-        )
-
-        # Create a FigureCanvas and embed it in the dialog
-        canvas = FigureCanvas(fig)
-        layout.addWidget(canvas)
         
 # general class for any inner inputs inside dialog
 class PropertiesInnerDialogText(QLineEdit):
@@ -206,23 +206,17 @@ class PlotEMGButton(QWidget):
     
     mvc_updated = pyqtSignal(float)  # Signal emitted when MVC is updated
     
-    def __init__(self, parent=None):
+    def __init__(self, analysis_plot, parent=None):
         super().__init__(parent)
+        self.analysis_plot = analysis_plot
         self.init_ui()
         
     def init_ui(self):
         layout = QVBoxLayout(self)
         
         # Subtitle
-        subtitle_label = QLabel("PLOT EMG")
+        subtitle_label = AnalysisText.create_subtitle("PLOT EMG")
         subtitle_label.setObjectName("motorUnitAnalysisSubTitle")
-        subtitle_label.setStyleSheet(
-            f"""
-            color: {CleanTheme.ANALYSIS_TEXT_TERTIARY};
-            margin: 0px;
-            """
-        )
-        subtitle_label.setFont(QFont("Arial", 10, QFont.Bold))
         layout.addWidget(subtitle_label)
 
         plot_emg_btn = GeneralButton("Plot EMG", lambda: self.open_plot_emg_btn())
@@ -231,5 +225,5 @@ class PlotEMGButton(QWidget):
         
     def open_plot_emg_btn(self):
         # Open the Motor Unit Properties dialog
-        dialog = PlotEMGToolDialog(self)
+        dialog = PlotEMGToolDialog(self.analysis_plot)
         dialog.exec_()
