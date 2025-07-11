@@ -14,7 +14,7 @@ from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 # when button is clicked it calls mu class method, passing instance of the center layout as it needs
 
 class FileSection(QFrame):
-    def __init__(self, sidebar, mu, center):
+    def __init__(self, sidebar, mu, analysis_plot):
         super().__init__(sidebar)
         self.setObjectName("FileSection")
         
@@ -30,7 +30,7 @@ class FileSection(QFrame):
         button_row.setSpacing(10)
 
         browse_btn = FileButton('Load File')
-        browse_btn.clicked.connect(lambda: mu.select_file_button_pushed(center))
+        browse_btn.clicked.connect(lambda: mu.select_file_button_pushed(analysis_plot))
         browse_btn.setFixedWidth(120)
         browse_btn.setFixedHeight(40)
 

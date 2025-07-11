@@ -37,20 +37,15 @@ class FileUploadFunc:
         # file holds emg file instance which is used in openHdemg code
         # self.file = None
         # canvas hold whatever the widget in the center area is (graph or message saying to load file)
-        self.canvas = None
         self.coords = []
         self.cid = None
         # MVC value for calculations
         self.mvc_value = None
 
-    # setter for UI to give reference to center layout current widget which will need to be replaced by graph
-    def set_canvas(self,canvas):
-        self.canvas = canvas
-
     # Triggerd of file upload button: opens file explorer
     # Checks if file is valid or not
     # passes to import_data to set center screen
-    def select_file_button_pushed(self,center_panel):
+    def select_file_button_pushed(self, analysis_plot):
         """Open file dialog to select file for editing and automatically import it."""
         FileUploadFunc.file = None
         file_dialog = QFileDialog()
@@ -61,14 +56,14 @@ class FileUploadFunc:
             valid = self.emg_from_otb(file_path)
             # Store the original file path for reset functionality
             self.original_file_path = file_path
-            self.import_data(file_path, center_panel, valid)
+            self.import_data(file_path, analysis_plot, valid)
 
     # If file is not valid it displays an error message
     # else it removes anything in center layour and replaces with new graph
-    def import_data(self, filepath, center_panel, valid):
+    def import_data(self, filepath, analysis_plot, valid):
         if valid:
             # immediately plots it
-            self.plot_idr(self.file, center_panel)
+            self.plot_idr(self.file, analysis_plot)
         else:
             canvas = QMessageBox()
             canvas.setIcon(QMessageBox.Critical)
@@ -409,7 +404,7 @@ class FileUploadFunc:
     # I will put my intials (AC) next to edited code throughout this
     def plot_idr(self,
     emgfile,
-    center_panel,
+    analysis_plot,
     munumber="all",
     addrefsig=True,
     timeinseconds=True,
@@ -518,10 +513,7 @@ class FileUploadFunc:
 
         # TL : Immediately plots the fig, instead of passing the figure on
         canvas = SaveablePlot(fig)
-        center_panel.removeWidget(self.canvas)
-        self.canvas.setParent(None)
-        center_panel.addWidget(canvas)
-        self.canvas = canvas
+        analysis_plot.display_fig(canvas)
 
     # OPENHDEMG
     def min_max_scaling(self, data=None, series_or_df=None, col_by_col=False):
@@ -601,7 +593,7 @@ class FileUploadFunc:
                 f"{type(data)} was passed instead."
             )
 
-    def handle_reset_workflow(self, center_panel):
+    def handle_reset_workflow(self, analysis_plot):
         """
         Handles the full workflow for resetting analysis data, including confirmation.
         """
@@ -616,9 +608,9 @@ class FileUploadFunc:
         )
         if dialog.exec_() == QDialog.Accepted:
             # User clicked 'Reset'
-            self.reset_analysis_data(center_panel)
+            self.reset_analysis_data(analysis_plot)
 
-    def reset_analysis_data(self, center_panel):
+    def reset_analysis_data(self, analysis_plot):
         """
         Resets the analysis data by reloading the original file, clearing any transformations.
         """
@@ -636,7 +628,7 @@ class FileUploadFunc:
         valid = self.emg_from_otb(self.original_file_path)
         if valid:
             # Re-import the data to refresh the display
-            self.import_data(self.original_file_path, center_panel, valid)
+            self.import_data(self.original_file_path, analysis_plot, valid)
             print("File successfully reloaded, transformations cleared.")
         else:
             print("Error reloading file during reset.")
@@ -652,7 +644,7 @@ class FileUploadFunc:
     def plot_refsig(
         self,
         emgfile,
-        center_panel,
+        analysis_plot,
         timeinseconds=True,
         figsize=[20, 15],
         tight_layout=True,
@@ -694,7 +686,4 @@ class FileUploadFunc:
 
         # the actual plotting 
         canvas = SaveablePlot(fig)
-        center_panel.removeWidget(self.canvas)
-        self.canvas.setParent(None)
-        center_panel.addWidget(canvas)
-        self.canvas = canvas
+        analysis_plot.display_fig(canvas)
