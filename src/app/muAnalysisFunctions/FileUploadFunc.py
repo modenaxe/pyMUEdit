@@ -1,4 +1,9 @@
 import sys
+
+# Fix matplotlib backend BEFORE importing matplotlib
+import matplotlib
+matplotlib.use('Qt5Agg')  # Use Qt5 backend to match PyQt5
+
 from PyQt5.QtWidgets import (
     QFileDialog,
     QLabel,
