@@ -103,6 +103,9 @@ class GoodSlider(QWidget):
     def set_slider_value(self, val):
         self.slider.setValue(val)
     
+    def get_slider_value(self):
+        return self.slider.value()
+    
     # show or hide the slider value
     def display_value(self, display_value):
         self.value_label.setHidden(not display_value)
