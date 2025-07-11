@@ -65,6 +65,7 @@ class MUeditManual(QMainWindow):
         self.graphstart = None
         self.graphend = None
         self.roi = None
+        self.resetPlot = False
         self.current_selection = None
         self.mu_checkboxes = []  # Initialize the mu_checkboxes list
         self.plot_display_mode = 0  # 0 for Single MU Seleted 
@@ -251,11 +252,13 @@ class MUeditManual(QMainWindow):
                         self.reference_dropdown.addItem(label)
 
             # Update MU checkboxes
+            self.resetPlot = True
             self.update_mu_checkboxes()
 
             # Set initial view limits
             self.graphstart = self.MUedition["edition"]["time"][0]
             self.graphend = self.MUedition["edition"]["time"][-1]
+
             self.update_plot_limits()
 
         except KeyError as ke:
@@ -381,7 +384,7 @@ class MUeditManual(QMainWindow):
         if self.mu_checkboxes:
             self.mu_checkboxes[0].setChecked(True)
 
-    def mu_checkbox_state_changed(self, _state=None, *, pluse_train_color="#D95535", zoom_reset = True):
+    def mu_checkbox_state_changed(self, _state=None, *, pluse_train_color="#D95535"):
         """Handle changes in MU checkbox selection."""
         # Get all checked MUs
         checked_mus = []
@@ -391,7 +394,7 @@ class MUeditManual(QMainWindow):
 
         # Update "Check All" checkboxes based on individual selections
         self.update_array_checkboxes()
-        if zoom_reset:
+        if self.resetPlot:
             self.zoom_slider.set_slider_value(0)
 
         # If none are checked, don't update display
@@ -702,9 +705,9 @@ class MUeditManual(QMainWindow):
                     pulse_train,
                     pen=pg.mkPen(color="#333333", width=1),
                 )
-                
-                self.safe_set_range(self.spiketrain_plot, yrange=[min(pulse_train)*1.2, max(pulse_train)*1.2])
-                
+                if self.resetPlot:
+                    self.safe_set_range(self.spiketrain_plot, yrange=[min(pulse_train)*1.2, max(pulse_train)*1.2])
+                    
                 # Plot reference signal if available
                 if "target" in self.MUedition["signal"] and self.MUedition["signal"]["target"].size > 0:
                     target_data = self.MUedition["signal"]["target"]
@@ -769,14 +772,14 @@ class MUeditManual(QMainWindow):
                 # Set y-axis range with margin
                 if len(dr) > 0:
                     dr_max = np.max(dr)
-                    self.safe_set_range(self.dr_plot, yrange=[0, dr_max * 1.5])
+                    if self.resetPlot:
+                        self.safe_set_range(self.dr_plot, yrange=[0, dr_max * 1.5])
                     # self.dr_plot.setYRange(0, dr_max * 1.5)
 
             def on_xrange_changed(_, ranges):
                 if self.update_plot_setRange:
                     return
                 self.graphstart, self.graphend = ranges
-                print(f"on_xrange_changed: {self.graphstart} {self.graphend}")
                 
             self.dr_plot.setXLink(self.spiketrain_plot)
                 
@@ -785,6 +788,7 @@ class MUeditManual(QMainWindow):
             
             # Ensure shortcut key responsiveness after plot creation 
             self.spiketrain_plot.setFocus()
+            self.resetPlot = False
 
 
         else:
@@ -984,7 +988,8 @@ class MUeditManual(QMainWindow):
             center = (self.graphend + self.graphstart) / 2
         except TypeError:
             return
-        len_scaled = (max_len / 100.0) * (100 ** ((100 - value)/100))
+        max_scale = 1000
+        len_scaled = (max_len / max_scale) * (max_scale ** ((100 - value)/100))
         self.graphstart = center - len_scaled / 2
         self.graphend = center + len_scaled / 2
         self.update_plot_limits()
@@ -1032,7 +1037,6 @@ class MUeditManual(QMainWindow):
         if self.plot_display_mode == 0:
             # For single MU view (standard plots)
             self.safe_set_range(self.spiketrain_plot, xrange=[self.graphstart, self.graphend])
-            self.safe_set_range(self.dr_plot, xrange=[self.graphstart, self.graphend])
             # self.spiketrain_plot.setXRange(self.graphstart, self.graphend)
             # self.dr_plot.setXRange(self.graphstart, self.graphend)
 
@@ -1184,7 +1188,7 @@ class MUeditManual(QMainWindow):
             if checkbox.objectName() == f"Array_{array_idx+1}_MU_{mu_idx+1}":
                 if checkbox.isChecked():
                     # If the MU is currently checked, update the display
-                    self.mu_checkbox_state_changed(zoom_reset=False)
+                    self.mu_checkbox_state_changed()
                 break
 
     def lock_spikes_button_pushed(self):
@@ -1336,9 +1340,9 @@ class MUeditManual(QMainWindow):
             new_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
             # Update the display
             if(new_sil >= old_sil):
-                self.mu_checkbox_state_changed(pluse_train_color="#8ACD69", zoom_reset = False)
+                self.mu_checkbox_state_changed(pluse_train_color="#8ACD69")
             else:
-                self.mu_checkbox_state_changed(pluse_train_color="#698CCD", zoom_reset = False)
+                self.mu_checkbox_state_changed(pluse_train_color="#698CCD")
             
             QApplication.restoreOverrideCursor()
             
@@ -1483,9 +1487,9 @@ class MUeditManual(QMainWindow):
 
             # Final display update
             if(new_sil >= old_sil):
-                self.mu_checkbox_state_changed(pluse_train_color="#8ACD69", zoom_reset= False)
+                self.mu_checkbox_state_changed(pluse_train_color="#8ACD69")
             else:
-                self.mu_checkbox_state_changed(pluse_train_color="#698CCD", zoom_reset= False)
+                self.mu_checkbox_state_changed(pluse_train_color="#698CCD")
             QApplication.processEvents()
 
             QApplication.restoreOverrideCursor()
