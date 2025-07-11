@@ -502,11 +502,11 @@ def setup_display_panel(main_window):
     main_window.plots_scroll_area = plots_scroll_area
 
     # Create the plots with a helper function
-    main_window.sil_plot = create_plot_widget("SIL", "")
+    main_window.sil_plot = create_plot_widget(main_window, "SIL", "")
     main_window.sil_plot.setVisible(False)  # Initially hidden until SIL checkbox is checked
 
-    main_window.spiketrain_plot = create_plot_widget("Pulse train (au)", "Time (s)")
-    main_window.dr_plot = create_plot_widget("Discharge rate (pps)", "Time (s)")
+    main_window.spiketrain_plot = create_plot_widget(main_window, "Pulse train (au)", "Time (s)")
+    main_window.dr_plot = create_plot_widget(main_window, "Discharge rate (pps)", "Time (s)")
 
     # Add plots to the layout
     main_window.plots_layout.addWidget(main_window.sil_plot)
@@ -602,9 +602,24 @@ def setup_display_panel(main_window):
             btn.hide()               # 或者：btn.setVisible(False)
     # =============================================================
 
-def create_plot_widget(y_label, x_label=""):
+def create_plot_widget(main_window, y_label, x_label=""):
     """Create a standardized plot widget with consistent styling."""
-    plot = pg.PlotWidget()
+    class NewViewBox(pg.ViewBox):
+        def __init__(self, zoom_slider, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.zoom_slider = zoom_slider        
+    
+        def wheelEvent(self, event):
+            event.accept()
+            delta = event.delta()
+            cur = self.zoom_slider.get_slider_value()
+
+            if delta > 0:
+                self.zoom_slider.set_slider_value(cur + 1)
+            elif delta < 0:
+                self.zoom_slider.set_slider_value(cur - 1)
+                
+    plot = pg.PlotWidget(viewBox=NewViewBox(main_window.zoom_slider))
     plot.setBackground("w")  # White background
     if y_label:
         plot.setLabel("left", y_label)
