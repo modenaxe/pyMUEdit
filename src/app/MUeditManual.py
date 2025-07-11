@@ -41,7 +41,7 @@ from ui.components import (
     SuccessDialog,
     ErrorDialog,
 )
-
+import json
 
 class MUeditManual(QMainWindow):
     """
@@ -446,8 +446,39 @@ class MUeditManual(QMainWindow):
 
         # Copy structured data from MATLAB file
         edition_data = files["edition"][0, 0]
+        #恢复"Dischargetimes", "silval", "silvalcon"这三个字典
         for field in edition_data.dtype.names:
-            self.MUedition["edition"][field] = edition_data[field]
+            val = edition_data[field]
+            # 检查是不是json字符串
+            if field in ("Dischargetimes", "silval", "silvalcon") and isinstance(val, np.ndarray) and val.dtype.kind in {'U','S','O'}:
+                # 这里val是一个长度为1的array，里面是string
+                str_val = str(val.item())
+                try:
+                    raw_dict = json.loads(str_val)
+                    # key从"[i,j]"字符串恢复为tuple
+                    new_dict = {}
+                    for k, v in raw_dict.items():
+                        idx = tuple(json.loads(k.replace("'", '"')))  # 将"[i, j]" -> (i, j)
+                        # value如果是list，转回np.array；如果是float/int，直接用
+                        if isinstance(v, list):
+                            new_dict[idx] = np.array(v)
+                        else:
+                            new_dict[idx] = v
+                    self.MUedition["edition"][field] = new_dict
+                except Exception as e:
+                    print(f"Error loading field {field}: {e}")
+                    self.MUedition["edition"][field] = {}
+            elif field == "Pulsetrain" and isinstance(val, np.ndarray): #处理pulsetrain
+                self.MUedition["edition"][field] = [x for x in val.flatten()]
+            elif field == "Flag" and isinstance(val, np.ndarray):   #处理flag
+                self.MUedition["edition"][field] = [x.tolist()[0] if isinstance(x, np.ndarray) else list(x) for x in
+                                   val.flatten()]
+            elif field == "time" and isinstance(val, np.ndarray):   #处理time
+                self.MUedition["edition"][field] = val.flatten()
+            elif field == "arraynb" and isinstance(val, np.ndarray):    #处理arraynb
+                self.MUedition["edition"][field] = val.flatten()
+            else:
+                self.MUedition["edition"][field] = val
 
         signal_data = files["signal"][0, 0]
         for field in signal_data.dtype.names:
@@ -1305,9 +1336,9 @@ class MUeditManual(QMainWindow):
             new_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
             # Update the display
             if(new_sil >= old_sil):
-                self.mu_checkbox_state_changed(pluse_train_color="#8ACD69")
+                self.mu_checkbox_state_changed(pluse_train_color="#8ACD69", zoom_reset = False)
             else:
-                self.mu_checkbox_state_changed(pluse_train_color="#698CCD")
+                self.mu_checkbox_state_changed(pluse_train_color="#698CCD", zoom_reset = False)
             
             QApplication.restoreOverrideCursor()
             
@@ -1321,6 +1352,7 @@ class MUeditManual(QMainWindow):
     def extend_mu_filter_button_pushed(self):
         """Extend the motor unit filter to the entire signal."""
         if not self.MUedition:
+            ErrorDialog(text="Please import file first!")
             return
 
         # Get the first checked MU
@@ -1331,108 +1363,138 @@ class MUeditManual(QMainWindow):
                 break
 
         if not checked_mus:
+            ErrorDialog(text="Please select a MU first!")
             return
 
         mu_text = checked_mus[0]
         parts = mu_text.split("_")
 
         if len(parts) < 4:
+            ErrorDialog(text="Data loading error!")
             return
 
-        array_idx = int(parts[1]) - 1
-        mu_idx = int(parts[3]) - 1
+        from PyQt5.QtWidgets import QApplication
+        from PyQt5.QtCore import Qt
+        # 设置鼠标为等待
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            array_idx = int(parts[1]) - 1
+            mu_idx = int(parts[3]) - 1
 
-        # Store current state for undo
-        self._push_undo(array_idx, mu_idx)
+            # Store current state for undo
+            self._push_undo(array_idx, mu_idx)
 
-        # Get EMG data for the current array
-        emg_data = self.MUedition["signal"]["data"][self.MUedition["edition"]["arraynb"] == array_idx, :]
-        emg_mask = self.MUedition["signal"]["EMGmask"][array_idx]
-        emg_data = emg_data[emg_mask == 0, :]  # Use only non-rejected channels
+            # Get EMG data for the current array
+            emg_data = self.MUedition["signal"]["data"][self.MUedition["edition"]["arraynb"] == array_idx, :]
+            #emg_mask = self.MUedition["signal"]["EMGmask"][array_idx]
+            emg_mask = self.MUedition["signal"]["EMGmask"][0]
+            emg_mask = emg_mask[array_idx].squeeze()
+            #emg_data = emg_data[emg_mask == 0, :]  # Use only non-rejected channels
 
-        # Get the current view indices
-        current_idx = np.where(
-            (self.MUedition["edition"]["time"] > self.graphstart) & (self.MUedition["edition"]["time"] < self.graphend)
-        )[0]
+            #get EMG type
+            emg_type = "surface"
+            if(self.MUedition["signal"]["emgtype"][0,array_idx]==2):
+                emg_type = "intra"
 
-        if len(current_idx) == 0:
-            return
+            #get fsamp
+            fsamp = self.MUedition["signal"]["fsamp"][0][0]
 
-        # Save old SIL for later comparison
-        old_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
+            # Get the current view indices
+            current_idx = np.where(
+                (self.MUedition["edition"]["time"] > self.graphstart) & (self.MUedition["edition"]["time"] < self.graphend)
+            )[0]
 
-        # Zoom out to full signal
-        self.graphstart = self.MUedition["edition"]["time"][0]
-        self.graphend = self.MUedition["edition"]["time"][-1]
-        self.update_plot_limits()
+            if len(current_idx) == 0:
+                return
 
-        # Process the signal in windows to extend the filter
-        signal_length = self.MUedition["edition"]["time"].shape[0]
-        step = current_idx.shape[0] // 2
+            # Save old SIL for later comparison
+            old_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
 
-        # First extend forward
-        idx = current_idx.copy()
-        for j in range(int((signal_length - idx[-1]) / step)):
-            # Move idx forward
-            idx = idx + step
-            idx = idx[idx < signal_length]
+            # Zoom out to full signal
+            self.graphstart = self.MUedition["edition"]["time"][0]
+            self.graphend = self.MUedition["edition"]["time"][-1]
+            self.update_plot_limits()
 
-            if len(idx) == 0:
-                break
+            # Process the signal in windows to extend the filter
+            signal_length = self.MUedition["edition"]["time"].shape[0]
+            step = current_idx.shape[0] // 2
 
-            # Apply extendfilter
-            updated_pulse_train, updated_discharge_times = extendfilter(
-                emg_data,
-                emg_mask,
-                self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :],
-                self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx],
-                idx,
-                self.MUedition["signal"]["fsamp"],
-                self.MUedition["signal"]["emgtype"][array_idx],
-            )
+            # First extend forward
+            idx = current_idx.copy()
+            for j in range(int((signal_length - idx[-1]) / step)):
+                # Move idx forward
+                idx = idx + step
+                idx = idx[idx < signal_length]
 
-            # Update the data
-            self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = updated_pulse_train
-            self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = updated_discharge_times
+                if len(idx) == 0:
+                    break
 
-            # Update the display to show progress
-            self.mu_checkbox_state_changed()
+                # Apply extendfilter
+                updated_pulse_train, updated_discharge_times = extendfilter(
+                    emg_data,
+                    emg_mask,
+                    self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :],
+                    self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx],
+                    idx,
+                    fsamp,
+                    emg_type,
+                )
+
+                # Update the data
+                self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = updated_pulse_train
+                self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = updated_discharge_times
+
+                # Update the display
+                # self.mu_checkbox_state_changed(pluse_train_color="#EEF680")
+                #QApplication.processEvents()
+
+            # Then extend backward
+            idx = current_idx.copy()
+            for j in range(int(idx[0] / step)):
+                # Move idx backward
+                idx = idx - step
+                idx = idx[idx >= 0]
+
+                if len(idx) == 0:
+                    break
+
+                # Apply extendfilter
+                updated_pulse_train, updated_discharge_times = extendfilter(
+                    emg_data,
+                    emg_mask,
+                    self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :],
+                    self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx],
+                    idx,
+                    fsamp,
+                    emg_type,
+                )
+
+                # Update the data
+                self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = updated_pulse_train
+                self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = updated_discharge_times
+
+                # Update the display
+                # self.mu_checkbox_state_changed(pluse_train_color="#EEF680")
+                #QApplication.processEvents()
+
+            # Recalculate SIL values
+            self.calculate_silval(array_idx, mu_idx)
+            new_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
+
+            # Final display update
+            if(new_sil >= old_sil):
+                self.mu_checkbox_state_changed(pluse_train_color="#8ACD69", zoom_reset= False)
+            else:
+                self.mu_checkbox_state_changed(pluse_train_color="#698CCD", zoom_reset= False)
             QApplication.processEvents()
 
-        # Then extend backward
-        idx = current_idx.copy()
-        for j in range(int(idx[0] / step)):
-            # Move idx backward
-            idx = idx - step
-            idx = idx[idx >= 0]
-
-            if len(idx) == 0:
-                break
-
-            # Apply extendfilter
-            updated_pulse_train, updated_discharge_times = extendfilter(
-                emg_data,
-                emg_mask,
-                self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :],
-                self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx],
-                idx,
-                self.MUedition["signal"]["fsamp"],
-                self.MUedition["signal"]["emgtype"][array_idx],
-            )
-
-            # Update the data
-            self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = updated_pulse_train
-            self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = updated_discharge_times
-
-            # Update the display to show progress
-            self.mu_checkbox_state_changed()
-            QApplication.processEvents()
-
-        # Recalculate SIL values
-        self.calculate_silval(array_idx, mu_idx)
-
-        # Final display update
-        self.mu_checkbox_state_changed()
+            QApplication.restoreOverrideCursor()
+            
+            SuccessDialog(text="extend filter successfully!\nGreen means SIL improve. Blue means SIL decrease.")
+        except Exception as e:
+            QApplication.restoreOverrideCursor()
+            
+            ErrorDialog(text="Fail to extend filter.")
 
     def undo_button_pushed(self): # moy
         if not self.undo_stack:
@@ -2271,6 +2333,21 @@ class MUeditManual(QMainWindow):
         signal = self.MUedition["signal"]
         parameters = self.MUedition.get("parameters", {})
         edition = self.MUedition["edition"]
+
+        for field in ("Dischargetimes", "silval", "silvalcon"): #将这三个字典转为字符串存储
+            if field in edition and isinstance(edition[field], dict):
+                # tuple key转str
+                safe_dict = {}
+                for k, v in edition[field].items():
+                    # key: (i,j) -> "[i,j]"
+                    k_str = str(list(k))
+                    # value: ndarray/list/float
+                    if isinstance(v, np.ndarray):
+                        v_ = v.tolist()
+                    else:
+                        v_ = v
+                    safe_dict[k_str] = v_
+                edition[field] = json.dumps(safe_dict)
 
         # Save the data
         sio.savemat(savename, {"signal": signal, "parameters": parameters, "edition": edition})
