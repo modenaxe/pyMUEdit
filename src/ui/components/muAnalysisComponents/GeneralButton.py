@@ -2,15 +2,15 @@ from PyQt5.QtWidgets import QPushButton
 from PyQt5.QtCore import Qt
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
-class AnalysisButton(QPushButton):
-    """
-    Button for analysis tab UI 
+class GeneralButton(QPushButton):
 
+    """
+    General button for sideabars
     parameters:
         label (string): text for the button 
-        action (action): the thing the button triggers
-            - sometimes you have to put lambda in it, I have no idea how python works
+        action (lambda: action): the action the button triggers.
     """
+
     def __init__(self, label="", action=None, parent=None):
         super().__init__(label, parent)
 

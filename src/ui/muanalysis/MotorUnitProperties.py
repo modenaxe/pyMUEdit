@@ -9,14 +9,15 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal
-from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.AnalysisButton import AnalysisButton
-from ui.components.muAnalysisComponents.FileSidebar.FileButton import FileButton
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
+from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import PropertiesInnerDialogButton
 
 class MotorUnitPropertiesDialog(QDialog):
-    # Dialog for entering Motor Unit Properties including MVC value
+
+    """Dialog for entering Motor Unit Properties including MVC value"""
 
     mvc_updated = pyqtSignal(float)  # Signal emitted when MVC is updated
 
@@ -67,9 +68,12 @@ class MotorUnitPropertiesDialog(QDialog):
 # has firing at rec, firing at start/end input and basic properties button
 # button leads to functions found in app.MUPropertiesFun
 class MotorUnitPropertiesBasic(QHBoxLayout):
+
+    """Basic Properties analysis layout"""
+
     def __init__(self, analysis_plot, func, over):
         super().__init__()
-        button = AnalysisButton("Basic Properties", lambda: func.basic_prop(analysis_plot, rec_input, steady_input, over))
+        button = GeneralButton("Basic Properties", lambda: func.basic_prop(analysis_plot, rec_input, steady_input, over))
         rec_input = PropertiesInnerDialogText('Firings at Rec')
         steady_input = PropertiesInnerDialogText('Firings at Start/End Steady')
         self.addWidget(button)
@@ -78,6 +82,9 @@ class MotorUnitPropertiesBasic(QHBoxLayout):
 
 # general class for any inner inputs inside dialog
 class PropertiesInnerDialogText(QLineEdit):
+
+    """Inputs within Motor Unit Properties dialogs"""
+
     def __init__(self, text):
         super().__init__()
         self.setMinimumHeight(32)
@@ -98,6 +105,7 @@ class PropertiesInnerDialogText(QLineEdit):
         """)
 
 class MotorUnitPropertiesButton(QWidget):
+
     """Button widget for opening Motor Unit Properties dialog"""
     
     mvc_updated = pyqtSignal(float)  # Signal emitted when MVC is updated
@@ -115,9 +123,8 @@ class MotorUnitPropertiesButton(QWidget):
         subtitle_label = AnalysisText.create_subtitle("MOTOR UNIT ANALYSIS")
         subtitle_label.setObjectName("motorUnitAnalysisSubTitle")
         layout.addWidget(subtitle_label)
-        
-        # Motor Unit Properties button
-        mu_properties_btn = AnalysisButton("Motor Unit Properties", self.open_mu_properties, parent=self)
+
+        mu_properties_btn = GeneralButton("Motor Unit Properties", lambda: self.open_mu_properties())
         layout.addWidget(mu_properties_btn)
         
     def open_mu_properties(self):

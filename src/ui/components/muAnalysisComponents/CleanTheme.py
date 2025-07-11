@@ -2,6 +2,7 @@ from PyQt5.QtGui import QColor
 
 
 class CleanTheme:
+
     """Clean, minimalist color theme for the application"""
 
     # Main backgrounds
@@ -33,6 +34,25 @@ class CleanTheme:
     ANALYSIS_TEXT_BUTTON = "#e9ecee"
     ANALYSIS_TEXT_PROMPT = "#6c757d"
 
+    ################################################################
+    ########################### DIALOG ###########################
+    ################################################################
+    
+    DIALOG_TEXT = "#212529"
+    DIALOG_CANCEL = "#6c757d"
+    DIALOG_CANCEL_HOVER = "#5a6268"
+    DIALOG_CONFIRM = "#dc3545"
+    DIALOG_CONFIRM_HOVER = "#c82333"
+
+    ################################################################
+    ########################### REDS ###########################
+    ################################################################
+    
+    RED_BACKGROUND = "#f44336"
+    RED_HOVER = "#d32f2f"
+    
+    
+    
     """
         self.colors = {
             "bg_main": "#f8f9fa",

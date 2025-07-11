@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (
     QComboBox,
 )
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.AnalysisButton import AnalysisButton
+from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 
 """
 If there's no figure/file, a title appears prompting the user to load a file
@@ -23,7 +23,7 @@ class AnalysisPlot(QWidget):
 
         # setting up toggle button  
         self.plot = None
-        self.toggle_btn = AnalysisButton("Revert", lambda: self.revert(), parent=self)
+        self.toggle_btn = GeneralButton("Revert", lambda: self.revert(), parent=self)
         self.toggle_btn.set_width(100)
         self.toggle_btn.hide()
         self.layout.addWidget(self.toggle_btn)

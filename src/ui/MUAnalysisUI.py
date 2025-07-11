@@ -26,10 +26,14 @@ from ui.muanalysis.PlotEMG import PlotEMGButton
 from ui.muanalysis.SignalEditing import SignalEditing
 from ui.components.muAnalysisComponents.AnalysisPlot import AnalysisPlot
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText 
-from ui.components.muAnalysisComponents.FileSidebar.FileSection import FileSection
+from ui.components.muAnalysisComponents.MajorHeading import MajorHeading
+from ui.muanalysis.FileSection import FileSection
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from ui.components.muAnalysisComponents.ResultsPanel import ResultsPanel
-from ui.components.muAnalysisComponents.ResultsTable import ResultsTable
+
+from ui.muanalysis.ResultsPanel import ResultsPanel
+
+from core.muAnalysisCore.AnalysisResultsHist import store
+from core.muAnalysisCore.ResultsTable import ResultsTable
 from ui.components.muAnalysisComponents.ResultSelection import ResultSelection
 
 # legacy code
@@ -178,8 +182,7 @@ class MUAnalysis(QWidget):
         sidebar_layout = QVBoxLayout(sidebar)
 
         # title
-        title_label = QLabel("Analysis")
-        title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY}; border: none")
+        title_label = MajorHeading("Analysis")
         sidebar_layout.addWidget(title_label)
 
         # signal editing 

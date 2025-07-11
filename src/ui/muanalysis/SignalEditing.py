@@ -9,22 +9,18 @@ from PyQt5.QtWidgets import (
     QMessageBox,
 )
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from ui.components.muAnalysisComponents.AnalysisButton import AnalysisButton
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
-from ui.components.muAnalysisComponents.AnalysisButton import AnalysisButton
+from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
-"""
-All the code responsible for filtering the plot. This includes:
- - the button on the dashboard and the popup
- - the functionality behind the buttons you press inside the popup that filter the plot 
-"""
 class SignalEditing(QWidget):
+
     """
-    args:
-        mu (instance of MUAnalysisFunc): 
+    All the code responsible for filtering the plot. This includes:
+    - the button on the dashboard and the popup
+    - the functionality behind the buttons you press inside the popup that filter the plot 
     """
     def __init__(self, mu, analysis_plot, parent=None):
         super().__init__(parent)
@@ -33,7 +29,7 @@ class SignalEditing(QWidget):
         self.analysis_plot = analysis_plot
 
         layout = QVBoxLayout(self)
-        btn = AnalysisButton("Signal Editing", lambda: self.show_window(), parent=self)
+        btn = GeneralButton("Signal Editing", lambda: self.show_window(), parent=self)
         layout.addWidget(btn, stretch=1)
 
     # the popup
@@ -84,7 +80,7 @@ class SignalEditing(QWidget):
         filter_v_emg_layout.setContentsMargins(0, 0, 0, 0)
         filter_v_emg_layout.addStretch()
 
-        filter_emg_btn = AnalysisButton("Filter EMG signal", lambda: self.filter_emg_signal(), parent=self)
+        filter_emg_btn = GeneralButton("Filter EMG signal", lambda: self.filter_emg_signal(), parent=self)
         filter_v_emg_layout.addWidget(filter_emg_btn)
         filter_emg_layout.addWidget(filter_v_emg, stretch=1)
 
@@ -118,7 +114,7 @@ class SignalEditing(QWidget):
         filter_v_refsig_layout.setContentsMargins(0, 0, 0, 0)
         filter_v_refsig_layout.addStretch()
 
-        filter_refsig_btn = AnalysisButton("Filter Refsig", lambda: self.filter_refsig(), parent=self)
+        filter_refsig_btn = GeneralButton("Filter Refsig", lambda: self.filter_refsig(), parent=self)
         filter_v_refsig_layout.addWidget(filter_refsig_btn)
         filter_refsig_layout.addWidget(filter_v_refsig, stretch=1)
 
@@ -144,7 +140,7 @@ class SignalEditing(QWidget):
         remove_v_offset_layout.setContentsMargins(0, 0, 0, 0)
         remove_v_offset_layout.addStretch()
 
-        remove_offset_btn = AnalysisButton("Remove Offset", lambda: self.remove_offset(), parent=self)
+        remove_offset_btn = GeneralButton("Remove Offset", lambda: self.remove_offset(), parent=self)
         remove_v_offset_layout.addWidget(remove_offset_btn)
         remove_offset_layout.addWidget(remove_v_offset, stretch=1)
 
@@ -175,7 +171,7 @@ class SignalEditing(QWidget):
         convert_v_layout.setContentsMargins(0, 0, 0, 0)
         convert_v_layout.addStretch()
 
-        convert_btn = AnalysisButton("Convert", lambda: self.convert(), parent=self)
+        convert_btn = GeneralButton("Convert", lambda: self.convert(), parent=self)
         convert_v_layout.addWidget(convert_btn)
         convert_layout.addWidget(convert_v, stretch=1)
 
@@ -197,7 +193,7 @@ class SignalEditing(QWidget):
         percent_v_layout.setContentsMargins(0, 0, 0, 0)
         percent_v_layout.addStretch()
 
-        percent_btn = AnalysisButton("To Percent", lambda: self.to_percent(), parent=self)
+        percent_btn = GeneralButton("To Percent", lambda: self.to_percent(), parent=self)
         percent_v_layout.addWidget(percent_btn)
         percent_layout.addWidget(percent_v, stretch=1)
 
