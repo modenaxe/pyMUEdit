@@ -93,6 +93,11 @@ class HDEMGDashboard(QMainWindow):
             if hasattr(self.import_data_page, "fileImported"):
                 self.import_data_page.fileImported.connect(self.handle_file_imported)
 
+        if DecompositionApp:
+            self.decomposition_page = DecompositionApp()
+            self.decomposition_page.setWindowFlags(getattr(Qt.WindowType, "Widget"))
+
+
         # Note: Manual Editing page is now created after setup_ui in __init__
 
     def handle_file_imported(self, file_info):

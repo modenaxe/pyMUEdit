@@ -57,12 +57,15 @@ def setup_ui(main_window):
     if hasattr(main_window, "mu_analysis_page") and main_window.mu_analysis_page is not None:
         main_window.central_stacked_widget.addWidget(main_window.mu_analysis_page)
 
+    if hasattr(main_window, "decomposition_page") and main_window.decomposition_page is not None:
+        main_window.central_stacked_widget.addWidget(main_window.decomposition_page)
+    else:
+        main_window.decomposition_page = create_placeholder_page("Decomposition Page", main_window)
+        main_window.central_stacked_widget.addWidget(main_window.decomposition_page)
+
     # Placeholder pages
     main_window.manual_editing_page = create_placeholder_page("Manual Editing Page", main_window)
     main_window.central_stacked_widget.addWidget(main_window.manual_editing_page)
-
-    main_window.decomposition_page = create_placeholder_page("Decomposition Page", main_window)
-    main_window.central_stacked_widget.addWidget(main_window.decomposition_page)
 
     main_window.main_h_layout.addWidget(main_window.central_stacked_widget, 1)
 

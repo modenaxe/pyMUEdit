@@ -302,6 +302,20 @@ def setup_right_panel(main_window, parent_layout):
 
     right_layout.addWidget(status_group)
 
+    # Configuration buttons
+    config_group = SettingsGroup("Configuration")
+    main_window.set_configuration_button = ActionButton("Set Configuration", primary=False)
+    main_window.set_configuration_button.setEnabled(True)
+    config_group.add_field(main_window.set_configuration_button)
+
+    main_window.segment_session_button = ActionButton("Segment Session", primary=False)
+    config_group.add_field(main_window.segment_session_button)
+
+    main_window.channel_view_button = ActionButton("Channel Viewer", primary=False)
+    config_group.add_field(main_window.channel_view_button)
+
+    right_layout.addWidget(config_group)
+
     # Analysis Results group
     results_group = SettingsGroup("Analysis Results")
 
@@ -318,29 +332,19 @@ def setup_right_panel(main_window, parent_layout):
     results_group.add_field(main_window.cov_value_label)
 
     # Save Output button
-    main_window.save_output_button = ActionButton("💾 Save Output", primary=True)
-    main_window.save_output_button.setEnabled(True)  # Set to True for visual consistency with image
+    main_window.save_output_button = ActionButton("💾 Save Output", primary=False)
+    main_window.save_output_button.setEnabled(True)
     results_group.add_field(main_window.save_output_button)
+
+    main_window.next_button = ActionButton("Next", primary=True)
+    main_window.next_button.setEnabled(True)
+    results_group.add_field(main_window.next_button)
 
     right_layout.addWidget(results_group)
 
-    # Configuration buttons
-    config_group = SettingsGroup("Configuration")
-    main_window.set_configuration_button = ActionButton("Set Configuration", primary=False)
-    main_window.set_configuration_button.setEnabled(True)
-    config_group.add_field(main_window.set_configuration_button)
-
-    main_window.segment_session_button = ActionButton("Segment Session", primary=False)
-    config_group.add_field(main_window.segment_session_button)
-
-    main_window.channel_view_button = ActionButton("Channel Viewer", primary=False)
-    config_group.add_field(main_window.channel_view_button)
-
-    right_layout.addWidget(config_group)
-
     right_layout.addStretch(1)
     parent_layout.addWidget(right_panel, 1)
-    
+
 
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication, QMainWindow
