@@ -16,6 +16,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
+from core.muAnalysisCore.AnalysisResultsHist import store
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
 from app.ExportResults import ExportResultsWindow
@@ -23,6 +24,7 @@ from ui.muanalysis.AdvancedTools import AdvancedTools
 from ui.muanalysis.MotorUnitProperties import MotorUnitPropertiesButton
 from ui.muanalysis.PlotEMG import PlotEMGButton
 from ui.muanalysis.SignalEditing import SignalEditing
+from ui.components.muAnalysisComponents.AnalysisPlot import AnalysisPlot
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText 
 from ui.components.muAnalysisComponents.MajorHeading import MajorHeading
 from ui.muanalysis.FileSection import FileSection
@@ -52,7 +54,9 @@ class MUAnalysis(QWidget):
         self.result_combo = ResultSelection(self.results_table)
         # setting instance of function class from src/app.muAnalysisFunctions.FileUploadFunc
         self.mu = FileUploadFunc()
+        self.analysis_plot = AnalysisPlot()
         self.prop = MUPropertiesFunc()
+        print(self.analysis_plot)
 
         self.colors = {
             "bg_main": "#f8f9fa",
@@ -79,10 +83,9 @@ class MUAnalysis(QWidget):
         self.content_layout = QHBoxLayout()
         self.content_layout.setContentsMargins(15, 15, 15, 15)
         self.content_layout.setSpacing(20)
-        self.center = None
-        center_area = self._create_center_area() # doing it pre-emptively to set self.center for left sidebar 
+          
         self.content_layout.addWidget(self._create_left_sidebar(), stretch=1)
-        self.content_layout.addWidget(center_area, stretch=5)
+        self.content_layout.addWidget(self._create_center_area(), stretch=5)
         self.content_layout.addWidget(self._create_right_sidebar(), stretch=3)
         self.widget_layout.addLayout(self.content_layout)  # Add main content below top bar
         
@@ -183,17 +186,17 @@ class MUAnalysis(QWidget):
         sidebar_layout.addWidget(title_label)
 
         # signal editing 
-        signal_editing = SignalEditing(self.mu, self.center, parent=sidebar)
+        signal_editing = SignalEditing(self.mu, self.analysis_plot, parent=sidebar)
         sidebar_layout.addWidget(signal_editing)
 
         # motor unit properties
-        motor_unit_properties = MotorUnitPropertiesButton(parent=self)
+        motor_unit_properties = MotorUnitPropertiesButton(self.analysis_plot, parent=self)
         motor_unit_properties.mvc_updated.connect(self.prop.set_mvc)
         sidebar_layout.addWidget(motor_unit_properties)
         self.motor_unit_properties = motor_unit_properties
         
         # plot emg button
-        plot_emg_tools = PlotEMGButton(parent=self)
+        plot_emg_tools = PlotEMGButton(self.analysis_plot, parent=self)
         sidebar_layout.addWidget(plot_emg_tools)
         self.plot_emg_tools = plot_emg_tools
 
@@ -210,12 +213,7 @@ class MUAnalysis(QWidget):
     def _create_center_area(self):
         center = QFrame()
         center.setObjectName("centerContent")
-        center_layout = QVBoxLayout(center)
-        load = QLabel("Press Load File to View Data")
-        load.setFont(QFont("Arial", 27, QFont.Bold))
-        load.setStyleSheet(f"color: #6c757d; margin-right: 50%;")
-        center_layout.addWidget(load)
-        
+        center_layout = QVBoxLayout(center)        
         
         # code to test the result table
         # can be refered to when implimenting real data
@@ -244,9 +242,9 @@ class MUAnalysis(QWidget):
         title = "table " 
         dummy_button.clicked.connect(lambda: self.calc_result(title, [table]))
         center_layout.addWidget(dummy_button)
+
+        center_layout.addWidget(self.analysis_plot)
         
-        self.mu.set_canvas(load)
-        self.center = center_layout
         return center
 
     # side bar with load file button
@@ -263,10 +261,10 @@ class MUAnalysis(QWidget):
 
         """
         )
-        file_section = FileSection(sidebar, self.mu, self.center)
+        file_section = FileSection(sidebar, self.mu, self.analysis_plot)
         # Connect the reset button's signal to the MUAnalysisFunc method
         file_section.reset_btn.reset_requested.connect(
-            lambda: self.mu.handle_reset_workflow(self.center)
+            lambda: self.mu.handle_reset_workflow(self.analysis_plot)
         )
         results_section = ResultsPanel(sidebar, self.result_combo, self.results_table)
         

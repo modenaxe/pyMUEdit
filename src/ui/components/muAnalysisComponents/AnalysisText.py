@@ -65,3 +65,16 @@ class AnalysisText(QLabel):
         )
 
         return label 
+
+    def create_prompt(text=""):
+        prompt = QLabel(text)
+        prompt.setStyleSheet(
+            f"""
+                color: {CleanTheme.ANALYSIS_TEXT_PROMPT};
+                font-family: Arial;
+                font-size: 27px;
+                font-weight: 500
+            """
+        )
+
+        return prompt

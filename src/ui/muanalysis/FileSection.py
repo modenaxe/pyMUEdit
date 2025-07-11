@@ -20,22 +20,22 @@ class FileSection(QFrame):
 
     """Section contianing file handling Load and Reset"""
 
-    def __init__(self, sidebar, mu, center):
+    def __init__(self, sidebar, mu, analysis_plot):
         super().__init__(sidebar)
         self.setObjectName("FileSection")
-        
+
         layout = QVBoxLayout(self)
 
         title_label = MajorHeading("File")
         title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY}; border: none")
         title_label.setFont(QFont("Arial", 14, QFont.Bold))
         title_label.setObjectName("sidebarTitle")
-        
+
         # Create horizontal layout for the buttons
         button_row = QHBoxLayout()
         button_row.setSpacing(10)
 
-        browse_btn = GeneralButton('Load File', lambda: mu.select_file_button_pushed(center))
+        browse_btn = GeneralButton('Load File', lambda: mu.select_file_button_pushed(analysis_plot))
         browse_btn.setFixedWidth(120)
         browse_btn.setFixedHeight(40)
 
