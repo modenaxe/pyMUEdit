@@ -745,10 +745,11 @@ class MUeditManual(QMainWindow):
                 if self.update_plot_setRange:
                     return
                 self.graphstart, self.graphend = ranges
+                print(f"on_xrange_changed: {self.graphstart} {self.graphend}")
                 
             self.dr_plot.setXLink(self.spiketrain_plot)
                 
-            self.dr_plot.getViewBox().sigXRangeChanged.connect(on_xrange_changed, type=Qt.UniqueConnection) 
+            # self.dr_plot.getViewBox().sigXRangeChanged.connect(on_xrange_changed, type=Qt.UniqueConnection) 
             self.spiketrain_plot.getViewBox().sigXRangeChanged.connect(on_xrange_changed, type=Qt.UniqueConnection)
             
             # Ensure shortcut key responsiveness after plot creation 
@@ -943,10 +944,15 @@ class MUeditManual(QMainWindow):
     
     # Navigation actions
     def slider_value_changed(self, value):
-        if not self.MUedition or not self.graphend or not self.graphstart:
+
+        if not self.MUedition or self.graphend is None or self.graphstart is None:
             return
+
         max_len = self.MUedition["edition"]["time"][-1] - self.MUedition["edition"]["time"][0]
-        center = (self.graphend + self.graphstart) / 2
+        try:
+            center = (self.graphend + self.graphstart) / 2
+        except TypeError:
+            return
         len_scaled = (max_len / 100.0) * (100 ** ((100 - value)/100))
         self.graphstart = center - len_scaled / 2
         self.graphend = center + len_scaled / 2
