@@ -9,8 +9,10 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal
-from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.AnalysisButton import AnalysisButton
 from ui.components.muAnalysisComponents.FileSidebar.FileButton import FileButton
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
 
 class MotorUnitPropertiesDialog(QDialog):
@@ -18,10 +20,11 @@ class MotorUnitPropertiesDialog(QDialog):
 
     mvc_updated = pyqtSignal(float)  # Signal emitted when MVC is updated
 
-    def __init__(self, parent=None, current_mvc=None):
+    def __init__(self, parent=None, analysis_plot=None, current_mvc=None):
         super().__init__(parent)
         self.current_mvc = current_mvc
         # passing instance of MUPropertiesFunc to be used in parts of dialog
+        self.analysis_plot = analysis_plot
         self.init_ui(MUPropertiesFunc())
 
     def init_ui(self, func):
@@ -54,7 +57,7 @@ class MotorUnitPropertiesDialog(QDialog):
         #basic properties
         layout.addLayout(box)
         func.set_mvc(self.mvc_input)
-        basic_prop = MotorUnitPropertiesBasic(func, self)
+        basic_prop = MotorUnitPropertiesBasic(self.analysis_plot, func, self)
         layout.addLayout(basic_prop)
 
     def save_mvc(self):
@@ -64,12 +67,11 @@ class MotorUnitPropertiesDialog(QDialog):
 # has firing at rec, firing at start/end input and basic properties button
 # button leads to functions found in app.MUPropertiesFun
 class MotorUnitPropertiesBasic(QHBoxLayout):
-    def __init__(self, func, over):
+    def __init__(self, analysis_plot, func, over):
         super().__init__()
-        button = PropertiesInnerDialogButton('Basic Properties')
+        button = AnalysisButton("Basic Properties", lambda: func.basic_prop(analysis_plot, rec_input, steady_input, over))
         rec_input = PropertiesInnerDialogText('Firings at Rec')
         steady_input = PropertiesInnerDialogText('Firings at Start/End Steady')
-        button.clicked.connect(lambda: func.basic_prop(rec_input, steady_input, over))
         self.addWidget(button)
         self.addWidget(rec_input)
         self.addWidget(steady_input)
@@ -95,78 +97,32 @@ class PropertiesInnerDialogText(QLineEdit):
             }}
         """)
 
-# general class for any buttons inside dialog
-class PropertiesInnerDialogButton(QPushButton):
-    def __init__(self, text):
-        super().__init__(text )
-        self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: #495057;
-                color: #e9ecee;
-                border: none;
-                height: 40%;
-                max-width: 100%;
-                border-radius: 4px;
-            }}
-            QPushButton:hover {{
-                background-color: #4a5672;
-            }}
-        """
-        )
-
-
 class MotorUnitPropertiesButton(QWidget):
     """Button widget for opening Motor Unit Properties dialog"""
     
     mvc_updated = pyqtSignal(float)  # Signal emitted when MVC is updated
     
-    def __init__(self, parent=None):
+    def __init__(self, analysis_plot, parent=None):
         super().__init__(parent)
         self.current_mvc = None
+        self.analysis_plot = analysis_plot
         self.init_ui()
         
     def init_ui(self):
         layout = QVBoxLayout(self)
         
         # Subtitle
-        subtitle_label = QLabel("MOTOR UNIT ANALYSIS")
+        subtitle_label = AnalysisText.create_subtitle("MOTOR UNIT ANALYSIS")
         subtitle_label.setObjectName("motorUnitAnalysisSubTitle")
-        subtitle_label.setStyleSheet(
-            f"""
-            color: {CleanTheme.ANALYSIS_TEXT_TERTIARY};
-            margin: 0px;
-            """
-        )
-        subtitle_label.setFont(QFont("Arial", 10, QFont.Bold))
         layout.addWidget(subtitle_label)
         
         # Motor Unit Properties button
-        mu_properties_btn = QPushButton("Motor Unit Properties")
-        mu_properties_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        mu_properties_btn.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {CleanTheme.ANALYSIS_BG_BUTTON};
-                color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
-                height: 40px;
-                border-radius: 4px;
-            }}
-            QPushButton:hover {{
-                background-color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
-                color: {CleanTheme.ANALYSIS_BG_BUTTON};
-            }}
-        """
-        )
-        mu_properties_btn.clicked.connect(self.open_mu_properties)
+        mu_properties_btn = AnalysisButton("Motor Unit Properties", self.open_mu_properties, parent=self)
         layout.addWidget(mu_properties_btn)
-        layout.setAlignment(mu_properties_btn, Qt.AlignTop)
         
     def open_mu_properties(self):
         # Open the Motor Unit Properties dialog
-        dialog = MotorUnitPropertiesDialog(self, self.current_mvc)
+        dialog = MotorUnitPropertiesDialog(self, self.analysis_plot, self.current_mvc)
         dialog.mvc_updated.connect(self.update_mvc)
         dialog.exec_()
         

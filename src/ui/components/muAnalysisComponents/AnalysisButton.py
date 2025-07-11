@@ -8,7 +8,8 @@ class AnalysisButton(QPushButton):
 
     parameters:
         label (string): text for the button 
-        action (lambda: action): the thing the button triggers. Make sure you include `lambda:` in param
+        action (action): the thing the button triggers
+            - sometimes you have to put lambda in it, I have no idea how python works
     """
     def __init__(self, label="", action=None, parent=None):
         super().__init__(label, parent)
@@ -30,4 +31,12 @@ class AnalysisButton(QPushButton):
         """
         )
         self.clicked.connect(action)
+
+    # Sets the width 
+    # I defined the width for the 'revert' button to be 100, so just defining that for consistency,
+    # in case someone else wants to use this method 
+    # I would've defined a function that essentially removes the width css line, but it's looks 
+    # kinda complicated so I don't think it's worth it
+    def set_width(self, width):
+        self.setFixedWidth(width)
 
