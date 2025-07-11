@@ -13,17 +13,20 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from ui.components.muAnalysisComponents.FileSidebar.FileButton import FileButton
 from app.muAnalysisFunctions.PlotEMGFunc import parse_channel_input, plot_emgsig
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.AnalysisButton import AnalysisButton 
+from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import PropertiesInnerDialogButton
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
 
 class PlotEMGToolDialog(QDialog):
+
+    """Dialog containing options for plotting"""
+    
     def __init__(self, analysis_plot, parent=None):
         super().__init__(parent)
         self.analysis_plot = analysis_plot
@@ -91,7 +94,7 @@ class PlotEMGToolDialog(QDialog):
 
         # --- Plot EMGsig Button and Channel Input (side by side) ---
         emg_row_layout = QHBoxLayout()
-        emgsig_btn = AnalysisButton("Plot EMGsig", self.handle_emgsig_clicked, parent=self)
+        emgsig_btn = GeneralButton("Plot EMGsig", self.handle_emgsig_clicked, parent=self)
         emg_row_layout.addWidget(emgsig_btn)
 
         self.channel_input = QLineEdit()
@@ -215,13 +218,12 @@ class PlotEMGButton(QWidget):
         subtitle_label = AnalysisText.create_subtitle("PLOT EMG")
         subtitle_label.setObjectName("motorUnitAnalysisSubTitle")
         layout.addWidget(subtitle_label)
-        
-        # Motor Unit Properties button
-        plot_emg_btn = AnalysisButton("Plot EMG", self.open_plot_emg_btn, parent=self)
+
+        plot_emg_btn = GeneralButton("Plot EMG", lambda: self.open_plot_emg_btn())
         layout.addWidget(plot_emg_btn)
+        layout.setAlignment(plot_emg_btn, Qt.AlignmentFlag.AlignTop)
         
     def open_plot_emg_btn(self):
         # Open the Motor Unit Properties dialog
         dialog = PlotEMGToolDialog(self.analysis_plot)
         dialog.exec_()
-

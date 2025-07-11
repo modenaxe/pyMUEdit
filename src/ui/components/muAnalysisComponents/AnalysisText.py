@@ -2,11 +2,14 @@ from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QFont
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
-"""
+
+class AnalysisText(QLabel):
+
+    """
     (Factory Method)
     Each method returns an instance of different types of text (titles, headings, text etc.)
-"""
-class AnalysisText(QLabel):
+    """
+    
     # for titles 
     def create_title(text=""):
         title = QLabel(text)
@@ -18,7 +21,6 @@ class AnalysisText(QLabel):
             font-weight: 500;
             """
         )
-
         return title 
 
     # for headings you see on popups, such as the signal editing popup 

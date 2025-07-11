@@ -24,10 +24,13 @@ from ui.components.muAnalysisComponents.ConfirmationDialog import ConfirmationDi
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
-from app.muAnalysisFunctions.commonOpenFunc import commonOpenFunc
+from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
 
 # This class holds all the functions used for file uploading
 class FileUploadFunc:
+
+    """Methods for handling the emgFile and its intital display to centre"""
+
     # made file a class var, to be accessed via FileUploadFunc.file, so that it can be used across other classes
     file = None
 
@@ -35,7 +38,6 @@ class FileUploadFunc:
         # Store the original file path for reset functionality
         self.original_file_path = None
         # file holds emg file instance which is used in openHdemg code
-        # self.file = None
         # canvas hold whatever the widget in the center area is (graph or message saying to load file)
         self.coords = []
         self.cid = None
@@ -416,7 +418,7 @@ class FileUploadFunc:
     showimmediately=False,
     ):
         # Compute the IDR
-        common = commonOpenFunc()
+        common = CommonOpenFunc()
         idr = common.compute_idr(emgfile=emgfile)
 
         # Check if all the MUs have to be plotted
@@ -457,7 +459,8 @@ class FileUploadFunc:
             idr_all = pd.DataFrame({key: df['idr'] for key, df in idr.items()})
             idr_all = idr_all[munumber]
             # Normalise the df
-            norm_idr_all = self.min_max_scaling(data=idr_all, col_by_col=False)
+            common = CommonOpenFunc()
+            norm_idr_all = common.min_max_scaling(data=idr_all, col_by_col=False)
 
             for count, thisMU in enumerate(munumber):
                 norm_idr = norm_idr_all[thisMU]
@@ -514,84 +517,6 @@ class FileUploadFunc:
         # TL : Immediately plots the fig, instead of passing the figure on
         canvas = SaveablePlot(fig)
         analysis_plot.display_fig(canvas)
-
-    # OPENHDEMG
-    def min_max_scaling(self, data=None, series_or_df=None, col_by_col=False):
-        # Create a deepcopy of the original data
-        if data is not None:
-            data = copy.deepcopy(data)
-
-        elif series_or_df is not None:
-            data = copy.deepcopy(series_or_df)
-
-            # Warn for the use of deprecated parameters
-            msg = (
-                "The 'series_or_df' parameter is deprecated since v0.1.1 and " +
-                "will be removed after v0.2.0. Please use 'data' instead."
-            )
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
-
-        # Automatically act depending on the data received
-        if isinstance(data, pd.Series):
-            data = (data - data.min()) / (data.max() - data.min())
-
-            return data
-
-        elif isinstance(data, pd.DataFrame):
-            if col_by_col:
-                for col in data.columns:
-                    data[col] = (
-                        (data[col] - data[col].min()) /
-                        (data[col].max() - data[col].min())
-                    )
-
-                return data
-
-            else:
-                data = (
-                    (data - data.min().min()) /
-                    (data.max().max() - data.min().min())
-                )
-
-                return data
-
-        elif isinstance(data, np.ndarray):
-            if col_by_col:
-                # Check if data is 1D 2D or nD and act accordingly
-                if len(data.shape) == 1:
-                    data = (data - data.min()) / (data.max() - data.min())
-
-                    return data
-
-                elif len(data.shape) == 2:
-                    dims = any(d == 0 or d == 1 for d in data.shape)
-                    if dims:  # Only 1 column
-                        data = (data - data.min()) / (data.max() - data.min())
-                    else:  # Multiple columns
-                        for col in range(data.shape[1]):
-                            data[:, col] = (
-                                (data[:, col] - data[:, col].min()) /
-                                (data[:, col].max() - data[:, col].min())
-                            )
-
-                    return data
-
-                elif len(data.shape) > 2:
-                    raise ValueError(
-                        "col_by_col is supported only for 1 and 2D arrays. Set " +
-                        "col_by_col=False to normalise the whole data instead."
-                    )
-
-            else:
-                data = (data - data.min()) / (data.max() - data.min())
-
-                return data
-
-        else:
-            raise TypeError(
-                "data must be one of pd.series, pd.dataframe or np.ndarray. " +
-                f"{type(data)} was passed instead."
-            )
 
     def handle_reset_workflow(self, analysis_plot):
         """

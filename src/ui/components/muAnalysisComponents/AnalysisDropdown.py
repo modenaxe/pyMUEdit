@@ -11,14 +11,11 @@ from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 
 # For dropdown inputs for the analysis tab (factory method)
 class AnalysisDropdown(QComboBox):
+    
     """
     Initialise a dropdown without a label (label is a placeholder)
-
-    Args:
-        label: (string): placeholder text for dropdown
-        items (list of strings, optional): Array of options 
-        parent (QWidget, optional): Parent widget
     """
+
     def __init__(self, label, items=None, parent=None):
         super().__init__(parent)
 
@@ -56,14 +53,6 @@ class AnalysisDropdown(QComboBox):
     def get_value(self):
         return self.currentText()
 
-    """
-    Initialise a dropdown with a label
-
-    Args:
-        label: (string): placeholder text for dropdown
-        items (list of strings, optional): Array of options 
-        parent (QWidget, optional): Parent widget
-    """
     @staticmethod
     def labeled_dropdown(label="", items=None, parent=None):
         box = QFrame()

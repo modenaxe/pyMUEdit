@@ -3,13 +3,13 @@ import time
 import random
 from PyQt5.QtCore import QObject, pyqtSignal
 
-# singleton object that stores all calculated historical tabulated results within the current instance of the application
-# fields:
-# - title of table
-# - timestamp
-# - table as 2d arry
-
 class AnalysisResultsHist(QObject):
+
+    """
+    singleton object that stores all calculated historical tabulated results within the current instance of the application
+    params: table title, timestamp, 2d array table
+    """
+
     _instance = None
     data_changed = pyqtSignal(object)
     data_cleared = pyqtSignal()
