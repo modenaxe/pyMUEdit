@@ -20,6 +20,7 @@ from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
 from core.muAnalysisCore.AnalysisResultsHist import store
+from core.muAnalysisCore.SelectRange import SelectRange
 
 # class for functions required for the MU properties dialog
 class MUPropertiesFunc:
@@ -61,25 +62,26 @@ class MUPropertiesFunc:
     # user selects starting and ending points for calculation
     def showselect(self, emgfile, analysis_plot, rec, start, how="ref_signal"):
         plt.close()
-        data_to_plot = emgfile["REF_SIGNAL"][0]
-        self.fig, self.ax = plt.subplots()
+        # data_to_plot = emgfile["REF_SIGNAL"][0]
+        # self.fig, self.ax = plt.subplots()
 
-        self.ax.plot(data_to_plot)
-        self.ax.set_xlabel("Samples")
-        self.ax.set_ylabel('Reference signal')
-        self.ax.set_title('Click start and end range')
+        # self.ax.plot(data_to_plot)
+        # self.ax.set_xlabel("Samples")
+        # self.ax.set_ylabel('Reference signal')
+        # self.ax.set_title('Click start and end range')
 
-        self.fig.set_figheight(5)
-        self.fig.set_figwidth(5)
+        # self.fig.set_figheight(5)
+        # self.fig.set_figwidth(5)
 
-        self.coords = []
+        # self.coords = []
+        SelectRange(analysis_plot)
 
-        self.fig.canvas.mpl_connect('button_press_event', lambda event: self.on_click(event, rec, start, emgfile))
-        # self.fig.canvas.mpl_connect('key_press_event', lambda event: self.on_press(event, rec, start, emgfile))
+        # self.fig.canvas.mpl_connect('button_press_event', lambda event: self.on_click(event, rec, start, emgfile))
+        # # self.fig.canvas.mpl_connect('key_press_event', lambda event: self.on_press(event, rec, start, emgfile))
 
-        # the actual plotting 
-        canvas = SaveablePlot(self.fig)
-        analysis_plot.display_plot(canvas)
+        # # the actual plotting 
+        # canvas = SaveablePlot(self.fig)
+        # analysis_plot.display_plot(canvas)
 
     # helper function for showselect. Displays the red boundaries in the graph 
     def on_click(self, event, rec, start, emgfile):
