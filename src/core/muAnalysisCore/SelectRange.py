@@ -9,50 +9,65 @@ from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 class SelectRange:
 
     def __init__(self, analysis_plot):
-        emgfile = FileUploadFunc.file
         self.drag = True
         self.analysis_plot = analysis_plot
+        self.ax = None
+        self.canvas = None
+        self.shade_one = None
+        self.shade_two = None
+        self.set_up_plot()
+        val = self.ax.xaxis.get_view_interval()
+        upper = val[1] - abs(val[0])
+        self.max = val[1]
+        self.line = [self.ax.axvline(x=0, color='r', picker=1), self.ax.axvline(x=upper, color='r', picker=1)]
+        self.canvas.mpl_connect('pick_event', lambda event: self.click_on_line(event))
+        analysis_plot.display_plot(self.canvas)
+
+    def set_up_plot(self):
+        emgfile = FileUploadFunc.file
         plt.close()
         data_to_plot = emgfile["REF_SIGNAL"][0]
         fig, ax = plt.subplots()
-        self.ax = ax
         ax.plot(data_to_plot)
         ax.set_xlabel("Samples")
         ax.set_ylabel('Reference signal')
         ax.set_title('Click start and end range')
-        # fig.set_figheight(5)
-        # fig.set_figwidth(5)
-        self.s = None
-        val = ax.xaxis.get_view_interval()
-        upper = val[1] - abs(val[0])
         self.canvas = FigureCanvas(fig)
-        self.line = [ax.axvline(x=0, color='r', picker=1), ax.axvline(x=upper, color='r', picker=1)]
-        self.canvas.mpl_connect('pick_event', lambda event: self.clickOnLine(event))
-        analysis_plot.display_plot(self.canvas)
+        self.ax = ax
 
-    def clickOnLine(self, event):
+    def click_on_line(self, event):
         if event.artist in self.line:
             x = self.line.index(event.artist)
             if self.drag:
-                follow = self.canvas.mpl_connect("motion_notify_event", lambda event: self.followmouse(event, x))
-                release = self.canvas.mpl_connect("button_press_event", lambda event: self.releaseonclick(follow, release))
+                follow = self.canvas.mpl_connect("motion_notify_event", lambda event: self.follow_mouse(event, x))
+                release = self.canvas.mpl_connect("button_press_event", lambda event: self.release_on_click(follow, release))
                 self.drag = False
             else:
                 self.drag = True
 
-    def followmouse(self, event, index):
+    def follow_mouse(self, event, index):
         if event.xdata:
-            if (index == 0 and event.xdata <= self.line[1].get_xdata()[0]) or (index == 1 and event.xdata >= self.line[0].get_xdata()[0]):
-                self.line[index].set_xdata([event.xdata, event.xdata])
-                # max = ax.xaxis.get_view_interval()
-                if self.s:
-                    self.s.remove()
-                self.s = self.ax.axvspan(0, event.xdata, alpha=0.1, color='red')
-                self.canvas.draw()
+            if (index == 0):
+                self.line_one(event)
+            else:
+                self.line_two(event)
+            self.canvas.draw()
 
+    def line_one(self, event):
+        if event.xdata >= 0 and event.xdata <= self.line[1].get_xdata()[0]:
+            self.line[0].set_xdata([event.xdata, event.xdata])
+            if self.shade_one:
+                self.shade_one.remove()
+            self.shade_one = self.ax.axvspan(0, event.xdata, alpha=0.1, color='red')
 
-    def releaseonclick(self, follow, release):
-        print(self.line[0].get_xdata()[0])
+    def line_two(self, event):
+        if event.xdata <= self.max and event.xdata >= self.line[0].get_xdata()[0]:
+            self.line[1].set_xdata([event.xdata, event.xdata])
+            if self.shade_two:
+                self.shade_two.remove()
+            self.shade_two = self.ax.axvspan(event.xdata, self.max, alpha=0.1, color='red')
+
+    def release_on_click(self, follow, release):
         self.canvas.mpl_disconnect(follow)
         self.canvas.mpl_disconnect(release)
 
