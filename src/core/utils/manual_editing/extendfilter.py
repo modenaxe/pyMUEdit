@@ -79,4 +79,4 @@ def extendfilter(EMG, EMGmask, PulseT, distime, idx, fsamp, EMGtype):
             distime = np.append(distime, spikes2 + idx[0] - 1)
             distime = np.sort(distime)
 
-    return PulseT, distime
+    return PulseT, distime, spikes1
