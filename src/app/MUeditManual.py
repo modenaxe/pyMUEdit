@@ -1351,7 +1351,7 @@ class MUeditManual(QMainWindow):
             emg_data = self.MUedition["signal"]["data"][self.MUedition["edition"]["arraynb"] == array_idx, :]
             emg_mask = self.MUedition["signal"]["EMGmask"][0]
             emg_mask = emg_mask[array_idx].squeeze()
-            #emg_data = emg_data[(emg_mask == 0).squeeze(), :]  # Use only non-rejected channels
+            emg_data = emg_data[(emg_mask == 0).squeeze(), :]  # Use only non-rejected channels
 
             #get EMG type
             emg_type = "surface"
@@ -1445,10 +1445,9 @@ class MUeditManual(QMainWindow):
 
             # Get EMG data for the current array
             emg_data = self.MUedition["signal"]["data"][self.MUedition["edition"]["arraynb"] == array_idx, :]
-            #emg_mask = self.MUedition["signal"]["EMGmask"][array_idx]
             emg_mask = self.MUedition["signal"]["EMGmask"][0]
             emg_mask = emg_mask[array_idx].squeeze()
-            #emg_data = emg_data[emg_mask == 0, :]  # Use only non-rejected channels
+            emg_data = emg_data[emg_mask == 0, :]  # Use only non-rejected channels
 
             #get EMG type
             emg_type = "surface"
@@ -1468,7 +1467,6 @@ class MUeditManual(QMainWindow):
 
             # Save old SIL for later comparison
             old_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
-
             # Zoom out to full signal
             self.graphstart = self.MUedition["edition"]["time"][0]
             self.graphend = self.MUedition["edition"]["time"][-1]
@@ -1539,7 +1537,6 @@ class MUeditManual(QMainWindow):
             # Recalculate SIL values
             self.calculate_silval(array_idx, mu_idx)
             new_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
-
             # Final display update
             if(new_sil >= old_sil):
                 self.mu_checkbox_state_changed(pluse_train_color="#8ACD69")
@@ -1761,6 +1758,7 @@ class MUeditManual(QMainWindow):
     def update_all_mu_filters_button_pushed(self):
         """Update filters for all motor units."""
         if not self.MUedition:
+            ErrorDialog(text="Please import file first!")
             return
 
         # Create a progress dialog
@@ -1779,9 +1777,9 @@ class MUeditManual(QMainWindow):
         # Process each MU
         processed_mus = 0
         for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
-            # Get EMG data for this array
+            # Get EMG data for this array            
             emg_data = self.MUedition["signal"]["data"][self.MUedition["edition"]["arraynb"] == array_idx, :]
-            emg_mask = self.MUedition["signal"]["EMGmask"][array_idx]
+            emg_mask = self.MUedition["signal"]["EMGmask"][0, array_idx].squeeze()
             emg_data = emg_data[emg_mask == 0, :]  # Use only non-rejected channels
 
             num_mus = self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]
@@ -1827,7 +1825,7 @@ class MUeditManual(QMainWindow):
                     # Find peaks
                     from scipy.signal import find_peaks
 
-                    peaks, _ = find_peaks(pulse_train, distance=round(0.005 * self.MUedition["signal"]["fsamp"]))
+                    peaks, _ = find_peaks(pulse_train, distance=round(0.005 * self.MUedition["signal"]["fsamp"][0, 0]))
 
                     # Normalize using top peaks
                     if len(peaks) >= 10:
