@@ -1248,6 +1248,7 @@ class MUeditManual(QMainWindow):
 
     def lock_spikes_button_pushed(self):
         """Lock the current spikes to keep them during filter updates."""
+        print("push lock spikes")
         self.Backup["lock"] = 1
         self.lock_spikes_btn.setStyleSheet(
             "color: #f0f0f0; background-color: #7f7f7f; font-family: 'Poppins'; font-size: 18pt;"
@@ -1365,7 +1366,7 @@ class MUeditManual(QMainWindow):
             old_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
 
             # Apply filter update
-            updated_pulse_train, updated_discharge_times = extendfilter(
+            updated_pulse_train, updated_discharge_times, locked_spikes = extendfilter(
                 emg_data,
                 emg_mask,
                 self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :],
@@ -1377,13 +1378,25 @@ class MUeditManual(QMainWindow):
 
             # Handle spike locking
             if self.Backup["lock"] == 1:
-                self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = updated_pulse_train
+                aligned_locked_spikes = []
+                for s in locked_spikes:
+                    search_range = updated_pulse_train[s - 10 : s + 11]
+                    if len(search_range) == 21:
+                        peak_offset = np.argmax(search_range)
+                        aligned_locked_spikes.append(s - 10 + peak_offset)
+                    
+                aligned_locked_spikes = np.array(aligned_locked_spikes)
+                all_spikes = np.union1d(updated_discharge_times, aligned_locked_spikes)
+                all_spikes.sort()
+
+                self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = all_spikes
 
                 # Reset the lock
                 self.Backup["lock"] = 0
                 self.lock_spikes_btn.setStyleSheet(
-                    "color: #f0f0f0; background-color: #262626; font-family: 'Poppins'; font-size: 18pt;"
+                    "color: #f0f0f0; background-color: #D95535; font-family: 'Poppins'; font-size: 18pt;"
                 )
+                print("Reset")
             else:
                 # Update both pulse train and discharge times
                 self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = updated_pulse_train
@@ -1487,7 +1500,7 @@ class MUeditManual(QMainWindow):
                     break
 
                 # Apply extendfilter
-                updated_pulse_train, updated_discharge_times = extendfilter(
+                updated_pulse_train, updated_discharge_times, spikes1 = extendfilter(
                     emg_data,
                     emg_mask,
                     self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :],
@@ -1516,7 +1529,7 @@ class MUeditManual(QMainWindow):
                     break
 
                 # Apply extendfilter
-                updated_pulse_train, updated_discharge_times = extendfilter(
+                updated_pulse_train, updated_discharge_times, spikes1 = extendfilter(
                     emg_data,
                     emg_mask,
                     self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :],
