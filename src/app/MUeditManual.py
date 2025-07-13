@@ -614,6 +614,62 @@ class MUeditManual(QMainWindow):
             plot.setYRange(yrange[0], yrange[1])
         self.update_plot_setRange = False    
             
+    def update_spike_train_plot(self, array_idx, mu_idx, pulse_train, color="#D95535"):
+        """Update pulse train plot only without touching layout or other widgets."""
+        print("update_spike_train_plot")
+
+        # Clear existing plots
+        self.spiketrain_plot.clear()
+
+        # Show and update spike train plot
+        time_vector = self.MUedition["edition"]["time"]
+        self.spiketrain_plot.plot(
+            time_vector,
+            pulse_train,
+            pen=pg.mkPen(color="#333333", width=1),
+        )
+
+        if self.resetPlot:
+            self.safe_set_range(self.spiketrain_plot, yrange=[min(pulse_train)*1.2, max(pulse_train)*1.2])
+
+        # Plot reference signal if available
+        if "target" in self.MUedition["signal"] and self.MUedition["signal"]["target"].size > 0:
+            target_data = self.MUedition["signal"]["target"]
+            if target_data.ndim > 1:
+                target_data = target_data[0]
+            if isinstance(target_data, np.ndarray) and len(target_data) == len(time_vector):
+                target_max = np.max(target_data)
+                if target_max > 0:
+                    target_normalized = target_data / target_max
+                    self.spiketrain_plot.plot(
+                        time_vector,
+                        target_normalized,
+                        pen=pg.mkPen(color="#1B5E20", width=2, style=Qt.PenStyle.DashLine),
+                    )
+
+        # Plot discharge times
+        discharge_times = self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
+        if len(discharge_times) > 0:
+            scatter = pg.ScatterPlotItem()
+            x_values, y_values = [], []
+            window_size = 10
+
+            for dt in discharge_times:
+                if 0 <= dt < len(pulse_train):
+                    start = int(max(0, dt - window_size))
+                    end = int(min(len(pulse_train), dt + window_size + 1))
+                    window = pulse_train[start:end]
+                    if len(window) > 0:
+                        local_max_idx = start + np.argmax(window)
+                        x_values.append(time_vector[local_max_idx])
+                        y_values.append(pulse_train[local_max_idx])
+
+            if x_values:
+                scatter.addPoints(x=x_values, y=y_values, pen=None, brush=pg.mkBrush(color), size=10)
+                self.spiketrain_plot.addItem(scatter)
+
+        self.spiketrain_plot.setFocus()
+
 
     def display_selected_mus(self, checked_mus, pluse_train_color="#D95535"):
         """Display the currently selected motor units."""
@@ -789,7 +845,6 @@ class MUeditManual(QMainWindow):
             # Ensure shortcut key responsiveness after plot creation 
             self.spiketrain_plot.setFocus()
             self.resetPlot = False
-
 
         else:
             # Multiple MUs selected - show only pulse trains stacked vertically
@@ -1349,7 +1404,7 @@ class MUeditManual(QMainWindow):
             SuccessDialog(text="Update filter successfully!\nGreen means SIL improve. Blue means SIL decrease.")
         except Exception as e:
             QApplication.restoreOverrideCursor()
-            
+            print(e)
             ErrorDialog(text="Fail to update filter.")
             
 
@@ -1449,8 +1504,8 @@ class MUeditManual(QMainWindow):
                 self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = updated_discharge_times
 
                 # Update the display
-                # self.mu_checkbox_state_changed(pluse_train_color="#EEF680")
-                #QApplication.processEvents()
+                self.update_spike_train_plot(array_idx, mu_idx, updated_pulse_train)
+                QApplication.processEvents()
 
             # Then extend backward
             idx = current_idx.copy()
@@ -1478,8 +1533,8 @@ class MUeditManual(QMainWindow):
                 self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = updated_discharge_times
 
                 # Update the display
-                # self.mu_checkbox_state_changed(pluse_train_color="#EEF680")
-                #QApplication.processEvents()
+                self.update_spike_train_plot(array_idx, mu_idx, updated_pulse_train)
+                QApplication.processEvents()
 
             # Recalculate SIL values
             self.calculate_silval(array_idx, mu_idx)
@@ -1497,7 +1552,7 @@ class MUeditManual(QMainWindow):
             SuccessDialog(text="extend filter successfully!\nGreen means SIL improve. Blue means SIL decrease.")
         except Exception as e:
             QApplication.restoreOverrideCursor()
-            
+            print(e)
             ErrorDialog(text="Fail to extend filter.")
 
     def undo_button_pushed(self): # moy
