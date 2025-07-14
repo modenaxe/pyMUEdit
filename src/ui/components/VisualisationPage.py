@@ -33,7 +33,7 @@ class VisualisationPage(QWidget):
         left_layout.setSpacing(15)
 
         # main panel (signal graphs)
-        self.viewer = ChannelViewer(self.emg_data)
+        self.viewer = ChannelViewer(self.emg_obj, self.channel_group_change)
         self.viewer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # signal range dropdown panel
@@ -68,10 +68,6 @@ class VisualisationPage(QWidget):
         done_button = ActionButton("Done", primary=True)
         done_button.clicked.connect(self.doneClicked)
         left_layout.addWidget(done_button)
-
-        # main panel (signal graphs)
-        self.viewer = ChannelViewer(self.emg_data)
-        self.viewer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         vis_panel = VisualizationPanel(plot_widget=self.viewer)
         vis_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)

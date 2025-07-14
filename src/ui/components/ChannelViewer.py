@@ -1,18 +1,23 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QCheckBox, QHBoxLayout, QSizePolicy
+import math
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QCheckBox, QHBoxLayout
 from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.cm as cm
 
+from ui.components.ElectrodeGrid import ElectrodeGrid
+
 class ChannelViewer(QWidget):
-    def __init__(self, emg_data, parent=None):
+    def __init__(self, emg_obj, channel_group_change, parent=None):
         super().__init__(parent)
         # Expecting a 2D NumPy array [channels x time]
-        self.entire_emg_data = emg_data
+        self.entire_emg_data = emg_obj.signal_dict["data"]
+        self.emg_obj = emg_obj
         self.channel_indices = list(range(0, 8))
         # Default number of channels to display is 8
         self.num_indices = 8
         self.rejected_channels = []
+        self.channel_group_change = channel_group_change
 
         self.layout = QHBoxLayout()
 
@@ -20,13 +25,17 @@ class ChannelViewer(QWidget):
         self.figure = Figure(figsize=(8, 3), dpi=100)
         self.canvas = FigureCanvas(self.figure)
         self.figure.tight_layout()
-        self.layout.addWidget(self.canvas, stretch=4)
+        self.layout.addWidget(self.canvas, stretch=5)
 
         # Create checkbox list
         self.checkBoxList = []
         self.checkbox_layout = QVBoxLayout()
         self.checkbox_layout.setContentsMargins(0, 55, 0, 55)
-        self.layout.addLayout(self.checkbox_layout, stretch=1)
+        self.layout.addLayout(self.checkbox_layout)
+
+        # Electrode grid
+        self.electrode_grid = ElectrodeGrid(self.emg_obj, self.channel_indices, self.set_channel_range_from_index)
+        self.layout.addWidget(self.electrode_grid)
 
         self.setLayout(self.layout)
 
@@ -36,6 +45,10 @@ class ChannelViewer(QWidget):
     def set_channel_range(self, indices):
         self.channel_indices = indices
         self.update_plot()
+        self.electrode_grid.update_indices(indices)
+
+    def set_channel_range_from_index(self, index):
+        self.channel_group_change(math.floor(index / self.num_indices))
 
     def update_plot(self):
         self.figure.clear()
