@@ -97,7 +97,7 @@ class ElectrodeGrid(QWidget):
 
         layout.addLayout(grid_layout)
 
-        self.label = QLabel(f"Electrode {self.electrode_index}")
+        self.label = QLabel(f"Electrode {self.electrode_index + 1}")
         layout.addWidget(self.label)
 
         # left and right buttons
