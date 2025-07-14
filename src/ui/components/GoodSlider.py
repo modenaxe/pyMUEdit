@@ -47,12 +47,15 @@ class GoodSlider(QWidget):
         self.slider.valueChanged.connect(self._on_value_changed)
 
         self.slider.setStyleSheet("""
+            QSlider {
+                min-height: 30px;
+                padding: 0 2px;
+            }
             QSlider::groove:horizontal {
                 height: 8px;
                 background: #e0e0e0;
                 border-radius: 4px;
-                margin: 0 -1px;
-                
+                margin: 0 -3px;
             }
             QSlider::sub-page:horizontal {
                 background: #007bff;
@@ -61,12 +64,13 @@ class GoodSlider(QWidget):
             QSlider::add-page:horizontal {
                 background: #e0e0e0;
                 border-radius: 4px;
+                margin: 0 -3px;
             }
             QSlider::handle:horizontal {
-                width: 24px;
-                height: 24px;
-                margin: -8px 0;
-                border-radius: 12px;
+                width: 28px;
+                height: 28px;
+                margin: -10px 0;
+                border-radius: 14px;
                 background: qradialgradient(
                     cx:0.5, cy:0.5,
                     fx:0.5, fy:0.5,
@@ -102,6 +106,9 @@ class GoodSlider(QWidget):
     
     def set_slider_value(self, val):
         self.slider.setValue(val)
+    
+    def get_slider_value(self):
+        return self.slider.value()
     
     # show or hide the slider value
     def display_value(self, display_value):
