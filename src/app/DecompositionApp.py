@@ -550,8 +550,15 @@ class DecompositionApp(QMainWindow):
         # Plot the reference signal
         try:
             if "auxiliary" in self.decomposition_result and "fsamp" in self.decomposition_result:
+                index = 0
+                # Plot selected auxiliary signal
+                for i, aux_name in enumerate(self.decomposition_result["auxiliaryname"][0]):
+                    if aux_name == self.reference_dropdown.currentText():
+                        index = i
+                        break
+
                 # First auxiliary signal
-                reference_signal = self.decomposition_result["auxiliary"][0, :]
+                reference_signal = self.decomposition_result["auxiliary"][index, :]
                 fsamp = self.decomposition_result["fsamp"]
                 time_vector = np.arange(reference_signal.shape[0]) / fsamp
 
