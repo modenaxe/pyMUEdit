@@ -5,11 +5,13 @@ import os
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from ui.components.SaveablePlot import SaveablePlot
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
+from PyQt5.QtCore import Qt
 
 class SelectRange:
 
-    def __init__(self, analysis_plot):
+    def __init__(self, analysis_plot, func):
         self.drag = True
+        self.func = func
         self.analysis_plot = analysis_plot
         self.ax = None
         self.canvas = None
@@ -17,11 +19,19 @@ class SelectRange:
         self.shade_two = None
         self.set_up_plot()
         val = self.ax.xaxis.get_view_interval()
-        upper = val[1] - abs(val[0])
         self.max = val[1]
-        self.line = [self.ax.axvline(x=0, color='r', picker=1), self.ax.axvline(x=upper, color='r', picker=1)]
+        self.line = [self.ax.axvline(x=0, color='r', picker=1), self.ax.axvline(x=self.max, color='r', picker=1)]
+        self.ax.axvspan(self.max, self.max, alpha=0.1, color='red')
+        self.canvas.mpl_connect('key_press_event', lambda event: self.on_press(event))
         self.canvas.mpl_connect('pick_event', lambda event: self.click_on_line(event))
+
         analysis_plot.display_plot(self.canvas)
+
+    def on_press(self, event):
+        print(event)
+        if event.key == 'enter':
+            self.func(round(self.line[0].get_xdata()[0]),round(self.line[1].get_xdata()[0]))
+            self.analysis_plot.revert()
 
     def set_up_plot(self):
         emgfile = FileUploadFunc.file
@@ -30,10 +40,13 @@ class SelectRange:
         fig, ax = plt.subplots()
         ax.plot(data_to_plot)
         ax.set_xlabel("Samples")
-        ax.set_ylabel('Reference signal')
-        ax.set_title('Click start and end range')
+        plt.rcParams["axes.titlesize"] = 8
+        title = 'Click red lines to select/release range, drag to adjust. Press enter once satisfied'
+        ax.set_title(title, wrap=True)
         self.canvas = FigureCanvas(fig)
         self.ax = ax
+        self.canvas.setFocusPolicy(Qt.ClickFocus)
+        self.canvas.setFocus()
 
     def click_on_line(self, event):
         if event.artist in self.line:
