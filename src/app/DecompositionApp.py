@@ -551,10 +551,10 @@ class DecompositionApp(QMainWindow):
         try:
             # Import the DecompositionState class
             from core.utils.decomposition_state import DecompositionState
-            
+
             # Save the state and get metadata
             state_meta = DecompositionState.save_state(self)
-            
+
             # Add to dashboard's recent visualizations if parent exists
             if hasattr(self, 'parent') and callable(self.parent):
                 parent = self.parent()
