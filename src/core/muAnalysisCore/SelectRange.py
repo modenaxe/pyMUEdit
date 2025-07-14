@@ -28,7 +28,6 @@ class SelectRange:
         analysis_plot.display_plot(self.canvas)
 
     def on_press(self, event):
-        print(event)
         if event.key == 'enter':
             self.func(round(self.line[0].get_xdata()[0]),round(self.line[1].get_xdata()[0]))
             self.analysis_plot.revert()

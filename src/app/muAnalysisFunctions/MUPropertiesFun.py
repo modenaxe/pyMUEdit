@@ -19,8 +19,8 @@ from ui.components.SaveablePlot import SaveablePlot
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
-from core.muAnalysisCore.AnalysisResultsHist import store
 from core.muAnalysisCore.SelectRange import SelectRange
+from core.muAnalysisCore.AnalysisResultsHist import store
 
 # class for functions required for the MU properties dialog
 class MUPropertiesFunc:
@@ -61,7 +61,7 @@ class MUPropertiesFunc:
 
     def two_point(self, x, y):
         self.basic_mus_properties(FileUploadFunc.file,n_firings_RecDerec=int(self.basic[0]), n_firings_steady=int(self.basic[1]), start_steady=x,end_steady=y, mvc=int(self.get_mvc()))
-        
+
 
     # OPENHDEMG
     # adapted parts labelled with AC
