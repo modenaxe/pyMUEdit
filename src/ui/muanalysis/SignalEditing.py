@@ -343,7 +343,6 @@ class SignalEditing(QWidget):
                     canvas = SaveablePlot(self.fig)
                     self.analysis_plot.display_fig(canvas)
                 else:
-                    # TODO: update title based on how aditi manages to implement things 
                     title = (
                         "TODO: REPLACE TITLE WITH INSTRUCTIONS"
                     )
