@@ -56,8 +56,8 @@ def _fixed_point_core(w, X, B, cf_func_id, maxiter=500):
     BBT = B @ B.T
 
     # Pre-allocate arrays for intermediate values
-    w_old = np.zeros_like(w)
-    w_new = np.zeros_like(w)
+    w_old = np.zeros(w.shape[0], dtype=w.dtype)
+    w_new = np.zeros(w.shape[0], dtype=w.dtype)
 
     # Pre-compute buffer for X @ g_wx calculations
     buffer = np.zeros(n_features)
@@ -66,7 +66,8 @@ def _fixed_point_core(w, X, B, cf_func_id, maxiter=500):
     # Main iteration loop
     while counter < maxiter:
         # Store previous w
-        w_old[:] = w
+        for i in range(w.shape[0]):
+            w_old[i] = w[i]
 
         # Calculate w^T * X
         wTX = w.T @ X
@@ -92,7 +93,8 @@ def _fixed_point_core(w, X, B, cf_func_id, maxiter=500):
         buffer /= n_samples
 
         # Subtract A*w_old
-        w_new[:] = buffer - mean_gp * w_old
+        for j in range(n_features):
+            w_new[j] = buffer[j] - mean_gp * w_old[j]
 
         # Orthogonalize against existing sources
         w_new = w_new - BBT @ w_new
@@ -108,7 +110,8 @@ def _fixed_point_core(w, X, B, cf_func_id, maxiter=500):
             break
 
         # Update w for next iteration
-        w[:] = w_new
+        for j in range(n_features):
+            w[j] = w_new[j]
         counter += 1
 
     return w_new
