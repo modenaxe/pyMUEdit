@@ -325,3 +325,12 @@ class SignalEditing(QWidget):
             return
         
         print("to percenting")
+        try:
+            percent = float(self.percent_mvc_value.get())
+            self.mu.file["REF_SIGNAL"] = (self.mu.file["REF_SIGNAL"] * 100 / percent)
+
+            # plotting 
+            self.mu.plot_refsig(self.mu.file, self.analysis_plot)
+        except ValueError as e:
+            ErrorDialog("MVC value must be a valid float.", "Error").exec_()
+
