@@ -257,6 +257,47 @@ def create_mu_selection_tab(main_window):
 
     return mu_tab
 
+# def create_batch_processing_tab(main_window):
+#     """Create the Batch Processing tab."""
+#     batch_tab = QWidget()
+#     batch_tab.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
+#     batch_layout = QVBoxLayout(batch_tab)
+#     batch_layout.setContentsMargins(15, 15, 15, 15)
+#     batch_layout.setSpacing(10)
+
+#     # Batch processing content
+#     batch_header = SectionHeader("Batch Processing")
+#     batch_layout.addWidget(batch_header)
+
+#     # Create batch processing buttons
+#     button_configs = [
+#         ("1 - Remove all the outliers", main_window.remove_all_outliers_button_pushed),
+#         ("2 - Update all MU filters", main_window.update_all_mu_filters_button_pushed),
+#         ("3 - Remove flagged MU", main_window.remove_flagged_mu_button_pushed),
+#         ("4 - Remove duplicates within grids", main_window.remove_duplicates_within_grids_button_pushed),
+#         ("5 - Remove duplicates between grids", main_window.remove_duplicates_between_grids_button_pushed),
+#     ]
+
+#     for text, handler in button_configs:
+#         btn = ActionButton(text, primary=False)
+#         btn.clicked.connect(handler)
+#         batch_layout.addWidget(btn)
+
+#         # Store button references
+#         if text.startswith("1 -"):
+#             main_window.remove_outliers_btn = btn
+#         elif text.startswith("2 -"):
+#             main_window.update_filters_btn = btn
+#         elif text.startswith("3 -"):
+#             main_window.remove_flagged_btn = btn
+#         elif text.startswith("4 -"):
+#             main_window.remove_duplicates_within_btn = btn
+#         elif text.startswith("5 -"):
+#             main_window.remove_duplicates_between_btn = btn
+
+#     batch_layout.addStretch()
+
+#     return batch_tab
 
 def create_batch_processing_tab(main_window):
     """Create the Batch Processing tab."""
@@ -269,34 +310,67 @@ def create_batch_processing_tab(main_window):
     # Batch processing content
     batch_header = SectionHeader("Batch Processing")
     batch_layout.addWidget(batch_header)
+    proc_combo = QComboBox()
+    proc_combo.setMinimumHeight(34)
+    proc_combo.addItem("Please select…")     
+    proc_combo.addItem("1 - Remove all the outliers")
+    proc_combo.addItem("2 - Update all MU filters")
+    proc_combo.addItem("3 - Remove flagged MU")
+    proc_combo.addItem("4 - Remove duplicates within grids")
+    proc_combo.addItem("5 - Remove duplicates between grids")
 
-    # Create batch processing buttons
-    button_configs = [
-        ("1 - Remove all the outliers", main_window.remove_all_outliers_button_pushed),
-        ("2 - Update all MU filters", main_window.update_all_mu_filters_button_pushed),
-        ("3 - Remove flagged MU", main_window.remove_flagged_mu_button_pushed),
-        ("4 - Remove duplicates within grids", main_window.remove_duplicates_within_grids_button_pushed),
-        ("5 - Remove duplicates between grids", main_window.remove_duplicates_between_grids_button_pushed),
-    ]
+    blue = "#0072ee"        
+    text = "#ffffff"
+    proc_combo.setStyleSheet(f"""
+    QComboBox {{
+        border: 1px solid {CleanTheme.BORDER};
+        border-radius: 6px;
+        padding: 6px 24px 6px 10px;
+        background: #ffffff;
+        font-weight: 500;
+    }}
 
-    for text, handler in button_configs:
-        btn = ActionButton(text, primary=False)
-        btn.clicked.connect(handler)
-        batch_layout.addWidget(btn)
+    QComboBox QListView {{
+        border: 1px solid #d0d0d0;
+        border-radius: 4px;
+        padding: 4px;
+        background: #ffffff;
+    }}
 
-        # Store button references
-        if text.startswith("1 -"):
-            main_window.remove_outliers_btn = btn
-        elif text.startswith("2 -"):
-            main_window.update_filters_btn = btn
-        elif text.startswith("3 -"):
-            main_window.remove_flagged_btn = btn
-        elif text.startswith("4 -"):
-            main_window.remove_duplicates_within_btn = btn
-        elif text.startswith("5 -"):
-            main_window.remove_duplicates_between_btn = btn
+    QComboBox QListView::item {{
+        padding: 6px 10px;
+        color: #1a1a1a;
+    }}
 
-    batch_layout.addStretch()
+    QComboBox QListView::item:hover {{
+        background: {blue};
+        color: {text};
+    }}
+
+    QComboBox QListView::item:selected,
+    QComboBox QListView::item:selected:!active {{
+        background:{blue};
+        color:{text};
+    }}
+    """)
+    batch_layout.addWidget(proc_combo)
+
+    batch_layout.addStretch(1)
+
+    handler_map = {
+        1: main_window.remove_all_outliers_button_pushed,
+        2: main_window.update_all_mu_filters_button_pushed,
+        3: main_window.remove_flagged_mu_button_pushed,
+        4: main_window.remove_duplicates_within_grids_button_pushed,
+        5: main_window.remove_duplicates_between_grids_button_pushed,
+    }
+
+    def _on_choice(idx: int):
+        if idx in handler_map:
+            handler_map[idx]()  
+            proc_combo.setCurrentIndex(0)
+
+    proc_combo.currentIndexChanged.connect(_on_choice)    
 
     return batch_tab
 
@@ -316,14 +390,21 @@ def create_visualization_tab(main_window):
     # Reference selection - create a panel for this
     ref_panel = CollapsiblePanel("Reference Settings")
     ref_contents = QWidget()
-    ref_layout = QHBoxLayout(ref_contents)
-    ref_layout.setSpacing(10)
+    ref_layout = QVBoxLayout(ref_contents)
+    ref_layout.setContentsMargins(0, 0, 0, 0)
+    ref_layout.setSpacing(8)
+
+    row1 = QWidget()
+    row1_layout = QHBoxLayout(row1)
+    row1_layout.setContentsMargins(0, 0, 0, 0)
+    row1_layout.setSpacing(6)
 
     reference_label = QLabel("Reference")
     reference_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
 
     # Create a dropdown for reference selection
     main_window.reference_dropdown = FixedPopupComboBox() # change to new class moy
+    main_window.reference_dropdown.setMinimumHeight(28)
     main_window.reference_dropdown.setStyleSheet(
         f"""
         QComboBox {{
@@ -337,29 +418,26 @@ def create_visualization_tab(main_window):
     )
     main_window.reference_dropdown.currentIndexChanged.connect(main_window.reference_dropdown_value_changed)
 
-    main_window.sil_checkbox = QCheckBox("SIL")
-    main_window.sil_checkbox.setStyleSheet(
-        f"""
-        QCheckBox {{
-            color: {CleanTheme.TEXT_PRIMARY};
-        }}
-        QCheckBox::indicator {{
-            width: 15px;
-            height: 15px;
-            border: 1px solid {CleanTheme.BORDER};
-            border-radius: 3px;
-        }}
-        QCheckBox::indicator:checked {{
-            background-color: #4C72B0;
-            border: 1px solid #4C72B0;
-        }}
-        """
-    )
-    main_window.sil_checkbox.stateChanged.connect(main_window.sil_checkbox_value_changed)
+    row1_layout.addWidget(reference_label)
+    row1_layout.addWidget(main_window.reference_dropdown, 1)
+    ref_layout.addWidget(row1)   
+    from ui.components import ToggleSwitch
+    row2 = QWidget()
+    row2_lay = QHBoxLayout(row2)
+    row2_lay.setContentsMargins(0,0,0,0)
+    row2_lay.setSpacing(6)
+    apply_lbl = QLabel("Apply SIL")                         # 左侧文字
+    apply_lbl.setStyleSheet(f"color:{CleanTheme.TEXT_PRIMARY};")
 
-    ref_layout.addWidget(reference_label)
-    ref_layout.addWidget(main_window.reference_dropdown, 1)  # 1 is stretch factor
-    ref_layout.addWidget(main_window.sil_checkbox)
+    main_window.sil_switch = ToggleSwitch()          # ① 创建
+    main_window.sil_switch.toggled.connect(          # ② 连接信号
+        main_window.sil_checkbox_value_changed)
+    main_window.sil_checkbox = main_window.sil_switch
+    row2_lay.addWidget(apply_lbl)
+    row2_lay.addStretch(1)               
+    row2_lay.addWidget(main_window.sil_switch)
+
+    ref_layout.addWidget(row2)  
 
     ref_panel.add_widget(ref_contents)
     viz_layout.addWidget(ref_panel)
@@ -375,7 +453,20 @@ def create_visualization_tab(main_window):
     main_window.plot_firingrates_btn = ActionButton("Plot MU firing rates", primary=False)
     main_window.plot_firingrates_btn.clicked.connect(main_window.plot_mu_firingrates_button_pushed)
     button_panel.add_widget(main_window.plot_firingrates_btn)
-
+    blue_btn_qss = """
+    QPushButton{
+        background:#3a7afe;
+        color:#ffffff;
+        border:none;
+        border-radius:6px;
+        padding:6px 12px;
+        font-weight:600;
+    }
+    QPushButton:hover  { background:#5287ff; }
+    QPushButton:pressed{ background:#225cf5; }
+    """
+    main_window.plot_spiketrains_btn.setStyleSheet(blue_btn_qss)
+    main_window.plot_firingrates_btn.setStyleSheet(blue_btn_qss)
     viz_layout.addWidget(button_panel)
     viz_layout.addStretch()
 
@@ -441,14 +532,6 @@ def setup_display_panel(main_window):
     main_window.undo_title_btn.setFixedHeight(28)
     main_window.undo_title_btn.clicked.connect(main_window.undo_button_pushed)
     
-    # ★★ 新增：顶部缩放按钮（沿用现有槽函数）
-    main_window.zoom_in_top_btn  = ActionButton("Zoom in",  primary=False)
-    main_window.zoom_out_top_btn = ActionButton("Zoom out", primary=False)
-    for b in (main_window.zoom_in_top_btn, main_window.zoom_out_top_btn):
-        b.setFixedHeight(28)              # 与 Undo 行高保持一致
-    main_window.zoom_in_top_btn.clicked.connect(main_window.zoom_in_button_pushed)
-    main_window.zoom_out_top_btn.clicked.connect(main_window.zoom_out_button_pushed)
-    
     # Zoom Silder
     main_window.zoom_slider = GoodSlider(default=0, on_value_changed=main_window.slider_value_changed, display_value=False)
     
@@ -459,9 +542,7 @@ def setup_display_panel(main_window):
 
     undo_layout.addWidget(main_window.undo_title_btn)
     undo_layout.addStretch(1)
-    undo_layout.addWidget(main_window.zoom_in_top_btn) # 右侧 Zoom in
-    undo_layout.addWidget(main_window.zoom_out_top_btn)# 右侧 Zoom out
-    
+
     undo_layout.addWidget(main_window.zoom_slider)
     
     display_layout.addWidget(undo_row)                        # ★★ 只 add 一次
@@ -594,8 +675,8 @@ def setup_display_panel(main_window):
     # === 旧 Undo / Zoom 控件统一隐藏 =============================
     for attr in ("undo_btn", "zoom_in_btn", "zoom_out_btn"):
         btn = getattr(main_window, attr, None)
-        if btn is not None:          # 确认按钮确实存在
-            btn.hide()               # 或者：btn.setVisible(False)
+        if btn is not None:         
+            btn.hide()               
     # =============================================================
 
 def create_plot_widget(y_label, x_label=""):
@@ -647,34 +728,29 @@ def create_mu_checkbox(main_window, array_idx, mu_idx, text, sil_value, is_check
 
     return checkbox
 
-# === 追加到 MUeditManualUI.py 末尾（或放在本文件任意位置，只要能被 import） =========
 def _add_floating_save_btn(main_window):
     """
     在窗口右上角放一个悬浮 Save 按钮，点击后仍调用 main_window.save_button_pushed。
     不动侧边栏里的原有 Save。
     """
-    from ui.components import ActionButton   # 项目里已有的按钮类
+    from ui.components import ActionButton
 
     btn = ActionButton("Save", primary=True, parent=main_window)
     btn.setFixedSize(80, 30)
     btn.clicked.connect(main_window.save_button_pushed)
 
-    # ---- 把按钮固定在右上角 ----------------------------------------
     margin = 16
     def _reposition():
         x = main_window.width() - btn.width() - margin
         y = margin
         btn.move(x, y)
-    _reposition()                 # 初始化时摆一次
+    _reposition()           
 
-    # 在窗口 resize 时保持位置
     old_resize = main_window.resizeEvent
     def new_resize(ev):
         if callable(old_resize):
-            old_resize(ev)        # 保留原本逻辑
+            old_resize(ev)      
         _reposition()
     main_window.resizeEvent = new_resize
 
-    # 可选：把引用挂到 main_window，方便别处 hide()/show()
     main_window.floating_save_btn = btn
-# ===================================================================
