@@ -1,10 +1,10 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSizePolicy, QLabel
 from PyQt5.QtGui import QFont
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
 import numpy as np
 import pandas as pd
+from core.utils.config_and_input.segmenttargets import segmenttargets
 import pyqtgraph as pg
+from matplotlib.cm import winter
 
 from ui.components import ActionButton
 from ui.components.CleanTheme import CleanTheme
@@ -56,8 +56,9 @@ class SegmentSessionPage(QWidget):
 
         # segmentation parameters dropdown panel
         segmentation_param_panel = CollapsiblePanel("Segmentation Parameters")
-        self.seg_param_dropdown = FormDoubleSpinBox("Threshold", 0.80, 0, 1, 0.1)
-        segmentation_param_panel.add_widget(self.seg_param_dropdown)
+        self.threshold_dropdown = FormDoubleSpinBox("Threshold", 0, 0, 1, 0.1)
+        self.threshold_dropdown.spinbox.valueChanged.connect(self.threshold_edit_field_value_changed)
+        segmentation_param_panel.add_widget(self.threshold_dropdown)
         self.windows_dropdown = FormSpinBox("Windows", 1, 1, 10)
         segmentation_param_panel.add_widget(self.windows_dropdown)
         segmentation_param_panel.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
@@ -106,6 +107,7 @@ class SegmentSessionPage(QWidget):
     def on_reference_signal_change(self):
         self.vis_plot.clear()
         if self.reference_dropdown.dropdown.currentText() == "EMG amplitude":
+            self.threshold_dropdown.setEnabled(False)
             data = self.emg_obj.signal_dict["data"]
             fsamp = self.emg_obj.signal_dict["fsamp"]
 
@@ -121,18 +123,52 @@ class SegmentSessionPage(QWidget):
             self.emg_obj.signal_dict["target"] = target
             self.emg_obj.signal_dict["path"] = target
 
+            # Plot each row of the data
             for row in tmp:
                 self.vis_plot.plot(row, pen=pg.mkPen(color=(128, 128, 128), width=0.25))
 
+            # Plot the mean/target
             self.vis_plot.plot(target, pen=pg.mkPen(color=(217, 84, 26), width=2))
         else:
+            self.threshold_dropdown.setEnabled(True)
             index = 0
             for i, name in enumerate(self.emg_obj.signal_dict["auxiliaryname"]):
+                # Find which auxiliary channel corresponding to the selected reference signal
                 if self.reference_dropdown.dropdown.currentText() == name:
                     index = i
 
             target = self.emg_obj.signal_dict["auxiliary"][index, :]
+            # Plot the data
             self.vis_plot.plot(target, pen=pg.mkPen(color=(0.95, 0.95, 0.95), width=2))
+
+    def threshold_edit_field_value_changed(self):
+        threshold = self.threshold_dropdown.spinbox.value()
+        target = self.emg_obj.signal_dict["target"]
+        if self.reference_dropdown.dropdown.currentText() != "EMG amplitude":
+            # Segment target using threshold
+            coords = segmenttargets(target, 1, threshold)
+            fsamp = self.emg_obj.signal_dict["fsamp"]
+
+            for i in range(len(coords) // 2):
+                coords[i * 2] -= fsamp
+                coords[i * 2 + 1] += fsamp
+
+            # Clamp coordinates to valid range
+            coords = np.clip(coords, 1, len(target))
+
+            # Update plot
+            self.vis_plot.clear()
+            self.vis_plot.plot(target, pen=pg.mkPen(color=(0.95, 0.95, 0.95), width=2))
+
+            # Add vertical lines for segments
+            for i in range(len(coords) // 2):
+                # Blue-ish hues
+                hue = 0.6 - (i / (len(coords) // 2) * 0.3)
+                color = pg.hsvColor(hue, 0.8, 0.9)
+                self.vis_plot.addLine(x=coords[i * 2], pen=pg.mkPen(color=color, width=2))
+                self.vis_plot.addLine(x=coords[i * 2 + 1], pen=pg.mkPen(color=color, width=2))
+
+            self.vis_plot.enableAutoRange(axis='y')
 
     def doneClicked(self):
         self.close()
