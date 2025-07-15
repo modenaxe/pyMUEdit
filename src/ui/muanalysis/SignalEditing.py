@@ -157,7 +157,7 @@ class SignalEditing(QWidget):
             ["Multiply", "Divide"], 
             parent=self
         )
-        convert_layout.addWidget(convert_operator)
+        convert_layout.addWidget(convert_operator, stretch=1)
         self.convert_operator = convert_operator
 
         convert_factor = AnalysisInput("Factor", "2.5", parent=window)
@@ -193,10 +193,19 @@ class SignalEditing(QWidget):
         percent_v_layout.setContentsMargins(0, 0, 0, 0)
         percent_v_layout.addStretch()
 
-        percent_btn = GeneralButton("To Percent", lambda: self.to_percent(), parent=self)
-        percent_v_layout.addWidget(percent_btn)
-        percent_layout.addWidget(percent_v, stretch=1)
+        percent_h = QFrame()
+        percent_h_layout = QHBoxLayout(percent_h)
+        percent_h_layout.setContentsMargins(0, 0, 0, 0)
 
+        percent_warning = AnalysisText.create_italic_text("*Only for absolute\nvalued RefSigs")
+        percent_h_layout.addWidget(percent_warning)
+
+        percent_btn = GeneralButton("To Percent", lambda: self.to_percent(), parent=self)
+        percent_h_layout.addWidget(percent_btn)
+
+        percent_v_layout.addWidget(percent_h)
+
+        percent_layout.addWidget(percent_v, stretch=1)
 
         window_layout.addStretch()
         window.exec()
@@ -332,3 +341,12 @@ class SignalEditing(QWidget):
             return
         
         print("to percenting")
+        try:
+            percent = float(self.percent_mvc_value.get())
+            self.mu.file["REF_SIGNAL"] = (self.mu.file["REF_SIGNAL"] * 100 / percent)
+
+            # plotting 
+            self.mu.plot_refsig(self.mu.file, self.analysis_plot)
+        except ValueError as e:
+            ErrorDialog("MVC value must be a valid float.", "Error").exec_()
+
