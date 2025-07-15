@@ -16,8 +16,7 @@ class ResultSelection(QWidget):
         self.df = {}
 
         layout = QVBoxLayout(self)
-        self.combo = AnalysisDropdown('Results Tab')
-        self.combo.addItems(self.titles)
+        self.combo = AnalysisDropdown('Results Tab', self.titles)
    
         store.data_changed.connect(self.update_combo_from_df)
         store.data_cleared.connect(self.combo.clear)
