@@ -66,6 +66,7 @@ class AnalysisText(QLabel):
 
         return label 
 
+    # for the load file prompt on the center screen
     def create_prompt(text=""):
         prompt = QLabel(text)
         prompt.setStyleSheet(
@@ -78,3 +79,18 @@ class AnalysisText(QLabel):
         )
 
         return prompt
+
+    # used for the italic warning inside signal editing 
+    def create_italic_text(text=""):
+        italic = QLabel(text)
+        italic.setStyleSheet(
+            f"""
+                color: {CleanTheme.ANALYSIS_TEXT_TERTIARY};
+                font-family: Arial;
+                font-size: 10px;
+                font-style: italic;
+                qproperty-alignment: 'AlignRight | AlignVCenter';
+            """
+        )
+        return italic
+
