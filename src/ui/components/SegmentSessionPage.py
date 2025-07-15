@@ -2,6 +2,9 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSizePolicy, QLab
 from PyQt5.QtGui import QFont
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+import numpy as np
+import pandas as pd
+import pyqtgraph as pg
 
 from ui.components import ActionButton
 from ui.components.CleanTheme import CleanTheme
@@ -10,8 +13,6 @@ from ui.components.FormDoubleSpinBox import FormDoubleSpinBox
 from ui.components.FormDropdown import FormDropdown
 from ui.components.FormSpinBox import FormSpinBox
 from .VisualizationPanel import VisualizationPanel
-
-import math
 
 class SegmentSessionPage(QWidget):
     def __init__(self, emg_obj, parent=None):
@@ -36,21 +37,28 @@ class SegmentSessionPage(QWidget):
         left_layout.setSpacing(15)
 
         # signal visualisation plot
-        self.figure = Figure(figsize=(8, 3), dpi=100)
-        self.canvas = FigureCanvas(self.figure)
-        self.figure.tight_layout()
+        self.vis_plot = pg.PlotWidget()
+        self.vis_plot.setBackground("w")
+        self.vis_plot.setLabel("left", "Amplitude")
+        self.vis_plot.setLabel("bottom", "Time (s)")
+        self.vis_plot.showGrid(x=True, y=True)
+        self.vis_plot.setMinimumHeight(250)
+
+        vis_panel = VisualizationPanel(plot_widget=self.vis_plot)
+        vis_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # reference signal dropdown panel
         reference_signal_panel = CollapsiblePanel("Reference Signal")
-        self.reference_dropdown = FormDropdown("Select Reference Signal", ["EMG Amplitude", "Path", "Target"])
+        self.reference_dropdown = FormDropdown("Select Reference Signal", self.generate_signal_reference_options())
         reference_signal_panel.add_widget(self.reference_dropdown)
         reference_signal_panel.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.reference_dropdown.dropdown.currentIndexChanged.connect(self.on_reference_signal_change)
 
         # segmentation parameters dropdown panel
         segmentation_param_panel = CollapsiblePanel("Segmentation Parameters")
-        self.seg_param_dropdown = FormDoubleSpinBox("Threshold", 0.80, 0, 1)
+        self.seg_param_dropdown = FormDoubleSpinBox("Threshold", 0.80, 0, 1, 0.1)
         segmentation_param_panel.add_widget(self.seg_param_dropdown)
-        self.windows_dropdown = FormSpinBox("Windows", 1, 0, 10)
+        self.windows_dropdown = FormSpinBox("Windows", 1, 1, 10)
         segmentation_param_panel.add_widget(self.windows_dropdown)
         segmentation_param_panel.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
@@ -64,9 +72,6 @@ class SegmentSessionPage(QWidget):
         done_button = ActionButton("Done", primary=True)
         done_button.clicked.connect(self.doneClicked)
         left_layout.addWidget(done_button)
-
-        vis_panel = VisualizationPanel(plot_widget=self.canvas)
-        vis_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # Setup main layout
         main_layout = QVBoxLayout()
@@ -88,6 +93,46 @@ class SegmentSessionPage(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.setFocus()
+
+        self.on_reference_signal_change()
+
+    # Create the dropdown signal reference options
+    def generate_signal_reference_options(self):
+        options = ["EMG amplitude"]
+        for name in self.emg_obj.signal_dict["auxiliaryname"]:
+            options.append(name)
+        return options
+
+    def on_reference_signal_change(self):
+        self.vis_plot.clear()
+        if self.reference_dropdown.dropdown.currentText() == "EMG amplitude":
+            data = self.emg_obj.signal_dict["data"]
+            fsamp = self.emg_obj.signal_dict["fsamp"]
+
+            n_rows = data.shape[0] // 2
+            tmp = np.zeros((n_rows, data.shape[1]))
+
+            for i in range(n_rows):
+                abs_signal = np.abs(data[i, :])
+                abs_df = pd.DataFrame(abs_signal)
+                tmp[i, :] = abs_df.rolling(window=fsamp).mean().to_numpy().flatten()
+
+            target = np.mean(tmp, axis=0)
+            self.emg_obj.signal_dict["target"] = target
+            self.emg_obj.signal_dict["path"] = target
+
+            for row in tmp:
+                self.vis_plot.plot(row, pen=pg.mkPen(color=(128, 128, 128), width=0.25))
+
+            self.vis_plot.plot(target, pen=pg.mkPen(color=(217, 84, 26), width=2))
+        else:
+            index = 0
+            for i, name in enumerate(self.emg_obj.signal_dict["auxiliaryname"]):
+                if self.reference_dropdown.dropdown.currentText() == name:
+                    index = i
+
+            target = self.emg_obj.signal_dict["auxiliary"][index, :]
+            self.vis_plot.plot(target, pen=pg.mkPen(color=(0.95, 0.95, 0.95), width=2))
 
     def doneClicked(self):
         self.close()
