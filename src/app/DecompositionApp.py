@@ -39,6 +39,7 @@ class DecompositionApp(QMainWindow):
         self.emg_obj = emg_obj
         self.imported_signal = imported_signal
         self.visualisation_page = None
+        self.segment_session = None
 
         self.MUdecomp = {"config": None}
         self.Configuration = None
@@ -332,8 +333,20 @@ class DecompositionApp(QMainWindow):
             print("No configuration dialog available")
 
     def segment_session_button_pushed(self):
-        self.segment_session = SegmentSessionPage(self.emg_obj)
-        self.segment_session.show()
+        if not self.emg_obj or "data" not in self.emg_obj.signal_dict:
+            self.edit_field.setText("No EMG data loaded for segment session.")
+            return
+
+        try:
+            # Handle persistance - if segment session has already been opened,
+            # open the same panel (not a new instance)
+            if self.segment_session is not None:
+                self.segment_session.show()
+            else:
+                self.segment_session = SegmentSessionPage(self.emg_obj)
+                self.segment_session.show()
+        except Exception as e:
+            self.edit_field.setText(f"Failed to load segment session: {e}")
         # if self.pathname is not None and self.filename is not None:
         #     self.segment_session.pathname.setText(self.pathname + self.filename + "_decomp.mat")
 
