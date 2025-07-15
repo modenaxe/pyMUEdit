@@ -15,7 +15,6 @@ class AnalysisResultsHist(QObject):
     data_cleared = pyqtSignal()
     
     def __new__(cls):
-        print(f"Called {random.randint(1, 10)}!!!!!!")
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance.df = pd.DataFrame()

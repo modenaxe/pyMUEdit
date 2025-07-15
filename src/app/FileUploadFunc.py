@@ -705,3 +705,7 @@ class FileUploadFunc:
         self.canvas.setParent(None)
         center_panel.addWidget(canvas)
         self.canvas = canvas
+
+    def updateEMGFile(self, emgfile):
+        print(f"updating original file")
+        self.file = emgfile

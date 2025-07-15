@@ -25,6 +25,7 @@ from ui.muanalysis.PlotEMG import PlotEMGButton
 from ui.muanalysis.SignalEditing import SignalEditing
 from ui.components.AnalysisText import AnalysisText 
 from ui.components.FileSidebar.FileSection import FileSection
+from ui.muanalysis.SortMUs import SortMUs
 
 from ui.components.ResultsPanel import ResultsPanel
 # from ui.components.FileButton import FileButton
@@ -45,7 +46,6 @@ class MUAnalysis(QWidget):
         super().__init__(parent)
 
         self.data = store
-        print(id(self.data))
         self.results_table = ResultsTable()
         self.result_combo = ResultSelection(self.results_table)
         # setting instance of function class from src/app/FileUploadFunc
@@ -180,6 +180,10 @@ class MUAnalysis(QWidget):
         title_label = AnalysisText.create_title("Analysis")
         sidebar_layout.addWidget(title_label)
 
+        # sort MUs
+        sort_MUs = SortMUs(self.mu, self.center, parent=sidebar)
+        sidebar_layout.addWidget(sort_MUs)
+        
         # signal editing 
         signal_editing = SignalEditing(self.mu, self.center, parent=sidebar)
         sidebar_layout.addWidget(signal_editing)
