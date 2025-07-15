@@ -163,6 +163,10 @@ class ImportDataWindow(QWidget):
         self.preview_message.setText("Loading file...")
         ext = os.path.splitext(file)[1].lower()
 
+        # Reset failure messages
+        self.failure_message.setVisible(False)
+        self.file_info_label.setStyleSheet(f"color: #4CAF50; font-weight: bold;")
+
         if ext == ".otb+":
             try:
                 # Construct the full file path
@@ -239,6 +243,9 @@ class ImportDataWindow(QWidget):
             self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
             self.preview_message.setText(f"File type {ext} not supported in this demo.\nPlease select an OTB+ file.")
             self.next_btn.setEnabled(False)
+            self.file_info_label.setText(f"Failed uploading {self.filename}")
+            self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
+            self.failure_message.setVisible(True)
 
     def save_mat_in_background(self, filename, data, compression=True):
         """Save data as .mat file in a background thread."""

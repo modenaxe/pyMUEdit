@@ -23,7 +23,6 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
     IED = []
     c_map = []
     r_map = []
-    rejected_channels = []
     chans_per_electrode = []
     emg_obj.signal_dict["filtered_data"] = np.zeros(
         [np.shape(emg_obj.signal_dict["data"])[0], np.shape(emg_obj.signal_dict["data"])[1]]
@@ -53,7 +52,6 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
                 ]
             )
 
-            rejected_channels.append(np.zeros([65]))
             IED.append(4)
             ElChannelMap[i] = np.squeeze(np.array(ElChannelMap[i]))
             chans_per_electrode.append((np.shape(ElChannelMap[i])[0] * np.shape(ElChannelMap[i])[1]) - 1)
@@ -79,7 +77,6 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
                 ]
             )
 
-            rejected_channels.append(np.zeros([65]))
             IED.append(8)
             ElChannelMap[i] = np.squeeze(np.array(ElChannelMap[i]))
             chans_per_electrode.append((np.shape(ElChannelMap[i])[0] * np.shape(ElChannelMap[i])[1]) - 1)
@@ -105,7 +102,6 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
                 ]
             )
 
-            rejected_channels.append(np.zeros([65]))
             IED.append(8)
             ElChannelMap[i] = np.squeeze(np.array(ElChannelMap[i]))
             chans_per_electrode.append((np.shape(ElChannelMap[i])[0] * np.shape(ElChannelMap[i])[1]) - 1)
@@ -126,7 +122,6 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
                 ]
             )
 
-            rejected_channels.append(np.zeros([65]))
             IED.append(10)
             ElChannelMap[i] = np.squeeze(np.array(ElChannelMap[i]))
             chans_per_electrode.append((np.shape(ElChannelMap[i])[0] * np.shape(ElChannelMap[i])[1]) - 1)
@@ -153,7 +148,6 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
                 ]
             )
 
-            rejected_channels.append(np.zeros([65]))
             IED.append(1)
             ElChannelMap[i] = np.squeeze(np.array(ElChannelMap[i]))
             chans_per_electrode.append((np.shape(ElChannelMap[i])[0] * np.shape(ElChannelMap[i])[1]) - 1)
@@ -176,7 +170,6 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
                 ]
             )
 
-            rejected_channels.append(np.zeros([40]))
             IED.append(1)
             ElChannelMap[i] = np.squeeze(np.array(ElChannelMap[i]))
             chans_per_electrode.append((np.shape(ElChannelMap[i])[0] * np.shape(ElChannelMap[i])[1]))
@@ -186,7 +179,6 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
             print(f"Configuring {electrode_names[i]} (4-wire needle)")
             ElChannelMap.append([[0, 8], [1, 9], [2, 10], [3, 11], [4, 12], [5, 13], [6, 14], [7, 15]])
 
-            rejected_channels.append(np.zeros([16]))
             IED.append(4)
             ElChannelMap[i] = np.squeeze(np.array(ElChannelMap[i]))
             chans_per_electrode.append((np.shape(ElChannelMap[i])[0] * np.shape(ElChannelMap[i])[1]))
@@ -207,7 +199,6 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
                 ]
             )
 
-            rejected_channels.append(np.zeros([16]))
             IED.append(4)
             ElChannelMap[i] = np.squeeze(np.array(ElChannelMap[i]))
             chans_per_electrode.append((np.shape(ElChannelMap[i])[0] * np.shape(ElChannelMap[i])[1]))
@@ -218,7 +209,6 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
             # assume that it is some variation of an intramusuclar array
             ElChannelMap.append([[0, 8], [1, 9], [2, 10], [3, 11], [4, 12], [5, 13], [6, 14], [7, 15]])
 
-            rejected_channels.append(np.zeros([16]))
             IED.append(4)
             ElChannelMap[i] = np.squeeze(np.array(ElChannelMap[i]))
             chans_per_electrode.append((np.shape(ElChannelMap[i])[0] * np.shape(ElChannelMap[i])[1]))
@@ -263,7 +253,6 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
 
     emg_obj.c_maps = c_map
     emg_obj.r_maps = r_map
-    emg_obj.rejected_channels = rejected_channels
     emg_obj.ied = IED
     emg_obj.chans_per_electrode = chans_per_electrode
     emg_obj.coordinates = coordinates

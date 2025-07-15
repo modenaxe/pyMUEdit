@@ -38,6 +38,7 @@ class DecompositionApp(QMainWindow):
         self.pathname = pathname
         self.emg_obj = emg_obj
         self.imported_signal = imported_signal
+        self.visualisation_page = None
 
         self.MUdecomp = {"config": None}
         self.Configuration = None
@@ -86,9 +87,13 @@ class DecompositionApp(QMainWindow):
             return
 
         try:
-            emg_data = self.emg_obj.signal_dict["data"]
-            self.visualisation_page = VisualisationPage(emg_data=emg_data)
-            self.visualisation_page.show()
+            # Handle persistance - if channel viewer has already been opened,
+            # open the same viewer (not a new instance)
+            if self.visualisation_page is not None:
+                self.visualisation_page.show()
+            else:
+                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj)
+                self.visualisation_page.show()
         except Exception as e:
             self.edit_field.setText(f"Failed to load channel viewer: {e}")
 
