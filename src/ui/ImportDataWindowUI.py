@@ -180,13 +180,29 @@ def create_preview_section(import_window):
     # Create stacked widget to display either the label or the visualisation of the file
     import_window.preview_stacked_frame = QStackedWidget()
 
+    # Create preview messages
+    import_window.preview_messages = QVBoxLayout()
+
+    # Create import failure message
+    import_window.failure_message = QLabel("Error Loading Signal Preview")
+    import_window.failure_message.setStyleSheet(f"color: #FA0000; font-weight: bold;")
+    import_window.failure_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    import_window.failure_message.setVisible(False)
+
     # Create preview message
     import_window.preview_message = QLabel("No file selected. Import a file to see a preview.")
     import_window.preview_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
     import_window.preview_message.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
 
-    # Add preview message to stacked frame as an active widget
-    import_window.preview_stacked_frame.addWidget(import_window.preview_message)
+    # Add preview messages to stacked frame as an active widget
+    import_window.preview_messages.addStretch()
+    import_window.preview_messages.addWidget(import_window.failure_message)
+    import_window.preview_messages.addSpacing(20)
+    import_window.preview_messages.addWidget(import_window.preview_message)
+    import_window.preview_messages.addStretch()
+    import_window.preview_messages_widget = QWidget()
+    import_window.preview_messages_widget.setLayout(import_window.preview_messages)
+    import_window.preview_stacked_frame.addWidget(import_window.preview_messages_widget)
 
     # Create visualization panel to preview the data in a selected file
     import_window.preview_plot = pg.PlotWidget()
