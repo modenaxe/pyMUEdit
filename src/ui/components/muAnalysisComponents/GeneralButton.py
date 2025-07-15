@@ -5,7 +5,7 @@ from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 class GeneralButton(QPushButton):
 
     """
-    General button for sideabars
+    General button for sidebars
     parameters:
         label (string): text for the button 
         action (lambda: action): the action the button triggers.
@@ -20,7 +20,7 @@ class GeneralButton(QPushButton):
             QPushButton {{
                 background-color: {CleanTheme.ANALYSIS_BG_BUTTON};
                 color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
-                border-radius: 4px;
+                border-radius: 5px;
                 padding: 0px 10px;
                 height: 40px;
             }}
