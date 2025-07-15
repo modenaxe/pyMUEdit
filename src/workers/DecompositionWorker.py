@@ -12,7 +12,7 @@ class DecompositionWorker(QThread):
     """
 
     progress = pyqtSignal(str, object)
-    plot_update = pyqtSignal(object, object, object, object, object, object, object, object)
+    plot_update = pyqtSignal(object, object, object, object, object)
     finished = pyqtSignal(object)
     error = pyqtSignal(str)
 
@@ -183,10 +183,10 @@ class DecompositionWorker(QThread):
             traceback.print_exc()
             self.error.emit(str(e))
 
-    def send_plot_update(self, time_axis, target, plateau_coords, fICA_source, spikes, time2, sil, cov):
+    def send_plot_update(self, fICA_source, spikes, time2, sil, cov):
         """Send plot update signals to the main UI thread"""
         # Throttle updates to avoid overwhelming the UI
-        self.plot_update.emit(time_axis, target, plateau_coords, fICA_source, spikes, time2, sil, cov)
+        self.plot_update.emit(fICA_source, spikes, time2, sil, cov)
         # Process events to keep the UI responsive during long computations
         time.sleep(0.01)  # Small delay to prevent UI freezing
 
