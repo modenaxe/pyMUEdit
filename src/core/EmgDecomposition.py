@@ -417,9 +417,6 @@ class offline_EMG(EMG):
                 # Call the plot callback if provided
                 if plot_callback is not None and self.drawing_mode:
                     plot_callback(
-                        time_axis,
-                        self.signal_dict["target"],
-                        self.plateau_coords,
                         fICA_source,
                         spikes,
                         time_axis,
