@@ -12,6 +12,8 @@ from core.utils.decomposition_state import DecompositionState
 # Add project root to path
 from pathlib import Path
 
+from ui.components.SegmentSessionPage import SegmentSessionPage
+
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
@@ -325,29 +327,29 @@ class DecompositionApp(QMainWindow):
             print("No configuration dialog available")
 
     def segment_session_button_pushed(self):
-        self.segment_session = SegmentSession()
+        self.segment_session = SegmentSessionPage(self.emg_obj)
+        self.segment_session.show()
+        # if self.pathname is not None and self.filename is not None:
+        #     self.segment_session.pathname.setText(self.pathname + self.filename + "_decomp.mat")
 
-        if self.pathname is not None and self.filename is not None:
-            self.segment_session.pathname.setText(self.pathname + self.filename + "_decomp.mat")
+        # # Setup the dropdown contents before setting the current item
+        # self.segment_session.reference_dropdown.clear()
+        # for i in range(self.reference_dropdown.count()):
+        #     self.segment_session.reference_dropdown.addItem(self.reference_dropdown.itemText(i))
 
-        # Setup the dropdown contents before setting the current item
-        self.segment_session.reference_dropdown.clear()
-        for i in range(self.reference_dropdown.count()):
-            self.segment_session.reference_dropdown.addItem(self.reference_dropdown.itemText(i))
-
-        try:
-            if self.segment_session.pathname.text():
-                self.segment_session.file = sio.loadmat(self.segment_session.pathname.text())
-        except Exception as e:
-            print(f"Warning: Could not load file: {e}")
+        # try:
+        #     if self.segment_session.pathname.text():
+        #         self.segment_session.file = sio.loadmat(self.segment_session.pathname.text())
+        # except Exception as e:
+        #     print(f"Warning: Could not load file: {e}")
 
         # Set current text after file is loaded
-        self.segment_session.reference_dropdown.setCurrentText(self.reference_dropdown.currentText())
-        self.segment_session.initialize_with_file()
-        self.segment_session.show()
-        self.segment_session_button.setStyleSheet(
-            "color: #cf80ff; background-color: #7f7f7f; font-family: 'Poppins'; font-size: 18pt;"
-        )
+        # self.segment_session.reference_dropdown.setCurrentText(self.reference_dropdown.currentText())
+        # self.segment_session.initialize_with_file()
+        # self.segment_session.show()
+        # self.segment_session_button.setStyleSheet(
+        #     "color: #cf80ff; background-color: #7f7f7f; font-family: 'Poppins'; font-size: 18pt;"
+        # )
 
     def start_button_pushed(self):
         # Reset iteration counter at the start of a new decomposition
