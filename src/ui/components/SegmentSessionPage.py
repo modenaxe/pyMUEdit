@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 from core.utils.config_and_input.segmenttargets import segmenttargets
 import pyqtgraph as pg
-from matplotlib.cm import winter
 
 from ui.components import ActionButton
 from ui.components.CleanTheme import CleanTheme
@@ -18,11 +17,7 @@ class SegmentSessionPage(QWidget):
     def __init__(self, emg_obj, parent=None):
         super().__init__(parent)
         self.emg_obj = emg_obj
-        self.file = None
-        self.coordinates = []
-        self.data = {"data": [], "auxiliary": [], "target": [], "path": []}
-        self.emg_amplitude_cache = None
-        self.roi = None
+        self.rois = []
         self.current_window = 0
 
         self.setMinimumSize(1024, 700)
@@ -59,7 +54,8 @@ class SegmentSessionPage(QWidget):
         self.threshold_dropdown = FormDoubleSpinBox("Threshold", 0, 0, 1, 0.1)
         self.threshold_dropdown.spinbox.valueChanged.connect(self.threshold_edit_field_value_changed)
         segmentation_param_panel.add_widget(self.threshold_dropdown)
-        self.windows_dropdown = FormSpinBox("Windows", 1, 1, 10)
+        self.windows_dropdown = FormSpinBox("Windows", 0, 0, 10)
+        self.windows_dropdown.spinbox.valueChanged.connect(self.windows_edit_field_value_changed)
         segmentation_param_panel.add_widget(self.windows_dropdown)
         segmentation_param_panel.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
@@ -164,11 +160,34 @@ class SegmentSessionPage(QWidget):
             for i in range(len(coords) // 2):
                 # Blue-ish hues
                 hue = 0.6 - (i / (len(coords) // 2) * 0.3)
-                color = pg.hsvColor(hue, 0.8, 0.9)
-                self.vis_plot.addLine(x=coords[i * 2], pen=pg.mkPen(color=color, width=2))
-                self.vis_plot.addLine(x=coords[i * 2 + 1], pen=pg.mkPen(color=color, width=2))
+                colour = pg.hsvColor(hue, 0.8, 0.9)
+                self.vis_plot.addLine(x=coords[i * 2], pen=pg.mkPen(color=colour, width=2))
+                self.vis_plot.addLine(x=coords[i * 2 + 1], pen=pg.mkPen(color=colour, width=2))
 
             self.vis_plot.enableAutoRange(axis='y')
+
+    def windows_edit_field_value_changed(self):
+        num_windows = self.windows_dropdown.spinbox.value()
+        target = self.emg_obj.signal_dict["target"]
+
+        # Update plot
+        self.vis_plot.clear()
+        self.vis_plot.plot(target, pen=pg.mkPen(color=(0.95, 0.95, 0.95), width=2))
+
+        self.rois = []
+        for i in range(num_windows):
+            hue = i / max(num_windows - 1, 1)
+            # Create semi-transparent colour to distinguish each roi
+            colour = pg.hsvColor(hue, 1.0, 1.0, 0.5)
+
+            # Create new ROI region
+            roi = pg.LinearRegionItem(values=[i * 1000, i * 1000 + 500])
+            roi.setZValue(10)
+            roi.setBrush(pg.mkBrush(colour))
+            # Allow it to be scaled and moved
+            roi.setMovable(True)
+            self.vis_plot.addItem(roi)
+            self.rois.append(roi)
 
     def doneClicked(self):
         self.close()
