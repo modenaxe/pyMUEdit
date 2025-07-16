@@ -1,24 +1,26 @@
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QFont
-from ui.components.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
-"""
+
+class AnalysisText(QLabel):
+
+    """
     (Factory Method)
     Each method returns an instance of different types of text (titles, headings, text etc.)
-"""
-class AnalysisText(QLabel):
+    """
+    
     # for titles 
     def create_title(text=""):
         title = QLabel(text)
         title.setStyleSheet(
             f"""
-            color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
+            color: {CleanTheme.ANALYSIS_BG_CARD};
             font-family: Arial;
             font-size: 14px;
             font-weight: 500;
             """
         )
-
         return title 
 
     # for headings you see on popups, such as the signal editing popup 
@@ -63,3 +65,32 @@ class AnalysisText(QLabel):
         )
 
         return label 
+
+    # for the load file prompt on the center screen
+    def create_prompt(text=""):
+        prompt = QLabel(text)
+        prompt.setStyleSheet(
+            f"""
+                color: {CleanTheme.ANALYSIS_TEXT_PROMPT};
+                font-family: Arial;
+                font-size: 27px;
+                font-weight: 500
+            """
+        )
+
+        return prompt
+
+    # used for the italic warning inside signal editing 
+    def create_italic_text(text=""):
+        italic = QLabel(text)
+        italic.setStyleSheet(
+            f"""
+                color: {CleanTheme.ANALYSIS_TEXT_TERTIARY};
+                font-family: Arial;
+                font-size: 10px;
+                font-style: italic;
+                qproperty-alignment: 'AlignRight | AlignVCenter';
+            """
+        )
+        return italic
+

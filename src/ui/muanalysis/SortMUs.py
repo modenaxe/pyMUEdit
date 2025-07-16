@@ -11,9 +11,9 @@ from PyQt5.QtWidgets import (
     QMessageBox,
 )
 from ui.components.CleanTheme import CleanTheme
-from ui.components.AnalysisButton import AnalysisButton
-from ui.components.AnalysisText import AnalysisText
-from ui.components.AnalysisInput import AnalysisInput
+from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
 
 class SortMUs(QWidget):
     def __init__(self, mu, center, parent = None):
@@ -25,7 +25,7 @@ class SortMUs(QWidget):
         layout = QVBoxLayout(self)
         
         sort_label = AnalysisText.create_subtitle("MU EDITING")
-        btn = AnalysisButton("Sort MUs", lambda: self.sort_MUs(), parent=self)
+        btn = GeneralButton("Sort MUs", lambda: self.sort_MUs(), parent=self)
         layout.addWidget(sort_label)
         layout.addWidget(btn, stretch=1)
         

@@ -1,8 +1,12 @@
 import pandas as pd
 
-# singleton object that stores the data associated with the current signal
-# gets reset when new file is uploaded
 class AnalysisResultsCur():
+
+    """
+    singleton object that stores the data associated with the current signal
+    gets reset when new file is uploaded
+    """
+
     _instance = None
     
     def __new__(cls):
