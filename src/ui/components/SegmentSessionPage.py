@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from core.utils.config_and_input.segmenttargets import segmenttargets
 import pyqtgraph as pg
+import matplotlib.cm as cm
 
 from ui.components import ActionButton
 from ui.components.CleanTheme import CleanTheme
@@ -18,7 +19,8 @@ class SegmentSessionPage(QWidget):
         super().__init__(parent)
         self.emg_obj = emg_obj
         self.rois = []
-        self.current_window = 0
+        self.coordinates = []
+        self.data = {"data": [], "auxiliary": [], "target": [], "path": []}
 
         self.setMinimumSize(1024, 700)
 
@@ -62,12 +64,22 @@ class SegmentSessionPage(QWidget):
         left_layout.addWidget(reference_signal_panel)
         left_layout.addWidget(segmentation_param_panel)
 
+        # concatenate button
+        concat_button = ActionButton("Concatenate", primary=False)
+        concat_button.clicked.connect(self.concat_clicked)
+        left_layout.addWidget(concat_button)
+
+        # split button
+        split_button = ActionButton("Split", primary=False)
+        split_button.clicked.connect(self.split_clicked)
+        left_layout.addWidget(split_button)
+
         # add gap between controls and done button
         left_layout.addStretch()
 
         # done button
         done_button = ActionButton("Done", primary=True)
-        done_button.clicked.connect(self.doneClicked)
+        done_button.clicked.connect(self.done_clicked)
         left_layout.addWidget(done_button)
 
         # Setup main layout
@@ -142,27 +154,27 @@ class SegmentSessionPage(QWidget):
         target = self.emg_obj.signal_dict["target"]
         if self.reference_dropdown.dropdown.currentText() != "EMG amplitude":
             # Segment target using threshold
-            coords = segmenttargets(target, 1, threshold)
+            self.coordinates = segmenttargets(target, 1, threshold)
             fsamp = self.emg_obj.signal_dict["fsamp"]
 
-            for i in range(len(coords) // 2):
-                coords[i * 2] -= fsamp
-                coords[i * 2 + 1] += fsamp
+            for i in range(len(self.coordinates) // 2):
+                self.coordinates[i * 2] -= fsamp
+                self.coordinates[i * 2 + 1] += fsamp
 
             # Clamp coordinates to valid range
-            coords = np.clip(coords, 1, len(target))
+            self.coordinates = np.clip(self.coordinates, 1, len(target))
 
             # Update plot
             self.vis_plot.clear()
             self.vis_plot.plot(target, pen=pg.mkPen(color=(0.95, 0.95, 0.95), width=2))
 
             # Add vertical lines for segments
-            for i in range(len(coords) // 2):
+            for i in range(len(self.coordinates) // 2):
                 # Blue-ish hues
-                hue = 0.6 - (i / (len(coords) // 2) * 0.3)
+                hue = 0.6 - (i / (len(self.coordinates) // 2) * 0.3)
                 colour = pg.hsvColor(hue, 0.8, 0.9)
-                self.vis_plot.addLine(x=coords[i * 2], pen=pg.mkPen(color=colour, width=2))
-                self.vis_plot.addLine(x=coords[i * 2 + 1], pen=pg.mkPen(color=colour, width=2))
+                self.vis_plot.addLine(x=self.coordinates[i * 2], pen=pg.mkPen(color=colour, width=2))
+                self.vis_plot.addLine(x=self.coordinates[i * 2 + 1], pen=pg.mkPen(color=colour, width=2))
 
             self.vis_plot.enableAutoRange(axis='y')
 
@@ -175,10 +187,25 @@ class SegmentSessionPage(QWidget):
         self.vis_plot.plot(target, pen=pg.mkPen(color=(0.95, 0.95, 0.95), width=2))
 
         self.rois = []
+        self.coordinates = [0] * (num_windows * 2)
+
+        def on_roi_change():
+            for i, roi in enumerate(self.rois):
+                region = roi.getRegion()
+                x1 = max(int(region[0]), 1)
+                x2 = min(int(region[1]), len(target))
+                self.coordinates[i * 2] = x1
+                self.coordinates[i * 2 + 1] = x2
+
+        cmap = cm.get_cmap('hsv')
+        colours = [cmap(i / num_windows) for i in range(num_windows)]
+
         for i in range(num_windows):
-            hue = i / max(num_windows - 1, 1)
             # Create semi-transparent colour to distinguish each roi
-            colour = pg.hsvColor(hue, 1.0, 1.0, 0.5)
+            rgba = colours[i]
+            rgb = tuple(int(c * 255) for c in rgba[:3])
+            alpha = 127
+            colour = pg.mkColor(rgb + (alpha,))
 
             # Create new ROI region
             roi = pg.LinearRegionItem(values=[i * 1000, i * 1000 + 500])
@@ -186,8 +213,18 @@ class SegmentSessionPage(QWidget):
             roi.setBrush(pg.mkBrush(colour))
             # Allow it to be scaled and moved
             roi.setMovable(True)
+            roi.sigRegionChangeFinished.connect(on_roi_change)
+
             self.vis_plot.addItem(roi)
             self.rois.append(roi)
 
-    def doneClicked(self):
+        on_roi_change()
+
+    def concat_clicked(self):
+        self.close()
+
+    def split_clicked(self):
+        self.close()
+
+    def done_clicked(self):
         self.close()
