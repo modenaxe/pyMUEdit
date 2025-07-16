@@ -6,22 +6,11 @@ import warnings
 import copy
 
 from matplotlib.figure import Figure
+from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
+from ui.components.SaveablePlot import SaveablePlot
 
 
 def parse_channel_input(raw_text, max_channels=None):
-    """
-    Parse the channel input string into a list of integers.
-    Accepts comma-separated and dash ranges, e.g. '1,3,5-7'.
-    Raises ValueError if input is invalid or channels exceed available range.
-    
-    Parameters:
-    -----------
-    raw_text : str
-        The channel input string to parse
-    max_channels : int, optional
-        Maximum number of available channels (0-indexed). If provided, validates
-        that all requested channels are within range [0, max_channels-1].
-    """
     channels = []
     raw_text = raw_text.strip()
     if not raw_text:
@@ -54,86 +43,9 @@ def parse_channel_input(raw_text, max_channels=None):
     return channels
 
 #OPENHDEMG
-def min_max_scaling(data=None, series_or_df=None, col_by_col=False):
-    # Create a deepcopy of the original data
-    if data is not None:
-        data = copy.deepcopy(data)
-
-    elif series_or_df is not None:
-        data = copy.deepcopy(series_or_df)
-
-        # Warn for the use of deprecated parameters
-        msg = (
-            "The 'series_or_df' parameter is deprecated since v0.1.1 and " +
-            "will be removed after v0.2.0. Please use 'data' instead."
-        )
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
-
-    # Automatically act depending on the data received
-    if isinstance(data, pd.Series):
-        data = (data - data.min()) / (data.max() - data.min())
-
-        return data
-
-    elif isinstance(data, pd.DataFrame):
-        if col_by_col:
-            for col in data.columns:
-                data[col] = (
-                    (data[col] - data[col].min()) /
-                    (data[col].max() - data[col].min())
-                )
-
-            return data
-
-        else:
-            data = (
-                (data - data.min().min()) /
-                (data.max().max() - data.min().min())
-            )
-
-            return data
-
-    elif isinstance(data, np.ndarray):
-        if col_by_col:
-            # Check if data is 1D 2D or nD and act accordingly
-            if len(data.shape) == 1:
-                data = (data - data.min()) / (data.max() - data.min())
-
-                return data
-
-            elif len(data.shape) == 2:
-                dims = any(d == 0 or d == 1 for d in data.shape)
-                if dims:  # Only 1 column
-                    data = (data - data.min()) / (data.max() - data.min())
-                else:  # Multiple columns
-                    for col in range(data.shape[1]):
-                        data[:, col] = (
-                            (data[:, col] - data[:, col].min()) /
-                            (data[:, col].max() - data[:, col].min())
-                        )
-
-                return data
-
-            elif len(data.shape) > 2:
-                raise ValueError(
-                    "col_by_col is supported only for 1 and 2D arrays. Set " +
-                    "col_by_col=False to normalise the whole data instead."
-                )
-
-        else:
-            data = (data - data.min()) / (data.max() - data.min())
-
-            return data
-
-    else:
-        raise TypeError(
-            "data must be one of pd.series, pd.dataframe or np.ndarray. " +
-            f"{type(data)} was passed instead."
-        )
-
-#OPENHDEMG
 def plot_emgsig(
     emgfile,
+    analysis_plot,
     channels,
     manual_offset=0,
     addrefsig=False,
@@ -190,7 +102,8 @@ def plot_emgsig(
 
     # Case 2: Multiple channels, no offset
     elif isinstance(channels, list) and manual_offset == 0:
-        norm_raw_all = min_max_scaling(emgsig[channels], col_by_col=False)
+        common = CommonOpenFunc()
+        norm_raw_all = common.min_max_scaling(emgsig[channels], col_by_col=False)
         for count, ch in enumerate(channels):
             norm_raw = norm_raw_all[ch] + (0.5 - norm_raw_all[ch].mean()) + count
             ax1.plot(x_axis, norm_raw, **line2d_kwargs_ax1)
@@ -244,5 +157,7 @@ def plot_emgsig(
 
     if showimmediately:
         plt.show()
-        
-    return fig
+    
+    # TL : function now plots it and doesn't return a figure, similar to plot_idr and plog_refsig in MUAnalysisFunc
+    canvas = SaveablePlot(fig)
+    analysis_plot.display_plot(canvas)

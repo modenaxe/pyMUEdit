@@ -1,8 +1,13 @@
 from PyQt5.QtWidgets import QComboBox, QWidget, QVBoxLayout, QLabel
 from PyQt5.QtGui import QFont
-from ui.components.CleanTheme import CleanTheme
-from core.AnalysisResultsHist import store
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from core.muAnalysisCore.AnalysisResultsHist import store
+from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
+
 class ResultSelection(QWidget):
+
+    """Result sections tabbing to choose what data to display"""
+
     def __init__(self, model):
         super().__init__()
         self.model = model
@@ -11,9 +16,8 @@ class ResultSelection(QWidget):
         self.df = {}
 
         layout = QVBoxLayout(self)
-        self.combo = QComboBox()
-        self.combo.addItems(self.titles)
-        
+        self.combo = AnalysisDropdown('Results Tab', self.titles)
+   
         store.data_changed.connect(self.update_combo_from_df)
         store.data_cleared.connect(self.combo.clear)
         
@@ -25,7 +29,6 @@ class ResultSelection(QWidget):
             """
         )
         self.label.setFont(QFont("Arial", 10, QFont.Bold))
-        
         layout.addWidget(self.label)
         layout.addWidget(self.combo)
         self.combo.setCurrentIndex(0)

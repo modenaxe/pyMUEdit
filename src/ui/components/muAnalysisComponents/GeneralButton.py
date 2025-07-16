@@ -1,15 +1,16 @@
 from PyQt5.QtWidgets import QPushButton
 from PyQt5.QtCore import Qt
-from ui.components.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
-class AnalysisButton(QPushButton):
+class GeneralButton(QPushButton):
+
     """
-    Button for analysis tab UI 
-
+    General button for sidebars
     parameters:
         label (string): text for the button 
-        action (lambda: action): the thing the button triggers. Make sure you include `lambda:` in param
+        action (lambda: action): the action the button triggers.
     """
+
     def __init__(self, label="", action=None, parent=None):
         super().__init__(label, parent)
 
@@ -19,7 +20,7 @@ class AnalysisButton(QPushButton):
             QPushButton {{
                 background-color: {CleanTheme.ANALYSIS_BG_BUTTON};
                 color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
-                border-radius: 4px;
+                border-radius: 5px;
                 padding: 0px 10px;
                 height: 40px;
             }}
@@ -30,4 +31,12 @@ class AnalysisButton(QPushButton):
         """
         )
         self.clicked.connect(action)
+
+    # Sets the width 
+    # I defined the width for the 'revert' button to be 100, so just defining that for consistency,
+    # in case someone else wants to use this method 
+    # I would've defined a function that essentially removes the width css line, but it's looks 
+    # kinda complicated so I don't think it's worth it
+    def set_width(self, width):
+        self.setFixedWidth(width)
 

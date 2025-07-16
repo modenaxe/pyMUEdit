@@ -1,4 +1,9 @@
 import sys
+
+# Fix matplotlib backend BEFORE importing matplotlib
+import matplotlib
+matplotlib.use('Qt5Agg')  # Use Qt5 backend to match PyQt5
+
 from PyQt5.QtWidgets import (
     QFileDialog,
     QLabel,
@@ -15,14 +20,17 @@ import os
 import copy
 import itertools
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-from ui.components.ConfirmationDialog import ConfirmationDialog
-from ui.components.SaveablePlot import SaveablePlot
+from ui.components.muAnalysisComponents.ConfirmationDialog import ConfirmationDialog
+from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
-from app.commonOpenFunc import OpenFunct
+from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
 
 # This class holds all the functions used for file uploading
 class FileUploadFunc:
+
+    """Methods for handling the emgFile and its intital display to centre"""
+
     # made file a class var, to be accessed via FileUploadFunc.file, so that it can be used across other classes
     file = None
 
@@ -30,22 +38,16 @@ class FileUploadFunc:
         # Store the original file path for reset functionality
         self.original_file_path = None
         # file holds emg file instance which is used in openHdemg code
-        # self.file = None
         # canvas hold whatever the widget in the center area is (graph or message saying to load file)
-        self.canvas = None
         self.coords = []
         self.cid = None
         # MVC value for calculations
         self.mvc_value = None
 
-    # setter for UI to give reference to center layout current widget which will need to be replaced by graph
-    def set_canvas(self,canvas):
-        self.canvas = canvas
-
     # Triggerd of file upload button: opens file explorer
     # Checks if file is valid or not
     # passes to import_data to set center screen
-    def select_file_button_pushed(self,center_panel):
+    def select_file_button_pushed(self, analysis_plot):
         """Open file dialog to select file for editing and automatically import it."""
         FileUploadFunc.file = None
         file_dialog = QFileDialog()
@@ -56,14 +58,14 @@ class FileUploadFunc:
             valid = self.emg_from_otb(file_path)
             # Store the original file path for reset functionality
             self.original_file_path = file_path
-            self.import_data(file_path, center_panel, valid)
+            self.import_data(file_path, analysis_plot, valid)
 
     # If file is not valid it displays an error message
     # else it removes anything in center layour and replaces with new graph
-    def import_data(self, filepath, center_panel, valid):
+    def import_data(self, filepath, analysis_plot, valid):
         if valid:
             # immediately plots it
-            self.plot_idr(self.file, center_panel)
+            self.plot_idr(self.file, analysis_plot)
         else:
             canvas = QMessageBox()
             canvas.setIcon(QMessageBox.Critical)
@@ -143,16 +145,12 @@ class FileUploadFunc:
                         warnings.warn(
                             "\nALERT! Ref signal greater than 100, did you use values normalised to the MVC?\n"
                         )
-
                     return REF_SIGNAL_SUBSAMPLED
-
                 else:
                     warnings.warn(
                         "\nReference signal not found, it might be necessary for some analyses\n"
                     )
-
                     return pd.DataFrame(columns=[0])
-
             elif refsig[1] == "fullsampled":
                 # Extract the acquired path (raw data)
                 REF_SIGNAL_FULLSAMPLED = df.filter(regex="acquired data")
@@ -166,19 +164,14 @@ class FileUploadFunc:
                         warnings.warn(
                             "\nALERT! Ref signal grater than 100, did you use values normalised to the MVC?\n"
                         )
-
                     return REF_SIGNAL_FULLSAMPLED
-
                 else:
                     warnings.warn(
                         "\nReference signal not found, it might be necessary for some analyses\n"
                     )
-
                     return pd.DataFrame(columns=[0])
-
         else:
             warnings.warn("\nNot searched for reference signal, it might be necessary for some analyses\n")
-
             return pd.DataFrame(columns=[0])
 
     # OPENHDEMG
@@ -191,7 +184,6 @@ class FileUploadFunc:
             raise ValueError(
                 "\nSource for decomposition (IPTS) not found in the .mat file\n"
             )
-
         # Extract the BINARY_MUS_FIRING and rename columns progressively
         BINARY_MUS_FIRING = df.filter(regex="Decomposition of")
         BINARY_MUS_FIRING.columns = np.arange(len(BINARY_MUS_FIRING.columns))
@@ -200,7 +192,6 @@ class FileUploadFunc:
             raise ValueError(
                 "\nDecomposition of (BINARY_MUS_FIRING) not found in the .mat file\n"
             )
-
         return IPTS, BINARY_MUS_FIRING
 
     # OPENHDEMG
@@ -223,7 +214,6 @@ class FileUploadFunc:
                 IED = float(OTBelectrodes_ied[matrix])
 
                 return IED
-
         # If no matrix is found and we exit the loop:
         warnings.warn(
             "OTB recording grid not found, IED could not be inferred"
@@ -416,7 +406,7 @@ class FileUploadFunc:
     # I will put my intials (AC) next to edited code throughout this
     def plot_idr(self,
     emgfile,
-    center_panel,
+    analysis_plot,
     munumber="all",
     addrefsig=True,
     timeinseconds=True,
@@ -428,7 +418,7 @@ class FileUploadFunc:
     showimmediately=False,
     ):
         # Compute the IDR
-        common = OpenFunct()
+        common = CommonOpenFunc()
         idr = common.compute_idr(emgfile=emgfile)
 
         # Check if all the MUs have to be plotted
@@ -469,7 +459,8 @@ class FileUploadFunc:
             idr_all = pd.DataFrame({key: df['idr'] for key, df in idr.items()})
             idr_all = idr_all[munumber]
             # Normalise the df
-            norm_idr_all = self.min_max_scaling(data=idr_all, col_by_col=False)
+            common = CommonOpenFunc()
+            norm_idr_all = common.min_max_scaling(data=idr_all, col_by_col=False)
 
             for count, thisMU in enumerate(munumber):
                 norm_idr = norm_idr_all[thisMU]
@@ -525,90 +516,9 @@ class FileUploadFunc:
 
         # TL : Immediately plots the fig, instead of passing the figure on
         canvas = SaveablePlot(fig)
-        center_panel.removeWidget(self.canvas)
-        self.canvas.setParent(None)
-        center_panel.addWidget(canvas)
-        self.canvas = canvas
+        analysis_plot.display_fig(canvas)
 
-    # OPENHDEMG
-    def min_max_scaling(self, data=None, series_or_df=None, col_by_col=False):
-        # Create a deepcopy of the original data
-        if data is not None:
-            data = copy.deepcopy(data)
-
-        elif series_or_df is not None:
-            data = copy.deepcopy(series_or_df)
-
-            # Warn for the use of deprecated parameters
-            msg = (
-                "The 'series_or_df' parameter is deprecated since v0.1.1 and " +
-                "will be removed after v0.2.0. Please use 'data' instead."
-            )
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
-
-        # Automatically act depending on the data received
-        if isinstance(data, pd.Series):
-            data = (data - data.min()) / (data.max() - data.min())
-
-            return data
-
-        elif isinstance(data, pd.DataFrame):
-            if col_by_col:
-                for col in data.columns:
-                    data[col] = (
-                        (data[col] - data[col].min()) /
-                        (data[col].max() - data[col].min())
-                    )
-
-                return data
-
-            else:
-                data = (
-                    (data - data.min().min()) /
-                    (data.max().max() - data.min().min())
-                )
-
-                return data
-
-        elif isinstance(data, np.ndarray):
-            if col_by_col:
-                # Check if data is 1D 2D or nD and act accordingly
-                if len(data.shape) == 1:
-                    data = (data - data.min()) / (data.max() - data.min())
-
-                    return data
-
-                elif len(data.shape) == 2:
-                    dims = any(d == 0 or d == 1 for d in data.shape)
-                    if dims:  # Only 1 column
-                        data = (data - data.min()) / (data.max() - data.min())
-                    else:  # Multiple columns
-                        for col in range(data.shape[1]):
-                            data[:, col] = (
-                                (data[:, col] - data[:, col].min()) /
-                                (data[:, col].max() - data[:, col].min())
-                            )
-
-                    return data
-
-                elif len(data.shape) > 2:
-                    raise ValueError(
-                        "col_by_col is supported only for 1 and 2D arrays. Set " +
-                        "col_by_col=False to normalise the whole data instead."
-                    )
-
-            else:
-                data = (data - data.min()) / (data.max() - data.min())
-
-                return data
-
-        else:
-            raise TypeError(
-                "data must be one of pd.series, pd.dataframe or np.ndarray. " +
-                f"{type(data)} was passed instead."
-            )
-
-    def handle_reset_workflow(self, center_panel):
+    def handle_reset_workflow(self, analysis_plot):
         """
         Handles the full workflow for resetting analysis data, including confirmation.
         """
@@ -623,9 +533,9 @@ class FileUploadFunc:
         )
         if dialog.exec_() == QDialog.Accepted:
             # User clicked 'Reset'
-            self.reset_analysis_data(center_panel)
+            self.reset_analysis_data(analysis_plot)
 
-    def reset_analysis_data(self, center_panel):
+    def reset_analysis_data(self, analysis_plot):
         """
         Resets the analysis data by reloading the original file, clearing any transformations.
         """
@@ -643,7 +553,7 @@ class FileUploadFunc:
         valid = self.emg_from_otb(self.original_file_path)
         if valid:
             # Re-import the data to refresh the display
-            self.import_data(self.original_file_path, center_panel, valid)
+            self.import_data(self.original_file_path, analysis_plot, valid)
             print("File successfully reloaded, transformations cleared.")
         else:
             print("Error reloading file during reset.")
@@ -659,7 +569,7 @@ class FileUploadFunc:
     def plot_refsig(
         self,
         emgfile,
-        center_panel,
+        analysis_plot,
         timeinseconds=True,
         figsize=[20, 15],
         tight_layout=True,
@@ -701,6 +611,7 @@ class FileUploadFunc:
 
         # the actual plotting 
         canvas = SaveablePlot(fig)
+<<<<<<< HEAD:src/app/FileUploadFunc.py
         center_panel.removeWidget(self.canvas)
         self.canvas.setParent(None)
         center_panel.addWidget(canvas)
@@ -709,3 +620,6 @@ class FileUploadFunc:
     def updateEMGFile(self, emgfile):
         print(f"updating original file")
         FileUploadFunc.file = emgfile
+=======
+        analysis_plot.display_fig(canvas)
+>>>>>>> de6f2ddd347941d91af90629f39bd900e4cbd7f1:src/app/muAnalysisFunctions/FileUploadFunc.py

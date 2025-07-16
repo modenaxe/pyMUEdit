@@ -3,22 +3,20 @@ from PyQt5.QtWidgets import (
     QFrame, 
     QVBoxLayout,
     QLabel,
+    QWidget,
 )
 from PyQt5.QtCore import Qt
-from ui.components.CleanTheme import CleanTheme
-from ui.components.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 
 
 # For dropdown inputs for the analysis tab (factory method)
 class AnalysisDropdown(QComboBox):
+    
     """
     Initialise a dropdown without a label (label is a placeholder)
-
-    Args:
-        label: (string): placeholder text for dropdown
-        items (list of strings, optional): Array of options 
-        parent (QWidget, optional): Parent widget
     """
+
     def __init__(self, label, items=None, parent=None):
         super().__init__(parent)
 
@@ -37,7 +35,8 @@ class AnalysisDropdown(QComboBox):
                 subcontrol-origin: padding;
                 subcontrol-position: center right;
                 border: 0px;
-                padding: 0px 10px;
+                width: fit-content;
+                padding: 0px 20px;
             }}
             QComboBox::down-arrow {{
                 image: url(src/public/down_arrow_white_icon.svg);
@@ -55,30 +54,27 @@ class AnalysisDropdown(QComboBox):
     def get_value(self):
         return self.currentText()
 
-    """
-    Initialise a dropdown with a label
 
-    Args:
-        label: (string): placeholder text for dropdown
-        items (list of strings, optional): Array of options 
-        parent (QWidget, optional): Parent widget
-    """
-    @staticmethod
-    def labeled_dropdown(label="", items=None, parent=None):
-        box = QFrame()
-        box_layout = QVBoxLayout(box)
-        box_layout.setContentsMargins(0, 0, 0, 0)
-        box.layout = box_layout
+# too hard to convert the old class 'AnalysisDropdown' into a QWidget child class, that supports
+# labeled and non-labeled dropdowns, so I thought a new class would be better 
+class AnalysisLabeledDropdown(QWidget):
+    def __init__(self, label="", items=None, parent=None):
+        super().__init__(parent)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         # the label
-        dropdown_label = AnalysisText.create_label(label)
-        box_layout.addWidget(dropdown_label)
+        label = AnalysisText.create_label(label)
+        layout.addWidget(label)
 
         # the dropdown, taken from init
-        dropdown_dropdown = AnalysisDropdown("", items=items)
-        dropdown_dropdown.setPlaceholderText("")
-        box.dropdown = dropdown_dropdown
-        box_layout.addWidget(dropdown_dropdown)
+        dropdown = AnalysisDropdown("", items=items)
+        dropdown.adjustSize()
+        dropdown.setPlaceholderText("")
+        layout.addWidget(dropdown)
+        self.dropdown = dropdown
 
-        return box 
+    def get(self):
+        return self.dropdown.currentText()
 
