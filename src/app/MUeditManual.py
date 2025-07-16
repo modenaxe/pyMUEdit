@@ -16,6 +16,7 @@ from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
     QFileDialog,
+    QMessageBox,
 )
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas

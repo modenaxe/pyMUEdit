@@ -29,6 +29,7 @@ from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.MajorHeading import MajorHeading
 from ui.muanalysis.FileSection import FileSection
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from ui.muanalysis.RemoveMUSection import RemoveMUSection
 
 from ui.muanalysis.ResultsPanel import ResultsPanel
 
@@ -184,6 +185,10 @@ class MUAnalysis(QWidget):
         # title
         title_label = MajorHeading("Analysis")
         sidebar_layout.addWidget(title_label)
+
+        # remove mu section
+        remove_mu_section = RemoveMUSection(self.mu, self.analysis_plot, parent=sidebar)
+        sidebar_layout.addWidget(remove_mu_section)
 
         # signal editing 
         signal_editing = SignalEditing(self.mu, self.analysis_plot, parent=sidebar)
