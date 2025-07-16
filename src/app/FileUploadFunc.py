@@ -708,4 +708,4 @@ class FileUploadFunc:
 
     def updateEMGFile(self, emgfile):
         print(f"updating original file")
-        self.file = emgfile
+        FileUploadFunc.file = emgfile
