@@ -111,6 +111,37 @@ class RemoveMUSection(QWidget):
             return
 
         try:
+            # Get the total number of motor units
+            file = self.mu_analysis_func.file
+            total_mus = file.get("NUMBER_OF_MUS", 0) if file else 0
+
+            # Parse the input to check for numbers exceeding the limit
+            mus_to_check = []
+            parts = input_text.split(",")
+            for part in parts:
+                part = part.strip()
+                if not part:
+                    continue
+
+                sub_parts = [p.strip() for p in part.split("-")]
+
+                if len(sub_parts) == 1:
+                    mu_num = int(sub_parts[0])
+                    mus_to_check.append(mu_num)
+                elif len(sub_parts) == 2:
+                    start_num = int(sub_parts[0])
+                    end_num = int(sub_parts[1])
+                    mus_to_check.extend(range(start_num, end_num + 1))
+
+            # Check if any MU numbers exceed the total
+            invalid_mus = [mu for mu in mus_to_check if mu > total_mus]
+            if invalid_mus:
+                ErrorDialog(
+                    f"Invalid MU numbers: {', '.join(map(str, invalid_mus))}\nAvailable MUs: 1-{total_mus}",
+                    "Invalid Input",
+                ).exec_()
+                return
+
             self.mu_analysis_func.remove_mus_by_range(input_text)
             # After removing, replot the data to reflect the changes
             self.mu_analysis_func.plot_idr(
