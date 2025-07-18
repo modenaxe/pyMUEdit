@@ -12,6 +12,8 @@ from PyQt5.QtCore import Qt
 
 class Resize:
 
+    """Class to handle resizing file functionality"""
+
     def __init__(self, mu, analysis_plot):
         self.mu = mu
         self.analysis_plot = analysis_plot

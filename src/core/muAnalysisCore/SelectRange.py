@@ -9,6 +9,8 @@ from PyQt5.QtCore import Qt
 
 class SelectRange:
 
+    """Class to handle selecting range of points with clamping mechanism"""
+
     def __init__(self, analysis_plot, func):
         self.drag = True
         self.func = func
@@ -27,11 +29,13 @@ class SelectRange:
 
         analysis_plot.display_plot(self.canvas)
 
+    # after pressing enter the graph returns to original view
     def on_press(self, event):
         if event.key == 'enter':
             self.func(round(self.line[0].get_xdata()[0]),round(self.line[1].get_xdata()[0]))
             self.analysis_plot.revert()
 
+    # creates intervative canvas for the centre panel
     def set_up_plot(self):
         emgfile = FileUploadFunc.file
         plt.close()
@@ -47,6 +51,7 @@ class SelectRange:
         self.canvas.setFocusPolicy(Qt.ClickFocus)
         self.canvas.setFocus()
 
+    # after a line is clicked it can be moved until clicked again
     def click_on_line(self, event):
         if event.artist in self.line:
             x = self.line.index(event.artist)
@@ -57,6 +62,7 @@ class SelectRange:
             else:
                 self.drag = True
 
+    # following moving line
     def follow_mouse(self, event, index):
         if event.xdata:
             if (index == 0):
@@ -65,6 +71,7 @@ class SelectRange:
                 self.line_two(event)
             self.canvas.draw()
 
+    # prevents starting line from going past axes or past ending line and shades non selected region 
     def line_one(self, event):
         if event.xdata >= 0 and event.xdata <= self.line[1].get_xdata()[0]:
             self.line[0].set_xdata([event.xdata, event.xdata])
@@ -72,6 +79,7 @@ class SelectRange:
                 self.shade_one.remove()
             self.shade_one = self.ax.axvspan(0, event.xdata, alpha=0.1, color='red')
 
+    # prevents ending line from going past axes or past starting line and shades non selected region
     def line_two(self, event):
         if event.xdata <= self.max and event.xdata >= self.line[0].get_xdata()[0]:
             self.line[1].set_xdata([event.xdata, event.xdata])
@@ -79,6 +87,7 @@ class SelectRange:
                 self.shade_two.remove()
             self.shade_two = self.ax.axvspan(event.xdata, self.max, alpha=0.1, color='red')
 
+    # line is dropped on click
     def release_on_click(self, follow, release):
         self.canvas.mpl_disconnect(follow)
         self.canvas.mpl_disconnect(release)

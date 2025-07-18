@@ -24,11 +24,15 @@ from core.muAnalysisCore.AnalysisResultsHist import store
 
 # class for functions required for the MU properties dialog
 class MUPropertiesFunc:
+
+     """Motor Unit Properties functionality"""
+
     def __init__(self):
         # MVC value for calculations
         self.mvc_value = None
         self.results = store
         self.basic = []
+        self.over = None
         print(id(self.results))
 
   # MVC value management
@@ -55,12 +59,15 @@ class MUPropertiesFunc:
         if (len(self.convert(self.mvc_value)) == 0 or len(self.convert(rec)) == 0 or len(self.convert(start)) == 0):
             ErrorDialog('You are missing Inputs', 'Error').exec_()
             return
-        over.close()
+        over.hide()
+        self.over = over
         self.basic = [self.convert(rec), self.convert(start)]
         SelectRange(analysis_plot, self.two_point)
 
     def two_point(self, x, y):
-        self.basic_mus_properties(FileUploadFunc.file,n_firings_RecDerec=int(self.basic[0]), n_firings_steady=int(self.basic[1]), start_steady=x,end_steady=y, mvc=int(self.get_mvc()))
+        value = int(self.get_mvc())
+        self.basic_mus_properties(FileUploadFunc.file,n_firings_RecDerec=int(self.basic[0]), n_firings_steady=int(self.basic[1]), start_steady=x,end_steady=y, mvc=value)
+        self.over.close()
 
 
     # OPENHDEMG
