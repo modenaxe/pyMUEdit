@@ -12,6 +12,8 @@ from PyQt5.QtGui import QFont
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme as AnalysisTheme
 from PyQt5.QtCore import Qt
 
+from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
+
 
 class RemoveMUSection(QWidget):
     def __init__(self, mu_analysis_func, analysis_plot, colors, parent=None):
@@ -25,7 +27,9 @@ class RemoveMUSection(QWidget):
         # Use a container QFrame for consistent sidebar alignment
         container = QFrame()
         container_layout = QVBoxLayout(container)
-        container_layout.setContentsMargins(10, 10, 10, 10)  # 10px left/right to match sidebar
+        container_layout.setContentsMargins(
+            10, 10, 10, 10
+        )  # 10px left/right to match sidebar
         container_layout.setSpacing(8)
 
         # Update heading to 'MU EDITING' and match sidebar heading formatting
@@ -100,7 +104,7 @@ class RemoveMUSection(QWidget):
     def remove_specified_mus(self):
         input_text = self.mu_remove_input.text()
         if not self.mu_analysis_func.data_loaded():
-            QMessageBox.warning(self, "No Data", "Please load a file first.")
+            ErrorDialog("No file has been loaded", "Error").exec_()
             return
 
         if not input_text:
@@ -112,15 +116,9 @@ class RemoveMUSection(QWidget):
             self.mu_analysis_func.plot_idr(
                 self.mu_analysis_func.file, self.analysis_plot
             )
-            QMessageBox.information(
-                self,
-                "Success",
-                "Specified MUs have been removed and the plot has been updated.",
-            )
             self.mu_remove_input.clear()
         except ValueError as e:
-            QMessageBox.critical(
-                self,
+            ErrorDialog(
+                "Invalid format:\n Expected format: '1 or 3-5'.",
                 "Invalid Input",
-                f"Invalid format: {e}\nPlease use comma-separated 'mu' or 'start-end' pairs, e.g., '1, 3-5'.",
-            )
+            ).exec_()
