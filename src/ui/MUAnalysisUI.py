@@ -19,6 +19,7 @@ from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from core.muAnalysisCore.AnalysisResultsHist import store
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
+from app.muAnalysisFunctions.ResizeFunc import Resize
 from app.ExportResults import ExportResultsWindow
 from ui.muanalysis.AdvancedTools import AdvancedTools
 from ui.muanalysis.MotorUnitProperties import MotorUnitPropertiesButton
@@ -27,6 +28,7 @@ from ui.muanalysis.SignalEditing import SignalEditing
 from ui.components.muAnalysisComponents.AnalysisPlot import AnalysisPlot
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText 
 from ui.components.muAnalysisComponents.MajorHeading import MajorHeading
+from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.muanalysis.FileSection import FileSection
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
@@ -215,34 +217,39 @@ class MUAnalysis(QWidget):
         center.setObjectName("centerContent")
         center_layout = QVBoxLayout(center)        
         
-        # code to test the result table
-        # can be refered to when implimenting real data
-        dummy_button = QPushButton("Dummy")
-        dummy_button.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {self.colors['button_grey_bg']};
-                border-radius: 15px;
-                padding: 0px;
-                height: 40%;
+        # # code to test the result table
+        # # can be refered to when implimenting real data
+        # dummy_button = QPushButton("Dummy")
+        # dummy_button.setStyleSheet(
+        #     f"""
+        #     QPushButton {{
+        #         background-color: {self.colors['button_grey_bg']};
+        #         border-radius: 15px;
+        #         padding: 0px;
+        #         height: 40%;
                 
-            }}
-            QPushButton:hover {{
-                background-color: {self.colors['button_dark_hover']};
-            }}
-        """
-        )
+        #     }}
+        #     QPushButton:hover {{
+        #         background-color: {self.colors['button_dark_hover']};
+        #     }}
+        # """
+        # )
         
-        # result need to be an list of dictionaries with consistent keys
-        # refer to the code below to append the results
-        table = {
-            "col": 42,
-            "timestamp": time.time()
-        }
-        title = "table " 
-        dummy_button.clicked.connect(lambda: self.calc_result(title, [table]))
-        center_layout.addWidget(dummy_button)
+        # # result need to be an list of dictionaries with consistent keys
+        # # refer to the code below to append the results
+        # table = {
+        #     "col": 42,
+        #     "timestamp": time.time()
+        # }
+        # title = "table " 
+        # dummy_button.clicked.connect(lambda: self.calc_result(title, [table]))
+        # center_layout.addWidget(dummy_button)
 
+        
+        resize_file = Resize(self.mu, self.analysis_plot)
+        resize_btn = GeneralButton("Resize", lambda: resize_file.resize(resize_btn))
+        center_layout.addWidget(resize_btn)
+        self.analysis_plot.set_reseize(resize_btn)
         center_layout.addWidget(self.analysis_plot)
         
         return center
