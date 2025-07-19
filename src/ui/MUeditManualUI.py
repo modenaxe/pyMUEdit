@@ -624,6 +624,7 @@ def setup_display_panel(main_window):
     ]
 
     # Create action buttons and store references
+    main_window.action_buttons = {}
     for text, handler, attr_name in action_button_configs:
         btn = ActionButtonedit(text, primary=False)
         btn.clicked.connect(handler)
@@ -632,6 +633,7 @@ def setup_display_panel(main_window):
         action_layout.addWidget(btn)
         # Store reference to button in main_window
         setattr(main_window, attr_name, btn)
+        main_window.action_buttons[handler.__name__] = btn
 
     action_card.content_layout.addWidget(action_container)
     display_layout.addWidget(action_card)
