@@ -281,6 +281,15 @@ class MUeditManual(QMainWindow):
         #     print(f"Error importing data: {e}")
         #     traceback.print_exc()
 
+    def update_action_button_states(self):
+        enabled = self.plot_display_mode == 0
+        self.add_spikes_btn.setEnabled(enabled)
+        self.delete_spikes_btn.setEnabled(enabled)
+        self.delete_dr_btn.setEnabled(enabled)
+        self.update_mu_filter_btn.setEnabled(enabled)
+        self.extend_mu_filter_btn.setEnabled(enabled)
+        self.lock_spikes_btn.setEnabled(enabled)
+        
     def update_mu_checkboxes(self):
         """Update the MU checkboxes based on loaded data using collapsible panels."""
         # Initialize array panels list if it doesn't exist
@@ -415,6 +424,7 @@ class MUeditManual(QMainWindow):
             
         # Update the display based on selection
         self.display_selected_mus(checked_mus, pluse_train_color)
+        self.update_action_button_states()
 
     def update_array_checkboxes(self):
         """Update the state of "Check All" checkboxes based on individual MU selections."""
@@ -1124,6 +1134,7 @@ class MUeditManual(QMainWindow):
         self.delete_dr_btn.setEnabled(False)
         self.update_mu_filter_btn.setEnabled(False)
         self.extend_mu_filter_btn.setEnabled(False)
+        self.lock_spikes_btn.setEnabled(False)
 
     def enable_action_buttons(self):
         """Re-enable action buttons after selection is complete."""
@@ -1132,6 +1143,7 @@ class MUeditManual(QMainWindow):
         self.delete_dr_btn.setEnabled(True)
         self.update_mu_filter_btn.setEnabled(True)
         self.extend_mu_filter_btn.setEnabled(True)
+        self.lock_spikes_btn.setEnabled(True)
 
     def add_spikes_button_pushed(self):
         """Add spikes by drawing a selection rectangle."""
