@@ -485,7 +485,7 @@ def setup_display_panel(main_window):
     title_lbl.setFont(font)
     #  新建按钮
     main_window.select_file_title_btn = ActionButton("Press here to select file", primary=False)
-    main_window.select_file_title_btn.setFixedHeight(28)
+    main_window.select_file_title_btn.setFixedHeight(40)
 
     main_window.select_file_title_btn.clicked.connect(
         main_window.select_file_button_pushed
@@ -755,7 +755,7 @@ def _add_floating_save_btn(main_window):
     from ui.components import ActionButton
 
     btn = ActionButton("Save", primary=True, parent=main_window)
-    btn.setFixedSize(80, 30)
+    btn.setFixedSize(80, 40)
     btn.clicked.connect(main_window.save_button_pushed)
 
     margin = 16
