@@ -119,7 +119,7 @@ class SelectionTool:
             # Auto rectangle size
             x_ratio = 0.005
             
-            if x_max - x_min < 2 * x_ratio:
+            if x_max - x_min < 2 * x_ratio * x_length:
                 items = self.plot_widget.listDataItems()
                 all_y = []
                 for item in items:
@@ -302,6 +302,8 @@ def process_selection(MUedition, action_type, array_idx, mu_idx, x_min, x_max, y
         if (array_idx, mu_idx) in MUedition["edition"]["Dischargetimes"]:
             discharge_times = MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]
             time = MUedition["edition"]["time"]
+            # print("discharge_times:", discharge_times)
+            # print("time:", time)
 
             # Create masks for time and amplitude ranges
             time_mask = (time[discharge_times] >= x_min) & (time[discharge_times] <= x_max)
