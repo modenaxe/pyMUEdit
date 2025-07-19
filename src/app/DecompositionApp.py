@@ -71,6 +71,7 @@ class DecompositionApp(QMainWindow):
 
         # Right panel connections
         self.save_output_button.clicked.connect(self.save_output_to_location)
+        self.next_button.clicked.connect(self.open_editing_mode)
         self.channel_view_button.clicked.connect(self.open_channel_viewer)
 
     def back_to_import(self):
@@ -537,6 +538,7 @@ class DecompositionApp(QMainWindow):
         self.status_progress.setValue(100)
         self.start_button.setEnabled(True)
         self.save_output_button.setEnabled(True)
+        self.next_button.setEnabled(True)
 
         # Count total motor units
         total_mus = 0
