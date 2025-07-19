@@ -22,10 +22,10 @@ from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
 from core.muAnalysisCore.SelectRange import SelectRange
 from core.muAnalysisCore.AnalysisResultsHist import store
 
+
 # class for functions required for the MU properties dialog
 class MUPropertiesFunc:
-
-     """Motor Unit Properties functionality"""
+    """Motor Unit Properties functionality"""
 
     def __init__(self):
         # MVC value for calculations
@@ -35,7 +35,7 @@ class MUPropertiesFunc:
         self.over = None
         print(id(self.results))
 
-  # MVC value management
+    # MVC value management
     def set_mvc(self, mvc_value):
         """Set the Maximum Voluntary Contraction value"""
         self.mvc_value = mvc_value
@@ -44,20 +44,24 @@ class MUPropertiesFunc:
     def get_mvc(self):
         """Get the current MVC value"""
         return str(self.mvc_value.text())
-    
+
     # general function to turn input text into usable string
     def convert(self, value):
         return str(value.text())
-    
+
     # used for basic properties
     # errors if no file or missing inputs
     def basic_prop(self, analysis_plot, rec, start, over):
         file = FileUploadFunc.file
-        if (file == None):
-            ErrorDialog('No file has been loaded', 'Error').exec_()
+        if file == None:
+            ErrorDialog("No file has been loaded", "Error").exec_()
             return
-        if (len(self.convert(self.mvc_value)) == 0 or len(self.convert(rec)) == 0 or len(self.convert(start)) == 0):
-            ErrorDialog('You are missing Inputs', 'Error').exec_()
+        if (
+            len(self.convert(self.mvc_value)) == 0
+            or len(self.convert(rec)) == 0
+            or len(self.convert(start)) == 0
+        ):
+            ErrorDialog("You are missing Inputs", "Error").exec_()
             return
         over.hide()
         self.over = over
@@ -66,24 +70,31 @@ class MUPropertiesFunc:
 
     def two_point(self, x, y):
         value = int(self.get_mvc())
-        self.basic_mus_properties(FileUploadFunc.file,n_firings_RecDerec=int(self.basic[0]), n_firings_steady=int(self.basic[1]), start_steady=x,end_steady=y, mvc=value)
+        self.basic_mus_properties(
+            FileUploadFunc.file,
+            n_firings_RecDerec=int(self.basic[0]),
+            n_firings_steady=int(self.basic[1]),
+            start_steady=x,
+            end_steady=y,
+            mvc=value,
+        )
         self.over.close()
-
 
     # OPENHDEMG
     # adapted parts labelled with AC
-    def basic_mus_properties(self,
-    emgfile,
-    n_firings_rt_dert=1,
-    n_firings_RecDerec=4,
-    n_firings_steady=10,
-    start_steady=-1,
-    end_steady=-1,
-    idr_range=None,
-    accuracy="default",
-    ignore_negative_ipts=False,
-    constrain_pulses=[True, 3],
-    mvc=0,
+    def basic_mus_properties(
+        self,
+        emgfile,
+        n_firings_rt_dert=1,
+        n_firings_RecDerec=4,
+        n_firings_steady=10,
+        start_steady=-1,
+        end_steady=-1,
+        idr_range=None,
+        accuracy="default",
+        ignore_negative_ipts=False,
+        constrain_pulses=[True, 3],
+        mvc=0,
     ):
         # Collect the information to export
         # First: create a dataframe that contains all the output
@@ -235,17 +246,20 @@ class MUPropertiesFunc:
         covsteady = pd.DataFrame([{"COV_steady": covsteady}])
         exportable_df = pd.concat([exportable_df, covsteady], axis=1)
         print(exportable_df)
-        self.results.append_analysis_hist("Basic Properties", exportable_df.to_dict('records'))
+        self.results.append_analysis_hist(
+            "Basic Properties", exportable_df.to_dict("records")
+        )
         return exportable_df
 
     # OPEN
     # AC: removed their version of show select code
-    def compute_thresholds(self,
-      emgfile,
-      event_="rt_dert",
-      type_="abs_rel",
-      n_firings=1,
-      mvc=0,
+    def compute_thresholds(
+        self,
+        emgfile,
+        event_="rt_dert",
+        type_="abs_rel",
+        n_firings=1,
+        mvc=0,
     ):
         # Extract the variables of interest from the EMG file
         NUMBER_OF_MUS = emgfile["NUMBER_OF_MUS"]
@@ -284,8 +298,8 @@ class MUPropertiesFunc:
                 mup_rec = MUPULSES[mu][0:n_firings]
                 mup_derec = MUPULSES[mu][-n_firings:]
                 # Calculate absolute and relative RT and DERT if requested
-                abs_RT = ((float(REF_SIGNAL.iloc[mup_rec, 0].mean()) * mvc) / 100)
-                abs_DERT = ((float(REF_SIGNAL.iloc[mup_derec, 0].mean()) * mvc) / 100)
+                abs_RT = (float(REF_SIGNAL.iloc[mup_rec, 0].mean()) * mvc) / 100
+                abs_DERT = (float(REF_SIGNAL.iloc[mup_derec, 0].mean()) * mvc) / 100
                 rel_RT = float(REF_SIGNAL.iloc[mup_rec, 0].mean())
                 rel_DERT = float(REF_SIGNAL.iloc[mup_derec, 0].mean())
 
@@ -325,7 +339,8 @@ class MUPropertiesFunc:
 
         return mus_thresholds
 
-    def compute_dr(self,
+    def compute_dr(
+        self,
         emgfile,
         n_firings_RecDerec=4,
         n_firings_steady=10,
@@ -361,19 +376,19 @@ class MUPropertiesFunc:
         if idr_range is not None:
             if not isinstance(idr_range, list):
                 raise ValueError(
-                    "idr_range can be None or a list of 2 numbers. " +
-                    f"A{type(idr_range)} was passed instead."
+                    "idr_range can be None or a list of 2 numbers. "
+                    + f"A{type(idr_range)} was passed instead."
                 )
             else:
                 if len(idr_range) != 2:
                     raise ValueError(
-                        "idr_range can be None or a list of 2 numbers. " +
-                        f"The list contains {len(idr_range)} numbers instead."
+                        "idr_range can be None or a list of 2 numbers. "
+                        + f"The list contains {len(idr_range)} numbers instead."
                     )
             for mu in idr.keys():
                 idr[mu]["idr"] = idr[mu]["idr"][idr[mu]["idr"] > idr_range[0]]
                 idr[mu]["idr"] = idr[mu]["idr"][idr[mu]["idr"] < idr_range[1]]
-        
+
         # Create an object to append the results
         toappend_dr = []
         for mu in range(emgfile["NUMBER_OF_MUS"]):  # Loop all the MUs
@@ -384,7 +399,7 @@ class MUPropertiesFunc:
 
                 length = len(idr[mu]["idr"])
                 selected_idr = idr[mu]["idr"].iloc[
-                    length - n_firings_RecDerec + 1: length
+                    length - n_firings_RecDerec + 1 : length
                 ]
                 # +1 because len() counts position 0
                 drderec = selected_idr.mean()
@@ -427,19 +442,19 @@ class MUPropertiesFunc:
                 # Use +1 to work only on the steady state (here and after)
                 # because the idr is calculated on the previous firing.
                 selected_idr = idr[mu]["idr"].loc[
-                    index_startsteady + 1: index_startsteady + n_firings_steady
+                    index_startsteady + 1 : index_startsteady + n_firings_steady
                 ]
                 drstartsteady = selected_idr.mean()
 
                 # DR endsteady
                 selected_idr = idr[mu]["idr"].loc[
-                    index_endsteady + 1 - n_firings_steady: index_endsteady
+                    index_endsteady + 1 - n_firings_steady : index_endsteady
                 ]
                 drendsteady = selected_idr.mean()
 
                 # DR steady
                 selected_idr = idr[mu]["idr"].loc[
-                    index_startsteady + 1: index_endsteady
+                    index_startsteady + 1 : index_endsteady
                 ]
                 drsteady = selected_idr.mean()
 
@@ -457,7 +472,9 @@ class MUPropertiesFunc:
             elif event_ == "derec":
                 toappend_dr.append({"DR_derec": drderec, "DR_all": drall})
             elif event_ == "rec_derec":
-                toappend_dr.append({"DR_rec": drrec, "DR_derec": drderec, "DR_all": drall})
+                toappend_dr.append(
+                    {"DR_rec": drrec, "DR_derec": drderec, "DR_all": drall}
+                )
             elif event_ == "steady":
                 toappend_dr.append(
                     {
@@ -486,14 +503,15 @@ class MUPropertiesFunc:
 
     # OPEN
     # AC: removed their version of show select code
-    def compute_covisi(self,
-    emgfile,
-    n_firings_RecDerec=4,
-    start_steady=-1,
-    end_steady=-1,
-    event_="rec_derec_steady",
-    idr_range=None,
-    single_mu_number=-1,
+    def compute_covisi(
+        self,
+        emgfile,
+        n_firings_RecDerec=4,
+        start_steady=-1,
+        end_steady=-1,
+        event_="rec_derec_steady",
+        idr_range=None,
+        single_mu_number=-1,
     ):
         # Check that all the inputs are correct
         errormessage = f"event_ must be one of the following strings: rec, derec, rec_derec, steady, rec_derec_steady. {event_} was passed instead."
@@ -519,14 +537,14 @@ class MUPropertiesFunc:
         if idr_range is not None:
             if not isinstance(idr_range, list):
                 raise ValueError(
-                    "idr_range can be None or a list of 2 numbers. " +
-                    f"A{type(idr_range)} was passed instead."
+                    "idr_range can be None or a list of 2 numbers. "
+                    + f"A{type(idr_range)} was passed instead."
                 )
             else:
                 if len(idr_range) != 2:
                     raise ValueError(
-                        "idr_range can be None or a list of 2 numbers. " +
-                        f"The list contains {len(idr_range)} numbers instead."
+                        "idr_range can be None or a list of 2 numbers. "
+                        + f"The list contains {len(idr_range)} numbers instead."
                     )
             idr_range[0] = emgfile["FSAMP"] / idr_range[0]
             idr_range[1] = emgfile["FSAMP"] / idr_range[1]
@@ -545,21 +563,21 @@ class MUPropertiesFunc:
             for mu in range(emgfile["NUMBER_OF_MUS"]):  # Loop all the MUs
 
                 # COVisi rec
-                selected_idr = idr[mu]["diff_mupulses"].iloc[0: n_firings_RecDerec]
+                selected_idr = idr[mu]["diff_mupulses"].iloc[0:n_firings_RecDerec]
                 covisirec = (selected_idr.std() / selected_idr.mean()) * 100
 
                 # COVisi derec
                 length = len(idr[mu]["diff_mupulses"])
                 selected_idr = idr[mu]["diff_mupulses"].iloc[
-                    length - n_firings_RecDerec + 1: length
+                    length - n_firings_RecDerec + 1 : length
                 ]  # +1 because len() counts position 0
                 covisiderec = (selected_idr.std() / selected_idr.mean()) * 100
 
                 # COVisi all steady
-                if (event_ == "rec_derec_steady" or event_ == "steady"):
+                if event_ == "rec_derec_steady" or event_ == "steady":
                     idr_indexed = idr[mu].set_index("mupulses")
                     selected_idr = idr_indexed["diff_mupulses"].loc[
-                        start_steady: end_steady
+                        start_steady:end_steady
                     ]
                     covisisteady = (selected_idr.std() / selected_idr.mean()) * 100
 
@@ -621,27 +639,27 @@ class MUPropertiesFunc:
         return covsteady[0]
 
     # not sure what this for, from Finn's
-        # def calculate_mvc_based_statistics(self, force_data):
-        #     """Calculate summary statistics based on MVC value"""
-        #     if self.mvc_value is None:
-        #         print("Warning: MVC value not set. Cannot calculate MVC-based statistics.")
-        #         return None
-            
-        #     if force_data is None or len(force_data) == 0:
-        #         print("Warning: No force data available for MVC-based calculations.")
-        #         return None
-            
-        #     # Convert force data to percentage of MVC
-        #     force_percentage = (force_data / self.mvc_value) * 100
-            
-        #     # Calculate summary statistics
-        #     stats = {
-        #         'mvc_value': self.mvc_value,
-        #         'mean_force_percentage': np.mean(force_percentage),
-        #         'max_force_percentage': np.max(force_percentage),
-        #         'min_force_percentage': np.min(force_percentage),
-        #         'std_force_percentage': np.std(force_percentage),
-        #         'force_percentage_data': force_percentage
-        #     }
-            
-        #     return stats
+    # def calculate_mvc_based_statistics(self, force_data):
+    #     """Calculate summary statistics based on MVC value"""
+    #     if self.mvc_value is None:
+    #         print("Warning: MVC value not set. Cannot calculate MVC-based statistics.")
+    #         return None
+
+    #     if force_data is None or len(force_data) == 0:
+    #         print("Warning: No force data available for MVC-based calculations.")
+    #         return None
+
+    #     # Convert force data to percentage of MVC
+    #     force_percentage = (force_data / self.mvc_value) * 100
+
+    #     # Calculate summary statistics
+    #     stats = {
+    #         'mvc_value': self.mvc_value,
+    #         'mean_force_percentage': np.mean(force_percentage),
+    #         'max_force_percentage': np.max(force_percentage),
+    #         'min_force_percentage': np.min(force_percentage),
+    #         'std_force_percentage': np.std(force_percentage),
+    #         'force_percentage_data': force_percentage
+    #     }
+
+    #     return stats
