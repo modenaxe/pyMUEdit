@@ -194,7 +194,9 @@ class MUAnalysis(QWidget):
         sidebar_layout.addWidget(title_label)
 
         # remove mu section
-        remove_mu_section = RemoveMUSection(self.mu, self.analysis_plot, self.colors, parent=sidebar)
+        remove_mu_section = RemoveMUSection(
+            self.mu, self.analysis_plot, self.colors, parent=sidebar
+        )
         sidebar_layout.addWidget(remove_mu_section)
 
         # signal editing
@@ -229,32 +231,6 @@ class MUAnalysis(QWidget):
         center.setObjectName("centerContent")
         center_layout = QVBoxLayout(center)
 
-        # code to test the result table
-        # can be refered to when implimenting real data
-        dummy_button = QPushButton("Dummy")
-        dummy_button.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {self.colors['button_grey_bg']};
-                border-radius: 15px;
-                padding: 0px;
-                height: 40%;
-                
-            }}
-            QPushButton:hover {{
-                background-color: {self.colors['button_dark_hover']};
-            }}
-        """
-        )
-
-        # result need to be an list of dictionaries with consistent keys
-        # refer to the code below to append the results
-        table = {"col": 42, "timestamp": time.time()}
-        title = "table "
-        dummy_button.clicked.connect(lambda: self.calc_result(title, [table]))
-        center_layout.addWidget(dummy_button)
-        center_layout = QVBoxLayout(center)        
-        
         # # code to test the result table
         # # can be refered to when implimenting real data
         # dummy_button = QPushButton("Dummy")
@@ -265,25 +241,24 @@ class MUAnalysis(QWidget):
         #         border-radius: 15px;
         #         padding: 0px;
         #         height: 40%;
-                
+
         #     }}
         #     QPushButton:hover {{
         #         background-color: {self.colors['button_dark_hover']};
         #     }}
         # """
         # )
-        
+
         # # result need to be an list of dictionaries with consistent keys
         # # refer to the code below to append the results
         # table = {
         #     "col": 42,
         #     "timestamp": time.time()
         # }
-        # title = "table " 
+        # title = "table "
         # dummy_button.clicked.connect(lambda: self.calc_result(title, [table]))
         # center_layout.addWidget(dummy_button)
 
-        
         resize_file = Resize(self.mu, self.analysis_plot)
         resize_btn = GeneralButton("Resize", lambda: resize_file.resize(resize_btn))
         center_layout.addWidget(resize_btn)
