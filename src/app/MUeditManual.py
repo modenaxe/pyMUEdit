@@ -187,11 +187,18 @@ class MUeditManual(QMainWindow):
             self.pathname = os.path.dirname(file_path) + "/"
             self.filename = os.path.basename(file_path)
             self.file_path_field.setText(self.filename)
+            display_name = self.filename if len(self.filename) <= 30 else self.filename[:27] + "..."
+            self.select_file_title_btn.setText(display_name)
 
             self.import_data()
 
     def import_data(self):
         """Import data from selected file."""
+        from PyQt5.QtWidgets import QApplication
+        from PyQt5.QtCore import Qt
+        # 设置鼠标为等待
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+
         if not self.filename or not self.pathname:
             return
 
@@ -266,6 +273,7 @@ class MUeditManual(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Import Error", f"Failed to load the file:\n{str(e)}")
 
+        QApplication.restoreOverrideCursor()    #还原鼠标
         #origial error print
         # except Exception as e:
         #     import traceback
