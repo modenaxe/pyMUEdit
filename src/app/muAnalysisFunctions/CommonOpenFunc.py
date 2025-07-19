@@ -136,3 +136,49 @@ class CommonOpenFunc():
                 f"{type(data)} was passed instead."
             )
             
+    def compute_sil(self, ipts, mupulses, ignore_negative_ipts=False):
+        # Manage exception of no firings
+        if len(mupulses) == 0:
+            return np.nan
+
+        # Extract source and peaks and align source and peaks based on IPTS
+        source = ipts.to_numpy()
+
+        if ignore_negative_ipts:
+            # Ignore negative values, this is particularly needed for negative
+            # unbalanced sources.
+            source = source * np.abs(source)
+
+        peaks_idxs = mupulses - ipts.index[0]
+
+        # Create clusters
+        peak_cluster = source[peaks_idxs]
+        noise_cluster = np.delete(source, peaks_idxs)
+
+        # Create centroids for each cluster
+        peak_centroid = np.mean(peak_cluster)
+        noise_centroid = np.mean(noise_cluster)
+
+        # Calculate within-cluster sums of point-to-centroid distances using the
+        # squared Euclidean distance metric. It is defined as the sum of the
+        # squares of the differences between the corresponding elements of the two
+        # vectors.
+        intra_sums = cdist(
+            peak_cluster.reshape(-1, 1),
+            peak_centroid.reshape(-1, 1),
+            metric="sqeuclidean",
+        ).sum()
+
+        # Calculate between-cluster sums of point-to-centroid distances
+        inter_sums = cdist(
+            peak_cluster.reshape(-1, 1),
+            noise_centroid.reshape(-1, 1),
+            metric="sqeuclidean",
+        ).sum()
+
+        # Calculate silhouette coefficient
+        sil = (inter_sums - intra_sums) / max(intra_sums, inter_sums)
+
+        return sil
+
+            
