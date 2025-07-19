@@ -40,6 +40,7 @@ from ui.components import (
     WarningDialog,
     SuccessDialog,
     ErrorDialog,
+    MessageDialog,
 )
 import json
 
@@ -59,7 +60,7 @@ class MUeditManual(QMainWindow):
         self.filename = None
         self.pathname = None
         self.MUedition = None
-        self.Backup = {"lock": 0, "Pulsetrain": None, "Dischargetimes": None}
+        self.Backup = {"lock": 0, "Pulsetrain": None, "Dischargetimes": None, "lock_changable": 1}
         self.undo_stack = [] # add undo stack moy
         self.redo_stack = []
         self.graphstart = None
@@ -1330,7 +1331,24 @@ class MUeditManual(QMainWindow):
         if not self.MUedition:
             ErrorDialog(text="Please import file first!")
             return
-    
+        
+        # Ask whether lock spikes
+        if self.Backup["lock_changable"] == 1:
+            dialog = MessageDialog(text="Do you want to lock splikes? ", HelpButtonTip="When updating the filter, the spikes in the non-edge part of the current display area are retained and not deleted.")
+            result = dialog.exec_()
+            if result == QDialog.Accepted:
+                print("Yes: lock")
+                print("push lock spikes")
+                self.Backup["lock"] = 1
+            elif dialog.user_clicked_no:
+                print("No: no lock")
+            elif dialog.user_closed_window:
+                print("cancel operation")
+                return
+            if dialog.checkbox_selected:
+                print("no ask again")
+                self.Backup["lock_changable"] = 0
+
         # Get the first checked MU
         checked_mus = []
         for checkbox in self.mu_checkboxes:
@@ -1412,11 +1430,9 @@ class MUeditManual(QMainWindow):
                 self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = all_spikes
 
                 # Reset the lock
-                self.Backup["lock"] = 0
-                self.lock_spikes_btn.setStyleSheet(
-                    "color: #f0f0f0; background-color: #D95535; font-family: 'Poppins'; font-size: 18pt;"
-                )
-                print("Reset")
+                if self.Backup["lock_changable"] == 0:
+                    self.Backup["lock"] = 0
+                print("Reset lock")
             else:
                 # Update both pulse train and discharge times
                 self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = updated_pulse_train
