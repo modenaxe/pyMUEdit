@@ -11,10 +11,11 @@ class SelectionTool:
     """
     import os
     os.environ["OMP_NUM_THREADS"] = "1"
-    def __init__(self, plot_widget, action_type, callback):
+    def __init__(self, plot_widget, action_type, callback, undo_func):
         self.plot_widget = plot_widget
         self.action_type = action_type
         self.callback = callback
+        self.undo_func = undo_func
 
         # Points in scene coordinates
         self.start_point = None
@@ -136,6 +137,7 @@ class SelectionTool:
                 y_max = self.start_point.y() + y_length * 1
 
             # Call the callback with the selection bounds
+            self.undo_func()
             self.cleanup()
             self.callback(x_min, x_max, y_min, y_max)
 
@@ -154,7 +156,9 @@ class SelectionTool:
         if self.guide_text is not None:
             self.plot_widget.removeItem(self.guide_text)
             self.guide_text = None
-
+            
+    def disable(self):
+        
         # Restore original event handlers
         self.plot_widget.mousePressEvent = self.original_mouse_press
         self.plot_widget.mouseMoveEvent = self.original_mouse_move

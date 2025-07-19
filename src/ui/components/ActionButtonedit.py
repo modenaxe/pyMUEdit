@@ -84,12 +84,18 @@ class ActionButtonedit(QPushButton):
                     border: 1px solid #e0e0e0;
                 }}
                 QPushButton[active="true"] {{
-                    background-color: #eeeeee;
+                    background-color: #c0ffc0;
+                    border: 1px solid green;
+                    color: darkgreen;
                 }}
             """
             )
+            
     def set_active(self, active: bool):
         """Set the active visual state of the button."""
         self.setProperty("active", active)
         self.style().unpolish(self)
         self.style().polish(self)
+        
+    def get_active(self):
+        return self.property("active")
