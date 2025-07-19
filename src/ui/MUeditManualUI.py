@@ -27,7 +27,7 @@ from ui.components import (
     CleanScrollBar,
     GoodSlider,
 )
-
+from ui.components.ActionButtonedit import ActionButtonedit
 class FixedPopupComboBox(QComboBox): # set a new class for dropout moy
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -528,10 +528,10 @@ def setup_display_panel(main_window):
     display_layout.setContentsMargins(0, 0, 0, 0)
     display_layout.setSpacing(15)
 
-    main_window.undo_title_btn = ActionButton("Undo", primary=False)
+    main_window.undo_title_btn = ActionButtonedit("Undo", primary=False) # alex
     main_window.undo_title_btn.setFixedHeight(28)
     main_window.undo_title_btn.clicked.connect(main_window.undo_button_pushed)
-    main_window.redo_title_btn = ActionButton("Redo", primary=False) # new redo btn moy
+    main_window.redo_title_btn = ActionButtonedit("Redo", primary=False) # new redo btn moy
     main_window.redo_title_btn.setFixedHeight(28)
     main_window.redo_title_btn.clicked.connect(main_window.redo_button_pushed)
     
@@ -625,7 +625,7 @@ def setup_display_panel(main_window):
 
     # Create action buttons and store references
     for text, handler, attr_name in action_button_configs:
-        btn = ActionButton(text, primary=False)
+        btn = ActionButtonedit(text, primary=False)
         btn.clicked.connect(handler)
         btn.setMinimumHeight(36)
         btn.setMaximumHeight(36)
@@ -752,7 +752,6 @@ def _add_floating_save_btn(main_window):
     在窗口右上角放一个悬浮 Save 按钮，点击后仍调用 main_window.save_button_pushed。
     不动侧边栏里的原有 Save。
     """
-    from ui.components import ActionButton
 
     btn = ActionButton("Save", primary=True, parent=main_window)
     btn.setFixedSize(80, 40)
