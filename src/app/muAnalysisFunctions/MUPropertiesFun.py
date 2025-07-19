@@ -19,14 +19,20 @@ from ui.components.SaveablePlot import SaveablePlot
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
+from core.muAnalysisCore.SelectRange import SelectRange
 from core.muAnalysisCore.AnalysisResultsHist import store
 
 # class for functions required for the MU properties dialog
 class MUPropertiesFunc:
+
+     """Motor Unit Properties functionality"""
+
     def __init__(self):
         # MVC value for calculations
         self.mvc_value = None
         self.results = store
+        self.basic = []
+        self.over = None
         print(id(self.results))
 
   # MVC value management
@@ -53,67 +59,15 @@ class MUPropertiesFunc:
         if (len(self.convert(self.mvc_value)) == 0 or len(self.convert(rec)) == 0 or len(self.convert(start)) == 0):
             ErrorDialog('You are missing Inputs', 'Error').exec_()
             return
-        over.close()
-       
-        self.showselect(file, analysis_plot, rec, start)
+        over.hide()
+        self.over = over
+        self.basic = [self.convert(rec), self.convert(start)]
+        SelectRange(analysis_plot, self.two_point)
 
-    # used for basic properties
-    # user selects starting and ending points for calculation
-    def showselect(self, emgfile, analysis_plot, rec, start, how="ref_signal"):
-        plt.close()
-        data_to_plot = emgfile["REF_SIGNAL"][0]
-        self.fig, self.ax = plt.subplots()
-
-        self.ax.plot(data_to_plot)
-        self.ax.set_xlabel("Samples")
-        self.ax.set_ylabel('Reference signal')
-        self.ax.set_title('Click start and end range')
-
-        self.fig.set_figheight(5)
-        self.fig.set_figwidth(5)
-
-        self.coords = []
-
-        self.fig.canvas.mpl_connect('button_press_event', lambda event: self.on_click(event, rec, start, emgfile))
-        # self.fig.canvas.mpl_connect('key_press_event', lambda event: self.on_press(event, rec, start, emgfile))
-
-        # the actual plotting 
-        canvas = SaveablePlot(self.fig)
-        analysis_plot.display_plot(canvas)
-
-    # helper function for showselect. Displays the red boundaries in the graph 
-    def on_click(self, event, rec, start, emgfile):
-        # only want to process clicks within the plot 
-        if event.inaxes != self.ax:
-            return
-
-        if event.button == 1 and len(self.coords) < 2:
-            x = event.xdata
-            self.coords.append(x)
-            
-            self.ax.axvline(x=x, color='r')
-            
-            if len(self.coords) == 2:
-                # self.ax.set_title("Press enter to see results")
-
-                points = [round(point) for point in self.coords]
-                points.sort()
-
-                dataframe = self.basic_mus_properties(emgfile, n_firings_RecDerec=int(self.convert(rec)), n_firings_steady=int(self.convert(start)), start_steady=points[0],end_steady=points[1])
-
-            self.fig.canvas.draw()
-
-    # user has to press enter before computing range. Allows for editing, but that hasn't been implemented yet
-    # THIS DOESN'T WORK. This doesn't trigger for some reason, so I've disabled it for now, and move the functionality
-    # into on_click
-    # def on_press(self, event, rec, start, emgfile):
-    #     print("this is happening")
-    #     if event.key == 'enter' and len(self.coords) == 2:
-    #         print("pressing enter")
-    #         points = [round(point) for point in self.coords]
-    #         points.sort()
-    #
-    #         dataframe = self.basic_mus_properties(emgfile, n_firings_RecDerec=int(self.convert(rec)), n_firings_steady=int(self.convert(start)), start_steady=points[0],end_steady=points[1])
+    def two_point(self, x, y):
+        value = int(self.get_mvc())
+        self.basic_mus_properties(FileUploadFunc.file,n_firings_RecDerec=int(self.basic[0]), n_firings_steady=int(self.basic[1]), start_steady=x,end_steady=y, mvc=value)
+        self.over.close()
 
 
     # OPENHDEMG
@@ -137,7 +91,6 @@ class MUPropertiesFunc:
 
         # AC get mvc from dialog
         # AC I removed their version of show select and did it above
-        mvc = int(self.get_mvc())
         exportable_df.append({"MVC": mvc})
         exportable_df = pd.DataFrame(exportable_df)
 
