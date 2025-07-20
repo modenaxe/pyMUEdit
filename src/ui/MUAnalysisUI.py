@@ -192,17 +192,16 @@ class MUAnalysis(QWidget):
         # title
         title_label = MajorHeading("Analysis")
         sidebar_layout.addWidget(title_label)
-
-        # sort MUs
-        sort_MUs = SortMUs(self.mu, self.analysis_plot, parent=sidebar)
-        sidebar_layout.addWidget(sort_MUs)
-        
+    
         # signal editing 
         # remove mu section
         remove_mu_section = RemoveMUSection(
             self.mu, self.analysis_plot, self.colors, parent=sidebar
         )
         sidebar_layout.addWidget(remove_mu_section)
+        # sort MUs
+        sort_MUs = SortMUs(self.mu, self.analysis_plot, parent=sidebar)
+        sidebar_layout.addWidget(sort_MUs)
 
         # signal editing
         signal_editing = SignalEditing(self.mu, self.analysis_plot, parent=sidebar)
