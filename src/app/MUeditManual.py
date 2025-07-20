@@ -157,25 +157,25 @@ class MUeditManual(QMainWindow):
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts."""
         if event.key() == Qt.Key.Key_Left:
-            self.scroll_left_button_pushed()
+            self.scroll_left_btn.click()
         elif event.key() == Qt.Key.Key_Right:
-            self.scroll_right_button_pushed()
+            self.scroll_right_btn.click()
         elif event.key() == Qt.Key.Key_Up:
-            self.zoom_in_button_pushed()
+            self.zoom_in_btn.click()
         elif event.key() == Qt.Key.Key_Down:
-            self.zoom_out_button_pushed()
+            self.zoom_out_btn.click()
         elif event.key() == Qt.Key.Key_A:
-            self.add_spikes_button_pushed()
+            self.add_spikes_btn.click()
         elif event.key() == Qt.Key.Key_D:
-            self.delete_spikes_button_pushed()
+            self.delete_spikes_btn.click()
         elif event.key() == Qt.Key.Key_R:
-            self.remove_outliers_button_pushed()
+            self.remove_outliers_btn.click()
         elif event.key() == Qt.Key.Key_Space:
-            self.update_mu_filter_button_pushed()
+            self.update_mu_filter_btn.click()
         elif event.key() == Qt.Key.Key_S:
-            self.lock_spikes_button_pushed()
+            self.lock_spikes_btn.click()
         elif event.key() == Qt.Key.Key_E:
-            self.extend_mu_filter_button_pushed()
+            self.extend_mu_filter_btn.click()
         else:
             super().keyPressEvent(event)
 
