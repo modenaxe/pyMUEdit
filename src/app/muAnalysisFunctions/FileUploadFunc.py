@@ -641,6 +641,6 @@ class FileUploadFunc:
 
         # the actual plotting
         canvas = SaveablePlot(fig)
-        analysis_plot.display_fig(canvas)
+        analysis_plot.display_plot(canvas)
 
     
