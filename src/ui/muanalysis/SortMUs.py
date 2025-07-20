@@ -1,48 +1,35 @@
 import copy
 import numpy as np
 import pandas as pd
-from scipy import signal
 from PyQt5.QtWidgets import (
     QWidget, 
-    QFrame,
     QVBoxLayout, 
-    QHBoxLayout,
-    QDialog,
-    QMessageBox,
 )
-from ui.components.CleanTheme import CleanTheme
+
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
+from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme as AnalysisTheme
 
 class SortMUs(QWidget):
-    def __init__(self, mu, center, parent = None):
+    def __init__(self, mu, analysis_plot, parent = None):
         super().__init__(parent)
         
         self.mu = mu
-        self.center = center
+        self.analysis_plot = analysis_plot
         
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(12, 0, 12, 0)
+        layout.setSpacing(0)
         
-        sort_label = AnalysisText.create_subtitle("MU EDITING")
         btn = GeneralButton("Sort MUs", lambda: self.sort_MUs(), parent=self)
-        layout.addWidget(sort_label)
         layout.addWidget(btn, stretch=1)
         
         # returns boolean value based on whethere or not there's a valid file loaded
     def valid_file(self):
         if not self.mu.file:
-            self.display_warning("Invalid File", "Please upload a file to edit signals")
+            ErrorDialog("No file has been loaded", "Error").exec_()
             return False 
         return True 
-    
-        # displays a popup warning 
-    def display_warning(self, label="", text=""):
-        QMessageBox.warning(
-            self,
-            label,
-            text,
-        )
 
         
     def sort_MUs(self):
@@ -112,5 +99,5 @@ class SortMUs(QWidget):
         for origpos, newpos in enumerate(sorting_order):
             sorted_emgfile["MUPULSES"][origpos] = emgfile["MUPULSES"][newpos]
 
-        self.mu.plot_idr(sorted_emgfile, self.center)
+        self.mu.plot_idr(sorted_emgfile, self.analysis_plot)
         self.mu.updateEMGFile(sorted_emgfile)
