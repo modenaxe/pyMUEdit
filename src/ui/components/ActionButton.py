@@ -71,5 +71,9 @@ class ActionButton(QPushButton):
                 QPushButton:pressed {{
                     background-color: #e0e0e0;
                 }}
+                QPushButton:disabled {{
+                    color: lightgray;
+                    background-color: white;
+                }}
             """
             )

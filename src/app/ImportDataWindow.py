@@ -46,6 +46,7 @@ class ImportDataWindow(QWidget):
         self.imported_signal = None  # Will store the imported signal data
         self.threads = []  # Keep reference to worker threads
         self.file_size_bytes = None  # Store file size in bytes
+        self.data_saved = False
 
         # Create EMG object using the appropriate class
         temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp")
@@ -261,6 +262,10 @@ class ImportDataWindow(QWidget):
         """Handle completion of background save."""
         print("Data saved successfully")
         self.cleanup_thread(worker)
+        if self.data_saved:
+            self.parent_window.enable_segment_session()
+        else:
+            self.data_saved = True
 
     def on_save_error(self, worker, error_msg):
         """Handle error in background save."""
