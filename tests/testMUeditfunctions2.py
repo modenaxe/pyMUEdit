@@ -42,6 +42,7 @@ expOutFilterExtendWhiten =  os.path.join(os.getcwd(), "ExpOut20FilterExtendWhite
 expOutConSphSkew = os.path.join(os.getcwd(), "ExpOut20ConSphSkew.mat")
 expOutConSphKurt = os.path.join(os.getcwd(), "ExpOut20ConSphKurt.mat")
 expOutConSphLogc = os.path.join(os.getcwd(), "ExpOut20ConSphLogc.mat")
+expOutFixedPointAlg = os.path.join(os.getcwd(), "ExpOut20FixedPointAlg.mat")
 expOutGetSpikes = os.path.join(os.getcwd(), "ExpOut20GetSpikes.mat")
 expOutMinimizeCOVISI = os.path.join(os.getcwd(), "ExpOut20MinimizeCOVISI.mat")
 
@@ -280,36 +281,23 @@ class Test20MVCfile(unittest.TestCase):
 # Returns:
 #     w: Updated separation vector
     def testFixedPointAlg(self):
-        # Note: Parameters might have changed in the new implementation
-        initialWeights = loadmat(expOutOpenOTBPlus)
-        whitenedSignal = loadmat(expOutWhiten)
-        seperationMatrix = 42 # whats a seperation matrix/basis matrix? Where can i find one
-        # basis matrix isnt mentioned anywhere else except our fixed point alg??? Are we using different names across diff functions???
-        expectedSkew = loadmat(expOutConSphSkew)
-        expectedKurtosis = loadmat(expOutConSphKurt)
-        expectedLogc = loadmat(expOutConSphLogc)
+        expected = loadmat(expOutFixedPointAlg, mat_dtype=True)
 
-        contrastFunc = 0  # skew
-        expectedSkew = 42
-        outputSkew = fixed_point_alg(initialWeights, seperationMatrix, whitenedSignal, contrastFunc, None)
+        outputSkew = fixed_point_alg(expected.get("w"), expected.get("B"), expected.get("X"), "skew")
         try:
-            npt.assert_array_equal(outputSkew, expectedSkew)
+            npt.assert_allclose(outputSkew, expected.get("w_skew")[:, 0])
         except AssertionError as e:
             raise AssertionError(f"fixed_point_alg failed to return the expected seperation vector using the skew contrast func:\n{e}")
 
-        contrastFunc = 1 # kurtosis
-        expectedKurtosis = 42
-        outputKurtosis = fixed_point_alg(initialWeights, seperationMatrix, whitenedSignal, contrastFunc, None)
+        outputKurtosis = fixed_point_alg(expected.get("w"), expected.get("B"), expected.get("X"), "kurtosis")
         try:
-            npt.assert_array_equal(outputKurtosis, expectedKurtosis)
+            npt.assert_allclose(outputKurtosis, expected.get("w_kurtosis")[:, 0])
         except AssertionError as e:
             raise AssertionError(f"fixed_point_alg failed to return the expected seperation vector using the kurtosis contrast func:\n{e}")
 
-        contrastFunc = 2 # logcosh
-        expectedLogcosh = 42
-        outputLogcosh = fixed_point_alg(initialWeights, seperationMatrix, whitenedSignal, contrastFunc, None)
+        outputLogcosh = fixed_point_alg(expected.get("w"), expected.get("B"), expected.get("X"), "logcosh")
         try:
-            npt.assert_array_equal(outputLogcosh, expectedLogcosh)
+            npt.assert_allclose(outputLogcosh, expected.get("w_logcosh")[:, 0])
         except AssertionError as e:
             raise AssertionError(f"fixed_point_alg failed to return the expected seperation vector using the logcosh contrast func:\n{e}")
 
@@ -373,6 +361,7 @@ if __name__ == '__main__':
     suite.addTest(Test20MVCfile('testDemean'))
     #suite.addTest(Test20MVCfile('testpcaesig'))
     #suite.addTest(Test20MVCfile('testWhitenEMG'))
+    suite.addTest(Test20MVCfile('testFixedPointAlg'))
     suite.addTest(Test20MVCfile('testGetSpikes'))
     suite.addTest(Test20MVCfile('testMinCovISI'))
     
