@@ -92,11 +92,10 @@ class PlotEMGToolDialog(QDialog):
         filter_row_layout.addLayout(dropdown_col)
         layout.addLayout(filter_row_layout)
 
-        # --- Plot EMGsig and REFsig Buttons (vertical) and Channel Input (side by side) ---
+        # --- Plot EMGsig and REFsig Buttons and Channel Input  ---
         button_col = QVBoxLayout()
         emgsig_btn = GeneralButton("Plot EMGsig", self.handle_emgsig_clicked, parent=self)
         refsig_btn = GeneralButton("Plot REFsig", self.handle_refsig_clicked, parent=self)
-        # Set both buttons to the same width (use the max of their size hints)
         max_width = max(emgsig_btn.sizeHint().width(), refsig_btn.sizeHint().width())
         emgsig_btn.setFixedWidth(max_width)
         refsig_btn.setFixedWidth(max_width)
