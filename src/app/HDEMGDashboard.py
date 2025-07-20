@@ -94,6 +94,11 @@ class HDEMGDashboard(QMainWindow):
             if hasattr(self.import_data_page, "fileImported"):
                 self.import_data_page.fileImported.connect(self.handle_file_imported)
 
+        if DecompositionApp:
+            self.decomposition_page = DecompositionApp()
+            self.decomposition_page.setWindowFlags(getattr(Qt.WindowType, "Widget"))
+
+
         # Note: Manual Editing page is now created after setup_ui in __init__
 
     def handle_file_imported(self, file_info):
@@ -503,6 +508,8 @@ class HDEMGDashboard(QMainWindow):
             
             # Update UI elements
             decomp_app.edit_field.setText("Restored previous decomposition")
+            decomp_app.save_output_button.setEnabled(True)
+            decomp_app.next_button.setEnabled(True)
             decomp_app.status_text.setText("Complete")
             decomp_app.status_progress.setValue(100)
             
@@ -532,7 +539,6 @@ class HDEMGDashboard(QMainWindow):
             
             # Enable buttons
             decomp_app.start_button.setEnabled(True)
-            decomp_app.save_output_button.setEnabled(True)
             decomp_app.channel_view_button.setEnabled(True if decomp_app.emg_obj else False)
             
             # Create a wrapper widget to hold the DecompositionApp
