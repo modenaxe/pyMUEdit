@@ -187,8 +187,7 @@ class MUeditManual(QMainWindow):
             self.pathname = os.path.dirname(file_path) + "/"
             self.filename = os.path.basename(file_path)
             self.file_path_field.setText(self.filename)
-            display_name = self.filename if len(self.filename) <= 30 else self.filename[:27] + "..."
-            self.select_file_title_btn.setText(display_name)
+            self.select_file_title_btn.setText(self.filename)
 
             self.import_data()
 
@@ -204,7 +203,7 @@ class MUeditManual(QMainWindow):
 
         # Wrong Format
         if not self.filename.lower().endswith(".mat"):
-            QMessageBox.critical(self, "File Format Error","Selected file is not a valid .mat file.\nPlease choose a .mat file.")
+            ErrorDialog(title="File Format Error", text="Selected file is not a valid .mat file.\nPlease choose a .mat file.")
             return
 
         try:
@@ -269,9 +268,9 @@ class MUeditManual(QMainWindow):
             self.update_plot_limits()
 
         except KeyError as ke:
-            QMessageBox.critical(self, "Missing Field", f"The .mat file is missing required fields:\n{ke}")
+            ErrorDialog(title="Missing Field", text=f"The .mat file is missing required fields:\n{ke}")
         except Exception as e:
-            QMessageBox.critical(self, "Import Error", f"Failed to load the file:\n{str(e)}")
+            ErrorDialog(title="Import Error", text=f"Failed to load the file:\n{str(e)}")
 
         QApplication.restoreOverrideCursor()    #还原鼠标
         #origial error print
@@ -2432,8 +2431,8 @@ class MUeditManual(QMainWindow):
 
         # Show a confirmation message
         from PyQt5.QtWidgets import QMessageBox
-
-        QMessageBox.information(self, "Save Complete", f"Data saved to {savename}", QMessageBox.Ok)
+        #QMessageBox.information(self, "Save Complete", f"Data saved to {savename}", QMessageBox.Ok)
+        SuccessDialog(title="Save Complete", text=f"Data saved to:\n{savename}")
     
     def clear_layout(self, layout):
         while layout.count():
