@@ -611,15 +611,9 @@ class FileUploadFunc:
 
         # the actual plotting 
         canvas = SaveablePlot(fig)
-<<<<<<< HEAD:src/app/FileUploadFunc.py
-        center_panel.removeWidget(self.canvas)
-        self.canvas.setParent(None)
-        center_panel.addWidget(canvas)
-        self.canvas = canvas
+        analysis_plot.display_fig(canvas)
+
 
     def updateEMGFile(self, emgfile):
-        print(f"updating original file")
-        FileUploadFunc.file = emgfile
-=======
-        analysis_plot.display_fig(canvas)
->>>>>>> de6f2ddd347941d91af90629f39bd900e4cbd7f1:src/app/muAnalysisFunctions/FileUploadFunc.py
+            print(f"updating original file")
+            FileUploadFunc.file = emgfile

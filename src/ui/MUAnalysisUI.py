@@ -186,7 +186,7 @@ class MUAnalysis(QWidget):
         sidebar_layout.addWidget(title_label)
 
         # sort MUs
-        sort_MUs = SortMUs(self.mu, self.center, parent=sidebar)
+        sort_MUs = SortMUs(self.mu, self.analysis_plot, parent=sidebar)
         sidebar_layout.addWidget(sort_MUs)
         
         # signal editing 
