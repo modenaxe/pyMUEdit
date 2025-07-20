@@ -818,7 +818,7 @@ class MUeditManual(QMainWindow):
                 scatter = pg.ScatterPlotItem()
 
                 # Find local maxima around each discharge time
-                window_size = 10
+                window_size = 3
                 x_values = []
                 y_values = []
 
