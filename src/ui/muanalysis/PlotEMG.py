@@ -92,11 +92,18 @@ class PlotEMGToolDialog(QDialog):
         filter_row_layout.addLayout(dropdown_col)
         layout.addLayout(filter_row_layout)
 
-        # --- Plot EMGsig Button and Channel Input (side by side) ---
-        emg_row_layout = QHBoxLayout()
+        # --- Plot EMGsig and REFsig Buttons (vertical) and Channel Input (side by side) ---
+        button_col = QVBoxLayout()
         emgsig_btn = GeneralButton("Plot EMGsig", self.handle_emgsig_clicked, parent=self)
-        emg_row_layout.addWidget(emgsig_btn)
+        refsig_btn = GeneralButton("Plot REFsig", self.handle_refsig_clicked, parent=self)
+        # Set both buttons to the same width (use the max of their size hints)
+        max_width = max(emgsig_btn.sizeHint().width(), refsig_btn.sizeHint().width())
+        emgsig_btn.setFixedWidth(max_width)
+        refsig_btn.setFixedWidth(max_width)
+        button_col.addWidget(emgsig_btn)
+        button_col.addWidget(refsig_btn)
 
+        channel_col = QVBoxLayout()
         self.channel_input = QLineEdit()
         self.channel_input.setPlaceholderText("Channel Number (e.g. 1-3,5,7)")
         self.channel_input.setFont(QFont("Arial", 11))
@@ -104,7 +111,12 @@ class PlotEMGToolDialog(QDialog):
         self.channel_input.setStyleSheet("""
             QLineEdit { padding: 8px; border: 2px solid #ced4da; border-radius: 6px; background-color: #ffffff; color: #212529; }
         """)
-        emg_row_layout.addWidget(self.channel_input)
+        channel_col.addWidget(self.channel_input)
+        channel_col.addStretch(1)
+
+        emg_row_layout = QHBoxLayout()
+        emg_row_layout.addLayout(button_col)
+        emg_row_layout.addLayout(channel_col)
         layout.addLayout(emg_row_layout)
 
     def has_invalid_filter_inputs(self):
@@ -145,6 +157,20 @@ class PlotEMGToolDialog(QDialog):
             ErrorDialog('Invalid channel input', 'Error').exec_()
         except Exception as e:
             ErrorDialog('Error plotting EMG', 'Error').exec_()
+
+    def handle_refsig_clicked(self):
+        emgfile = FileUploadFunc.file
+        if emgfile is None:
+            ErrorDialog('No file has been loaded', 'Error').exec_()
+            return
+        try:
+            FileUploadFunc().plot_refsig(
+                emgfile=emgfile,
+                analysis_plot=self.analysis_plot,
+                timeinseconds=self.time_seconds_checkbox.isChecked()
+            )
+        except Exception as e:
+            ErrorDialog('Error plotting REFsig', 'Error').exec_()
 
 
 # TL : useless after W18ABANANA-37-center-plots
