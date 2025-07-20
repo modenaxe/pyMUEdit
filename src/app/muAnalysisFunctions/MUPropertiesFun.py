@@ -277,8 +277,6 @@ class MUPropertiesFunc:
         NUMBER_OF_MUS = emgfile["NUMBER_OF_MUS"]
         MUPULSES = emgfile["MUPULSES"]
         REF_SIGNAL = emgfile["REF_SIGNAL"]
-        
-        print(f"no mus{NUMBER_OF_MUS}, mupulses{MUPULSES}, refsig{REF_SIGNAL}")
 
         # Check that all the inputs are correct
         if event_ not in ["rt_dert", "rt", "dert"]:
@@ -313,7 +311,6 @@ class MUPropertiesFunc:
                 mup_derec = MUPULSES[mu][-n_firings:]
                 # Calculate absolute and relative RT and DERT if requested
                 abs_RT = (float(REF_SIGNAL.iloc[mup_rec, 0].mean()) * mvc) / 100
-                print(f"hi{abs_RT}, mvc {mvc}")
                 abs_DERT = (float(REF_SIGNAL.iloc[mup_derec, 0].mean()) * mvc) / 100
                 rel_RT = float(REF_SIGNAL.iloc[mup_rec, 0].mean())
                 rel_DERT = float(REF_SIGNAL.iloc[mup_derec, 0].mean())
@@ -356,7 +353,7 @@ class MUPropertiesFunc:
         self.results.append_analysis_hist(
             "MUs Thresholds", mus_thresholds.to_dict("records")
         )
-        print(mus_thresholds)
+        
         return mus_thresholds
 
     def compute_dr(
