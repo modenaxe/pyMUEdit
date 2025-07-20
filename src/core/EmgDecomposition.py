@@ -355,16 +355,6 @@ class offline_EMG(EMG):
         Z = np.array(self.decomp_dict["whitened_obvs"][interval]).copy()
         time_axis = np.linspace(0, np.shape(Z)[1], np.shape(Z)[1]) / self.signal_dict["fsamp"]
 
-        # Choose contrast function
-        if cf_type == "square":
-            cf, dot_cf = square, dot_square
-        elif cf_type == "skew":
-            cf, dot_cf = skew, dot_skew
-        elif cf_type == "exp":
-            cf, dot_cf = exp, dot_exp
-        elif cf_type == "logcosh":
-            cf, dot_cf = logcosh, dot_logcosh
-
         for i in range(self.its):
 
             #################### FIXED POINT ALGORITHM #################################
@@ -391,7 +381,7 @@ class offline_EMG(EMG):
 
             # use the fixed point algorithm to identify consecutive separation vectors
             self.decomp_dict["w_sep_vect"] = fixed_point_alg(
-                self.decomp_dict["w_sep_vect"], self.decomp_dict["B_sep_mat"], Z, cf, dot_cf, fpa_its
+                self.decomp_dict["w_sep_vect"], self.decomp_dict["B_sep_mat"], Z, cf_type, fpa_its
             )
 
             # get the first iteration of spikes using k means ++
