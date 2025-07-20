@@ -5,6 +5,7 @@ import pandas as pd
 from core.utils.config_and_input.segmenttargets import segmenttargets
 import pyqtgraph as pg
 import matplotlib.cm as cm
+import scipy.io as sio
 
 from ui.components import ActionButton
 from ui.components.CleanTheme import CleanTheme
@@ -15,13 +16,14 @@ from ui.components.FormSpinBox import FormSpinBox
 from .VisualizationPanel import VisualizationPanel
 
 class SegmentSessionPage(QWidget):
-    def __init__(self, emg_obj, parent=None):
+    def __init__(self, emg_obj, filename, parent=None):
         super().__init__(parent)
         self.emg_obj = emg_obj
         self.rois = []
         self.coordinates = []
         self.data = {"data": [], "auxiliary": [], "target": [], "path": []}
-
+        self.filename = filename
+        self.file = sio.loadmat(filename)
         self.setMinimumSize(1024, 700)
 
         # left panel
@@ -65,14 +67,14 @@ class SegmentSessionPage(QWidget):
         left_layout.addWidget(segmentation_param_panel)
 
         # concatenate button
-        concat_button = ActionButton("Concatenate", primary=False)
-        concat_button.clicked.connect(self.concat_clicked)
-        left_layout.addWidget(concat_button)
+        self.concat_button = ActionButton("Concatenate", primary=False)
+        self.concat_button.clicked.connect(self.concat_clicked)
+        left_layout.addWidget(self.concat_button)
 
         # split button
-        split_button = ActionButton("Split", primary=False)
-        split_button.clicked.connect(self.split_clicked)
-        left_layout.addWidget(split_button)
+        self.split_button = ActionButton("Split", primary=False)
+        self.split_button.clicked.connect(self.split_clicked)
+        left_layout.addWidget(self.split_button)
 
         # add gap between controls and done button
         left_layout.addStretch()
@@ -108,8 +110,12 @@ class SegmentSessionPage(QWidget):
     # Create the dropdown signal reference options
     def generate_signal_reference_options(self):
         options = ["EMG amplitude"]
+        # print("IN GENERATE SIGNAL REFS")
+        # print(self.file)
         for name in self.emg_obj.signal_dict["auxiliaryname"]:
+            # print(name)
             options.append(name)
+        # print("=======================================")
         return options
 
     def on_reference_signal_change(self):
@@ -221,10 +227,71 @@ class SegmentSessionPage(QWidget):
         on_roi_change()
 
     def concat_clicked(self):
-        self.close()
+        self.data["data"] = []
+        self.data["auxiliary"] = []
+        self.data["target"] = []
+        self.data["path"] = []
+
+        signal = self.emg_obj.signal_dict
+        num_segments = len(self.coordinates) // 2
+        for i in range(num_segments):
+            start = self.coordinates[i * 2]
+            end = self.coordinates[i * 2 + 1]
+            self.data["data"].append(signal["data"][:, start:end])
+            self.data["auxiliary"].append(signal["auxiliary"][:, start:end])
+            self.data["target"].append(signal["target"][start:end])
+
+        self.data["data"] = np.hstack(self.data["data"])
+        self.data["auxiliary"] = np.hstack(self.data["auxiliary"])
+        self.data["target"] = np.hstack(self.data["target"])
+
+        signal["data"] = self.data["data"]
+        signal["auxiliary"] = self.data["auxiliary"]
+        signal["target"] = self.data["target"]
+        signal["path"] = signal["target"]
+
+        self.vis_plot.clear()
+        # Update plot
+        self.vis_plot.plot(signal["target"], pen=pg.mkPen(color=(0.95, 0.95, 0.95), width=2))
+
+        # Disable split and concat buttons
+        self.concat_button.setEnabled(False)
+        self.split_button.setEnabled(False)
+
+        # Save updated file
+        sio.savemat(self.filename, {"signal": signal}, do_compression=True)
 
     def split_clicked(self):
-        self.close()
+        signal = self.emg_obj.signal_dict
+        num_segments = len(self.coordinates) // 2
+
+        for i in range(num_segments):
+            start = self.coordinates[i * 2]
+            end = self.coordinates[i * 2 + 1]
+
+            # Extract segments
+            self.data["data"].append(signal["data"][:, start:end])
+            self.data["auxiliary"].append(signal["auxiliary"][:, start:end])
+            self.data["target"].append(signal["target"][start:end])
+            self.data["path"].append(signal["target"][i])
+
+            signal["data"] = self.data["data"][i]
+            signal["auxiliary"] = self.data["auxiliary"][i]
+            signal["target"] = self.data["target"][i]
+            signal["path"] = self.data["path"][i]
+
+            # Save the segment into a .mat file
+            save_filename = f"{self.filename}_{i + 1}.mat"
+            sio.savemat(save_filename, {"signal": signal}, do_compression=True)
+
+        self.vis_plot.clear()
+        # Update plot to be the first segment
+        self.vis_plot.plot(self.data["target"][0], pen=pg.mkPen(color=(0.95, 0.95, 0.95), width=2))
+
+        # Disable split and concat buttons
+        self.concat_button.setEnabled(False)
+        self.split_button.setEnabled(False)
+
 
     def done_clicked(self):
         self.close()
