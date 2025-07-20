@@ -7,7 +7,7 @@ from PyQt5.QtCore import Qt
 import os
 
 class SuccessDialog(QDialog):
-    def __init__(self, title="Success!", text="Please change text."):
+    def __init__(self, title_label="Success!", text="Please change text."):
         super().__init__()
         self.setWindowTitle("Success")
         #self.setFixedSize(350, 280)
@@ -34,7 +34,7 @@ class SuccessDialog(QDialog):
         layout.addWidget(icon_label)
 
         # title
-        title = QLabel(title)
+        title = QLabel(title_label)
         title.setAlignment(Qt.AlignCenter)
         title.setStyleSheet("font-size: 18px; font-weight: bold; color: #222;")
         layout.addWidget(title)

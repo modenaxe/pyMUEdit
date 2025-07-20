@@ -6,17 +6,19 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 import os
 
-class WarningDialog(QDialog):
-    def __init__(self, title_label="Warning", text="This is a warning Pop-up box. "
-                         "Please change text.\n"
-                         "Are you sure you want to continue?", enableCheckBox=True, checkBoxText="Don't ask again",
-                         enableHelpButton=True, HelpButtonTip="Click for help"):
+class MessageDialog(QDialog):
+    def __init__(self, title_label="Question", text="Do you want to continue? "
+                        , enableCheckBox=True, checkBoxText="Remember my choice\nand don't ask again. ",
+                        enableHelpButton=True, HelpButtonTip="Click for help"):
         super().__init__()
-        self.setWindowTitle("Warning")
+        self.setWindowTitle("Question")
         self.setFixedSize(350, 290)
         self.setWindowFlags(Qt.Dialog | Qt.MSWindowsFixedSizeDialogHint)
 
+        self.user_clicked_no = False
+        self.user_closed_window = False
         self.checkbox_selected = False
+        self.enableCheckBox = enableCheckBox
 
         # Layout
         layout = QVBoxLayout()
@@ -46,15 +48,15 @@ class WarningDialog(QDialog):
             help_row.addWidget(help_button)
             layout.addLayout(help_row)
 
-        # ⚠️ icon
+        # ❓ icon
         icon_label = QLabel()
         current_dir = os.path.dirname(__file__)
-        icon_path = os.path.join(current_dir, "../../public/warning_icon.png")
+        icon_path = os.path.join(current_dir, "../../public/question_icon.png")
         pixmap = QPixmap(icon_path)
         if not os.path.exists(icon_path) or not pixmap or pixmap.isNull():
-            icon = self.style().standardIcon(QStyle.SP_MessageBoxWarning)
+            icon = self.style().standardIcon(QStyle.SP_MessageBoxQuestion)
             icon_label.setPixmap(icon.pixmap(48, 48))
-            print("⚠️ Image not found")
+            print("❓ Image not found")
         else:
             icon_label.setPixmap(pixmap.scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation))
 
@@ -70,7 +72,7 @@ class WarningDialog(QDialog):
         # Description text
         message = QLabel(text)
         message.setWordWrap(True)
-        message.setStyleSheet("font-size: 13px; color: #333;")
+        message.setStyleSheet("font-size: 18px; color: #333;")
         message.setAlignment(Qt.AlignHCenter)
         layout.addWidget(message)
 
@@ -79,11 +81,27 @@ class WarningDialog(QDialog):
         yes_button.setFixedHeight(30)
         yes_button.setStyleSheet("background-color: #007aff; color: white; border-radius: 6px; font-weight: bold;")
         yes_button.clicked.connect(self.handle_yes_clicked)
-        layout.addWidget(yes_button)
+
+        # No button
+        no_button = QPushButton("No")
+        no_button.setFixedHeight(30)
+        no_button.setStyleSheet("background-color: #ccc; color: black; border-radius: 6px; font-weight: bold;")
+        yes_button.setFixedWidth(120)
+        no_button.clicked.connect(self.handle_no_clicked)
+        
+        # Button layout
+        button_row = QHBoxLayout()
+        button_row.addStretch()
+        button_row.addWidget(yes_button)
+        button_row.addWidget(no_button)
+        button_row.addStretch()
+        no_button.setFixedWidth(120)
+        layout.addLayout(button_row)
 
         # “Don't ask again” checkbox
         if(enableCheckBox):
             self.checkbox = QCheckBox(checkBoxText)
+            self.checkbox.setStyleSheet("QCheckBox { font-size: 8pt; }")
             checkbox_layout = QHBoxLayout()
             checkbox_layout.addStretch()
             checkbox_layout.addWidget(self.checkbox)
@@ -92,14 +110,22 @@ class WarningDialog(QDialog):
 
         self.setLayout(layout)
 
-        self.exec_()
-    
     def handle_yes_clicked(self):
         if self.enableCheckBox and self.checkbox.isChecked():
             self.checkbox_selected = True
         else:
             self.checkbox_selected = False
         self.accept()
+
+    def handle_no_clicked(self):
+        self.user_clicked_no = True
+        if self.enableCheckBox and self.checkbox.isChecked():
+            self.checkbox_selected = True
+        self.reject()
+
+    def closeEvent(self, event):
+        self.user_closed_window = True
+        super().closeEvent(event)
 
 
 
