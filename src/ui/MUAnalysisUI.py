@@ -19,17 +19,20 @@ from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from core.muAnalysisCore.AnalysisResultsHist import store
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
+from app.muAnalysisFunctions.ResizeFunc import Resize
 from app.ExportResults import ExportResultsWindow
 from ui.muanalysis.AdvancedTools import AdvancedTools
 from ui.muanalysis.MotorUnitProperties import MotorUnitPropertiesButton
 from ui.muanalysis.PlotEMG import PlotEMGButton
 from ui.muanalysis.SignalEditing import SignalEditing
 from ui.components.muAnalysisComponents.AnalysisPlot import AnalysisPlot
-from ui.components.muAnalysisComponents.AnalysisText import AnalysisText 
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.MajorHeading import MajorHeading
+from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.muanalysis.FileSection import FileSection
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.muanalysis.SortMUs import SortMUs
+from ui.muanalysis.RemoveMUSection import RemoveMUSection
 
 from ui.muanalysis.ResultsPanel import ResultsPanel
 
@@ -37,10 +40,13 @@ from core.muAnalysisCore.AnalysisResultsHist import store
 from core.muAnalysisCore.ResultsTable import ResultsTable
 from ui.components.muAnalysisComponents.ResultSelection import ResultSelection
 
+
 # legacy code
 def get_icon(standard_icon):
     """Helper function to get standard icons safely."""
-    return QApplication.style().standardIcon(getattr(QStyle, standard_icon))  # type:ignore
+    return QApplication.style().standardIcon(
+        getattr(QStyle, standard_icon)
+    )  # type:ignore
 
 
 class MUAnalysis(QWidget):
@@ -83,13 +89,13 @@ class MUAnalysis(QWidget):
         self.content_layout = QHBoxLayout()
         self.content_layout.setContentsMargins(15, 15, 15, 15)
         self.content_layout.setSpacing(20)
-          
+
         self.content_layout.addWidget(self._create_left_sidebar(), stretch=1)
         self.content_layout.addWidget(self._create_center_area(), stretch=5)
         self.content_layout.addWidget(self._create_right_sidebar(), stretch=3)
-        self.widget_layout.addLayout(self.content_layout)  # Add main content below top bar
-        
-        
+        self.widget_layout.addLayout(
+            self.content_layout
+        )  # Add main content below top bar
 
     # legacy code
     def request_return_to_dashboard(self):
@@ -165,8 +171,8 @@ class MUAnalysis(QWidget):
         return top_bar
 
     # dropdown order for matrix code
-    # the border on the right sidebar 
-    # the dropdown names 
+    # the border on the right sidebar
+    # the dropdown names
     # global styling
     def _create_left_sidebar(self):
         sidebar = QFrame()
@@ -180,6 +186,8 @@ class MUAnalysis(QWidget):
         """
         )
         sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setContentsMargins(10, 10, 10, 10)
+        sidebar_layout.setSpacing(10)
 
         # title
         title_label = MajorHeading("Analysis")
@@ -190,15 +198,24 @@ class MUAnalysis(QWidget):
         sidebar_layout.addWidget(sort_MUs)
         
         # signal editing 
+        # remove mu section
+        remove_mu_section = RemoveMUSection(
+            self.mu, self.analysis_plot, self.colors, parent=sidebar
+        )
+        sidebar_layout.addWidget(remove_mu_section)
+
+        # signal editing
         signal_editing = SignalEditing(self.mu, self.analysis_plot, parent=sidebar)
         sidebar_layout.addWidget(signal_editing)
 
         # motor unit properties
-        motor_unit_properties = MotorUnitPropertiesButton(self.analysis_plot, parent=self)
+        motor_unit_properties = MotorUnitPropertiesButton(
+            self.analysis_plot, parent=self
+        )
         motor_unit_properties.mvc_updated.connect(self.prop.set_mvc)
         sidebar_layout.addWidget(motor_unit_properties)
         self.motor_unit_properties = motor_unit_properties
-        
+
         # plot emg button
         plot_emg_tools = PlotEMGButton(self.analysis_plot, parent=self)
         sidebar_layout.addWidget(plot_emg_tools)
@@ -217,38 +234,42 @@ class MUAnalysis(QWidget):
     def _create_center_area(self):
         center = QFrame()
         center.setObjectName("centerContent")
-        center_layout = QVBoxLayout(center)        
-        
-        # code to test the result table
-        # can be refered to when implimenting real data
-        dummy_button = QPushButton("Dummy")
-        dummy_button.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {self.colors['button_grey_bg']};
-                border-radius: 15px;
-                padding: 0px;
-                height: 40%;
-                
-            }}
-            QPushButton:hover {{
-                background-color: {self.colors['button_dark_hover']};
-            }}
-        """
-        )
-        
-        # result need to be an list of dictionaries with consistent keys
-        # refer to the code below to append the results
-        table = {
-            "col": 42,
-            "timestamp": time.time()
-        }
-        title = "table " 
-        dummy_button.clicked.connect(lambda: self.calc_result(title, [table]))
-        center_layout.addWidget(dummy_button)
+        center_layout = QVBoxLayout(center)
 
+        # # code to test the result table
+        # # can be refered to when implimenting real data
+        # dummy_button = QPushButton("Dummy")
+        # dummy_button.setStyleSheet(
+        #     f"""
+        #     QPushButton {{
+        #         background-color: {self.colors['button_grey_bg']};
+        #         border-radius: 15px;
+        #         padding: 0px;
+        #         height: 40%;
+
+        #     }}
+        #     QPushButton:hover {{
+        #         background-color: {self.colors['button_dark_hover']};
+        #     }}
+        # """
+        # )
+
+        # # result need to be an list of dictionaries with consistent keys
+        # # refer to the code below to append the results
+        # table = {
+        #     "col": 42,
+        #     "timestamp": time.time()
+        # }
+        # title = "table "
+        # dummy_button.clicked.connect(lambda: self.calc_result(title, [table]))
+        # center_layout.addWidget(dummy_button)
+
+        resize_file = Resize(self.mu, self.analysis_plot)
+        resize_btn = GeneralButton("Resize", lambda: resize_file.resize(resize_btn))
+        center_layout.addWidget(resize_btn)
+        self.analysis_plot.set_reseize(resize_btn)
         center_layout.addWidget(self.analysis_plot)
-        
+
         return center
 
     # side bar with load file button
@@ -271,14 +292,15 @@ class MUAnalysis(QWidget):
             lambda: self.mu.handle_reset_workflow(self.analysis_plot)
         )
         results_section = ResultsPanel(sidebar, self.result_combo, self.results_table)
-        
+
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.addWidget(file_section, stretch=1)
         sidebar_layout.addWidget(results_section, stretch=4)
         return sidebar
-    
+
     def calc_result(self, title="title", data=[{}]):
         self.data.append_analysis_hist(title, data)
+
 
 # --- Main execution block (for testing) ---
 # legacy code

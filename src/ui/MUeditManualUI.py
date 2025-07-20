@@ -213,8 +213,12 @@ def create_mu_selection_tab(main_window):
     mu_layout.addWidget(mu_scroll_area)
 
     # Add flag button in the MU selection tab
-    main_window.flag_mu_btn = ActionButton("Flag selected MU(s) for deletion", primary=False)
-    main_window.flag_mu_btn.clicked.connect(main_window.flag_mu_for_deletion_button_pushed)
+    main_window.flag_mu_btn = ActionButton(
+        "Flag selected MU(s) for deletion", primary=False
+    )
+    main_window.flag_mu_btn.clicked.connect(
+        main_window.flag_mu_for_deletion_button_pushed
+    )
     mu_layout.addWidget(main_window.flag_mu_btn)
 
     return mu_tab
@@ -237,8 +241,14 @@ def create_batch_processing_tab(main_window):
         ("1 - Remove all the outliers", main_window.remove_all_outliers_button_pushed),
         ("2 - Update all MU filters", main_window.update_all_mu_filters_button_pushed),
         ("3 - Remove flagged MU", main_window.remove_flagged_mu_button_pushed),
-        ("4 - Remove duplicates within grids", main_window.remove_duplicates_within_grids_button_pushed),
-        ("5 - Remove duplicates between grids", main_window.remove_duplicates_between_grids_button_pushed),
+        (
+            "4 - Remove duplicates within grids",
+            main_window.remove_duplicates_within_grids_button_pushed,
+        ),
+        (
+            "5 - Remove duplicates between grids",
+            main_window.remove_duplicates_between_grids_button_pushed,
+        ),
     ]
 
     for text, handler in button_configs:
@@ -297,7 +307,9 @@ def create_visualization_tab(main_window):
         }}
         """
     )
-    main_window.reference_dropdown.currentIndexChanged.connect(main_window.reference_dropdown_value_changed)
+    main_window.reference_dropdown.currentIndexChanged.connect(
+        main_window.reference_dropdown_value_changed
+    )
 
     main_window.sil_checkbox = QCheckBox("SIL")
     main_window.sil_checkbox.setStyleSheet(
@@ -317,7 +329,9 @@ def create_visualization_tab(main_window):
         }}
         """
     )
-    main_window.sil_checkbox.stateChanged.connect(main_window.sil_checkbox_value_changed)
+    main_window.sil_checkbox.stateChanged.connect(
+        main_window.sil_checkbox_value_changed
+    )
 
     ref_layout.addWidget(reference_label)
     ref_layout.addWidget(main_window.reference_dropdown, 1)  # 1 is stretch factor
@@ -330,12 +344,20 @@ def create_visualization_tab(main_window):
     button_panel = CollapsiblePanel("Plot Options")
 
     # Add plot buttons to the panel
-    main_window.plot_spiketrains_btn = ActionButton("Plot MU spike trains", primary=False)
-    main_window.plot_spiketrains_btn.clicked.connect(main_window.plot_mu_spiketrains_button_pushed)
+    main_window.plot_spiketrains_btn = ActionButton(
+        "Plot MU spike trains", primary=False
+    )
+    main_window.plot_spiketrains_btn.clicked.connect(
+        main_window.plot_mu_spiketrains_button_pushed
+    )
     button_panel.add_widget(main_window.plot_spiketrains_btn)
 
-    main_window.plot_firingrates_btn = ActionButton("Plot MU firing rates", primary=False)
-    main_window.plot_firingrates_btn.clicked.connect(main_window.plot_mu_firingrates_button_pushed)
+    main_window.plot_firingrates_btn = ActionButton(
+        "Plot MU firing rates", primary=False
+    )
+    main_window.plot_firingrates_btn.clicked.connect(
+        main_window.plot_mu_firingrates_button_pushed
+    )
     button_panel.add_widget(main_window.plot_firingrates_btn)
 
     viz_layout.addWidget(button_panel)
@@ -379,7 +401,9 @@ def setup_display_panel(main_window):
     CleanScrollBar.apply(plots_scroll_area)
 
     main_window.plots_container = QWidget()
-    main_window.plots_container.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
+    main_window.plots_container.setStyleSheet(
+        f"background-color: {CleanTheme.BG_CARD};"
+    )
     main_window.plots_layout = QVBoxLayout(main_window.plots_container)
     main_window.plots_layout.setContentsMargins(0, 0, 0, 0)
     main_window.plots_layout.setSpacing(10)
@@ -388,7 +412,9 @@ def setup_display_panel(main_window):
 
     # Create the plots with a helper function
     main_window.sil_plot = create_plot_widget("SIL", "")
-    main_window.sil_plot.setVisible(False)  # Initially hidden until SIL checkbox is checked
+    main_window.sil_plot.setVisible(
+        False
+    )  # Initially hidden until SIL checkbox is checked
 
     main_window.spiketrain_plot = create_plot_widget("Pulse train (au)", "Time (s)")
     main_window.dr_plot = create_plot_widget("Discharge rate (pps)", "Time (s)")
@@ -421,9 +447,21 @@ def setup_display_panel(main_window):
         ("Delete spikes", main_window.delete_spikes_button_pushed, "delete_spikes_btn"),
         ("Delete DR", main_window.delete_dr_button_pushed, "delete_dr_btn"),
         ("Lock spikes", main_window.lock_spikes_button_pushed, "lock_spikes_btn"),
-        ("Update MU filter", main_window.update_mu_filter_button_pushed, "update_mu_filter_btn"),
-        ("Extend MU filter", main_window.extend_mu_filter_button_pushed, "extend_mu_filter_btn"),
-        ("Remove outliers", main_window.remove_outliers_button_pushed, "remove_outliers_single_btn"),
+        (
+            "Update MU filter",
+            main_window.update_mu_filter_button_pushed,
+            "update_mu_filter_btn",
+        ),
+        (
+            "Extend MU filter",
+            main_window.extend_mu_filter_button_pushed,
+            "extend_mu_filter_btn",
+        ),
+        (
+            "Remove outliers",
+            main_window.remove_outliers_button_pushed,
+            "remove_outliers_single_btn",
+        ),
         ("Undo", main_window.undo_button_pushed, "undo_btn"),
     ]
 
@@ -502,7 +540,9 @@ def create_plot_widget(y_label, x_label=""):
     return plot
 
 
-def create_mu_checkbox(main_window, array_idx, mu_idx, text, sil_value, is_checked=False):
+def create_mu_checkbox(
+    main_window, array_idx, mu_idx, text, sil_value, is_checked=False
+):
     """Helper function to create a styled checkbox for motor unit selection."""
     checkbox = QCheckBox(text)
     checkbox.setStyleSheet(
