@@ -3,16 +3,15 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QLineEdit,
-    QMessageBox,
     QLabel,
     QFrame,
 )
-from ui.components import ActionButton, CleanTheme
-from PyQt5.QtGui import QFont
+from ui.components import ActionButton
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme as AnalysisTheme
 from PyQt5.QtCore import Qt
 
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
+from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 
 
 class RemoveMUSection(QWidget):
@@ -24,15 +23,11 @@ class RemoveMUSection(QWidget):
         self.init_ui()
 
     def init_ui(self):
-        # Use a container QFrame for consistent sidebar alignment
         container = QFrame()
         container_layout = QVBoxLayout(container)
-        container_layout.setContentsMargins(
-            10, 10, 10, 10
-        )  # 10px left/right to match sidebar
+        container_layout.setContentsMargins(10, 10, 10, 10)
         container_layout.setSpacing(8)
 
-        # Update heading to 'MU EDITING' and match sidebar heading formatting
         title_label = QLabel("MU EDITING")
         title_label.setStyleSheet(
             f"""
@@ -85,17 +80,17 @@ class RemoveMUSection(QWidget):
                 text-align: center;
                 font-size: 14px;
             }}
-            QPushButton:hover {{
-                background-color: {AnalysisTheme.ANALYSIS_TEXT_BUTTON};
-                color: {AnalysisTheme.ANALYSIS_BG_BUTTON};
-            }}
             """
         )
         remove_mu_layout.addWidget(self.remove_mu_confirm_btn)
 
+        self.remove_empty_mus_btn = GeneralButton(
+            "Remove empty MUs", lambda: self.remove_empty_mus(), parent=self
+        )
+        container_layout.addWidget(self.remove_empty_mus_btn)
+
         container_layout.addLayout(remove_mu_layout)
 
-        # Clear the main layout and add the container
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -111,11 +106,9 @@ class RemoveMUSection(QWidget):
             return
 
         try:
-            # Get the total number of motor units
             file = self.mu_analysis_func.file
             total_mus = file.get("NUMBER_OF_MUS", 0) if file else 0
 
-            # Parse the input to check for numbers exceeding the limit
             mus_to_check = []
             parts = input_text.split(",")
             for part in parts:
@@ -133,7 +126,6 @@ class RemoveMUSection(QWidget):
                     end_num = int(sub_parts[1])
                     mus_to_check.extend(range(start_num, end_num + 1))
 
-            # Check if any MU numbers exceed the total
             invalid_mus = [mu for mu in mus_to_check if mu > total_mus]
             if invalid_mus:
                 ErrorDialog(
@@ -143,7 +135,6 @@ class RemoveMUSection(QWidget):
                 return
 
             self.mu_analysis_func.remove_mus_by_range(input_text)
-            # After removing, replot the data to reflect the changes
             self.mu_analysis_func.plot_idr(
                 self.mu_analysis_func.file, self.analysis_plot
             )
@@ -153,3 +144,21 @@ class RemoveMUSection(QWidget):
                 "Invalid format:\n Expected format: '1 or 3-5'.",
                 "Invalid Input",
             ).exec_()
+
+    def remove_empty_mus(self):
+        if not self.mu_analysis_func.data_loaded():
+            ErrorDialog("No file has been loaded", "Error").exec_()
+            return
+
+        emgfile = self.mu_analysis_func.file
+        empty_mu_indices = [
+            i for i, pulses in enumerate(emgfile["MUPULSES"]) if len(pulses) == 0
+        ]
+        if not empty_mu_indices:
+            ErrorDialog("No empty MUs to remove.", "Info").exec_()
+            return
+
+        input_text = ",".join(str(i + 1) for i in empty_mu_indices)
+        self.mu_analysis_func.remove_mus_by_range(input_text)
+        self.mu_analysis_func.plot_idr(self.mu_analysis_func.file, self.analysis_plot)
+        self.mu_remove_input.clear()
