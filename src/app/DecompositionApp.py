@@ -25,7 +25,6 @@ from ui.components.VisualisationPage import VisualisationPage
 from workers.SaveMatWorker import SaveMatWorker
 from workers.DecompositionWorker import DecompositionWorker
 from core.utils.config_and_input.prepare_parameters import prepare_parameters
-from core.utils.config_and_input.segmentsession import SegmentSession
 from MUeditManual import MUeditManual
 
 
