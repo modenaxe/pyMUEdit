@@ -6,7 +6,6 @@ from PyQt5.QtWidgets import (
     QLabel,
     QProgressBar,
     QScrollArea,
-    QFrame,
     QApplication,
 )
 from PyQt5.QtCore import Qt
@@ -301,21 +300,6 @@ def setup_right_panel(main_window, parent_layout):
     status_group.add_field(main_window.status_text)
 
     right_layout.addWidget(status_group)
-
-    # Configuration buttons
-    config_group = SettingsGroup("Configuration")
-    main_window.set_configuration_button = ActionButton("Set Configuration", primary=False)
-    main_window.set_configuration_button.setEnabled(True)
-    config_group.add_field(main_window.set_configuration_button)
-
-    main_window.segment_session_button = ActionButton("Segment Session", primary=False)
-    main_window.segment_session_button.setEnabled(False)
-    config_group.add_field(main_window.segment_session_button)
-
-    main_window.channel_view_button = ActionButton("Channel Viewer", primary=False)
-    config_group.add_field(main_window.channel_view_button)
-
-    right_layout.addWidget(config_group)
 
     # Analysis Results group
     results_group = SettingsGroup("Analysis Results")
