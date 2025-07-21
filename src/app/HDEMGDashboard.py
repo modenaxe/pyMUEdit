@@ -26,6 +26,7 @@ class HDEMGDashboard(QMainWindow):
         self.mu_analysis_page = None
         self.manual_editing_page = None
         self.decomposition_page = None
+        self.decomp_app = None
 
         # Colors and recent items for demonstration
         self.colors = {
@@ -182,7 +183,7 @@ class HDEMGDashboard(QMainWindow):
             wrapper_layout.setContentsMargins(0, 0, 0, 0)
 
             # Create DecompositionApp instance
-            decomp_app = DecompositionApp(
+            self.decomp_app = DecompositionApp(
                 emg_obj=emg_obj,
                 filename=filename,
                 pathname=pathname,
@@ -192,14 +193,14 @@ class HDEMGDashboard(QMainWindow):
             )
 
             # Set window flags to make it a widget instead of a window
-            decomp_app.setWindowFlags(Qt.WindowType.Widget)
+            self.decomp_app.setWindowFlags(Qt.WindowType.Widget)
 
             # Add to layout
-            wrapper_layout.addWidget(decomp_app)
+            wrapper_layout.addWidget(self.decomp_app)
 
             # Connect back button to show import view
-            if hasattr(decomp_app, "back_to_import_btn"):
-                decomp_app.back_to_import_btn.clicked.connect(self.show_import_data_view)
+            if hasattr(self.decomp_app, "back_to_import_btn"):
+                self.decomp_app.back_to_import_btn.clicked.connect(self.show_import_data_view)
 
             # Replace the placeholder with our real decomposition view
             self.decomposition_page = wrapper

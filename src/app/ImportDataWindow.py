@@ -5,12 +5,11 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent
 import numpy as np
-import scipy.io as sio
 import pyqtgraph as pg
 
 # Import UI setup function
-from core.utils.config_and_input.segmentsession import SegmentSession
 from ui.ImportDataWindowUI import setup_ui
+from ui.components.SegmentSessionPage import SegmentSessionPage
 from ui.components.VisualisationPage import VisualisationPage
 
 # Ensure the current and project directories are in the system path
@@ -52,7 +51,9 @@ class ImportDataWindow(QMainWindow):
         self.file_size_bytes = None  # Store file size in bytes
         self.config = None # will be used to store configuration
 
+        # Config popup windows
         self.visualisation_page = None
+        self.segment_session = None
 
         # Create EMG object using the appropriate class
         temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp")
@@ -177,7 +178,7 @@ class ImportDataWindow(QMainWindow):
         self.failure_message.setVisible(False)
         self.file_info_label.setStyleSheet(f"color: #4CAF50; font-weight: bold;")
 
-        if ext == ".otb+":
+        if ext == ".otb+" or ext == ".mat":
             try:
                 # Construct the full file path
                 full_path = os.path.join(path, file)
@@ -188,21 +189,24 @@ class ImportDataWindow(QMainWindow):
                     os.makedirs(temp_dir)
                 self.emg_obj = EMG_offline_EMG(save_dir=temp_dir, to_filter=True)
 
-                # Call the open_otb_plus function with the correct parameters
-                self.emg_obj.open_otb_plus(full_path)
+                fsamp = []
+                if ext == ".otb+":
+                    # Call the open_otb_plus function with the correct parameters
+                    self.emg_obj.open_otb_plus(full_path)
 
-                # Get the signal from the EMG object
-                signal = self.emg_obj.signal_dict
+                    # Create a default save name for .mat files
+                    savename = os.path.join(path, file + "_processed.mat")
+
+                    # Save the data as a .mat file in the background
+                    if self.emg_obj.signal_dict:
+                        self.save_mat_in_background(savename, {"signal": self.emg_obj.signal_dict}, True, True)
+                elif ext == '.mat':
+                    # Call the open_otb_plus function with the correct parameters
+                    self.emg_obj.open_mat(full_path)
 
                 # Store the imported signal
+                signal = self.emg_obj.signal_dict
                 self.imported_signal = signal
-
-                # Create a default save name for .mat files
-                savename = os.path.join(path, file + "_processed.mat")
-
-                # Save the data as a .mat file in the background
-                if signal:
-                    self.save_mat_in_background(savename, {"signal": signal}, True)
 
                 # Load file data into the plot
                 if "data" in signal and "fsamp" in signal:
@@ -227,7 +231,9 @@ class ImportDataWindow(QMainWindow):
                         self.preview_plot.setTitle(f"Signal Preview ({num_preview_channels} channels)")
                     except Exception as e:
                         print(f"Error creating preview plot: {e}")
-                
+                else:
+                    print("Error cannot display data")
+
                 # Resize app window to show the plot properly, then display the plot in the preview pane
                 self.preview_stacked_frame.setCurrentIndex(PreviewElement.GRAPH.value)
                 self.next_btn.setEnabled(True)
@@ -239,12 +245,17 @@ class ImportDataWindow(QMainWindow):
                     "signal": signal,
                     "filesize": os.path.getsize(full_path)  # Get actual file size
                 }
-                
+
                 self.fileImported.emit(file_info)
 
                 self.set_configuration_button.setEnabled(True)
-                self.segment_session_button.setEnabled(True)
                 self.channel_view_button.setEnabled(True)
+
+                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj)
+
+                if ext == ".mat":
+                    self.segment_session = SegmentSessionPage(full_path)
+                    self.segment_session_button.setEnabled(True)
 
             except Exception as e:
                 self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
@@ -260,7 +271,7 @@ class ImportDataWindow(QMainWindow):
             self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
             self.failure_message.setVisible(True)
 
-    def save_mat_in_background(self, filename, data, compression=True):
+    def save_mat_in_background(self, filename, data, compression=True, processing=False):
         """Save data as .mat file in a background thread."""
         worker = SaveMatWorker(filename, data, compression)
         self.threads.append(worker)
@@ -268,12 +279,24 @@ class ImportDataWindow(QMainWindow):
         worker.finished.connect(lambda: self.on_save_finished(worker))
         worker.error.connect(lambda msg: self.on_save_error(worker, msg))
 
+        if processing:
+            # Ensure segment session cannot be accessed while this happens
+            self.segment_session_button.setEnabled(False)
+            worker.finished.connect(self.enable_segment_session)
+
         worker.start()
 
     def on_save_finished(self, worker):
         """Handle completion of background save."""
         print("Data saved successfully")
         self.cleanup_thread(worker)
+
+    def enable_segment_session(self):
+        if self.segment_session_button and self.pathname and self.filename:
+            filename = os.path.join(self.pathname, self.filename) + "_processed.mat"
+            self.segment_session = SegmentSessionPage(filename)
+
+            self.segment_session_button.setEnabled(True)
 
     def on_save_error(self, worker, error_msg):
         """Handle error in background save."""
@@ -364,46 +387,59 @@ class ImportDataWindow(QMainWindow):
         else:
             print("No configuration dialog available")
 
+    # def segment_session_button_pushed(self):
+    #     self.segment_session = SegmentSession()
+
+    #     if self.pathname is not None and self.filename is not None:
+    #         self.segment_session.pathname.setText(self.pathname + self.filename + "_decomp.mat")
+
+    #     # Setup the dropdown contents before setting the current item
+    #     self.segment_session.reference_dropdown.clear()
+
+    #     signal = self.emg_obj.signal_dict
+    #     if "auxiliaryname" in signal:
+    #         for name in signal["auxiliaryname"]:
+    #             self.segment_session.reference_dropdown.addItem(name)
+    #     elif "target" in signal:
+    #         path_data = signal["path"]
+    #         target_data = signal["target"]
+
+    #         if isinstance(path_data, np.ndarray) and isinstance(target_data, np.ndarray):
+    #             path_reshaped = path_data.reshape(1, -1) if path_data.ndim == 1 else path_data
+    #             target_reshaped = target_data.reshape(1, -1) if target_data.ndim == 1 else target_data
+    #             signal["auxiliary"] = np.vstack((path_reshaped, target_reshaped))
+    #         else:
+    #             signal["auxiliary"] = np.vstack((np.array([path_data]), np.array([target_data])))
+
+    #         signal["auxiliaryname"] = ["Path", "Target"]
+    #         self.segment_session.reference_dropdown.addItem("EMG amplitude")
+    #         for name in signal["auxiliaryname"]:
+    #             self.segment_session.reference_dropdown.addItem(name)
+    #     else:
+    #         self.segment_session.reference_dropdown.addItem("EMG amplitude")
+
+    #     try:
+    #         if self.segment_session.pathname.text():
+    #             self.segment_session.file = sio.loadmat(self.segment_session.pathname.text())
+    #     except Exception as e:
+    #         print(f"Warning: Could not load file: {e}")
+
+    #     # Set current text after file is loaded
+    #     self.segment_session.initialize_with_file()
+    #     self.segment_session.show()
+
     def segment_session_button_pushed(self):
-        self.segment_session = SegmentSession()
-
-        if self.pathname is not None and self.filename is not None:
-            self.segment_session.pathname.setText(self.pathname + self.filename + "_decomp.mat")
-
-        # Setup the dropdown contents before setting the current item
-        self.segment_session.reference_dropdown.clear()
-
-        signal = self.emg_obj.signal_dict
-        if "auxiliaryname" in signal:
-            for name in signal["auxiliaryname"]:
-                self.segment_session.reference_dropdown.addItem(name)
-        elif "target" in signal:
-            path_data = signal["path"]
-            target_data = signal["target"]
-
-            if isinstance(path_data, np.ndarray) and isinstance(target_data, np.ndarray):
-                path_reshaped = path_data.reshape(1, -1) if path_data.ndim == 1 else path_data
-                target_reshaped = target_data.reshape(1, -1) if target_data.ndim == 1 else target_data
-                signal["auxiliary"] = np.vstack((path_reshaped, target_reshaped))
-            else:
-                signal["auxiliary"] = np.vstack((np.array([path_data]), np.array([target_data])))
-
-            signal["auxiliaryname"] = ["Path", "Target"]
-            self.segment_session.reference_dropdown.addItem("EMG amplitude")
-            for name in signal["auxiliaryname"]:
-                self.segment_session.reference_dropdown.addItem(name)
-        else:
-            self.segment_session.reference_dropdown.addItem("EMG amplitude")
+        if not self.emg_obj or "data" not in self.emg_obj.signal_dict or not self.pathname or not self.filename:
+            self.edit_field.setText("No EMG data loaded for segment session.")
+            return
 
         try:
-            if self.segment_session.pathname.text():
-                self.segment_session.file = sio.loadmat(self.segment_session.pathname.text())
+            # Handle persistance - if segment session has already been opened,
+            # open the same panel (not a new instance)
+            if self.segment_session is not None:
+                self.segment_session.show()
         except Exception as e:
-            print(f"Warning: Could not load file: {e}")
-
-        # Set current text after file is loaded
-        self.segment_session.initialize_with_file()
-        self.segment_session.show()
+            self.edit_field.setText(f"Failed to load segment session: {e}")
 
 
 # For testing the window independently
