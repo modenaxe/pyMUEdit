@@ -69,24 +69,19 @@ class MotorUnitPropertiesDialog(QDialog):
         box.addWidget(mvc_label)
         box.addWidget(self.mvc_input)
 
-        # Add Discharge Rate Section
         dr_section = QHBoxLayout()
-        # Remove dr_label ("Discharge Rate:")
 
-        # Discharge Rate button (move to leftmost position)
-        # Use GeneralButton to match Basic Properties button style
         dr_button = GeneralButton(
             "Discharge Rate", lambda: self.handle_discharge_rate()
         )
         dr_section.addWidget(dr_button)
 
-        # Event dropdown - style to match other components
         self.dr_event_dropdown = AnalysisDropdown(
             "Event",
             items=["rec", "derec", "rec_derec", "steady", "rec_derec_steady"],
             parent=self,
         )
-        self.dr_event_dropdown.setMinimumHeight(32)  # Match input field height
+        self.dr_event_dropdown.setMinimumHeight(32)
         dr_section.addWidget(self.dr_event_dropdown)
 
         # Firings at Rec textbox
@@ -106,12 +101,10 @@ class MotorUnitPropertiesDialog(QDialog):
         layout.addLayout(basic_prop)
 
     def handle_discharge_rate(self):
-        # Validate inputs
         event = self.dr_event_dropdown.currentText()
         firings_rec = self.dr_firings_rec.text()
         firings_steady = self.dr_firings_steady.text()
 
-        # Check if any field is empty or if event is the placeholder text
         if not event or event == "Event" or not firings_rec or not firings_steady:
             ErrorDialog("Complete all inputs", "Error").exec_()
             return
@@ -122,13 +115,11 @@ class MotorUnitPropertiesDialog(QDialog):
             ErrorDialog("Firings values must be integers", "Error").exec_()
             return
         # Get EMG file/data context
-        # Access the EMG file passed during dialog initialization
         if self.emgfile is None:
             ErrorDialog("EMG data not loaded.", "Error").exec_()
             return
 
         if event in ["steady", "rec_derec_steady"]:
-            # Close the dialog box first to avoid UI blocking
             self.accept()
             # Show the range selection dialog
             ResizeFunc.get_range(
@@ -160,12 +151,9 @@ class MotorUnitPropertiesDialog(QDialog):
             ErrorDialog(f"Error computing discharge rate: {str(e)}", "Error").exec_()
             return
         # Append result to results panel (top of history)
-        # Use the same mechanism as append_analysis_hist
         store.append_analysis_hist(
             f"Discharge Rate (event: {event})", dr_df.to_dict("records")
         )
-        # Optionally, show a confirmation or close the dialog
-        # self.accept()  # Uncomment if you want to close the dialog after
 
     def save_mvc(self):
         pass
