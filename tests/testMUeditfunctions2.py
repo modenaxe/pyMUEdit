@@ -8,6 +8,7 @@ To run a test
 import unittest
 import numpy as np
 import numpy.testing as npt
+import scipy
 import filecmp
 import sys
 import os
@@ -221,19 +222,16 @@ class Test20MVCfile(unittest.TestCase):
     def testDemean(self):
         if not os.path.exists(expOutDemean):
             print("expected output file for demean not found!")
-        # This implementation depends on how demean is now handled in the new codebase
-        # If it's part of another function, we'll need to adjust this test
-        # For now, commenting this out as it might not be directly testable
-        """
-        output = demean(input.get("signal")[0][0][0])
+
+        output = scipy.signal.detrend(
+            input.get("signal")[0][0][0], axis=-1, type="constant", bp=0
+        )
         expected = loadmat(expOutDemean).get('demsignals')
         try:
-            npt.assert_array_equal(output, expected)
+            npt.assert_allclose(output, expected)
         except AssertionError as e:
             raise AssertionError(f"demean failed to return the expected demsignals:\n{e}")
-        """
-        pass
-        
+
     # is part of convul_sphering, to combine w other tests
     def testWhitenEMG(self):
         # whiten_emg may have a different signature than the old whiteesig function
@@ -382,7 +380,7 @@ if __name__ == '__main__':
     #suite.addTest(Test20MVCfile('testNotchFilter')) 
     #suite.addTest(Test20MVCfile('testBandpassFilter'))
     #suite.addTest(Test20MVCfile('testExtendEMG'))
-    #suite.addTest(Test20MVCfile('testDemean'))
+    suite.addTest(Test20MVCfile('testDemean'))
     #suite.addTest(Test20MVCfile('testpcaesig'))
     #suite.addTest(Test20MVCfile('testWhitenEMG'))
     
