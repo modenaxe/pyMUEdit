@@ -2,7 +2,7 @@ import sys
 import os
 import traceback
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
-from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent
 import numpy as np
 import scipy.io as sio

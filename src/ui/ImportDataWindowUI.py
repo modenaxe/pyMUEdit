@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QApplication, QScrollArea, QStackedWidget
 from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt
 from PyQt5.QtSvg import QSvgWidget
 import pyqtgraph as pg
 
@@ -13,7 +13,6 @@ from ui.components import (
     Sidebar, 
     VisualizationPanel
 )
-from ui.components.SettingsGroup import SettingsGroup
 
 
 def setup_ui(import_window):
