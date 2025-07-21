@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (
 )
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-
+from PyQt5.QtCore import Qt
 """
 If there's no figure/file, a title appears prompting the user to load a file
 """
@@ -34,9 +34,10 @@ class AnalysisPlot(QWidget):
         self.load_file_prompt()
 
     # loads the prompt into canvas
-    def load_file_prompt(self):
+    def load_file_prompt(self): 
         self.canvas = AnalysisText.create_prompt("Press Load File to View Data")
-        self.layout.addWidget(self.canvas)
+        self.layout.addWidget(self.canvas, alignment=Qt.AlignCenter)
+
 
     # used to help toggle resize button
     def set_reseize(self, button):
