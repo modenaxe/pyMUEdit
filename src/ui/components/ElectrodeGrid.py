@@ -61,8 +61,8 @@ class ElectrodeGrid(QWidget):
         super().__init__(parent)
 
         self.channel_indices = channel_indices
-        if "electrodes" in emg_obj.signal_dict:
-            self.electrode_names = emg_obj.signal_dict["electrodes"]
+        if "gridname" in emg_obj.signal_dict:
+            self.electrode_names = emg_obj.signal_dict["gridname"]
         else:
             return
         
