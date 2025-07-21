@@ -206,7 +206,7 @@ class MUeditManual(QMainWindow):
 
         # Wrong Format
         if not self.filename.lower().endswith(".mat"):
-            ErrorDialog(title="File Format Error", text="Selected file is not a valid .mat file.\nPlease choose a .mat file.")
+            ErrorDialog(title_label="File Format Error", text="Selected file is not a valid .mat file.\nPlease choose a .mat file.")
             return
 
         try:
@@ -271,9 +271,9 @@ class MUeditManual(QMainWindow):
             self.update_plot_limits()
 
         except KeyError as ke:
-            ErrorDialog(title="Missing Field", text=f"The .mat file is missing required fields:\n{ke}")
+            ErrorDialog(title_label="Missing Field", text=f"The .mat file is missing required fields:\n{ke}")
         except Exception as e:
-            ErrorDialog(title="Import Error", text=f"Failed to load the file:\n{str(e)}")
+            ErrorDialog(title_label="Import Error", text=f"Failed to load the file:\n{str(e)}")
 
         QApplication.restoreOverrideCursor()    #还原鼠标
         #origial error print
@@ -2519,7 +2519,7 @@ class MUeditManual(QMainWindow):
         # Show a confirmation message
         from PyQt5.QtWidgets import QMessageBox
         #QMessageBox.information(self, "Save Complete", f"Data saved to {savename}", QMessageBox.Ok)
-        SuccessDialog(title="Save Complete", text=f"Data saved to:\n{savename}")
+        SuccessDialog(title_label="Save Complete", text=f"Data saved to:\n{savename}")
     
     def clear_layout(self, layout):
         while layout.count():
