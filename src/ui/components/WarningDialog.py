@@ -15,7 +15,7 @@ class WarningDialog(QDialog):
         self.setWindowTitle("Warning")
         self.setFixedSize(350, 290)
         self.setWindowFlags(Qt.Dialog | Qt.MSWindowsFixedSizeDialogHint)
-
+        self.enableCheckBox = enableCheckBox
         self.checkbox_selected = False
 
         # Layout
