@@ -34,12 +34,14 @@ from core.utils.decomposition.remove_duplicates import remove_duplicates
 from core.utils.decomposition.remove_duplicates_between_arrays import remove_duplicates_between_arrays
 from core.utils.decomposition.extend_emg import extend_emg
 from core.utils.decomposition.whiten_emg import whiten_emg
+from core.utils.manual_editing.smart_button_pushed import smart_button_pushed
 
 # Import custom components
 from ui.components import (
     WarningDialog,
     SuccessDialog,
     ErrorDialog,
+    MessageDialog,
 )
 import json
 
@@ -59,7 +61,7 @@ class MUeditManual(QMainWindow):
         self.filename = None
         self.pathname = None
         self.MUedition = None
-        self.Backup = {"lock": 0, "Pulsetrain": None, "Dischargetimes": None}
+        self.Backup = {"lock": 0, "Pulsetrain": None, "Dischargetimes": None, "lock_changable": 1}
         self.undo_stack = [] # add undo stack moy
         self.redo_stack = []
         self.graphstart = None
@@ -183,25 +185,25 @@ class MUeditManual(QMainWindow):
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts."""
         if event.key() == Qt.Key.Key_Left:
-            self.scroll_left_button_pushed()
+            self.scroll_left_btn.click()
         elif event.key() == Qt.Key.Key_Right:
-            self.scroll_right_button_pushed()
+            self.scroll_right_btn.click()
         elif event.key() == Qt.Key.Key_Up:
-            self.zoom_in_button_pushed()
+            self.zoom_in_btn.click()
         elif event.key() == Qt.Key.Key_Down:
-            self.zoom_out_button_pushed()
+            self.zoom_out_btn.click()
         elif event.key() == Qt.Key.Key_A:
-            self.add_spikes_button_pushed()
+            self.add_spikes_btn.click()
         elif event.key() == Qt.Key.Key_D:
-            self.delete_spikes_button_pushed()
+            self.delete_spikes_btn.click()
         elif event.key() == Qt.Key.Key_R:
-            self.remove_outliers_button_pushed()
+            self.remove_outliers_btn.click()
         elif event.key() == Qt.Key.Key_Space:
-            self.update_mu_filter_button_pushed()
+            self.update_mu_filter_btn.click()
         elif event.key() == Qt.Key.Key_S:
-            self.lock_spikes_button_pushed()
+            self.lock_spikes_btn.click()
         elif event.key() == Qt.Key.Key_E:
-            self.extend_mu_filter_button_pushed()
+            self.extend_mu_filter_btn.click()
         else:
             super().keyPressEvent(event)
 
@@ -215,17 +217,23 @@ class MUeditManual(QMainWindow):
             self.pathname = os.path.dirname(file_path) + "/"
             self.filename = os.path.basename(file_path)
             self.file_path_field.setText(self.filename)
+            self.select_file_title_btn.setText(self.filename)
 
             self.import_data()
 
     def import_data(self):
         """Import data from selected file."""
+        from PyQt5.QtWidgets import QApplication
+        from PyQt5.QtCore import Qt
+        # 设置鼠标为等待
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+
         if not self.filename or not self.pathname:
             return
 
         # Wrong Format
         if not self.filename.lower().endswith(".mat"):
-            QMessageBox.critical(self, "File Format Error","Selected file is not a valid .mat file.\nPlease choose a .mat file.")
+            ErrorDialog(title="File Format Error", text="Selected file is not a valid .mat file.\nPlease choose a .mat file.")
             return
 
         try:
@@ -290,10 +298,11 @@ class MUeditManual(QMainWindow):
             self.update_plot_limits()
 
         except KeyError as ke:
-            QMessageBox.critical(self, "Missing Field", f"The .mat file is missing required fields:\n{ke}")
+            ErrorDialog(title="Missing Field", text=f"The .mat file is missing required fields:\n{ke}")
         except Exception as e:
-            QMessageBox.critical(self, "Import Error", f"Failed to load the file:\n{str(e)}")
+            ErrorDialog(title="Import Error", text=f"Failed to load the file:\n{str(e)}")
 
+        QApplication.restoreOverrideCursor()    #还原鼠标
         #origial error print
         # except Exception as e:
         #     import traceback
@@ -301,6 +310,19 @@ class MUeditManual(QMainWindow):
         #     print(f"Error importing data: {e}")
         #     traceback.print_exc()
 
+    def update_action_button_states(self):
+        enabled = self.plot_display_mode == 0
+        self.add_spikes_btn.setEnabled(enabled)
+        self.add_spikes_btn.set_active(False)
+        self.delete_spikes_btn.setEnabled(enabled)
+        self.delete_spikes_btn.set_active(False)
+        self.delete_dr_btn.setEnabled(enabled)
+        self.delete_dr_btn.set_active(False)
+        self.update_mu_filter_btn.setEnabled(enabled)
+        self.extend_mu_filter_btn.setEnabled(enabled)
+        self.lock_spikes_btn.setEnabled(enabled)
+        if hasattr(self, "selection_tool"): self.selection_tool.disable()
+        
     def update_mu_checkboxes(self):
         """Update the MU checkboxes based on loaded data using collapsible panels."""
         # Initialize array panels list if it doesn't exist
@@ -435,6 +457,16 @@ class MUeditManual(QMainWindow):
             
         # Update the display based on selection
         self.display_selected_mus(checked_mus, pluse_train_color)
+        self.update_action_button_states()
+    
+    def update_display_mus(self, pluse_train_color="#D95535"):
+        checked_mus = []
+        for checkbox in self.mu_checkboxes:
+            if checkbox.isChecked():
+                checked_mus.append(checkbox.objectName())
+                
+        self.display_selected_mus(checked_mus, pluse_train_color)
+        
 
     def update_array_checkboxes(self):
         """Update the state of "Check All" checkboxes based on individual MU selections."""
@@ -814,7 +846,7 @@ class MUeditManual(QMainWindow):
                 scatter = pg.ScatterPlotItem()
 
                 # Find local maxima around each discharge time
-                window_size = 10
+                window_size = 3
                 x_values = []
                 y_values = []
 
@@ -1139,25 +1171,29 @@ class MUeditManual(QMainWindow):
     # Editing actions
     def disable_action_buttons(self):
         """Temporarily disable action buttons during selection."""
+        print("disable_action_buttons")
         self.add_spikes_btn.setEnabled(False)
         self.delete_spikes_btn.setEnabled(False)
         self.delete_dr_btn.setEnabled(False)
         self.update_mu_filter_btn.setEnabled(False)
         self.extend_mu_filter_btn.setEnabled(False)
+        self.lock_spikes_btn.setEnabled(False)
 
     def enable_action_buttons(self):
         """Re-enable action buttons after selection is complete."""
+        print("enable_action_buttons")
         self.add_spikes_btn.setEnabled(True)
         self.delete_spikes_btn.setEnabled(True)
         self.delete_dr_btn.setEnabled(True)
         self.update_mu_filter_btn.setEnabled(True)
         self.extend_mu_filter_btn.setEnabled(True)
+        self.lock_spikes_btn.setEnabled(True)
 
+
+    @smart_button_pushed
     def add_spikes_button_pushed(self):
         """Add spikes by drawing a selection rectangle."""
-        if not self.MUedition:
-            return
-
+        
         # Get the first checked MU
         checked_mus = []
         for checkbox in self.mu_checkboxes:
@@ -1178,7 +1214,7 @@ class MUeditManual(QMainWindow):
         mu_idx = int(parts[3]) - 1
 
         # Store current state for undo
-        self._push_undo(array_idx, mu_idx)
+        # self._push_undo(array_idx, mu_idx)
 
         self.selection_tool = SelectionTool(
             self.spiketrain_plot,
@@ -1186,13 +1222,13 @@ class MUeditManual(QMainWindow):
             lambda x_min, x_max, y_min, y_max: self.handle_selection_complete(
                 "add_spikes", array_idx, mu_idx, x_min, x_max, y_min, y_max
             ),
+            lambda: self._push_undo(array_idx, mu_idx),
         )
         
 
+    @smart_button_pushed
     def delete_spikes_button_pushed(self):
         """Delete spikes by drawing a selection rectangle."""
-        if not self.MUedition:
-            return
 
         # Get the first checked MU
         checked_mus = []
@@ -1214,7 +1250,7 @@ class MUeditManual(QMainWindow):
         mu_idx = int(parts[3]) - 1
 
         # Store current state for undo
-        self._push_undo(array_idx, mu_idx)
+        # self._push_undo(array_idx, mu_idx)
 
         # Create selection tool
         self.selection_tool = SelectionTool(
@@ -1223,12 +1259,12 @@ class MUeditManual(QMainWindow):
             lambda x_min, x_max, y_min, y_max: self.handle_selection_complete(
                 "delete_spikes", array_idx, mu_idx, x_min, x_max, y_min, y_max
             ),
+            lambda: self._push_undo(array_idx, mu_idx),
         )
 
+    @smart_button_pushed
     def delete_dr_button_pushed(self):
         """Delete discharge rates by drawing a selection rectangle in the DR plot."""
-        if not self.MUedition:
-            return
 
         # Get the first checked MU
         checked_mus = []
@@ -1250,7 +1286,7 @@ class MUeditManual(QMainWindow):
         mu_idx = int(parts[3]) - 1
 
         # Store current state for undo
-        self._push_undo(array_idx, mu_idx)
+        # self._push_undo(array_idx, mu_idx)
 
         # Create selection tool
         self.selection_tool = SelectionTool(
@@ -1259,6 +1295,7 @@ class MUeditManual(QMainWindow):
             lambda x_min, x_max, y_min, y_max: self.handle_selection_complete(
                 "delete_dr", array_idx, mu_idx, x_min, x_max, y_min, y_max
             ),
+            lambda: self._push_undo(array_idx, mu_idx),
         )
 
     def handle_selection_complete(self, action_type, array_idx, mu_idx, x_min, x_max, y_min, y_max):
@@ -1267,13 +1304,14 @@ class MUeditManual(QMainWindow):
         process_selection(self.MUedition, action_type, array_idx, mu_idx, x_min, x_max, y_min, y_max)
 
         # Update the display
-        for checkbox in self.mu_checkboxes:
-            if checkbox.objectName() == f"Array_{array_idx+1}_MU_{mu_idx+1}":
-                if checkbox.isChecked():
-                    # If the MU is currently checked, update the display
-                    self.mu_checkbox_state_changed()
-                    self.mark_dirty()
-                break
+        # for checkbox in self.mu_checkboxes:
+        #     if checkbox.objectName() == f"Array_{array_idx+1}_MU_{mu_idx+1}":
+        #         if checkbox.isChecked():
+        #             # If the MU is currently checked, update the display
+        #             self.mu_checkbox_state_changed()
+        #         break
+        self.mark_dirty() #shr
+        self.update_display_mus()
 
     def lock_spikes_button_pushed(self):
         """Lock the current spikes to keep them during filter updates."""
@@ -1340,7 +1378,24 @@ class MUeditManual(QMainWindow):
         if not self.MUedition:
             ErrorDialog(text="Please import file first!")
             return
-    
+        
+        # Ask whether lock spikes
+        if self.Backup["lock_changable"] == 1:
+            dialog = MessageDialog(text="Do you want to lock splikes? ", HelpButtonTip="When updating the filter, the spikes in the non-edge part of the current display area are retained and not deleted.")
+            result = dialog.exec_()
+            if result == QDialog.Accepted:
+                print("Yes: lock")
+                print("push lock spikes")
+                self.Backup["lock"] = 1
+            elif dialog.user_clicked_no:
+                print("No: no lock")
+            elif dialog.user_closed_window:
+                print("cancel operation")
+                return
+            if dialog.checkbox_selected:
+                print("no ask again")
+                self.Backup["lock_changable"] = 0
+
         # Get the first checked MU
         checked_mus = []
         for checkbox in self.mu_checkboxes:
@@ -1422,11 +1477,9 @@ class MUeditManual(QMainWindow):
                 self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = all_spikes
 
                 # Reset the lock
-                self.Backup["lock"] = 0
-                self.lock_spikes_btn.setStyleSheet(
-                    "color: #f0f0f0; background-color: #D95535; font-family: 'Poppins'; font-size: 18pt;"
-                )
-                print("Reset")
+                if self.Backup["lock_changable"] == 0:
+                    self.Backup["lock"] = 0
+                print("Reset lock")
             else:
                 # Update both pulse train and discharge times
                 self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = updated_pulse_train
@@ -1438,9 +1491,11 @@ class MUeditManual(QMainWindow):
             new_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
             # Update the display
             if(new_sil >= old_sil):
-                self.mu_checkbox_state_changed(pluse_train_color="#8ACD69")
+                # self.mu_checkbox_state_changed(pluse_train_color="#8ACD69")
+                self.update_display_mus(pluse_train_color="#8ACD69")
             else:
-                self.mu_checkbox_state_changed(pluse_train_color="#698CCD")
+                # self.mu_checkbox_state_changed(pluse_train_color="#698CCD")
+                self.update_display_mus(pluse_train_color="#698CCD")
             
             QApplication.restoreOverrideCursor()
             
@@ -1581,10 +1636,14 @@ class MUeditManual(QMainWindow):
             self.calculate_silval(array_idx, mu_idx)
             new_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
             # Final display update
+
             if(new_sil >= old_sil):
-                self.mu_checkbox_state_changed(pluse_train_color="#8ACD69")
+                # self.mu_checkbox_state_changed(pluse_train_color="#8ACD69")
+                self.update_display_mus(pluse_train_color="#8ACD69")
             else:
-                self.mu_checkbox_state_changed(pluse_train_color="#698CCD")
+                # self.mu_checkbox_state_changed(pluse_train_color="#698CCD")
+                self.update_display_mus(pluse_train_color="#698CCD")
+                
             QApplication.processEvents()
 
             QApplication.restoreOverrideCursor()
@@ -2461,8 +2520,8 @@ class MUeditManual(QMainWindow):
         self.mark_clean()
         # Show a confirmation message
         from PyQt5.QtWidgets import QMessageBox
-
-        QMessageBox.information(self, "Save Complete", f"Data saved to {savename}", QMessageBox.Ok)
+        #QMessageBox.information(self, "Save Complete", f"Data saved to {savename}", QMessageBox.Ok)
+        SuccessDialog(title="Save Complete", text=f"Data saved to:\n{savename}")
     
     def clear_layout(self, layout):
         while layout.count():

@@ -7,7 +7,7 @@ from PyQt5.QtGui import QPixmap
 import os
 
 class WarningDialog(QDialog):
-    def __init__(self, title="Warning", text="This is a warning Pop-up box. "
+    def __init__(self, title_label="Warning", text="This is a warning Pop-up box. "
                          "Please change text.\n"
                          "Are you sure you want to continue?", enableCheckBox=True, checkBoxText="Don't ask again",
                          enableHelpButton=True, HelpButtonTip="Click for help"):
@@ -15,6 +15,8 @@ class WarningDialog(QDialog):
         self.setWindowTitle("Warning")
         self.setFixedSize(350, 290)
         self.setWindowFlags(Qt.Dialog | Qt.MSWindowsFixedSizeDialogHint)
+
+        self.checkbox_selected = False
 
         # Layout
         layout = QVBoxLayout()
@@ -60,7 +62,7 @@ class WarningDialog(QDialog):
         layout.addWidget(icon_label)
 
         # title
-        title = QLabel("Warning")
+        title = QLabel(title_label)
         title.setStyleSheet("font-weight: bold; font-size: 18px;")
         title.setAlignment(Qt.AlignHCenter)
         layout.addWidget(title)
@@ -76,7 +78,7 @@ class WarningDialog(QDialog):
         yes_button = QPushButton("Yes")
         yes_button.setFixedHeight(30)
         yes_button.setStyleSheet("background-color: #007aff; color: white; border-radius: 6px; font-weight: bold;")
-        yes_button.clicked.connect(self.accept)
+        yes_button.clicked.connect(self.handle_yes_clicked)
         layout.addWidget(yes_button)
 
         # “Don't ask again” checkbox
@@ -91,6 +93,13 @@ class WarningDialog(QDialog):
         self.setLayout(layout)
 
         self.exec_()
+    
+    def handle_yes_clicked(self):
+        if self.enableCheckBox and self.checkbox.isChecked():
+            self.checkbox_selected = True
+        else:
+            self.checkbox_selected = False
+        self.accept()
 
 
 

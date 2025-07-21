@@ -11,10 +11,11 @@ class SelectionTool:
     """
     import os
     os.environ["OMP_NUM_THREADS"] = "1"
-    def __init__(self, plot_widget, action_type, callback):
+    def __init__(self, plot_widget, action_type, callback, undo_func):
         self.plot_widget = plot_widget
         self.action_type = action_type
         self.callback = callback
+        self.undo_func = undo_func
 
         # Points in scene coordinates
         self.start_point = None
@@ -119,7 +120,7 @@ class SelectionTool:
             # Auto rectangle size
             x_ratio = 0.005
             
-            if x_max - x_min < 2 * x_ratio:
+            if x_max - x_min < 2 * x_ratio * x_length:
                 items = self.plot_widget.listDataItems()
                 all_y = []
                 for item in items:
@@ -136,6 +137,7 @@ class SelectionTool:
                 y_max = self.start_point.y() + y_length * 1
 
             # Call the callback with the selection bounds
+            self.undo_func()
             self.cleanup()
             self.callback(x_min, x_max, y_min, y_max)
 
@@ -154,7 +156,9 @@ class SelectionTool:
         if self.guide_text is not None:
             self.plot_widget.removeItem(self.guide_text)
             self.guide_text = None
-
+            
+    def disable(self):
+        
         # Restore original event handlers
         self.plot_widget.mousePressEvent = self.original_mouse_press
         self.plot_widget.mouseMoveEvent = self.original_mouse_move
@@ -225,7 +229,7 @@ def process_selection(MUedition, action_type, array_idx, mu_idx, x_min, x_max, y
         # Find local maxima around each discharge time. 
         # This logic comes from MUeditManual.display_selected_mus.
         # The pulse train values corresponding to discharge_times cannot be used directly.
-        window_size = 10 
+        window_size = 3 
         if 0 <= dt < len(pulse_train): 
             start = int(max(0, dt - window_size)) 
             end = int(min(len(pulse_train), dt + window_size + 1)) 
@@ -302,6 +306,8 @@ def process_selection(MUedition, action_type, array_idx, mu_idx, x_min, x_max, y
         if (array_idx, mu_idx) in MUedition["edition"]["Dischargetimes"]:
             discharge_times = MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]
             time = MUedition["edition"]["time"]
+            # print("discharge_times:", discharge_times)
+            # print("time:", time)
 
             # Create masks for time and amplitude ranges
             time_mask = (time[discharge_times] >= x_min) & (time[discharge_times] <= x_max)

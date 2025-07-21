@@ -32,7 +32,7 @@ from ui.components import (
     CleanScrollBar,
     GoodSlider,
 )
-
+from ui.components.ActionButtonedit import ActionButtonedit
 class FixedPopupComboBox(QComboBox): # set a new class for dropout moy
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -256,7 +256,24 @@ def create_mu_selection_tab(main_window):
     # Add unflag button in the MU selection tab
     main_window.unflag_mu_btn = ActionButton("UnFlag selected MU(s) for deletion", primary=False)
     main_window.unflag_mu_btn.clicked.connect(main_window.unflag_mu_for_deletion_button_pushed)
-    
+    blue = "#0072ee"
+    hover = "#2383ff"
+    for btn in (main_window.flag_mu_btn, main_window.unflag_mu_btn):
+        btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {blue};
+                color: #ffffff;
+                border: none;
+                border-radius: 4px;
+                padding: 8px 15px;
+            }}
+            QPushButton:hover {{
+                background: {hover};
+            }}
+            QPushButton:pressed {{
+                background: #005fd1;
+            }}
+        """)    
     mu_layout.addWidget(main_window.flag_mu_btn)
     mu_layout.addWidget(main_window.unflag_mu_btn)
 
@@ -449,8 +466,8 @@ def setup_display_panel(main_window):
     title_lbl.setFont(font)
     
     main_window.select_file_title_btn = ActionButton("Press here to select file", primary=False)
-    main_window.select_file_title_btn.setFixedHeight(28)
-    main_window.select_file_title_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    main_window.select_file_title_btn.setFixedHeight(40)
+
     main_window.select_file_title_btn.clicked.connect(
         main_window.select_file_button_pushed
     )
@@ -492,10 +509,10 @@ def setup_display_panel(main_window):
     display_layout.setContentsMargins(0, 0, 0, 0)
     display_layout.setSpacing(15)
 
-    main_window.undo_title_btn = ActionButton("Undo", primary=False)
+    main_window.undo_title_btn = ActionButtonedit("Undo", primary=False) # alex
     main_window.undo_title_btn.setFixedHeight(28)
     main_window.undo_title_btn.clicked.connect(main_window.undo_button_pushed)
-    main_window.redo_title_btn = ActionButton("Redo", primary=False) # new redo btn moy
+    main_window.redo_title_btn = ActionButtonedit("Redo", primary=False) # new redo btn moy
     main_window.redo_title_btn.setFixedHeight(28)
     main_window.redo_title_btn.clicked.connect(main_window.redo_button_pushed)
     
@@ -599,14 +616,19 @@ def setup_display_panel(main_window):
     ]
 
     # Create action buttons and store references
+    main_window.action_buttons = {}
     for text, handler, attr_name in action_button_configs:
-        btn = ActionButton(text, primary=False)
+        btn = ActionButtonedit(text, primary=False)
         btn.clicked.connect(handler)
         btn.setMinimumHeight(36)
         btn.setMaximumHeight(36)
         action_layout.addWidget(btn)
         # Store reference to button in main_window
         setattr(main_window, attr_name, btn)
+        main_window.action_buttons[handler.__name__] = btn
+
+    if hasattr(main_window, "lock_spikes_btn"):
+        main_window.lock_spikes_btn.hide()   
 
     action_card.content_layout.addWidget(action_container)
     display_layout.addWidget(action_card)
@@ -727,10 +749,9 @@ def _add_floating_save_btn(main_window):
     在窗口右上角放一个悬浮 Save 按钮，点击后仍调用 main_window.save_button_pushed。
     不动侧边栏里的原有 Save。
     """
-    from ui.components import ActionButton
 
     btn = ActionButton("Save", primary=True, parent=main_window)
-    btn.setFixedSize(80, 30)
+    btn.setFixedSize(80, 40)
     btn.clicked.connect(main_window.save_button_pushed)
 
     margin = 16

@@ -19,6 +19,7 @@ from .GoodSlider import GoodSlider
 from .WarningDialog import WarningDialog
 from .SuccessDialog import SuccessDialog
 from .ErrorDialog import ErrorDialog
+from .MessageDialog import MessageDialog
 from .toggle_switch import ToggleSwitch
 # Export all components
 __all__ = [
@@ -42,4 +43,5 @@ __all__ = [
     "WarningDialog",
     "SuccessDialog",
     "ErrorDialog",
+    "MessageDialog"
 ]

@@ -1,0 +1,33 @@
+from functools import wraps
+
+def smart_button_pushed(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if not self.MUedition:
+            print("NO MUedition")
+            return
+        func_name = func.__name__
+        btn = self.action_buttons.get(func_name)
+        
+        if not btn:
+            print(f"Warning NO '{func_name}' Matched Button")
+            print(self.action_buttons)
+            return
+
+        if btn.get_active():
+            for b in self.action_buttons.values():
+                b.setEnabled(True)
+                b.setProperty("active", False)
+                b.style().unpolish(b)
+                b.style().polish(b)
+            self.selection_tool.disable()
+            return
+        else:
+            for name, b in self.action_buttons.items():
+                b.setEnabled(name == func_name)
+                b.setProperty("active", name == func_name)
+                b.style().unpolish(b)
+                b.style().polish(b)
+            
+        return func(self)
+    return wrapper
