@@ -12,6 +12,8 @@ from core.utils.decomposition_state import DecompositionState
 # Add project root to path
 from pathlib import Path
 
+from ui.components.SegmentSessionPage import SegmentSessionPage
+
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
@@ -23,7 +25,6 @@ from ui.components.VisualisationPage import VisualisationPage
 from workers.SaveMatWorker import SaveMatWorker
 from workers.DecompositionWorker import DecompositionWorker
 from core.utils.config_and_input.prepare_parameters import prepare_parameters
-from core.utils.config_and_input.segmentsession import SegmentSession
 from MUeditManual import MUeditManual
 
 
@@ -37,6 +38,7 @@ class DecompositionApp(QMainWindow):
         self.emg_obj = emg_obj
         self.imported_signal = imported_signal
         self.visualisation_page = None
+        self.segment_session = None
 
         self.MUdecomp = {"config": None}
         self.Configuration = None
@@ -331,29 +333,21 @@ class DecompositionApp(QMainWindow):
             print("No configuration dialog available")
 
     def segment_session_button_pushed(self):
-        self.segment_session = SegmentSession()
-
-        if self.pathname is not None and self.filename is not None:
-            self.segment_session.pathname.setText(self.pathname + self.filename + "_decomp.mat")
-
-        # Setup the dropdown contents before setting the current item
-        self.segment_session.reference_dropdown.clear()
-        for i in range(self.reference_dropdown.count()):
-            self.segment_session.reference_dropdown.addItem(self.reference_dropdown.itemText(i))
+        if not self.emg_obj or "data" not in self.emg_obj.signal_dict:
+            self.edit_field.setText("No EMG data loaded for segment session.")
+            return
 
         try:
-            if self.segment_session.pathname.text():
-                self.segment_session.file = sio.loadmat(self.segment_session.pathname.text())
+            # Handle persistance - if segment session has already been opened,
+            # open the same panel (not a new instance)
+            if self.segment_session is not None:
+                self.segment_session.show()
+            else:
+                filename = os.path.join(self.pathname, self.filename) + "_decomp.mat"
+                self.segment_session = SegmentSessionPage(filename)
+                self.segment_session.show()
         except Exception as e:
-            print(f"Warning: Could not load file: {e}")
-
-        # Set current text after file is loaded
-        self.segment_session.reference_dropdown.setCurrentText(self.reference_dropdown.currentText())
-        self.segment_session.initialize_with_file()
-        self.segment_session.show()
-        self.segment_session_button.setStyleSheet(
-            "color: #cf80ff; background-color: #7f7f7f; font-family: 'Poppins'; font-size: 18pt;"
-        )
+            self.edit_field.setText(f"Failed to load segment session: {e}")
 
     def start_button_pushed(self):
         # Reset iteration counter at the start of a new decomposition
