@@ -309,6 +309,7 @@ def setup_right_panel(main_window, parent_layout):
     config_group.add_field(main_window.set_configuration_button)
 
     main_window.segment_session_button = ActionButton("Segment Session", primary=False)
+    main_window.segment_session_button.setEnabled(False)
     config_group.add_field(main_window.segment_session_button)
 
     main_window.channel_view_button = ActionButton("Channel Viewer", primary=False)
