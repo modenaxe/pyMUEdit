@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from app.muAnalysisFunctions.PlotEMGFunc import parse_channel_input, plot_emgsig
+from app.muAnalysisFunctions.PlotEMGFunc import parse_channel_input, plot_emgsig, plot_idr, plot_mupulses
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
@@ -21,6 +21,8 @@ from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import PropertiesInnerDialogButton
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
+from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
+import matplotlib.pyplot as plt
 
 
 class PlotEMGToolDialog(QDialog):
@@ -92,31 +94,89 @@ class PlotEMGToolDialog(QDialog):
         filter_row_layout.addLayout(dropdown_col)
         layout.addLayout(filter_row_layout)
 
-        # --- Plot EMGsig and REFsig Buttons and Channel Input  ---
-        button_col = QVBoxLayout()
-        emgsig_btn = GeneralButton("Plot EMGsig", self.handle_emgsig_clicked, parent=self)
-        refsig_btn = GeneralButton("Plot REFsig", self.handle_refsig_clicked, parent=self)
-        max_width = max(emgsig_btn.sizeHint().width(), refsig_btn.sizeHint().width())
-        emgsig_btn.setFixedWidth(max_width)
-        refsig_btn.setFixedWidth(max_width)
-        button_col.addWidget(emgsig_btn)
-        button_col.addWidget(refsig_btn)
+        # --- Plot EMGsig, REFsig, IDR, and MUPulses Buttons with Inputs (each in their own row, aligned) ---
+        button_input_col = QVBoxLayout()
+        button_input_col.setSpacing(12)
+        dummy_action = lambda: None
+        button_width = max(
+            GeneralButton("Plot EMGsig", dummy_action).sizeHint().width(),
+            GeneralButton("Plot REFsig", dummy_action).sizeHint().width(),
+            GeneralButton("Plot IDR", dummy_action).sizeHint().width(),
+            GeneralButton("Plot MUPulses", dummy_action).sizeHint().width(),
+        ) + 40  # Add extra width for longer text
+        textbox_width = 280
+        button_height = 36
 
-        channel_col = QVBoxLayout()
+        # Row 1: Plot EMGsig + Channel Number
+        emgsig_row = QHBoxLayout()
+        emgsig_btn = GeneralButton("Plot EMGsig", self.handle_emgsig_clicked, parent=self)
+        emgsig_btn.setFixedWidth(button_width)
+        emgsig_btn.setFixedHeight(button_height)
+        emgsig_row.addWidget(emgsig_btn)
+        emgsig_row.addSpacing(8)
         self.channel_input = QLineEdit()
         self.channel_input.setPlaceholderText("Channel Number (e.g. 1-3,5,7)")
         self.channel_input.setFont(QFont("Arial", 11))
-        self.channel_input.setMinimumHeight(32)
+        self.channel_input.setMinimumHeight(button_height)
+        self.channel_input.setFixedHeight(button_height)
+        self.channel_input.setFixedWidth(textbox_width)
         self.channel_input.setStyleSheet("""
             QLineEdit { padding: 8px; border: 2px solid #ced4da; border-radius: 6px; background-color: #ffffff; color: #212529; }
         """)
-        channel_col.addWidget(self.channel_input)
-        channel_col.addStretch(1)
+        emgsig_row.addWidget(self.channel_input)
+        emgsig_row.addStretch(1)
+        button_input_col.addLayout(emgsig_row)
 
-        emg_row_layout = QHBoxLayout()
-        emg_row_layout.addLayout(button_col)
-        emg_row_layout.addLayout(channel_col)
-        layout.addLayout(emg_row_layout)
+        # Row 2: Plot REFsig (no input)
+        refsig_row = QHBoxLayout()
+        refsig_btn = GeneralButton("Plot REFsig", self.handle_refsig_clicked, parent=self)
+        refsig_btn.setFixedWidth(button_width)
+        refsig_btn.setFixedHeight(button_height)
+        refsig_row.addWidget(refsig_btn)
+        refsig_row.addStretch(1)
+        button_input_col.addLayout(refsig_row)
+
+        # Row 3: Plot IDR + MU number
+        idr_row = QHBoxLayout()
+        idr_btn = GeneralButton("Plot IDR", self.handle_idr_clicked, parent=self)
+        idr_btn.setFixedWidth(button_width)
+        idr_btn.setFixedHeight(button_height)
+        idr_row.addWidget(idr_btn)
+        idr_row.addSpacing(8)
+        self.mu_input = QLineEdit()
+        self.mu_input.setPlaceholderText("MU number (e.g. 1-3,5)")
+        self.mu_input.setFont(QFont("Arial", 11))
+        self.mu_input.setMinimumHeight(button_height)
+        self.mu_input.setFixedHeight(button_height)
+        self.mu_input.setFixedWidth(textbox_width)
+        self.mu_input.setStyleSheet("""
+            QLineEdit { padding: 8px; border: 2px solid #ced4da; border-radius: 6px; background-color: #ffffff; color: #212529; }
+        """)
+        idr_row.addWidget(self.mu_input)
+        idr_row.addStretch(1)
+        button_input_col.addLayout(idr_row)
+
+        # Row 4: Plot MUPulses + line width
+        mupulses_row = QHBoxLayout()
+        mupulses_btn = GeneralButton("Plot MUPulses", self.handle_mupulses_clicked, parent=self)
+        mupulses_btn.setFixedWidth(button_width)
+        mupulses_btn.setFixedHeight(button_height)
+        mupulses_row.addWidget(mupulses_btn)
+        mupulses_row.addSpacing(8)
+        self.linewidth_input = QLineEdit()
+        self.linewidth_input.setPlaceholderText("line width")
+        self.linewidth_input.setFont(QFont("Arial", 11))
+        self.linewidth_input.setMinimumHeight(button_height)
+        self.linewidth_input.setFixedHeight(button_height)
+        self.linewidth_input.setFixedWidth(textbox_width)
+        self.linewidth_input.setStyleSheet("""
+            QLineEdit { padding: 8px; border: 2px solid #ced4da; border-radius: 6px; background-color: #ffffff; color: #212529; }
+        """)
+        mupulses_row.addWidget(self.linewidth_input)
+        mupulses_row.addStretch(1)
+        button_input_col.addLayout(mupulses_row)
+
+        layout.addLayout(button_input_col)
 
     def has_invalid_filter_inputs(self):
         # Returns True if either dropdown is not at its placeholder
@@ -171,39 +231,81 @@ class PlotEMGToolDialog(QDialog):
         except Exception as e:
             ErrorDialog('Error plotting REFsig', 'Error').exec_()
 
+    def handle_idr_clicked(self):
+        emgfile = FileUploadFunc.file
+        if emgfile is None:
+            ErrorDialog('No file has been loaded', 'Error').exec_()
+            return
+        mu_text = self.mu_input.text()
+        try:
+            munumber = self.parse_mu_input(mu_text)
+        except Exception:
+            ErrorDialog('invalid plot inputs', 'Error').exec_()
+            return
+        try:
+            fig = plot_idr(
+                emgfile=emgfile,
+                munumber=munumber,
+                addrefsig=self.ref_signal_checkbox.isChecked(),
+                timeinseconds=self.time_seconds_checkbox.isChecked(),
+                showimmediately=False
+            )
+            canvas = SaveablePlot(fig)
+            self.analysis_plot.display_plot(canvas)
+            plt.close(fig)
+        except Exception as e:
+            ErrorDialog('Error plotting IDR', 'Error').exec_()
 
-# TL : useless after W18ABANANA-37-center-plots
-# class EMGsigResultDialog(QDialog):
-#     def __init__(self, channels, time_in_seconds, add_ref_signal, parent=None):
-#         super().__init__(parent)
-#         self.setWindowTitle("EMG Signal Plot")
-#         self.channels = channels  # This is now the raw text string
-#         self.emgfile = FileUploadFunc.file
-#         self.time_in_seconds = time_in_seconds
-#         self.add_ref_signal = add_ref_signal
-#         self.resize(1000, 700)
-#         self.init_ui()
-#
-#     def init_ui(self):
-#         # Create the layout for the dialog
-#         layout = QVBoxLayout(self)
-#
-#         # Get the figure from the plot_emgsig function
-#         fig = plot_emgsig(
-#             emgfile=self.emgfile,
-#             channels=self.channels,  # Pass the raw text string
-#             manual_offset=0,
-#             addrefsig=self.add_ref_signal,
-#             timeinseconds=self.time_in_seconds,
-#             figsize=[20, 15],
-#             tight_layout=True,
-#             showimmediately=False
-#         )
-#
-#         # Create a FigureCanvas and embed it in the dialog
-#         canvas = FigureCanvas(fig)
-#         layout.addWidget(canvas)
+    def handle_mupulses_clicked(self):
+        emgfile = FileUploadFunc.file
+        if emgfile is None:
+            ErrorDialog('No file has been loaded', 'Error').exec_()
+            return
+        lw_text = self.linewidth_input.text()
+        try:
+            linewidth = float(lw_text)
+            if linewidth <= 0:
+                raise ValueError()
+        except Exception:
+            ErrorDialog('invalid plot inputs', 'Error').exec_()
+            return
+        try:
+            fig = plot_mupulses(
+                emgfile=emgfile,
+                linewidths=linewidth,
+                addrefsig=self.ref_signal_checkbox.isChecked(),
+                timeinseconds=self.time_seconds_checkbox.isChecked(),
+                tight_layout=True,
+                showimmediately=False
+            )
+            canvas = SaveablePlot(fig)
+            self.analysis_plot.display_plot(canvas)
+            plt.close(fig)
+        except Exception as e:
+            ErrorDialog('Error plotting MUPulses', 'Error').exec_()
 
+    def parse_mu_input(self, raw_text):
+        # Accepts comma-separated and dash ranges, e.g. '1,3,5-7'
+        mus = []
+        raw_text = raw_text.strip()
+        if not raw_text:
+            raise ValueError("Empty input")
+        parts = raw_text.split(',')
+        for part in parts:
+            part = part.strip()
+            if '-' in part:
+                start_end = part.split('-')
+                if len(start_end) != 2:
+                    raise ValueError("Invalid range format")
+                start, end = start_end
+                start = int(start)
+                end = int(end)
+                if start > end:
+                    raise ValueError("Range start must be <= end")
+                mus.extend(range(start, end + 1))
+            else:
+                mus.append(int(part))
+        return sorted(set(mus))
         
 # general class for any inner inputs inside dialog
 class PropertiesInnerDialogText(QLineEdit):
