@@ -361,3 +361,134 @@ def min_max_scaling(data=None, series_or_df=None, col_by_col=False):
             "data must be one of pd.series, pd.dataframe or np.ndarray. " +
             f"{type(data)} was passed instead."
         )
+
+def plot_mupulses(
+    emgfile,
+    munumber="all",
+    linewidths=0,
+    linelengths=0.9,
+    addrefsig=True,
+    timeinseconds=True,
+    figsize=[20, 15],
+    tight_layout=True,
+    line2d_kwargs_ax1=None,
+    line2d_kwargs_ax2=None,
+    axes_kwargs=None,
+    showimmediately=True,
+):
+    # Warn for the use of a deprecated parameter
+    if linewidths > 0:
+        msg = (
+            "The linewidths parameter is deprecated since v0.1.1 and will " +
+            "be removed after v0.2.0. Please use line2d_kwargs_ax1 instead. " +
+            "See examples in the plot_mupulses documentation."
+        )
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
+    # Check to have the correct input
+    if isinstance(emgfile["MUPULSES"], list):
+        mupulses = emgfile["MUPULSES"]
+    else:
+        raise TypeError(
+            "MUPULSES is probably absent or it is not contained in a np.array"
+        )
+
+    # Check linelengths value
+    if linelengths < 0 or linelengths > 1:
+        raise ValueError(
+            "linelengths must be a number between 0 and 1."
+        )
+
+    # Check if all the MUs have to be plotted and create the y labels
+    if isinstance(munumber, str):
+        # Manage exception of single MU
+        if emgfile["NUMBER_OF_MUS"] > 1:
+            y_tick_lab = [*range(0, emgfile["NUMBER_OF_MUS"])]
+            ylab = "Motor units"
+            munumber = [*range(emgfile["NUMBER_OF_MUS"])]
+        else:
+            munumber = 0
+
+    if isinstance(munumber, int):
+        mupulses = [mupulses[munumber]]
+        y_tick_lab = []
+        ylab = f"MU n. {munumber}"
+    elif isinstance(munumber, list):
+        if len(munumber) > 1:
+            mupulses = [mupulses[mu] for mu in munumber]
+            y_tick_lab = munumber
+            ylab = "Motor units"
+        else:
+            mupulses = [mupulses[munumber[0]]]
+            y_tick_lab = []
+            ylab = f"MU n. {munumber[0]}"
+    else:
+        raise TypeError(
+            "While calling the plot_mupulses function, you should pass an " +
+            "integer, a list or 'all' to munumber"
+        )
+
+    # Convert x axes in seconds if timeinseconds==True.
+    # This has to be done both for the REF_SIGNAL and the mupulses, for the
+    # MUPULSES we need to convert the point of firing from samples to seconds.
+    if timeinseconds:
+        mupulses = [n / emgfile["FSAMP"] for n in mupulses]
+        x_axis = emgfile["RAW_SIGNAL"].index / emgfile["FSAMP"]
+    else:
+        x_axis = emgfile["RAW_SIGNAL"].index
+
+    # Create colors list for the firings and plot them
+    colors1 = ["C{}".format(i) for i in range(len(mupulses))]
+
+    # Use the subplot to allow the use of twinx
+    figname = ("MUs pulses")
+    fig, ax1 = plt.subplots(
+        figsize=(figsize[0] / 2.54, figsize[1] / 2.54), num=figname,
+    )
+
+    # Plot the MUPULSES.
+    # Iterate over each row and plot events manually to allow the use of
+    # the Figure_Layout_Manager.
+    for i, (events, color) in enumerate(zip(mupulses, colors1)):
+        # The `y` position for this row (increasing by 1 for each new row)
+        delta = (1-linelengths) / 2
+        y_pos = i
+        # Draw each event as a vertical line
+        for event in events:
+            ax1.plot(
+                [event, event],
+                [y_pos + delta, y_pos + delta + linelengths],
+                color=color, linewidth=linewidths,
+                **(line2d_kwargs_ax1 or {})
+            )
+
+    # Ensure correct and complete ticks on the left y axis
+    ax1.set_yticks(np.arange(0.5, len(mupulses) + 0.5, 1))
+    ax1.set_yticklabels([str(mu) for mu in y_tick_lab])
+    # Set axes labels
+    ax1.set_ylabel(ylab)
+    ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
+
+    if addrefsig:
+        if not isinstance(emgfile["REF_SIGNAL"], pd.DataFrame):
+            raise TypeError(
+                "REF_SIGNAL is probably absent or it is not contained in a " +
+                "dataframe"
+            )
+        ax2 = ax1.twinx()
+        ax2.plot(x_axis, emgfile["REF_SIGNAL"][0])
+        ax2.set_ylabel("MVC")
+
+        # Set z-order so that ax2 is in the background
+        ax2.set_zorder(0)
+        ax1.set_zorder(1)
+        ax1.patch.set_alpha(0)
+
+    # Set tight layout if requested
+    if tight_layout:
+        plt.tight_layout()
+
+    if showimmediately:
+        plt.show()
+
+    return fig
