@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QLineEdit,
     QDialog,
+    QComboBox
 )
 from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal
@@ -16,13 +17,11 @@ from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import (
-    PropertiesInnerDialogButton,
-)
 from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from core.muAnalysisCore.AnalysisResultsHist import store
 from app.muAnalysisFunctions.ResizeFunc import ResizeFunc
+from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
 
 
 class MotorUnitPropertiesDialog(QDialog):
@@ -97,6 +96,7 @@ class MotorUnitPropertiesDialog(QDialog):
         layout.addLayout(box)
         layout.addLayout(dr_section)
         func.set_mvc(self.mvc_input)
+        
         basic_prop = MotorUnitPropertiesBasic(self.analysis_plot, func, self)
         layout.addLayout(basic_prop)
 
@@ -202,6 +202,20 @@ class PropertiesInnerDialogText(QLineEdit):
             }}
         """
         )
+
+        
+# class that holds the inputs to compute threshold
+class ComputeThresholdSection(QHBoxLayout):
+    def __init__(self, func):
+        super().__init__()
+        event_ = AnalysisDropdown("Event", items=['rt', 'dert', 'rt_dert'])
+        type_ =  AnalysisDropdown("Type", items=['abs', 'rel', 'abs_rel'])
+        button = GeneralButton("Compute Thresholds", lambda: func.compute_thresh(event_.get_value(), type_.get_value()))
+
+        self.addWidget(button)
+        self.addWidget(event_)
+        self.addWidget(type_)
+        
 
 
 class MotorUnitPropertiesButton(QWidget):
