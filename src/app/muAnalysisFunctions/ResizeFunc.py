@@ -10,8 +10,19 @@ from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from PyQt5.QtCore import Qt
 
-class Resize:
 
+class ResizeFunc:
+    """Static interface for resize functionality"""
+
+    @staticmethod
+    def get_range(analysis_plot, callback):
+        if FileUploadFunc.file is None:
+            ErrorDialog("No file has been loaded", "Error").exec_()
+            return
+        SelectRange(analysis_plot, callback)
+
+
+class Resize:
     """Class to handle resizing file functionality"""
 
     def __init__(self, mu, analysis_plot):
@@ -20,16 +31,17 @@ class Resize:
 
     def resize(self, x):
         if FileUploadFunc.file == None:
-            ErrorDialog('No file has been loaded', 'Error').exec_()
+            ErrorDialog("No file has been loaded", "Error").exec_()
             return
         SelectRange(self.analysis_plot, self.two_point)
 
     def two_point(self, x, y):
-        self.resize_emgfile(FileUploadFunc.file,x,y)
-        self.mu.plot_idr(FileUploadFunc.file,self.analysis_plot)
+        self.resize_emgfile(FileUploadFunc.file, x, y)
+        self.mu.plot_idr(FileUploadFunc.file, self.analysis_plot)
 
     # AC
-    def resize_emgfile(self,
+    def resize_emgfile(
+        self,
         emgfile,
         start_,
         end_,
@@ -39,7 +51,7 @@ class Resize:
         ignore_negative_ipts=False,
     ):
 
-            # select points
+        # select points
         # Create the object to store the resized emgfile.
         rs_emgfile = copy.deepcopy(emgfile)
 
@@ -56,7 +68,9 @@ class Resize:
             rs_emgfile["RAW_SIGNAL"] = rs_emgfile["RAW_SIGNAL"].loc[start_:end_]
             first_idx = rs_emgfile["RAW_SIGNAL"].index[0]
             rs_emgfile["RAW_SIGNAL"] = rs_emgfile["RAW_SIGNAL"].reset_index(drop=True)
-            rs_emgfile["IPTS"] = rs_emgfile["IPTS"].loc[start_:end_].reset_index(drop=True)
+            rs_emgfile["IPTS"] = (
+                rs_emgfile["IPTS"].loc[start_:end_].reset_index(drop=True)
+            )
             rs_emgfile["EMG_LENGTH"] = int(len(rs_emgfile["RAW_SIGNAL"].index))
             rs_emgfile["BINARY_MUS_FIRING"] = (
                 rs_emgfile["BINARY_MUS_FIRING"].loc[start_:end_].reset_index(drop=True)
@@ -67,9 +81,7 @@ class Resize:
                 # array. However, make sure that all the numbers are int32 to
                 # prevent falling to int16 when small sections are resized.
                 # This may cause overflow.
-                rs_emgfile["MUPULSES"][mu] = rs_emgfile["MUPULSES"][mu].astype(
-                    np.int32
-                )
+                rs_emgfile["MUPULSES"][mu] = rs_emgfile["MUPULSES"][mu].astype(np.int32)
 
                 rs_emgfile["MUPULSES"][mu] = (
                     rs_emgfile["MUPULSES"][mu][
@@ -95,9 +107,9 @@ class Resize:
 
                     else:
                         raise ValueError(
-                            "Impossible to calculate ACCURACY (SIL). IPTS not " +
-                            "found. If IPTS is not present or empty, set " +
-                            "accuracy='maintain'"
+                            "Impossible to calculate ACCURACY (SIL). IPTS not "
+                            + "found. If IPTS is not present or empty, set "
+                            + "accuracy='maintain'"
                         )
 
             elif accuracy == "maintain":
