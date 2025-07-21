@@ -2494,9 +2494,9 @@ class MUeditManual(QMainWindow):
             savename = os.path.join(self.pathname or "", os.path.splitext(self.filename)[0] + "_edited.mat")
 
         # Prepare data for saving
-        signal = self.MUedition["signal"]
-        parameters = self.MUedition.get("parameters", {})
-        edition = self.MUedition["edition"]
+        signal = copy.deepcopy(self.MUedition["signal"])
+        parameters = copy.deepcopy(self.MUedition.get("parameters", {}))
+        edition = copy.deepcopy(self.MUedition["edition"])
 
         for field in ("Dischargetimes", "silval", "silvalcon"): #将这三个字典转为字符串存储
             if field in edition and isinstance(edition[field], dict):
