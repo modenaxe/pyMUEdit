@@ -344,7 +344,7 @@ class DecompositionApp(QMainWindow):
                 self.segment_session.show()
             else:
                 filename = os.path.join(self.pathname, self.filename) + "_decomp.mat"
-                self.segment_session = SegmentSessionPage(self.emg_obj, filename)
+                self.segment_session = SegmentSessionPage(filename)
                 self.segment_session.show()
         except Exception as e:
             self.edit_field.setText(f"Failed to load segment session: {e}")

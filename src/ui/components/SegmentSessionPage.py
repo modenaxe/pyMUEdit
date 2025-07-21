@@ -16,9 +16,8 @@ from ui.components.FormSpinBox import FormSpinBox
 from .VisualizationPanel import VisualizationPanel
 
 class SegmentSessionPage(QWidget):
-    def __init__(self, emg_obj, filename, parent=None):
+    def __init__(self, filename, parent=None):
         super().__init__(parent)
-        self.emg_obj = emg_obj
         self.rois = []
         self.coordinates = []
         self.data = {"data": [], "auxiliary": [], "target": [], "path": []}
@@ -110,16 +109,17 @@ class SegmentSessionPage(QWidget):
     # Create the dropdown signal reference options
     def generate_signal_reference_options(self):
         options = ["EMG amplitude"]
-        for name in self.emg_obj.signal_dict["auxiliaryname"]:
-            options.append(name)
+        for name in self.file["signal"]["auxiliaryname"][0, 0]:
+            options.append(name.strip())
+
         return options
 
     def on_reference_signal_change(self):
         self.vis_plot.clear()
         if self.reference_dropdown.dropdown.currentText() == "EMG amplitude":
             self.threshold_dropdown.setEnabled(False)
-            data = self.emg_obj.signal_dict["data"]
-            fsamp = self.emg_obj.signal_dict["fsamp"]
+            data = self.file["signal"][0, 0]["data"]
+            fsamp = self.file["signal"][0, 0]["fsamp"][0, 0]
 
             n_rows = data.shape[0] // 2
             tmp = np.zeros((n_rows, data.shape[1]))
@@ -130,8 +130,8 @@ class SegmentSessionPage(QWidget):
                 tmp[i, :] = abs_df.rolling(window=fsamp).mean().to_numpy().flatten()
 
             target = np.mean(tmp, axis=0)
-            self.emg_obj.signal_dict["target"] = target
-            self.emg_obj.signal_dict["path"] = target
+            self.file["signal"][0, 0]["target"] = target
+            self.file["signal"][0, 0]["path"] = target
 
             # Plot each row of the data
             for row in tmp:
@@ -142,22 +142,22 @@ class SegmentSessionPage(QWidget):
         else:
             self.threshold_dropdown.setEnabled(True)
             index = 0
-            for i, name in enumerate(self.emg_obj.signal_dict["auxiliaryname"]):
+            for i, name in enumerate(self.file["signal"][0, 0]["auxiliaryname"]):
                 # Find which auxiliary channel corresponding to the selected reference signal
-                if self.reference_dropdown.dropdown.currentText() == name:
+                if self.reference_dropdown.dropdown.currentText() == name.strip():
                     index = i
 
-            target = self.emg_obj.signal_dict["auxiliary"][index, :]
+            target = self.file["signal"][0, 0]["auxiliary"][index, :]
             # Plot the data
             self.vis_plot.plot(target, pen=pg.mkPen(color=(0.95, 0.95, 0.95), width=2))
 
     def threshold_edit_field_value_changed(self):
         threshold = self.threshold_dropdown.spinbox.value()
-        target = self.emg_obj.signal_dict["target"]
+        target = self.file["signal"][0, 0]["target"]
         if self.reference_dropdown.dropdown.currentText() != "EMG amplitude":
             # Segment target using threshold
             self.coordinates = segmenttargets(target, 1, threshold)
-            fsamp = self.emg_obj.signal_dict["fsamp"]
+            fsamp = self.file["signal"][0, 0]["fsamp"][0, 0]
 
             for i in range(len(self.coordinates) // 2):
                 self.coordinates[i * 2] -= fsamp
@@ -182,7 +182,7 @@ class SegmentSessionPage(QWidget):
 
     def windows_edit_field_value_changed(self):
         num_windows = self.windows_dropdown.spinbox.value()
-        target = self.emg_obj.signal_dict["target"]
+        target = self.file["signal"][0, 0]["target"]
 
         # Update plot
         self.vis_plot.clear()
@@ -228,37 +228,36 @@ class SegmentSessionPage(QWidget):
         self.data["target"] = []
         self.data["path"] = []
 
-        signal = self.emg_obj.signal_dict
         num_segments = len(self.coordinates) // 2
         for i in range(num_segments):
             start = self.coordinates[i * 2]
             end = self.coordinates[i * 2 + 1]
-            self.data["data"].append(signal["data"][:, start:end])
-            self.data["auxiliary"].append(signal["auxiliary"][:, start:end])
-            self.data["target"].append(signal["target"][start:end])
+            self.data["data"].append(self.file["signal"][0, 0]["data"][:, start:end])
+            self.data["auxiliary"].append(self.file["signal"][0, 0]["auxiliary"][:, start:end])
+            self.data["target"].append(self.file["signal"][0, 0]["target"][start:end])
 
         self.data["data"] = np.hstack(self.data["data"])
         self.data["auxiliary"] = np.hstack(self.data["auxiliary"])
         self.data["target"] = np.hstack(self.data["target"])
 
-        signal["data"] = self.data["data"]
-        signal["auxiliary"] = self.data["auxiliary"]
-        signal["target"] = self.data["target"]
-        signal["path"] = signal["target"]
+        self.file["signal"][0, 0]["data"] = self.data["data"]
+        self.file["signal"][0, 0]["auxiliary"] = self.data["auxiliary"]
+        self.file["signal"][0, 0]["target"] = self.data["target"]
+        self.file["signal"][0, 0]["path"] = self.file["signal"][0, 0]["target"]
 
         self.vis_plot.clear()
         # Update plot
-        self.vis_plot.plot(signal["target"], pen=pg.mkPen(color=(0.95, 0.95, 0.95), width=2))
+        self.vis_plot.plot(self.file["signal"][0, 0]["target"], pen=pg.mkPen(color=(0.95, 0.95, 0.95), width=2))
 
         # Disable split and concat buttons
         self.concat_button.setEnabled(False)
         self.split_button.setEnabled(False)
 
         # Save updated file
+        signal = self.file["signal"][0, 0]
         sio.savemat(self.filename, {"signal": signal}, do_compression=True)
 
     def split_clicked(self):
-        signal = self.emg_obj.signal_dict
         num_segments = len(self.coordinates) // 2
 
         for i in range(num_segments):
@@ -266,18 +265,20 @@ class SegmentSessionPage(QWidget):
             end = self.coordinates[i * 2 + 1]
 
             # Extract segments
-            self.data["data"].append(signal["data"][:, start:end])
-            self.data["auxiliary"].append(signal["auxiliary"][:, start:end])
-            self.data["target"].append(signal["target"][start:end])
-            self.data["path"].append(signal["target"][i])
+            self.data["data"].append(self.file["signal"][0, 0]["data"][:, start:end])
+            self.data["auxiliary"].append(self.file["signal"][0, 0]["auxiliary"][:, start:end])
+            self.data["target"].append(self.file["signal"][0, 0]["target"][start:end])
+            self.data["path"].append(self.file["signal"][0, 0]["target"][i])
 
-            signal["data"] = self.data["data"][i]
-            signal["auxiliary"] = self.data["auxiliary"][i]
-            signal["target"] = self.data["target"][i]
-            signal["path"] = self.data["path"][i]
+        for i in range(num_segments):
+            self.file["signal"][0, 0]["data"] = self.data["data"][i]
+            self.file["signal"][0, 0]["auxiliary"] = self.data["auxiliary"][i]
+            self.file["signal"][0, 0]["target"] = self.data["target"][i]
+            self.file["signal"][0, 0]["path"] = self.file["signal"][0, 0]["target"]
 
             # Save the segment into a .mat file
             save_filename = f"{self.filename}_{i + 1}.mat"
+            signal = self.file["signal"][0, 0]
             sio.savemat(save_filename, {"signal": signal}, do_compression=True)
 
         self.vis_plot.clear()
