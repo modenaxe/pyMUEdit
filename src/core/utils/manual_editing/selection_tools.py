@@ -229,7 +229,7 @@ def process_selection(MUedition, action_type, array_idx, mu_idx, x_min, x_max, y
         # Find local maxima around each discharge time. 
         # This logic comes from MUeditManual.display_selected_mus.
         # The pulse train values corresponding to discharge_times cannot be used directly.
-        window_size = 10 
+        window_size = 3 
         if 0 <= dt < len(pulse_train): 
             start = int(max(0, dt - window_size)) 
             end = int(min(len(pulse_train), dt + window_size + 1)) 

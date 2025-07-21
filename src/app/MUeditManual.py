@@ -35,6 +35,7 @@ from core.utils.decomposition.remove_duplicates_between_arrays import remove_dup
 from core.utils.decomposition.extend_emg import extend_emg
 from core.utils.decomposition.whiten_emg import whiten_emg
 from core.utils.manual_editing.smart_button_pushed import smart_button_pushed
+from core.utils.manual_editing.BatchFilterWorker import BatchFilterWorker
 
 # Import custom components
 from ui.components import (
@@ -157,25 +158,25 @@ class MUeditManual(QMainWindow):
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts."""
         if event.key() == Qt.Key.Key_Left:
-            self.scroll_left_button_pushed()
+            self.scroll_left_btn.click()
         elif event.key() == Qt.Key.Key_Right:
-            self.scroll_right_button_pushed()
+            self.scroll_right_btn.click()
         elif event.key() == Qt.Key.Key_Up:
-            self.zoom_in_button_pushed()
+            self.zoom_in_btn.click()
         elif event.key() == Qt.Key.Key_Down:
-            self.zoom_out_button_pushed()
+            self.zoom_out_btn.click()
         elif event.key() == Qt.Key.Key_A:
-            self.add_spikes_button_pushed()
+            self.add_spikes_btn.click()
         elif event.key() == Qt.Key.Key_D:
-            self.delete_spikes_button_pushed()
+            self.delete_spikes_btn.click()
         elif event.key() == Qt.Key.Key_R:
-            self.remove_outliers_button_pushed()
+            self.remove_outliers_btn.click()
         elif event.key() == Qt.Key.Key_Space:
-            self.update_mu_filter_button_pushed()
+            self.update_mu_filter_btn.click()
         elif event.key() == Qt.Key.Key_S:
-            self.lock_spikes_button_pushed()
+            self.lock_spikes_btn.click()
         elif event.key() == Qt.Key.Key_E:
-            self.extend_mu_filter_button_pushed()
+            self.extend_mu_filter_btn.click()
         else:
             super().keyPressEvent(event)
 
@@ -818,7 +819,7 @@ class MUeditManual(QMainWindow):
                 scatter = pg.ScatterPlotItem()
 
                 # Find local maxima around each discharge time
-                window_size = 10
+                window_size = 3
                 x_values = []
                 y_values = []
 
@@ -1771,6 +1772,11 @@ class MUeditManual(QMainWindow):
         from PyQt5.QtWidgets import QProgressDialog
         from PyQt5.QtCore import QTimer
 
+        original_dischargetimes = copy.deepcopy(self.MUedition["edition"]["Dischargetimes"])
+        original_silval = copy.deepcopy(self.MUedition["edition"]["silval"])
+        original_silvalcon = copy.deepcopy(self.MUedition["edition"]["silvalcon"])
+        print("deep copy complete!")
+
         progress = QProgressDialog("Removing outliers...", "Cancel", 0, 100, self)
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
@@ -1792,7 +1798,12 @@ class MUeditManual(QMainWindow):
                 QApplication.processEvents()
 
                 if progress.wasCanceled():
-                    break
+                    self.MUedition["edition"]["Dischargetimes"] = original_dischargetimes
+                    self.MUedition["edition"]["silval"] = original_silval
+                    self.MUedition["edition"]["silvalcon"] = original_silvalcon
+                    progress.close()
+                    print("Batch processing interruption!")
+                    return
 
                 # Create dummy arrays for remoutliers function
                 pulse_trains = np.zeros((1, self.MUedition["edition"]["Pulsetrain"][array_idx].shape[1]))
@@ -1820,7 +1831,12 @@ class MUeditManual(QMainWindow):
                 processed_mus += 1
 
             if progress.wasCanceled():
-                break
+                self.MUedition["edition"]["Dischargetimes"] = original_dischargetimes
+                self.MUedition["edition"]["silval"] = original_silval
+                self.MUedition["edition"]["silvalcon"] = original_silvalcon
+                progress.close()
+                print("Batch processing interruption!")
+                return
 
         progress.setValue(100)
         SuccessDialog(text="All motor unit outliers have been removed successfully.")
@@ -1832,6 +1848,12 @@ class MUeditManual(QMainWindow):
         if not self.MUedition:
             ErrorDialog(text="Please import file first!")
             return
+
+        original_pulsetrain = copy.deepcopy(self.MUedition["edition"]["Pulsetrain"])
+        original_dischargetimes = copy.deepcopy(self.MUedition["edition"]["Dischargetimes"])
+        original_silval = copy.deepcopy(self.MUedition["edition"]["silval"])
+        original_silvalcon = copy.deepcopy(self.MUedition["edition"]["silvalcon"])
+        print("deep copy complete!")
 
         # Create a progress dialog
         from PyQt5.QtWidgets import QProgressDialog
@@ -1862,7 +1884,13 @@ class MUeditManual(QMainWindow):
                 QApplication.processEvents()
 
                 if progress.wasCanceled():
-                    break
+                    self.MUedition["edition"]["Pulsetrain"] = original_pulsetrain
+                    self.MUedition["edition"]["Dischargetimes"] = original_dischargetimes
+                    self.MUedition["edition"]["silval"] = original_silval
+                    self.MUedition["edition"]["silvalcon"] = original_silvalcon
+                    progress.close()
+                    print("Batch processing interruption!")
+                    return
 
                 # Get discharge times
                 discharge_times = self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
@@ -1926,15 +1954,20 @@ class MUeditManual(QMainWindow):
 
                     # Update the pulse train and discharge times
                     self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = pulse_train
-                    self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = spikes
-
+                    self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = spikes 
                     # Recalculate SIL
                     self.calculate_silval(array_idx, mu_idx)
 
                 processed_mus += 1
 
             if progress.wasCanceled():
-                break
+                self.MUedition["edition"]["Pulsetrain"] = original_pulsetrain
+                self.MUedition["edition"]["Dischargetimes"] = original_dischargetimes
+                self.MUedition["edition"]["silval"] = original_silval
+                self.MUedition["edition"]["silvalcon"] = original_silvalcon
+                progress.close()
+                print("Batch processing interruption!")
+                return
 
         progress.setValue(100)
 
@@ -1970,7 +2003,9 @@ class MUeditManual(QMainWindow):
             QApplication.processEvents()
 
             if progress.wasCanceled():
-                break
+                progress.close()
+                print("Batch processing interruption!")
+                return
 
             # Get the pulse trains for this array
             array_pulse_train = self.MUedition["edition"]["Pulsetrain"][array_idx]
