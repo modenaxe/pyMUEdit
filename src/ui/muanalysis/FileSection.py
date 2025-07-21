@@ -35,15 +35,26 @@ class FileSection(QFrame):
         button_row = QHBoxLayout()
         button_row.setSpacing(10)
 
-        browse_btn = GeneralButton('Load File', lambda: mu.select_file_button_pushed(analysis_plot))
-        browse_btn.setFixedWidth(120)
+        browse_btn = GeneralButton('Load File', lambda: mu.select_file_button_pushed(analysis_plot, False))
+        # browse_btn.setFixedWidth(120)
+        #REMOVE THIS FOR FINAL JUST FOR TESTING
+        browse_btn.setFixedWidth(90)
         browse_btn.setFixedHeight(40)
 
+        json_btn = GeneralButton('Json File', lambda: mu.select_file_button_pushed(analysis_plot, True))
+        # json_btn.setFixedWidth(120)
+        #REMOVE THIS FOR FINAL JUST FOR TESTING
+        json_btn.setFixedWidth(90)
+        json_btn.setFixedHeight(40)
+
         self.reset_btn = ResetButton('Reset')
-        self.reset_btn.setFixedWidth(120)
+        # self.reset_btn.setFixedWidth(120)
+        #REMOVE THIS FOR FINAL JUST FOR TESTING
+        self.reset_btn.setFixedWidth(90)
         self.reset_btn.setFixedHeight(40)
 
         button_row.addWidget(browse_btn)
+        button_row.addWidget(json_btn)
         button_row.addWidget(self.reset_btn)
 
         layout.addWidget(title_label)

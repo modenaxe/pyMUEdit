@@ -186,8 +186,8 @@ class MUAnalysis(QWidget):
         """
         )
         sidebar_layout = QVBoxLayout(sidebar)
-        sidebar_layout.setContentsMargins(10, 10, 10, 10)
-        sidebar_layout.setSpacing(10)
+        sidebar_layout.setContentsMargins(10, 5, 10, 5)
+        sidebar_layout.setSpacing(0)
 
         # title
         title_label = MajorHeading("Analysis")
