@@ -491,7 +491,7 @@ class HDEMGDashboard(QMainWindow):
                     decomp_app.emg_obj.signal_dict = {
                         'data': emg_data['data'],
                         'fsamp': emg_data['fsamp'],
-                        'nchans': emg_data['nchans'],
+                        'nChan': emg_data['nChan'],
                     }
                     print(f"Restored EMG data for channel viewer: shape={emg_data['data'].shape}")
                 except Exception as e:
