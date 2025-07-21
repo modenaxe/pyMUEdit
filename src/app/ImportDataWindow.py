@@ -6,6 +6,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent
 import numpy as np
 import pyqtgraph as pg
+import scipy.io as sio
 
 # Import UI setup function
 from ui.ImportDataWindowUI import setup_ui
@@ -168,7 +169,7 @@ class ImportDataWindow(QWidget):
         self.failure_message.setVisible(False)
         self.file_info_label.setStyleSheet(f"color: #4CAF50; font-weight: bold;")
 
-        if ext == ".otb+":
+        if ext == ".otb+" or ext == ".mat":
             try:
                 # Construct the full file path
                 full_path = os.path.join(path, file)
@@ -179,21 +180,24 @@ class ImportDataWindow(QWidget):
                     os.makedirs(temp_dir)
                 self.emg_obj = EMG_offline_EMG(save_dir=temp_dir, to_filter=True)
 
-                # Call the open_otb_plus function with the correct parameters
-                self.emg_obj.open_otb_plus(full_path)
+                fsamp = []
+                if ext == ".otb+":
+                    # Call the open_otb_plus function with the correct parameters
+                    self.emg_obj.open_otb_plus(full_path)
 
-                # Get the signal from the EMG object
-                signal = self.emg_obj.signal_dict
+                    # Create a default save name for .mat files
+                    savename = os.path.join(path, file + "_processed.mat")
+
+                    # Save the data as a .mat file in the background
+                    if self.emg_obj.signal_dict:
+                        self.save_mat_in_background(savename, {"signal": self.emg_obj.signal_dict}, True)
+                elif ext == '.mat':
+                    # Call the open_otb_plus function with the correct parameters
+                    self.emg_obj.open_mat(full_path)
 
                 # Store the imported signal
+                signal = self.emg_obj.signal_dict
                 self.imported_signal = signal
-
-                # Create a default save name for .mat files
-                savename = os.path.join(path, file + "_processed.mat")
-
-                # Save the data as a .mat file in the background
-                if signal:
-                    self.save_mat_in_background(savename, {"signal": signal}, True)
 
                 # Load file data into the plot
                 if "data" in signal and "fsamp" in signal:
@@ -218,7 +222,9 @@ class ImportDataWindow(QWidget):
                         self.preview_plot.setTitle(f"Signal Preview ({num_preview_channels} channels)")
                     except Exception as e:
                         print(f"Error creating preview plot: {e}")
-                
+                else:
+                    print("Error cannot display data")
+
                 # Resize app window to show the plot properly, then display the plot in the preview pane
                 self.parent_window.resize(1300, 800)
                 self.preview_stacked_frame.setCurrentIndex(PreviewElement.GRAPH.value)
@@ -231,7 +237,7 @@ class ImportDataWindow(QWidget):
                     "signal": signal,
                     "filesize": os.path.getsize(full_path)  # Get actual file size
                 }
-                
+
                 self.fileImported.emit(file_info)
 
             except Exception as e:
