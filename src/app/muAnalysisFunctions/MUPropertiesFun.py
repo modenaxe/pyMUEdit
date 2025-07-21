@@ -348,9 +348,14 @@ class MUPropertiesFunc:
         end_steady=-1,
         event_="rec_derec_steady",
         idr_range=None,
+        time_range=None,
     ):
         # Check that all the inputs are correct
         errormessage = f"event_ must be one of the following strings: rec, derec, rec_derec, steady, rec_derec_steady. {event_} was passed instead."
+
+        # Handle time_range if provided (for steady and rec_derec_steady)
+        if time_range is not None and event_ in ["steady", "rec_derec_steady"]:
+            start_steady, end_steady = time_range
         if event_ not in [
             "rec",
             "derec",
