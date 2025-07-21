@@ -12,7 +12,12 @@ from PyQt5.QtWidgets import (
     QFrame,
     QComboBox,
     QListView, # moy
+    QSizePolicy, #shr
+    QSpacerItem,
 )
+from PyQt5.QtGui  import QIcon          # 图标
+from PyQt5.QtCore import QSize   
+from pathlib import Path
 
 # Import custom components
 from ui.components import (
@@ -257,47 +262,6 @@ def create_mu_selection_tab(main_window):
 
     return mu_tab
 
-# def create_batch_processing_tab(main_window):
-#     """Create the Batch Processing tab."""
-#     batch_tab = QWidget()
-#     batch_tab.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
-#     batch_layout = QVBoxLayout(batch_tab)
-#     batch_layout.setContentsMargins(15, 15, 15, 15)
-#     batch_layout.setSpacing(10)
-
-#     # Batch processing content
-#     batch_header = SectionHeader("Batch Processing")
-#     batch_layout.addWidget(batch_header)
-
-#     # Create batch processing buttons
-#     button_configs = [
-#         ("1 - Remove all the outliers", main_window.remove_all_outliers_button_pushed),
-#         ("2 - Update all MU filters", main_window.update_all_mu_filters_button_pushed),
-#         ("3 - Remove flagged MU", main_window.remove_flagged_mu_button_pushed),
-#         ("4 - Remove duplicates within grids", main_window.remove_duplicates_within_grids_button_pushed),
-#         ("5 - Remove duplicates between grids", main_window.remove_duplicates_between_grids_button_pushed),
-#     ]
-
-#     for text, handler in button_configs:
-#         btn = ActionButton(text, primary=False)
-#         btn.clicked.connect(handler)
-#         batch_layout.addWidget(btn)
-
-#         # Store button references
-#         if text.startswith("1 -"):
-#             main_window.remove_outliers_btn = btn
-#         elif text.startswith("2 -"):
-#             main_window.update_filters_btn = btn
-#         elif text.startswith("3 -"):
-#             main_window.remove_flagged_btn = btn
-#         elif text.startswith("4 -"):
-#             main_window.remove_duplicates_within_btn = btn
-#         elif text.startswith("5 -"):
-#             main_window.remove_duplicates_between_btn = btn
-
-#     batch_layout.addStretch()
-
-#     return batch_tab
 
 def create_batch_processing_tab(main_window):
     """Create the Batch Processing tab."""
@@ -477,16 +441,16 @@ def setup_display_panel(main_window):
     """Set up the display panel with all controls and plots using modern UI components."""
     # Use a VisualizationPanel instead of a basic CleanCard for better semantics
     main_window.display_panel = VisualizationPanel("EMG Signal Analysis")
-    title_lbl = main_window.display_panel.title_label   # ← 直接拿到 QLabel
+    title_lbl = main_window.display_panel.title_label  
 
     font = title_lbl.font()
-    font.setPointSize(25)         # 修改想要的字号
-    font.setBold(True)            # 加粗
+    font.setPointSize(20)       
+    font.setBold(True)      
     title_lbl.setFont(font)
-    #  新建按钮
+    
     main_window.select_file_title_btn = ActionButton("Press here to select file", primary=False)
     main_window.select_file_title_btn.setFixedHeight(28)
-
+    main_window.select_file_title_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
     main_window.select_file_title_btn.clicked.connect(
         main_window.select_file_button_pushed
     )
@@ -550,6 +514,17 @@ def setup_display_panel(main_window):
     undo_layout.addWidget(main_window.zoom_slider)
     
     display_layout.addWidget(undo_row)                        # ★★ 只 add 一次
+
+    ICON_DIR = Path(__file__).resolve().parent.parent / "public"
+    def _ico(name):    
+        return QIcon(str(ICON_DIR / f"{name}.png"))
+
+    for btn, name in (
+            (main_window.undo_title_btn, "undo"),
+            (main_window.redo_title_btn, "redo")):
+        btn.setText("")           
+        btn.setIcon(_ico(name))      
+        btn.setIconSize(QSize(18, 18))   
 
     # SIL info display
     main_window.sil_info = QLineEdit()

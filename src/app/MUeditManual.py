@@ -74,9 +74,37 @@ class MUeditManual(QMainWindow):
         # Set up the UI
         setup_ui(self)
 
+        self.dirty = False
+        self.update_save_button()
+
         # Add back button if needed when used in embedded mode
         if parent:
             self.add_back_button()
+
+    def mark_dirty(self):
+        if not self.dirty:
+            self.dirty = True
+            self.update_save_button()
+
+    # ② 保存成功后调
+    def mark_clean(self):
+        if self.dirty:
+            self.dirty = False
+            self.update_save_button()
+
+    # ③ 统一改外观
+    def update_save_button(self):
+        if self.dirty:
+            self.floating_save_btn.setEnabled(True)
+            self.floating_save_btn.setStyleSheet("""
+                QPushButton{background:#0072ee;color:#fff;border:none;border-radius:4px;padding:8px 15px;}
+                QPushButton:hover{background:#2383ff;}
+            """)
+        else:
+            self.floating_save_btn.setEnabled(False)
+            self.floating_save_btn.setStyleSheet("""
+                QPushButton{background:#c0c0c0;color:#f2f2f2;border:none;border-radius:4px;padding:8px 15px;}
+            """)
 
     def _push_undo(self, array_idx: int, mu_idx: int): # moy
         """Push the current MU state into the undo stack and clear the redo stack."""
@@ -1244,6 +1272,7 @@ class MUeditManual(QMainWindow):
                 if checkbox.isChecked():
                     # If the MU is currently checked, update the display
                     self.mu_checkbox_state_changed()
+                    self.mark_dirty()
                 break
 
     def lock_spikes_button_pushed(self):
@@ -1297,7 +1326,8 @@ class MUeditManual(QMainWindow):
 
             self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = filtered_distime[0]
             self.mu_checkbox_state_changed()
-
+            if removal_dict.get(mu_text, 0):  # shr
+                self.mark_dirty()
             removal_summary.update(removal_dict)
         if removal_summary:
             summary_lines = [f"{mu}: Removed {cnt} outliers" for mu, cnt in removal_summary.items()]
@@ -1653,7 +1683,7 @@ class MUeditManual(QMainWindow):
                 
                 origin_name = "_".join(mu_text.split("_")[-2:])                
                 checkbox.setText(f"FLAGGED - {origin_name} (SIL: {sil_value:.4f})")
-
+        self.mark_dirty() #shr
         # Update the display
         self.mu_checkbox_state_changed()
     
@@ -1700,6 +1730,7 @@ class MUeditManual(QMainWindow):
                 checkbox.setText(f"{origin_name} (SIL: {sil_value:.4f})")
 
         # Update the display
+        self.mark_dirty() #shr
         self.mu_checkbox_state_changed()
 
     # Batch processing
@@ -1765,6 +1796,7 @@ class MUeditManual(QMainWindow):
 
         progress.setValue(100)
         SuccessDialog(text="All motor unit outliers have been removed successfully.")
+        self.mark_dirty() #shr
         # Update the current MU display
         self.mu_checkbox_state_changed()
 
@@ -1880,6 +1912,7 @@ class MUeditManual(QMainWindow):
         progress.setValue(100)
 
         # Update the current MU display
+        self.mark_dirty() #shr
         self.mu_checkbox_state_changed()
 
     def remove_flagged_mu_button_pushed(self):
@@ -1973,6 +2006,7 @@ class MUeditManual(QMainWindow):
         self.MUedition["edition"]["silval"] = clean_silval
         self.MUedition["edition"]["silvalcon"] = clean_silvalcon
 
+        self.mark_dirty() #shr
         # Update the MU checkboxes
         self.update_mu_checkboxes()
 
@@ -2027,6 +2061,7 @@ class MUeditManual(QMainWindow):
                     self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = unique_discharge_times[mu_idx]
                     self.calculate_silval(array_idx, mu_idx)
 
+            self.mark_dirty() #shr
             # Update the MU checkboxes
             self.update_mu_checkboxes()
         self._run_with_progress("Removing duplicates within grids", _task)
@@ -2119,6 +2154,7 @@ class MUeditManual(QMainWindow):
             self.MUedition["edition"]["Pulsetrain"] = new_pulsetrain
             self.MUedition["edition"]["Dischargetimes"] = new_dischargetimes
 
+            self.mark_dirty() #shr
             # Update the MU checkboxes
             self.update_mu_checkboxes()
         self._run_with_progress("Removing duplicates between grids", _task)
@@ -2422,6 +2458,7 @@ class MUeditManual(QMainWindow):
         # Save the data
         sio.savemat(savename, {"signal": signal, "parameters": parameters, "edition": edition})
 
+        self.mark_clean()
         # Show a confirmation message
         from PyQt5.QtWidgets import QMessageBox
 
