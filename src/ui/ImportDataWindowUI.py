@@ -96,7 +96,7 @@ def create_right_content(import_window):
 def create_dropzone_card(import_window):
     """Create a clean card for the file dropzone."""
     dropzone_card = CleanCard()
-    dropzone_card.setMinimumHeight(180)
+    dropzone_card.setMinimumHeight(200)
 
     # Create layout for content
     dropzone_layout = QVBoxLayout()
@@ -167,12 +167,6 @@ def create_preview_section(import_window):
     preview_layout = QVBoxLayout()
     preview_layout.setContentsMargins(0, 0, 0, 0)
     preview_layout.setSpacing(15)
-
-    # Add section header
-    preview_header = QLabel("Signal Preview")
-    preview_header.setFont(QFont("Segoe UI", 14, QFont.Bold))
-    preview_header.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
-    preview_layout.addWidget(preview_header)
 
     # Create preview frame
     preview_frame = QFrame()
