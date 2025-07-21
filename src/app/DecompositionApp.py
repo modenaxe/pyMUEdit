@@ -4,10 +4,8 @@ import traceback
 import numpy as np
 import scipy.io as sio
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
-from PyQt5.QtCore import Qt
 
 import pyqtgraph as pg
-from core.utils.decomposition_state import DecompositionState
 
 # Add project root to path
 from pathlib import Path
@@ -17,18 +15,16 @@ sys.path.insert(0, str(project_root))
 
 # Import UI setup
 from ui.DecompositionAppUI import setup_ui
-from ui.components.VisualisationPage import VisualisationPage
 
 # Import workers and other required modules
 from workers.SaveMatWorker import SaveMatWorker
 from workers.DecompositionWorker import DecompositionWorker
 from core.utils.config_and_input.prepare_parameters import prepare_parameters
-from core.utils.config_and_input.segmentsession import SegmentSession
 from MUeditManual import MUeditManual
 
 
 class DecompositionApp(QMainWindow):
-    def __init__(self, emg_obj=None, filename=None, pathname=None, imported_signal=None, parent=None):
+    def __init__(self, emg_obj=None, filename=None, pathname=None, imported_signal=None, config=None, parent=None):
         super().__init__(parent)
 
         # Initialize variables
@@ -36,9 +32,8 @@ class DecompositionApp(QMainWindow):
         self.pathname = pathname
         self.emg_obj = emg_obj
         self.imported_signal = imported_signal
-        self.visualisation_page = None
 
-        self.MUdecomp = {"config": None}
+        self.MUdecomp = {"config": config}
         self.Configuration = None
         self.MUedition = None
         self.Backup = {"lock": 0}
@@ -62,39 +57,17 @@ class DecompositionApp(QMainWindow):
 
     def connect_signals(self):
         """Connect all UI signals to their handlers."""
-        # Left panel connections
-        self.set_configuration_button.clicked.connect(self.set_configuration_button_pushed)
-        self.segment_session_button.clicked.connect(self.segment_session_button_pushed)
-
         # Center panel connections
         self.start_button.clicked.connect(self.start_button_pushed)
 
         # Right panel connections
         self.save_output_button.clicked.connect(self.save_output_to_location)
         self.next_button.clicked.connect(self.open_editing_mode)
-        self.channel_view_button.clicked.connect(self.open_channel_viewer)
 
     def back_to_import(self):
         """Return to the Import window."""
         # This will now be connected externally to show the import view in the dashboard
         pass
-
-    def open_channel_viewer(self):
-        """Open the Channel Viewer window with the current EMG data"""
-        if not self.emg_obj or "data" not in self.emg_obj.signal_dict:
-            self.edit_field.setText("No EMG data loaded for channel viewer.")
-            return
-
-        try:
-            # Handle persistance - if channel viewer has already been opened,
-            # open the same viewer (not a new instance)
-            if self.visualisation_page is not None:
-                self.visualisation_page.show()
-            else:
-                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj)
-                self.visualisation_page.show()
-        except Exception as e:
-            self.edit_field.setText(f"Failed to load channel viewer: {e}")
 
     def set_data(self, emg_obj, filename, pathname, imported_signal=None):
         """Set data from ImportDataWindow and update UI."""
@@ -162,7 +135,6 @@ class DecompositionApp(QMainWindow):
 
         # Enable the start button and configuration
         self.start_button.setEnabled(True)
-        self.set_configuration_button.setEnabled(True)
 
         # Update status text
         self.edit_field.setText(f"Loaded {self.filename}")
@@ -311,49 +283,6 @@ class DecompositionApp(QMainWindow):
     def cleanup_thread(self, worker):
         if worker in self.threads:
             self.threads.remove(worker)
-
-    def set_configuration_button_pushed(self):
-        if "config" in self.MUdecomp and self.MUdecomp["config"]:
-            try:
-                if self.pathname is not None and self.filename is not None:
-                    savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
-                    self.MUdecomp["config"].pathname.setText(savename)
-
-                # Show the dialog
-                self.MUdecomp["config"].show()
-                self.set_configuration_button.setStyleSheet(
-                    "color: #cf80ff; background-color: #7f7f7f; font-family: 'Poppins'; font-size: 18pt;"
-                )
-            except Exception as e:
-                print(f"Error showing configuration dialog: {e}")
-                traceback.print_exc()
-        else:
-            print("No configuration dialog available")
-
-    def segment_session_button_pushed(self):
-        self.segment_session = SegmentSession()
-
-        if self.pathname is not None and self.filename is not None:
-            self.segment_session.pathname.setText(self.pathname + self.filename + "_decomp.mat")
-
-        # Setup the dropdown contents before setting the current item
-        self.segment_session.reference_dropdown.clear()
-        for i in range(self.reference_dropdown.count()):
-            self.segment_session.reference_dropdown.addItem(self.reference_dropdown.itemText(i))
-
-        try:
-            if self.segment_session.pathname.text():
-                self.segment_session.file = sio.loadmat(self.segment_session.pathname.text())
-        except Exception as e:
-            print(f"Warning: Could not load file: {e}")
-
-        # Set current text after file is loaded
-        self.segment_session.reference_dropdown.setCurrentText(self.reference_dropdown.currentText())
-        self.segment_session.initialize_with_file()
-        self.segment_session.show()
-        self.segment_session_button.setStyleSheet(
-            "color: #cf80ff; background-color: #7f7f7f; font-family: 'Poppins'; font-size: 18pt;"
-        )
 
     def start_button_pushed(self):
         # Reset iteration counter at the start of a new decomposition

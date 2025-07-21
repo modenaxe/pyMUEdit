@@ -1,14 +1,17 @@
 import sys
 import os
 import traceback
-from PyQt5.QtWidgets import QApplication, QWidget, QFileDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent
 import numpy as np
+import scipy.io as sio
 import pyqtgraph as pg
 
 # Import UI setup function
+from core.utils.config_and_input.segmentsession import SegmentSession
 from ui.ImportDataWindowUI import setup_ui
+from ui.components.VisualisationPage import VisualisationPage
 
 # Ensure the current and project directories are in the system path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -27,25 +30,29 @@ class PreviewElement(Enum):
     GRAPH = 1
 
 
-class ImportDataWindow(QWidget):
+class ImportDataWindow(QMainWindow):
     # Signal to notify the main window to return to dashboard
     return_to_dashboard_requested = pyqtSignal()
 
     # Signal to request showing decomposition view with data
-    decomposition_requested = pyqtSignal(object, str, str, object)
+    decomposition_requested = pyqtSignal(object, str, str, object, object)
 
     # Signal to notify other windows when a file is imported (if needed)
     fileImported = pyqtSignal(dict)
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.parent_window = parent
+    def __init__(self, emg_obj=None, filename=None, pathname=None, imported_signal=None, parent=None):
+        super().__init__()
+
         # Initialize file loading variables
-        self.filename = None
-        self.pathname = None
-        self.imported_signal = None  # Will store the imported signal data
+        self.emg_obj = emg_obj
+        self.filename = filename
+        self.pathname = pathname
+        self.imported_signal = imported_signal  # Will store the imported signal data
         self.threads = []  # Keep reference to worker threads
         self.file_size_bytes = None  # Store file size in bytes
+        self.config = None # will be used to store configuration
+
+        self.visualisation_page = None
 
         # Create EMG object using the appropriate class
         temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp")
@@ -59,20 +66,23 @@ class ImportDataWindow(QWidget):
         # Set up the UI using our improved UI setup
         setup_ui(self)
 
+        # Connect signals for configration buttons
+        self.connect_signals()
+
         # Set up drag and drop events for the dropzone
         self.dropzone.setAcceptDrops(True)
         self.dropzone.dragEnterEvent = self.dragEnterEvent
         self.dropzone.dropEvent = self.dropEvent
 
-    def dragEnterEvent(self, event: QDragEnterEvent):
+    def dragEnterEvent(self, a0: QDragEnterEvent | None):
         """Handle drag enter events for file drops."""
-        if event.mimeData().hasUrls():  # type:ignore
-            event.acceptProposedAction()
+        if a0 and a0.mimeData().hasUrls():  # type:ignore
+            a0.acceptProposedAction()
 
-    def dropEvent(self, event: QDropEvent):
+    def dropEvent(self, a0: QDropEvent | None):
         """Handle drop events for files."""
-        if event.mimeData().hasUrls():  # type:ignore
-            url = event.mimeData().urls()[0]  # type:ignore
+        if a0.mimeData().hasUrls():  # type:ignore
+            url = a0.mimeData().urls()[0]  # type:ignore
             file_path = url.toLocalFile()
             if os.path.isfile(file_path):
                 self.filename = os.path.basename(file_path)
@@ -219,7 +229,6 @@ class ImportDataWindow(QWidget):
                         print(f"Error creating preview plot: {e}")
                 
                 # Resize app window to show the plot properly, then display the plot in the preview pane
-                self.parent_window.resize(1300, 800)
                 self.preview_stacked_frame.setCurrentIndex(PreviewElement.GRAPH.value)
                 self.next_btn.setEnabled(True)
 
@@ -232,6 +241,10 @@ class ImportDataWindow(QWidget):
                 }
                 
                 self.fileImported.emit(file_info)
+
+                self.set_configuration_button.setEnabled(True)
+                self.segment_session_button.setEnabled(True)
+                self.channel_view_button.setEnabled(True)
 
             except Exception as e:
                 self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
@@ -288,7 +301,7 @@ class ImportDataWindow(QWidget):
                 self.save_mat_in_background(savename, {"signal": self.imported_signal}, True)
 
             # Emit signal to request showing decomposition view
-            self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal)
+            self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, self.config)
 
         except Exception as e:
             print(f"Error requesting decomposition view: {e}")
@@ -311,6 +324,86 @@ class ImportDataWindow(QWidget):
 
         # Call the parent method
         super().hideEvent(event)
+
+    def connect_signals(self):
+        """Connect all UI signals to their handlers."""
+        # Left panel connections
+        self.set_configuration_button.clicked.connect(self.set_configuration_button_pushed)
+        self.segment_session_button.clicked.connect(self.segment_session_button_pushed)
+        self.channel_view_button.clicked.connect(self.open_channel_viewer)
+
+    def open_channel_viewer(self):
+        """Open the Channel Viewer window with the current EMG data"""
+        if not self.emg_obj or "data" not in self.emg_obj.signal_dict:
+            print("No EMG data loaded for channel viewer.")
+            return
+
+        try:
+            # Handle persistance - if channel viewer has already been opened,
+            # open the same viewer (not a new instance)
+            if self.visualisation_page is not None:
+                self.visualisation_page.show()
+            else:
+                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj)
+                self.visualisation_page.show()
+        except Exception as e:
+            print(f"Failed to load channel viewer: {e}")
+
+    def set_configuration_button_pushed(self):
+        if self.config:
+            try:
+                if self.pathname is not None and self.filename is not None:
+                    savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
+                    self.config["pathname"].setText(savename)
+
+                # Show the dialog
+                self.MUdecomp["config"].show()
+            except Exception as e:
+                print(f"Error showing configuration dialog: {e}")
+                traceback.print_exc()
+        else:
+            print("No configuration dialog available")
+
+    def segment_session_button_pushed(self):
+        self.segment_session = SegmentSession()
+
+        if self.pathname is not None and self.filename is not None:
+            self.segment_session.pathname.setText(self.pathname + self.filename + "_decomp.mat")
+
+        # Setup the dropdown contents before setting the current item
+        self.segment_session.reference_dropdown.clear()
+
+        signal = self.emg_obj.signal_dict
+        if "auxiliaryname" in signal:
+            for name in signal["auxiliaryname"]:
+                self.segment_session.reference_dropdown.addItem(name)
+        elif "target" in signal:
+            path_data = signal["path"]
+            target_data = signal["target"]
+
+            if isinstance(path_data, np.ndarray) and isinstance(target_data, np.ndarray):
+                path_reshaped = path_data.reshape(1, -1) if path_data.ndim == 1 else path_data
+                target_reshaped = target_data.reshape(1, -1) if target_data.ndim == 1 else target_data
+                signal["auxiliary"] = np.vstack((path_reshaped, target_reshaped))
+            else:
+                signal["auxiliary"] = np.vstack((np.array([path_data]), np.array([target_data])))
+
+            signal["auxiliaryname"] = ["Path", "Target"]
+            self.segment_session.reference_dropdown.addItem("EMG amplitude")
+            for name in signal["auxiliaryname"]:
+                self.segment_session.reference_dropdown.addItem(name)
+        else:
+            self.segment_session.reference_dropdown.addItem("EMG amplitude")
+
+        try:
+            if self.segment_session.pathname.text():
+                self.segment_session.file = sio.loadmat(self.segment_session.pathname.text())
+        except Exception as e:
+            print(f"Warning: Could not load file: {e}")
+
+        # Set current text after file is loaded
+        self.segment_session.initialize_with_file()
+        self.segment_session.show()
 
 
 # For testing the window independently
