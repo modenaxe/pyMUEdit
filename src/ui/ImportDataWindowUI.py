@@ -13,21 +13,26 @@ from ui.components import (
     Sidebar, 
     VisualizationPanel
 )
+from ui.components.SettingsGroup import SettingsGroup
 
 
 def setup_ui(import_window):
     """Set up the UI for the import data window using custom components."""
     # Set widget properties
     import_window.setWindowTitle("HDEMG Analysis - Import Data")
-    import_window.resize(1200, 800)
+    import_window.setGeometry(100, 100, 1200, 800)
+    import_window.setStyleSheet(f"background-color: {CleanTheme.BG_MAIN};")
 
-    # Set up main layout
-    main_layout = QVBoxLayout(import_window)
-    main_layout.setContentsMargins(0, 0, 0, 0)
-    main_layout.setSpacing(0)
+    # Main widget and layout
+    import_window.central_widget = QWidget()
+    import_window.setCentralWidget(import_window.central_widget)
+    import_window.main_layout = QHBoxLayout(import_window.central_widget)
+    import_window.main_layout.setContentsMargins(0, 0, 0, 0)
+    import_window.main_layout.setSpacing(0)
 
     # Create main content layout
-    content_layout = QHBoxLayout()
+    content_widget = QWidget()
+    content_layout = QVBoxLayout(content_widget)
     content_layout.setContentsMargins(0, 0, 0, 0)
     content_layout.setSpacing(0)
 
@@ -36,11 +41,13 @@ def setup_ui(import_window):
     content_layout.addWidget(right_content, 1)
 
     # Add content to main layout
-    main_layout.addLayout(content_layout, 1)
+    content_layout.addLayout(content_layout, 1)
 
     # Add footer
     footer = create_footer(import_window)
-    main_layout.addWidget(footer)
+    content_layout.addWidget(footer)
+
+    import_window.main_layout.addWidget(content_widget)
 
     # Store references to functions for sidebar management
     import_window.update_sidebar_with_recent_files = lambda: update_sidebar_with_recent_files(import_window)
@@ -74,6 +81,10 @@ def create_right_content(import_window):
     preview_section = create_preview_section(import_window)
     right_layout.addWidget(preview_section)
 
+    # Create configuration section
+    configuration_section = create_configuration_section(import_window)
+    right_layout.addLayout(configuration_section)
+
     # Add stretch to push content to the top
     right_layout.addStretch(1)
 
@@ -86,12 +97,12 @@ def create_right_content(import_window):
 def create_dropzone_card(import_window):
     """Create a clean card for the file dropzone."""
     dropzone_card = CleanCard()
-    dropzone_card.setMinimumHeight(250)
+    dropzone_card.setMinimumHeight(180)
 
     # Create layout for content
     dropzone_layout = QVBoxLayout()
-    dropzone_layout.setContentsMargins(20, 20, 20, 20)
-    dropzone_layout.setSpacing(15)
+    dropzone_layout.setContentsMargins(10, 10, 10, 10)
+    dropzone_layout.setSpacing(10)
     dropzone_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     # Add SVG icon
@@ -101,7 +112,7 @@ def create_dropzone_card(import_window):
     icon_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     cloud_icon = QSvgWidget("public/upload_icon.svg")
-    cloud_icon.setFixedSize(48, 33)
+    cloud_icon.setFixedSize(32, 22)
     cloud_icon.setStyleSheet("margin-bottom: 10px;")
 
     icon_layout.addWidget(cloud_icon)
@@ -231,6 +242,21 @@ def create_preview_section(import_window):
 
     return preview_card
 
+def create_configuration_section(import_window):
+    config_group = QHBoxLayout()
+    import_window.set_configuration_button = ActionButton("Set Configuration", primary=False)
+    import_window.set_configuration_button.setEnabled(False)
+    config_group.addWidget(import_window.set_configuration_button)
+
+    import_window.segment_session_button = ActionButton("Segment Session", primary=False)
+    import_window.segment_session_button.setEnabled(False)
+    config_group.addWidget(import_window.segment_session_button)
+
+    import_window.channel_view_button = ActionButton("Channel Viewer", primary=False)
+    import_window.channel_view_button.setEnabled(False)
+    config_group.addWidget(import_window.channel_view_button)
+
+    return config_group
 
 def create_footer(import_window):
     """Create the footer with file info and navigation buttons."""
