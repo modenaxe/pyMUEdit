@@ -27,7 +27,7 @@ def setup_ui(main_window):
     """Sets up the UI for the HDEMG dashboard with improved sidebar."""
     # Main window settings
     main_window.setWindowTitle("HDEMG App")
-    main_window.resize(1200, 700)
+    main_window.resize(1500, 1000)
     main_window.setMinimumSize(1000, 600)
     # main_window.setStyleSheet(f"background-color: {CleanTheme.BG_MAIN};")
 
