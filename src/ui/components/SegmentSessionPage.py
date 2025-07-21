@@ -129,16 +129,15 @@ class SegmentSessionPage(QWidget):
                 abs_df = pd.DataFrame(abs_signal)
                 tmp[i, :] = abs_df.rolling(window=fsamp).mean().to_numpy().flatten()
 
-            target = np.mean(tmp, axis=0)
-            self.file["signal"][0, 0]["target"] = target
-            self.file["signal"][0, 0]["path"] = target
+            self.file["signal"][0, 0]["target"] = np.mean(tmp, axis=0)
+            self.file["signal"][0, 0]["path"] = np.mean(tmp, axis=0)
 
             # Plot each row of the data
             for row in tmp:
                 self.vis_plot.plot(row, pen=pg.mkPen(color=(128, 128, 128), width=0.25))
 
             # Plot the mean/target
-            self.vis_plot.plot(target, pen=pg.mkPen(color=(217, 84, 26), width=2))
+            self.vis_plot.plot(self.file["signal"][0, 0]["target"], pen=pg.mkPen(color=(217, 84, 26), width=2))
         else:
             self.threshold_dropdown.setEnabled(True)
             index = 0
@@ -147,9 +146,9 @@ class SegmentSessionPage(QWidget):
                 if self.reference_dropdown.dropdown.currentText() == name.strip():
                     index = i
 
-            target = self.file["signal"][0, 0]["auxiliary"][index, :]
+            self.file["signal"][0, 0]["target"] = self.file["signal"][0, 0]["auxiliary"][index, :]
             # Plot the data
-            self.vis_plot.plot(target, pen=pg.mkPen(color=(0.95, 0.95, 0.95), width=2))
+            self.vis_plot.plot(self.file["signal"][0, 0]["target"], pen=pg.mkPen(color=(0.95, 0.95, 0.95), width=2))
 
     def threshold_edit_field_value_changed(self):
         threshold = self.threshold_dropdown.spinbox.value()
