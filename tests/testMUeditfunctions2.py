@@ -13,7 +13,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 from scipy.io import loadmat
-from core.utils.config_and_input.open_otb import open_otb
+from core.utils.config_and_input.open_otb_plus import open_otb_plus
 from core.utils.decomposition.notch_filter import notch_filter
 from core.utils.decomposition.bandpass_filter import bandpass_filter
 from core.utils.decomposition.extend_emg import extend_emg
@@ -50,87 +50,83 @@ inputFile40 = os.path.join(os.getcwd())
 input = loadmat(expOutOpenOTBPlus)
 
 emg = offline_EMG(os.path.join(os.getcwd(), 'emg_obj_save_dir'), True)
-emg.open_otb(inputFile20)
+emg.open_otb_plus(inputFile20)
 # print("/////////////////////////////////")
 # emg.convul_sphering(0, 0, 0)
 # print(emg.signal_dict)
-# Tests uses unmodified data from original open_otb file where possible, which came from the provided data files trial1_20MVC.otb+ and trial1_40MVC.otb+
+# Tests uses unmodified data from original open_otb_plus file where possible, which came from the provided data files trial1_20MVC.otb+ and trial1_40MVC.otb+
 class Test20MVCfile(unittest.TestCase): 
 
-    def testOpenOTB(self):
+    def testOpenOTBPlus(self):
         if not os.path.exists(expOutOpenOTBPlus):
             print("expected OpenOTBPlus output file not found!")
         expected = loadmat(expOutOpenOTBPlus)
-        #output = open_otb(emg, inputFile20)
+        output = open_otb_plus(inputFile20)
         
-        # print(expected)
         # test data arrays are the exact same
         
-        output = emg.signal_dict
         print("//////////////////////////////")
-        print(emg.signal_dict)
+        print(output)
         print("//////////////////////////////")
         print(expected)
-        # failing, outputing wrong things
-        # try:
-        #     npt.assert_array_equal(output.get("data"), expected.get("signal")[0][0][0])
-        # except AssertionError as e:
-        #     raise AssertionError(f"open_otb failed to return the expected data:\n{e}")
-        
-        # auxiliary??? does it not exist anymore?
-        # try:
-        #     npt.assert_array_equal(output.get("auxiliary"), expected.get("signal")[0][0][1])
-        # except AssertionError as e:
-        #     raise AssertionError(f"open_otb failed to return the expected auxiliary array:\n{e}")
+        # grid data
+        try:
+            npt.assert_array_equal(output.get("data"), expected.get("signal")[0][0][0])
+        except AssertionError as e:
+            raise AssertionError(f"open_otb_plus failed to return the expected data:\n{e}")
 
-        # # auxiliary name (failing cause it needs to be array of arrays), also nonexistant 
-        # try:
-        #     npt.assert_array_equal(output[1].get("auxiliaryname"), expected.get("signal")[0][0][2])
-        # except AssertionError as e:
-        #     raise AssertionError(f"open_otb failed to return the expected auxiliary name array:\n{e}")
+        # auxiliary data
+        try:
+            npt.assert_array_equal(output.get("auxiliary"), expected.get("signal")[0][0][1])
+        except AssertionError as e:
+            raise AssertionError(f"open_otb_plus failed to return the expected auxiliary array:\n{e}")
+
+        # auxiliary names
+        try:
+            npt.assert_array_equal(np.array([output.get("auxiliaryname")]), expected.get("signal")[0][0][2])
+        except AssertionError as e:
+            raise AssertionError(f"open_otb_plus failed to return the expected auxiliary name array:\n{e}")
 
         # fsamp (cast to uint16)
         try:
-            npt.assert_array_equal(np.asarray(output.get("fsamp"), dtype = np.uint16), expected.get("signal")[0][0][3])
+            npt.assert_array_equal(np.array(output.get("fsamp"), dtype = np.uint16), expected.get("signal")[0][0][3])
         except AssertionError as e:
-            raise AssertionError(f"open_otb failed to return the expected fsamp value:\n{e}")
+            raise AssertionError(f"open_otb_plus failed to return the expected fsamp value:\n{e}")
         
         # nChan 
         try:
-            npt.assert_array_equal(np.asarray(output.get("nchans"), dtype = np.uint8), expected.get("signal")[0][0][4])
+            npt.assert_array_equal(np.array(output.get("nChan"), dtype = np.uint8), expected.get("signal")[0][0][4])
         except AssertionError as e:
-            raise AssertionError(f"open_otb failed to return the expected nChan value:\n{e}")
+            raise AssertionError(f"open_otb_plus failed to return the expected nChan value:\n{e}")
         
         # ngrid 
         try:
-            npt.assert_array_equal(np.asarray(output.get("ngrids")), expected.get("signal")[0][0][5])
+            npt.assert_array_equal(np.array(output.get("ngrid")), expected.get("signal")[0][0][5])
         except AssertionError as e:
-            raise AssertionError(f"open_otb failed to return the expected ngrid value:\n{e}")
-        
-        # nneedles??? nelectrodes??? electrodes = muscle? 
+            raise AssertionError(f"open_otb_plus failed to return the expected ngrid value:\n{e}")
 
-        # grid name (needs to be 2 nested arrays) maybe look through and test each elements?
-        # try:
-        #     npt.assert_array_equal(np.asarray(output.get("electrodes")), expected.get("signal")[0][0][6])
-        # except AssertionError as e:
-        #     raise AssertionError(f"open_otb failed to return the expected grid/electode names:\n{e}")
-        
-        #muscle (needs to be nested arrays) 
-        # try:
-        #     npt.assert_array_equal(np.asarray(output.get("muscles")), expected.get("signal")[0][0][7])
-        # except AssertionError as e:
-        #     raise AssertionError(f"open_otb failed to return the expected muscle names:\n{e}")
-        
+        # grid names
+        try:
+            npt.assert_array_equal(np.asarray([output.get("gridname")]), expected.get("signal")[0][0][6])
+        except AssertionError as e:
+            raise AssertionError(f"open_otb_plus failed to return the expected grid names:\n{e}")
+
+        # muscle (needs to be nested arrays)
+        try:
+            npt.assert_array_equal(np.asarray([output.get("muscle")]), expected.get("signal")[0][0][7])
+        except AssertionError as e:
+            raise AssertionError(f"open_otb_plus failed to return the expected muscle names:\n{e}")
+
         # path
         try:
             npt.assert_array_equal(np.asarray([output.get("path")]), expected.get("signal")[0][0][8])
         except AssertionError as e:
-            raise AssertionError(f"open_otb failed to return the expected path names:\n{e}")
+            raise AssertionError(f"open_otb_plus failed to return the expected path names:\n{e}")
         # target
         try:
             npt.assert_array_equal(np.asarray([output.get("target")]), expected.get("signal")[0][0][9])
         except AssertionError as e:
-            raise AssertionError(f"open_otb failed to return the expected targets:\n{e}")
+            raise AssertionError(f"open_otb_plus failed to return the expected targets:\n{e}")
 
 
 # to add openIntan and openOEphys 
@@ -380,8 +376,8 @@ class Test20MVCfile(unittest.TestCase):
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
-    #suite.addTest(Test20MVCfile('testOpenOTB')) 
-    suite.addTest(Test20MVCfile('testConvolutiveSphering')) 
+    suite.addTest(Test20MVCfile('testOpenOTBPlus')) 
+    # suite.addTest(Test20MVCfile('testConvolutiveSphering')) 
     # notchfilter, bandpass, extend and whitening will be merged into convolutivesphereing
     #suite.addTest(Test20MVCfile('testNotchFilter')) 
     #suite.addTest(Test20MVCfile('testBandpassFilter'))
