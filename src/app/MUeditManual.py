@@ -2498,6 +2498,13 @@ class MUeditManual(QMainWindow):
         parameters = copy.deepcopy(self.MUedition.get("parameters", {}))
         edition = copy.deepcopy(self.MUedition["edition"])
 
+        # 解决单个MU保存后读取失败的问题，Convert Pulsetrain to MATLAB-compatible 1xN cell array
+        pulsetrain_list = self.MUedition["edition"]["Pulsetrain"]
+        pulsetrain_matlab_cell = np.empty((1, len(pulsetrain_list)), dtype=object)
+        for i, pt in enumerate(pulsetrain_list):
+            pulsetrain_matlab_cell[0, i] = pt
+        edition["Pulsetrain"] = pulsetrain_matlab_cell  # overwrite with proper format
+
         for field in ("Dischargetimes", "silval", "silvalcon"): #将这三个字典转为字符串存储
             if field in edition and isinstance(edition[field], dict):
                 # tuple key转str
