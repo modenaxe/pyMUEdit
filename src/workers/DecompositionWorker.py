@@ -69,10 +69,10 @@ class DecompositionWorker(QThread):
             nwins = int(len(self.emg_obj.plateau_coords) / 2)
 
             # For each electrode
-            for g in range(int(self.emg_obj.signal_dict["nelectrodes"])):
-                electrode_progress = 0.25 + (0.6 * g / self.emg_obj.signal_dict["nelectrodes"])
+            for g in range(int(self.emg_obj.signal_dict["ngrid"])):
+                electrode_progress = 0.25 + (0.6 * g / self.emg_obj.signal_dict["ngrid"])
                 self.progress.emit(
-                    f"Processing electrode {g+1}/{self.emg_obj.signal_dict['nelectrodes']}", electrode_progress
+                    f"Processing electrode {g+1}/{self.emg_obj.signal_dict['ngrid']}", electrode_progress
                 )
 
                 # Calculate extension factor
@@ -119,7 +119,7 @@ class DecompositionWorker(QThread):
 
                 # For each window interval
                 for interval in range(nwins):
-                    interval_progress = electrode_progress + (0.6 / self.emg_obj.signal_dict["nelectrodes"]) * (
+                    interval_progress = electrode_progress + (0.6 / self.emg_obj.signal_dict["ngrid"]) * (
                         interval / nwins
                     )
                     self.progress.emit(f"Electrode {g+1}, interval {interval+1}/{nwins}", interval_progress)
@@ -232,12 +232,6 @@ class DecompositionWorker(QThread):
                 "diff_data",
             ]:
                 result[field] = self.emg_obj.signal_dict[field]
-
-        # Map field names to expected MUedit format
-        result["data"] = self.emg_obj.signal_dict.get("data", np.array([]))
-        result["ngrid"] = self.emg_obj.signal_dict.get("nelectrodes", 1)
-        result["gridname"] = self.emg_obj.signal_dict.get("electrodes", [])
-        result["muscle"] = self.emg_obj.signal_dict.get("muscles", [])
 
         # Add spatial information
         if hasattr(self.emg_obj, "coordinates"):

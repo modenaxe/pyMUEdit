@@ -17,7 +17,7 @@ sys.path.append(project_root)
 sys.path.append(current_dir)
 
 # Import needed functions from other modules
-from core.utils.config_and_input.open_otb import open_otb
+from core.utils.config_and_input.open_otb_plus import open_otb_plus
 from core.EmgDecomposition import offline_EMG as EMG_offline_EMG
 from workers.SaveMatWorker import SaveMatWorker
 from enum import Enum
@@ -179,8 +179,8 @@ class ImportDataWindow(QWidget):
                     os.makedirs(temp_dir)
                 self.emg_obj = EMG_offline_EMG(save_dir=temp_dir, to_filter=True)
 
-                # Call the open_otb function with the correct parameters
-                open_otb(self.emg_obj, full_path)
+                # Call the open_otb_plus function with the correct parameters
+                self.emg_obj.open_otb_plus(full_path)
 
                 # Get the signal from the EMG object
                 signal = self.emg_obj.signal_dict
