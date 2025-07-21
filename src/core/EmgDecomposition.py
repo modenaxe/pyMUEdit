@@ -2,7 +2,7 @@ import scipy
 import numpy as np
 from typing import Dict, List, Tuple, Any, Optional, Union
 
-from .utils.config_and_input.open_otb import open_otb
+from .utils.config_and_input.open_otb_plus import open_otb_plus
 from .utils.config_and_input.electrode_formatter import electrode_formatter
 from .utils.decomposition.notch_filter import notch_filter
 from .utils.decomposition.bandpass_filter import bandpass_filter
@@ -99,13 +99,18 @@ class offline_EMG(EMG):
             "cov": 0,  # Coefficient of variation
         }
 
-    def open_otb(self, inputfile: str) -> None:
+    def open_otb_plus(self, inputfile: str) -> None:
         """
         Opens OTB file and extracts data.
-        This is now a wrapper around the standalone open_otb function.
+        This is now a wrapper around the standalone open_otb_plus function.
         """
         print(f"Opening OTB file: {inputfile}")
-        return open_otb(self, inputfile)
+
+        self.signal_dict = open_otb_plus(inputfile)
+        self.decomp_dict = {}  # initialising this dictionary here for later use
+
+        # initialising a dictionary that is an empty nested list
+        self.mu_dict = dict(pulse_trains=[], discharge_times=[[] for item in range(1)])
 
     def electrode_formatter(self) -> None:
         """
@@ -120,7 +125,7 @@ class offline_EMG(EMG):
         print("Starting channel rejection")
         prev_chans_per_electrode = 0
         total_chans_rejected = 0
-        for i in range(self.signal_dict["nelectrodes"]):
+        for i in range(self.signal_dict["ngrid"]):
             num_channels = self.chans_per_electrode[i]
             # Initialise the boolean array for each electrode (if it doesn't exist)
             if len(self.rejected_channels) <= i:
@@ -192,10 +197,10 @@ class offline_EMG(EMG):
         tracker = 0
         n_intervals = int(len(self.plateau_coords) / 2)
         print(f"Number of intervals: {n_intervals}")
-        batched_data = [None] * (self.signal_dict["nelectrodes"] * n_intervals)
+        batched_data = [None] * (self.signal_dict["ngrid"] * n_intervals)
 
-        for i in range(int(self.signal_dict["nelectrodes"])):
-            print(f"Batching electrode {i+1}/{self.signal_dict['nelectrodes']}")
+        for i in range(int(self.signal_dict["ngrid"])):
+            print(f"Batching grid {i+1}/{self.signal_dict['ngrid']}")
             electrode = i + 1
             for interval in range(n_intervals):
                 start_idx = int(self.plateau_coords[interval * 2])
@@ -227,10 +232,10 @@ class offline_EMG(EMG):
         # Process similarly to the batched version
         tracker = 0
         n_intervals = int(len(self.plateau_coords) / 2)
-        batched_data = [None] * (self.signal_dict["nelectrodes"] * n_intervals)
+        batched_data = [None] * (self.signal_dict["ngrid"] * n_intervals)
 
-        for i in range(int(self.signal_dict["nelectrodes"])):
-            print(f"Batching electrode {i+1}/{self.signal_dict['nelectrodes']}")
+        for i in range(int(self.signal_dict["ngrid"])):
+            print(f"Batching grid {i+1}/{self.signal_dict['ngrid']}")
             electrode = i + 1
             for interval in range(n_intervals):
                 start_idx = int(self.plateau_coords[interval * 2])
@@ -473,7 +478,7 @@ class offline_EMG(EMG):
     def post_process_EMG(self, electrode):
         print(f"Starting post-processing for electrode {electrode+1}")
 
-        self.mus_in_array = np.zeros(self.signal_dict["nelectrodes"])
+        self.mus_in_array = np.zeros(self.signal_dict["ngrid"])
         electrode += 1
 
         # batch processing over each window
@@ -551,7 +556,7 @@ class offline_EMG(EMG):
     def post_process_EMG_for_biofeedback(self, electrode, interval):
         print(f"Starting biofeedback post-processing for electrode {electrode+1}")
 
-        self.mus_in_array = np.zeros(self.signal_dict["nelectrodes"])
+        self.mus_in_array = np.zeros(self.signal_dict["ngrid"])
         electrode += 1
 
         # Dewhiten MU filters

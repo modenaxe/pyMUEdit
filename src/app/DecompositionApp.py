@@ -124,8 +124,8 @@ class DecompositionApp(QMainWindow):
             if "fsamp" in signal:
                 file_info += f"Sample rate: {signal['fsamp']} Hz\n"
 
-            if "nelectrodes" in signal:
-                file_info += f"Electrodes: {signal['nelectrodes']}\n"
+            if "ngrid" in signal:
+                file_info += f"Grids: {signal['ngrid']}\n"
 
         self.file_info_display.setText(file_info)
 
