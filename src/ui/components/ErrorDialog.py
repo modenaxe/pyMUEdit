@@ -7,7 +7,7 @@ from PyQt5.QtCore import Qt
 import os
 
 class ErrorDialog(QDialog):
-    def __init__(self, title="Error!", text="There is something wrong. Please change text."):
+    def __init__(self, title_label="Error!", text="There is something wrong. Please change text."):
         super().__init__()
         self.setWindowTitle("Error")
         #self.setFixedSize(350, 280)
@@ -34,7 +34,7 @@ class ErrorDialog(QDialog):
         layout.addWidget(icon_label)
 
         # title
-        title = QLabel(title)
+        title = QLabel(title_label)
         title.setAlignment(Qt.AlignCenter)
         title.setStyleSheet("font-size: 18px; font-weight: bold; color: #222;")
         layout.addWidget(title)
