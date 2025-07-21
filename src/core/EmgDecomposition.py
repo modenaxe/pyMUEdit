@@ -2,6 +2,8 @@ import scipy
 import numpy as np
 from typing import Dict, List, Tuple, Any, Optional, Union
 
+from core.utils.config_and_input.open_mat import open_mat
+
 from .utils.config_and_input.open_otb_plus import open_otb_plus
 from .utils.config_and_input.electrode_formatter import electrode_formatter
 from .utils.decomposition.notch_filter import notch_filter
@@ -107,6 +109,18 @@ class offline_EMG(EMG):
         print(f"Opening OTB file: {inputfile}")
 
         self.signal_dict = open_otb_plus(inputfile)
+        self.decomp_dict = {}  # initialising this dictionary here for later use
+
+        # initialising a dictionary that is an empty nested list
+        self.mu_dict = dict(pulse_trains=[], discharge_times=[[] for item in range(1)])
+
+    def open_mat(self, inputfile: str) -> None:
+        """
+        Opens MAT file and extracts data.
+        """
+        print(f"Opening MAT file: {inputfile}")
+
+        self.signal_dict = open_mat(inputfile)
         self.decomp_dict = {}  # initialising this dictionary here for later use
 
         # initialising a dictionary that is an empty nested list
