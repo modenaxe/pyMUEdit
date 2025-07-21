@@ -24,7 +24,7 @@ class AdvancedTools(QWidget):
         super().__init__(parent)
 
         adv_layout = QVBoxLayout(self)
-
+        adv_layout.setContentsMargins(10,0,10,0)
         # the title 
         advanced_label = AnalysisText.create_subtitle("ADVANCED TOOLS")
         adv_layout.addWidget(advanced_label)
