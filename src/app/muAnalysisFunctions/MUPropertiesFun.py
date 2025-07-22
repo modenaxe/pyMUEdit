@@ -33,7 +33,6 @@ class MUPropertiesFunc:
         self.results = store
         self.basic = []
         self.over = None
-        print(id(self.results))
 
     # MVC value management
     def set_mvc(self, mvc_value):
@@ -67,6 +66,19 @@ class MUPropertiesFunc:
         self.over = over
         self.basic = [self.convert(rec), self.convert(start)]
         SelectRange(analysis_plot, self.two_point)
+        
+    def compute_thresh(self, event_, type_):
+        file = FileUploadFunc.file
+        if file == None:
+            ErrorDialog("No file has been loaded", "Error").exec_()
+            return
+        if (len(self.convert(self.mvc_value)) == 0 
+            or len(event_) == 0
+            or len(type_) == 0
+        ):
+            ErrorDialog("You are missing Inputs", "Error").exec_()
+            return
+        self.compute_thresholds(FileUploadFunc.file, event_, type_, mvc=float(self.get_mvc()))
 
     def two_point(self, x, y):
         value = int(self.get_mvc())
@@ -282,11 +294,11 @@ class MUPropertiesFunc:
                 f"mvc must be one of the following types: float, int. {type(mvc)} was passed instead."
             )
 
-        if type_ != "rel" and mvc == 0:
-            # Ask the user to input MVC
-            mvc = float(
-                input("--------------------------------\nEnter MVC value in newton: ")
-            )
+        # if type_ != "rel" and mvc == 0:
+        #     # Ask the user to input MVC
+        #     mvc = float(
+        #         input("--------------------------------\nEnter MVC value in newton: ")
+        #     )
 
         # Create an object to append the results
         toappend = []
@@ -309,6 +321,8 @@ class MUPropertiesFunc:
                 rel_RT = np.nan
                 rel_DERT = np.nan
 
+            
+            
             if event_ == "rt_dert" and type_ == "abs_rel":
                 toappend.append(
                     {
@@ -336,7 +350,10 @@ class MUPropertiesFunc:
                 toappend.append({"rel_DERT": rel_DERT})
 
         mus_thresholds = pd.DataFrame(toappend)
-
+        self.results.append_analysis_hist(
+            "MUs Thresholds", mus_thresholds.to_dict("records")
+        )
+        
         return mus_thresholds
 
     def compute_dr(
