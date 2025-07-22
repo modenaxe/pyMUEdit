@@ -346,7 +346,7 @@ class offline_EMG(EMG):
 
     ######################### FAST ICA AND CONVOLUTIVE KERNEL COMPENSATION  ############################################
 
-    def fast_ICA_and_CKC(self, g, interval, tracker, cf_type="square", plot_callback=None):
+    def fast_ICA_and_CKC(self, g, interval, tracker, cf_type="skew", plot_callback=None):
         print(f"Starting FastICA for electrode {g+1}, interval {interval+1}, contrast={cf_type}, iterations={self.its}")
 
         init_its = np.zeros([self.its], dtype=int)  # tracker of initialisaitons of separation vectors across iterations

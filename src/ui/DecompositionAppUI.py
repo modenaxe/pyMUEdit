@@ -127,7 +127,7 @@ def setup_left_panel(main_window):
     # Advanced Options panel
     advanced_panel = CollapsiblePanel("Advanced Options")
 
-    contrast_field = FormDropdown("Contrast Function", ["square", "skew", "logcosh"])
+    contrast_field = FormDropdown("Contrast Function", ["skew", "kurtosis", "logcosh"])
     main_window.contrast_function_dropdown = contrast_field.dropdown
     main_window.contrast_function_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
     main_window.contrast_function_dropdown.setCurrentText("square")  # Set initial value
