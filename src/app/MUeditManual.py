@@ -79,6 +79,7 @@ class MUeditManual(QMainWindow):
 
         self.dirty = False
         self.update_save_button()
+        self.dirty_depth = 0  #shr
 
         # Add back button if needed when used in embedded mode
         if parent:
@@ -95,7 +96,6 @@ class MUeditManual(QMainWindow):
             self.dirty = False
             self.update_save_button()
 
-    # ③ 统一改外观
     def update_save_button(self):
         if self.dirty:
             self.floating_save_btn.setEnabled(True)
@@ -118,6 +118,9 @@ class MUeditManual(QMainWindow):
             "times": copy.deepcopy( self.MUedition["edition"]["Dischargetimes"][(array_idx, mu_idx)]),
         })
         self.redo_stack.clear() # Any new edits will invalidate the redo history
+        self.dirty_depth += 1
+        if self.dirty_depth == 1:        # 0 -> 1
+            self.mark_dirty()
 
     def _run_with_progress(self, title, task_fn): # add pop-up window moy
 
@@ -1678,7 +1681,11 @@ class MUeditManual(QMainWindow):
         # Refresh Display
         self.calculate_silval(a, m)
         self.mu_checkbox_state_changed()
-
+        if self.dirty_depth > 0:
+            self.dirty_depth -= 1
+            if self.dirty_depth == 0: 
+                self.mark_clean()
+                
     def redo_button_pushed(self):
         if not self.redo_stack:
             WarningDialog(text="Nothing left to redo.")
@@ -1702,7 +1709,10 @@ class MUeditManual(QMainWindow):
         # Refresh Display
         self.calculate_silval(a, m)
         self.mu_checkbox_state_changed()
-
+        self.dirty_depth += 1
+        if self.dirty_depth == 1:        # 0 -> 1
+            self.mark_dirty()
+            
     def flag_mu_for_deletion_button_pushed(self):
         """Flag the selected motor units for deletion."""
         if not self.MUedition:
@@ -1871,6 +1881,7 @@ class MUeditManual(QMainWindow):
 
         progress.setValue(100)
         SuccessDialog(text="All motor unit outliers have been removed successfully.")
+        dirty_depth += 1
         self.mark_dirty() #shr
         # Update the current MU display
         self.mu_checkbox_state_changed()
@@ -2558,7 +2569,7 @@ class MUeditManual(QMainWindow):
 
         # Save the data
         sio.savemat(savename, {"signal": signal, "parameters": parameters, "edition": edition})
-
+        self.dirty_depth = 0 #shr
         self.mark_clean()
         # Show a confirmation message
         from PyQt5.QtWidgets import QMessageBox
