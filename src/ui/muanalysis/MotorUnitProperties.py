@@ -94,6 +94,8 @@ class MotorUnitPropertiesDialog(QDialog):
         dr_section.addWidget(self.dr_firings_steady)
 
         layout.addLayout(box)
+        compute_threshold = ComputeThresholdSection(func)
+        layout.addLayout(compute_threshold)
         layout.addLayout(dr_section)
         func.set_mvc(self.mvc_input)
         
