@@ -8,7 +8,6 @@ from PyQt5.QtWidgets import (
     QDialog,
     QMessageBox,
 )
-from PyQt5 import QtCore
 import matplotlib.pyplot as plt
 from ui.components.SaveablePlot import SaveablePlot
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
@@ -17,6 +16,7 @@ from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown, AnalysisLabeledDropdown
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
+from core.muAnalysisCore.SelectRange import SelectRange
 
 class SignalEditing(QWidget):
 
@@ -165,7 +165,7 @@ class SignalEditing(QWidget):
 
         convert_factor = AnalysisInput("Factor", "2.5", parent=window)
         convert_factor.set("2.5")
-        convert_layout.addWidget(convert_factor)
+        convert_layout.addWidget(convert_factor, stretch=1)
         self.convert_factor = convert_factor
 
         # aligning button to bottom
@@ -323,14 +323,14 @@ class SignalEditing(QWidget):
         
         print("removing offset")
         try:
-            # getting values 
-            offset = float(self.remove_offset_value.get())
-            auto = float(self.remove_auto_offset.get())
+            # getting values (openhdemg doesn't accept floats)
+            offset = int(self.remove_offset_value.get())
+            auto = int(self.remove_auto_offset.get())
 
             plt.close()
 
+            # setting up the plot 
             self.fig, self.ax = plt.subplots()
-            self.ax.plot(self.mu.file["REF_SIGNAL"][0])
             self.ax.set_xlabel("Samples")
             self.ax.set_ylabel('Reference signal')
 
@@ -341,80 +341,29 @@ class SignalEditing(QWidget):
             if (auto <= 0):
                 if (offset != 0):
                     self.mu.file["REF_SIGNAL"][0] = self.mu.file["REF_SIGNAL"][0] - offset
-
-                    canvas = SaveablePlot(self.fig)
-                    self.analysis_plot.display_fig(canvas)
+                    self.plot()
                 else:
-                    title = (
-                        "TODO: REPLACE TITLE WITH INSTRUCTIONS"
-                    )
-                    self.ax.set_title(title)
-
-                    self.coords = []
-                    self.vlines = []
-
-                    self.fig.canvas.mpl_connect('button_press_event', lambda event: self.on_click(event))
-                    self.fig.canvas.mpl_connect('key_press_event', lambda event: self.on_press(event))
-
-                    canvas = SaveablePlot(self.fig)
-                    self.analysis_plot.display_plot(canvas)
-
-                    self.fig.canvas.setFocusPolicy( QtCore.Qt.ClickFocus )
-                    self.fig.canvas.setFocus()
+                    SelectRange(self.analysis_plot, self.two_point)
             else :
                 # subtracting 
                 offset = self.mu.file["REF_SIGNAL"].iloc[0:auto].mean()
-                self.mu.file["REF_SIGNAL"][0] = (
-                    self.mu.file["REF_SIGNAL"][0] - float(offset[0])
-                )
-                canvas = SaveablePlot(self.fig)
-                self.analysis_plot.display_fig(canvas)
-
-            # plotting it in the center
-            # canvas = SaveablePlot(self.fig)
-            # self.analysis_plot.display_fig(canvas)
+                self.mu.file["REF_SIGNAL"][0] = (self.mu.file["REF_SIGNAL"][0] - float(offset))
+                self.plot()
         except ValueError as e:
             ErrorDialog("Offset and Automatic Offset value must be a valid integer")
 
-    # helper function for remove_offset 
-    # TODO: update according to aditi's future function
-    def on_click(self, event):
-        # only want to process clicks within the plot 
-        if event.inaxes != self.ax:
-            return
+    # defining two_point for SelectRange 
+    # executes after points are selected (don't need to revert center plot)
+    def two_point(self, x, y):
+        offsetval = self.mu.file["REF_SIGNAL"].loc[x:y].mean()
+        self.mu.file["REF_SIGNAL"][0] = (self.mu.file["REF_SIGNAL"][0] - float(offsetval))
+        self.plot()
 
-        # if it's a mouse click
-        if event.button == 1 and len(self.coords) < 2:
-            x = event.xdata
-            self.coords.append(x)
-            
-            line = self.ax.axvline(x=x, color='r')
-            self.vlines.append(line)
-            
-            self.fig.canvas.draw()
+    # helper function for remove_offset
+    def plot(self):
+        self.ax.plot(self.mu.file["REF_SIGNAL"][0])
+        self.analysis_plot.display_fig(SaveablePlot(self.fig))
 
-    def on_press(self, event):
-        if event.key == 'enter' and len(self.coords) == 2:
-            points = [round(point) for point in self.coords]
-            points.sort()
-
-            # from openhdemg:
-            start, end = points[0], points[1]
-
-            offset = self.mu.file["REF_SIGNAL"].loc[start:end].mean()
-            # We need to convert the series offsetval into int 
-            self.mu.file["REF_SIGNAL"][0] = (
-                self.mu.file["REF_SIGNAL"][0] - float(offset[0])
-            )
-
-            # plotting normal 
-            for line in self.vlines:
-                line.remove()
-            self.coords.clear()
-            self.vlines.clear()
-            self.ax.set_title("")
-            canvas = SaveablePlot(self.fig)
-            self.analysis_plot.display_fig(canvas)
 
     def convert(self):
         if not self.valid_file(): 

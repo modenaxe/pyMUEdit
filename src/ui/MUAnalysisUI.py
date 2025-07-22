@@ -266,7 +266,7 @@ class MUAnalysis(QWidget):
         resize_file = Resize(self.mu, self.analysis_plot)
         resize_btn = GeneralButton("Resize", lambda: resize_file.resize(resize_btn))
         center_layout.addWidget(resize_btn)
-        self.analysis_plot.set_reseize(resize_btn)
+        self.analysis_plot.set_resize(resize_btn)
         center_layout.addWidget(self.analysis_plot)
 
         return center
