@@ -1796,6 +1796,8 @@ class MUeditManual(QMainWindow):
                 
                 origin_name = "_".join(mu_text.split("_")[-2:])                
                 checkbox.setText(f"FLAGGED - {origin_name} (SIL: {sil_value:.4f})")
+        
+    
         self.update_save_button()
         # Update the display
         self.mu_checkbox_state_changed()
@@ -2083,6 +2085,9 @@ class MUeditManual(QMainWindow):
         clean_silval = {}
         clean_silvalcon = {}
         clean_flag = [] #添加flag剪裁
+        
+        # Create a flag for checking if remaining MU is empty
+        array_empty_flag = True
 
         # Process each array
         for array_idx in range(total_arrays):
@@ -2114,11 +2119,8 @@ class MUeditManual(QMainWindow):
             else:
                 array_flag = array_flag_full
 
-            keep_mask = np.ones(n_mu, dtype=bool)
-            array_empty_flag = True
 
-            # Create a flag for checking if remaining MU is empty
-            array_empty_flag = True
+            keep_mask = np.ones(n_mu, dtype=bool)
 
             # Check each MU
             for mu_idx in range(array_pulse_train.shape[0]):
@@ -2134,6 +2136,8 @@ class MUeditManual(QMainWindow):
                     array_flag[mu_idx] == 1
                 ):
                     keep_mask[mu_idx] = False
+            
+            print("keep_mask", keep_mask)
 
             # Keep only non-flagged MUs
             if np.any(keep_mask):
@@ -2161,7 +2165,7 @@ class MUeditManual(QMainWindow):
         progress.setValue(100)
         
         if array_empty_flag:
-            WarningDialog(text="You Are Trying to Remove All MUs!\nPlease Check Your Flagged MU.")
+            WarningDialog(text="You Are Trying to Remove All MUs!\nPlease Check Your Flagged MU.", enableCheckBox=False)
             return
 
         # Update the data
