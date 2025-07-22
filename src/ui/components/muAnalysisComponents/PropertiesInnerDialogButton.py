@@ -8,9 +8,10 @@ class PropertiesInnerDialogButton(QPushButton):
     """Buttons within Motor Unit Properties dialogs"""
 
     def __init__(self, text):
-        super().__init__(text )
+        super().__init__(text)
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setFont(QFont("Arial", 11))
         self.setStyleSheet(
             f"""
             QPushButton {{
@@ -20,6 +21,8 @@ class PropertiesInnerDialogButton(QPushButton):
                 height: 40%;
                 max-width: 100%;
                 border-radius: 4px;
+                padding: 6px 12px;
+                min-width: 140px;
             }}
             QPushButton:hover {{
                 background-color: #4a5672;
