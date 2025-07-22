@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (
     QMainWindow,
     QComboBox,
 )
+from PyQt5 import QtCore
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 
@@ -33,14 +34,20 @@ class AnalysisPlot(QWidget):
         self.canvas = None
         self.load_file_prompt()
 
+
     # loads the prompt into canvas
     def load_file_prompt(self):
         self.canvas = AnalysisText.create_prompt("Press Load File to View Data")
         self.layout.addWidget(self.canvas)
 
     # used to help toggle resize button
-    def set_reseize(self, button):
+    def set_resize(self, button):
         self.resize = button
+
+    # sets the plot into focus
+    def focus(self):
+        self.canvas.setFocusPolicy( QtCore.Qt.ClickFocus )
+        self.canvas.setFocus()
 
     # removes the canvas, or the last thing in the widget 
     def remove_canvas(self):
@@ -86,6 +93,8 @@ class AnalysisPlot(QWidget):
 
         self.plot = plot 
         self.layout.addWidget(self.plot)
+        
+        self.focus()
 
         self.resize.hide()
         self.toggle_btn.show()
