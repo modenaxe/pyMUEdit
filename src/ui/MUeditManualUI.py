@@ -173,7 +173,7 @@ def setup_control_panel(main_window):
     control_layout.addWidget(save_group)
 
     # 隐藏原来的save
-    save_group.hide() 
+    save_group.hide()
 
     # Set the control panel as the scroll area's widget
     scroll_area.setWidget(control_panel_widget)
