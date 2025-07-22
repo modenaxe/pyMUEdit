@@ -64,6 +64,7 @@ class MUPropertiesFunc:
             return
         over.hide()
         self.over = over
+        self.analysis_plot = analysis_plot
         self.basic = [self.convert(rec), self.convert(start)]
         SelectRange(analysis_plot, self.two_point)
         
@@ -91,6 +92,7 @@ class MUPropertiesFunc:
             mvc=value,
         )
         self.over.close()
+        self.analysis_plot.revert()
 
     # OPENHDEMG
     # adapted parts labelled with AC
