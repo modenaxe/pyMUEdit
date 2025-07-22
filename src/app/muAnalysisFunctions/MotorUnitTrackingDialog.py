@@ -49,18 +49,25 @@ class MotorUnitTrackingDialog(QDialog):
         file1_layout = QHBoxLayout()
         load_file1_btn = QPushButton("Load File 1")
         load_file1_btn.clicked.connect(self.load_file1)
+        
+        load_json1_btn = QPushButton("Load JSON 1")
+        load_json1_btn.clicked.connect(self.load_json1)
         self.file1_label = QLabel("No file selected")
         self.file1_label.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
         file1_layout.addWidget(load_file1_btn)
+        file1_layout.addWidget(load_json1_btn)
         file1_layout.addWidget(self.file1_label)
         main_layout.addLayout(file1_layout)
 
         file2_layout = QHBoxLayout()
         load_file2_btn = QPushButton("Load File 2")
         load_file2_btn.clicked.connect(self.load_file2)
+        load_json2_btn = QPushButton("Load JSON 2")
+        load_json2_btn.clicked.connect(self.load_json2)
         self.file2_label = QLabel("No file selected")
         self.file2_label.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
         file2_layout.addWidget(load_file2_btn)
+        file2_layout.addWidget(load_json2_btn)
         file2_layout.addWidget(self.file2_label)
         main_layout.addLayout(file2_layout)
 
@@ -97,6 +104,16 @@ class MotorUnitTrackingDialog(QDialog):
         self.mu_pair_selector.currentIndexChanged.connect(self.on_mu_pair_changed)
         controls_layout.addWidget(QLabel("Pair of MUs to visualise:"))
         controls_layout.addWidget(self.mu_pair_selector)
+        # --- Add manual input for MU pair ---
+        self.mu_pair_input = QLineEdit()
+        self.mu_pair_input.setPlaceholderText("e.g. 3-7")
+        self.mu_pair_input.setFixedWidth(70)
+        controls_layout.addWidget(self.mu_pair_input)
+        self.mu_pair_input_btn = QPushButton("Go")
+        self.mu_pair_input_btn.setFixedWidth(40)
+        self.mu_pair_input_btn.clicked.connect(self.on_manual_mu_pair_input)
+        controls_layout.addWidget(self.mu_pair_input_btn)
+        # --- End manual input ---
         self.inclusion_label = QLabel("INCLUDED")
         self.inclusion_label.setStyleSheet("color: green; font-weight: bold;")
         controls_layout.addWidget(self.inclusion_label)
@@ -164,6 +181,35 @@ class MotorUnitTrackingDialog(QDialog):
                 self.file2 = load_otb_data(file_path)
             except Exception as e:
                 ErrorDialog(f"Failed to load File 2:\n{str(e)}", 'Error').exec_()
+    def load_json1(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select JSON File 1", "", "JSON Files (*.json *.json.gz);;All Files (*)"
+        )
+        if file_path:
+            self.file1_label.setText(os.path.basename(file_path))
+            try:
+                file_handler = FileUploadFunc()
+                success = file_handler.emg_from_json(file_path)
+                if not success:
+                    raise ValueError("Failed to load JSON file")
+                self.file1 = FileUploadFunc.file
+            except Exception as e:
+                ErrorDialog(f"Failed to load JSON File 1:\n{str(e)}", 'Error').exec_()
+
+    def load_json2(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select JSON File 2", "", "JSON Files (*.json *.json.gz);;All Files (*)"
+        )
+        if file_path:
+            self.file2_label.setText(os.path.basename(file_path))
+            try:
+                file_handler = FileUploadFunc()
+                success = file_handler.emg_from_json(file_path)
+                if not success:
+                    raise ValueError("Failed to load JSON file")
+                self.file2 = FileUploadFunc.file
+            except Exception as e:
+                ErrorDialog(f"Failed to load JSON File 2:\n{str(e)}", 'Error').exec_()
 
     def on_track(self):
         if self.file1 is None or self.file2 is None:
@@ -189,17 +235,18 @@ class MotorUnitTrackingDialog(QDialog):
             ErrorDialog("Loaded files do not contain valid IPTS DataFrames.", 'Error').exec_()
             return
         for i in range(file1.shape[1]):
-            vec1 = file1.iloc[-samples_window:, i].to_numpy()
+            vec1 = file1.iloc[:, i].to_numpy()
             best_score = -1
             best_idx = -1
             for j in range(file2.shape[1]):
-                vec2 = file2.iloc[-samples_window:, j].to_numpy()
+                vec2 = file2.iloc[:, j].to_numpy()
                 score = 1 - cosine(vec1, vec2)
                 if score > best_score:
                     best_score = score
                     best_idx = j
             if best_score >= threshold:
                 results.append((i, best_idx, best_score))
+
 
         self.display_results(results)
 
@@ -290,31 +337,38 @@ class MotorUnitTrackingDialog(QDialog):
                         continue
                     start = p_int - window
                     end = p_int + window + 1
-                    if (
-                        isinstance(start, int) and isinstance(end, int)
-                        and start >= 0 and end <= raw_signal.shape[0] and end > start
-                        and valid_signal and 0 <= ch < raw_signal.shape[1]
-                    ):
-                        segments.append(raw_signal[start:end, ch])
+            if (
+                0 <= start < end <= raw_signal.shape[0]
+                and 0 <= ch < raw_signal.shape[1]
+                and (end - start) == (2 * window + 1)
+            ):
+                segments.append(raw_signal[start:end, ch])
+
             if segments:
                 muaps[ch, :] = np.mean(segments, axis=0)
             else:
                 muaps[ch, :] = np.nan
-        grid_size = int(np.ceil(np.sqrt(n_channels)))
-        n_rows = n_cols = grid_size
-        if n_rows * n_cols < n_channels:
-            n_rows += 1
+        # Detect the grid layout from number of channels (or set manually)
+        if n_channels == 64:
+            n_rows, n_cols = 8, 8
+        elif n_channels == 32:
+            n_rows, n_cols = 4, 8
+        elif n_channels == 16:
+            n_rows, n_cols = 4, 4
+        else:
+            n_cols = int(np.ceil(np.sqrt(n_channels)))
+            n_rows = int(np.ceil(n_channels / n_cols))
+
         fig.clf()
         axs = fig.subplots(n_rows, n_cols, squeeze=False)
+
         for ch in range(n_channels):
             r, c = divmod(ch, n_cols)
-            axs[r][c].plot(muaps[ch, :], color='orange')
+            axs[r][c].plot(muaps[ch, :], color='black', linewidth=1)
             axs[r][c].set_xticks([])
             axs[r][c].set_yticks([])
-            axs[r][c].spines['top'].set_visible(False)
-            axs[r][c].spines['right'].set_visible(False)
-            axs[r][c].spines['bottom'].set_visible(False)
-            axs[r][c].spines['left'].set_visible(False)
+            for spine in axs[r][c].spines.values():
+                spine.set_visible(False)
         for i in range(n_rows * n_cols):
             if i >= n_channels:
                 r, c = divmod(i, n_cols)
@@ -361,7 +415,8 @@ class MotorUnitTrackingDialog(QDialog):
             label="MU IDR",
             color=color
         )
-        ax.set_ylabel("Motor Unit")
+        ax.set_ylabel("Discharge Rate (pps)")
+
         ax.set_xlabel("Time (Sec)")
         ax.set_title(f"MU {mu_index}")
 
@@ -406,3 +461,30 @@ class MotorUnitTrackingDialog(QDialog):
             color: {CleanTheme.ANALYSIS_BG_BUTTON};
         }}
         """
+
+    # --- Add handler for manual MU pair input ---
+    def on_manual_mu_pair_input(self):
+        text = self.mu_pair_input.text().strip()
+        if '-' not in text:
+            ErrorDialog("Invalid Motor unit provided", 'Error').exec_()
+            return
+        try:
+            mu1_str, mu2_str = text.split('-', 1)
+            mu1 = int(mu1_str)
+            mu2 = int(mu2_str)
+        except Exception:
+            ErrorDialog("Invalid Motor unit provided", 'Error').exec_()
+            return
+        # Find the index in results
+        found_idx = -1
+        for idx, (ch1, ch2, _) in enumerate(self.results):
+            if ch1 == mu1 and ch2 == mu2:
+                found_idx = idx
+                break
+        if found_idx == -1:
+            ErrorDialog("Invalid Motor unit provided", 'Error').exec_()
+            return
+        # Update selection
+        self.mu_pair_selector.setCurrentIndex(found_idx)
+        self.table.selectRow(found_idx)
+        self.update_plots(found_idx)
