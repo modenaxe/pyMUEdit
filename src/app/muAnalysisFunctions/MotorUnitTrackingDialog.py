@@ -31,8 +31,8 @@ class MotorUnitTrackingDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Motor Unit Tracking")
-        self.setMinimumWidth(1400)
-        self.setMinimumHeight(900)
+        self.setMinimumWidth(1200)
+        self.setMinimumHeight(700)
         self.setStyleSheet(self._get_stylesheet())
         self.file1 = None
         self.file2 = None
@@ -128,20 +128,20 @@ class MotorUnitTrackingDialog(QDialog):
         # Left: MUAP grids
         muap_grids_layout = QVBoxLayout()
         muap_grids_layout.addWidget(QLabel("MUAP Grid (File 1)"))
-        self.muap_fig1, _ = plt.subplots(8, 8, figsize=(4, 4))
+        self.muap_fig1, _ = plt.subplots(8, 8, figsize=(3, 3))
         self.muap_canvas1 = FigureCanvas(self.muap_fig1)
         muap_grids_layout.addWidget(self.muap_canvas1)
         muap_grids_layout.addWidget(QLabel("MUAP Grid (File 2)"))
-        self.muap_fig2, _ = plt.subplots(8, 8, figsize=(4, 4))
+        self.muap_fig2, _ = plt.subplots(8, 8, figsize=(3, 3))
         self.muap_canvas2 = FigureCanvas(self.muap_fig2)
         muap_grids_layout.addWidget(self.muap_canvas2)
         plots_layout.addLayout(muap_grids_layout)
         # Right: IDR plots
         idr_plots_layout = QVBoxLayout()
-        self.fig1, self.ax1 = plt.subplots(figsize=(3, 1.5))
+        self.fig1, self.ax1 = plt.subplots(figsize=(2, 1))
         self.canvas1 = FigureCanvas(self.fig1)
         idr_plots_layout.addWidget(self.canvas1)
-        self.fig2, self.ax2 = plt.subplots(figsize=(3, 1.5))
+        self.fig2, self.ax2 = plt.subplots(figsize=(2, 1))
         self.canvas2 = FigureCanvas(self.fig2)
         idr_plots_layout.addWidget(self.canvas2)
         plots_layout.addLayout(idr_plots_layout)
