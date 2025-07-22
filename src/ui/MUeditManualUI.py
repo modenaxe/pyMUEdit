@@ -14,6 +14,8 @@ from PyQt5.QtWidgets import (
     QListView, # moy
     QSizePolicy, #shr
     QSpacerItem,
+    QApplication,
+    QLayout,
 )
 from PyQt5.QtGui  import QIcon          # 图标
 from PyQt5.QtCore import QSize   
@@ -26,7 +28,7 @@ from ui.components import (
     CleanCard,
     CollapsiblePanel,
     VisualizationPanel,
-    FormField,
+    Sidebar,
     SettingsGroup,
     SectionHeader,
     CleanScrollBar,
@@ -76,9 +78,10 @@ def setup_ui(main_window):
     # Set up control panel and display panel
     setup_control_panel(main_window)
     setup_display_panel(main_window)
+    attach_control_pannel_to_sidebar(main_window)
 
     # Add panels to main layout
-    main_layout.addWidget(main_window.control_panel)
+    
     main_layout.addWidget(main_window.display_panel, 1)  # The 1 is the stretch factor
 
     # Set up keyboard shortcuts
@@ -101,11 +104,9 @@ def setup_control_panel(main_window):
 
     # Create the actual control panel container
     control_panel_widget = QWidget()
-    control_panel_widget.setMinimumWidth(380)
-    control_panel_widget.setStyleSheet(f"background-color: {CleanTheme.BG_MAIN};")
+    control_panel_widget.setStyleSheet(f"background-color: {CleanTheme.BG_SIDEBAR};")
     control_layout = QVBoxLayout(control_panel_widget)
-    control_layout.setContentsMargins(5, 5, 5, 5)
-    control_layout.setSpacing(15)
+    control_layout.setContentsMargins(0, 0, 0, 0)
 
     # File selection section using SettingsGroup
     file_group = SettingsGroup("File Selection")
@@ -181,6 +182,64 @@ def setup_control_panel(main_window):
     # Set the scroll area as the control panel
     main_window.control_panel = scroll_area
 
+def attach_control_pannel_to_sidebar(main_window):
+    
+    sidebar = find_sidebar(main_window)
+    if not sidebar:
+        return
+
+    subpanel = QWidget()
+    subpanel.setVisible(False)
+    sub_lay = QVBoxLayout(subpanel)
+    # sub_lay.setContentsMargins(12, 6, 12, 6)
+    sub_lay.setSpacing(6)
+
+    sub_btns = []
+    
+    def _switch(idx:int):    
+        main_window.tabs.setCurrentIndex(idx)
+        for i, btn in enumerate(sub_btns):
+            btn.setProperty("active", "true" if i == idx else "false")
+            btn.style().unpolish(btn)
+            btn.style().polish(btn)
+    
+    def _sub_btn(text, idx):
+        b = ActionButtonedit(text, primary=False, tabs=True)
+        b.setFixedHeight(28)
+        b.clicked.connect(lambda _, i=idx: _switch(i))
+        sub_lay.addWidget(b)
+        sub_btns.append(b)
+        return b    
+    _sub_btn("MU Selection",    0).click()
+    _sub_btn("Batch Processing",1)
+    _sub_btn("Visualization",   2)
+    
+    sub_lay.addWidget(main_window.control_panel)
+
+    sidebar.layout.insertWidget(2, subpanel, 999)
+
+    main_window.sub_panel = subpanel
+    
+    def list_widgets(layout: QLayout, depth=0):
+        for i in range(layout.count()):
+            item = layout.itemAt(i)
+            prefix = "  " * depth
+            if item.widget():
+                w = item.widget()
+                name = w.objectName() or w.__class__.__name__
+                print(f"{prefix}- {name}")
+            elif item.layout():
+                print(f"{prefix}- SubLayout:")
+                list_widgets(item.layout(), depth+1)
+        for i in range(sidebar.layout.count()):
+            item    = sidebar.layout.itemAt(i)
+            w       = item.widget()
+            name    = w.objectName() if w else item.layout().__class__.__name__
+            factor  = sidebar.layout.stretch(i)
+            print(f"index={i}, {name}, stretch={factor}")
+    
+    
+
 
 def create_tab_widget():
     """Create a styled tab widget."""
@@ -188,14 +247,12 @@ def create_tab_widget():
     tabs.setStyleSheet(
         f"""
         QTabWidget::pane {{
-            border: 1px solid {CleanTheme.BORDER};
             border-radius: 8px;
             background-color: {CleanTheme.BG_CARD};
         }}
         QTabBar::tab {{
             background-color: {CleanTheme.BG_MAIN};
             color: {CleanTheme.TEXT_PRIMARY};
-            border: 1px solid {CleanTheme.BORDER};
             border-bottom: none;
             border-top-left-radius: 4px;
             border-top-right-radius: 4px;
@@ -210,8 +267,7 @@ def create_tab_widget():
         }}
         """
     )
-    # Set the minimum width for the tabs
-    tabs.setMinimumWidth(380)
+    tabs.setMaximumWidth(300)
     return tabs
 
 
@@ -220,7 +276,7 @@ def create_mu_selection_tab(main_window):
     mu_tab = QWidget()
     mu_tab.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
     mu_layout = QVBoxLayout(mu_tab)
-    mu_layout.setContentsMargins(15, 15, 15, 15)
+    mu_layout.setContentsMargins(0, 0, 0, 0)
     mu_layout.setSpacing(10)
 
     # MU selection content
@@ -242,7 +298,7 @@ def create_mu_selection_tab(main_window):
 
     # Initially add a label indicating no MUs
     no_mu_label = QLabel("No MUs loaded")
-    no_mu_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY}; font-size: 13px;")
+    no_mu_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY}; font-size: 15px;")
     main_window.mu_checkbox_layout.addWidget(no_mu_label)
     main_window.mu_checkbox_layout.addStretch()
 
@@ -250,11 +306,11 @@ def create_mu_selection_tab(main_window):
     mu_layout.addWidget(mu_scroll_area)
 
     # Add flag button in the MU selection tab
-    main_window.flag_mu_btn = ActionButton("Flag selected MU(s) for deletion", primary=False)
+    main_window.flag_mu_btn = ActionButtonedit("Flag selected MU(s) for deletion", primary=False)
     main_window.flag_mu_btn.clicked.connect(main_window.flag_mu_for_deletion_button_pushed)
     
     # Add unflag button in the MU selection tab
-    main_window.unflag_mu_btn = ActionButton("UnFlag selected MU(s) for deletion", primary=False)
+    main_window.unflag_mu_btn = ActionButtonedit("UnFlag selected MU(s) for deletion", primary=False)
     main_window.unflag_mu_btn.clicked.connect(main_window.unflag_mu_for_deletion_button_pushed)
     blue = "#0072ee"
     hover = "#2383ff"
@@ -265,7 +321,7 @@ def create_mu_selection_tab(main_window):
                 color: #ffffff;
                 border: none;
                 border-radius: 4px;
-                padding: 8px 15px;
+                padding: 8px 0px;
             }}
             QPushButton:hover {{
                 background: {hover};
@@ -285,73 +341,30 @@ def create_batch_processing_tab(main_window):
     batch_tab = QWidget()
     batch_tab.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
     batch_layout = QVBoxLayout(batch_tab)
-    batch_layout.setContentsMargins(15, 15, 15, 15)
     batch_layout.setSpacing(10)
+    batch_layout.setContentsMargins(0, 0, 0, 0)
 
     # Batch processing content
     batch_header = SectionHeader("Batch Processing")
     batch_layout.addWidget(batch_header)
-    proc_combo = QComboBox()
-    proc_combo.setMinimumHeight(34)
-    proc_combo.addItem("Please select…")     
-    proc_combo.addItem("1 - Remove all the outliers")
-    proc_combo.addItem("2 - Update all MU filters")
-    proc_combo.addItem("3 - Remove flagged MU")
-    proc_combo.addItem("4 - Remove duplicates within grids")
-    proc_combo.addItem("5 - Remove duplicates between grids")
+    
+    action_batch_configs = [
+    ("1 - Remove all the outliers", main_window.remove_all_outliers_button_pushed, "remove_outliers_all_btn"),
+    ("2 - Update all MU filters", main_window.update_all_mu_filters_button_pushed, "update_mu_filter_all_btn"),
+    ("3 - Remove flagged MU", main_window.remove_flagged_mu_button_pushed, "remove_flagged_mu_btn"),
+    ("4 - Remove duplicates within grids", main_window.remove_duplicates_within_grids_button_pushed, "remove_duplicates_within_btn"),
+    ("5 - Remove duplicates between grids", main_window.remove_duplicates_between_grids_button_pushed, "remove_duplicates_between_btn"),
+    ]
 
-    blue = "#0072ee"        
-    text = "#ffffff"
-    proc_combo.setStyleSheet(f"""
-    QComboBox {{
-        border: 1px solid {CleanTheme.BORDER};
-        border-radius: 6px;
-        padding: 6px 24px 6px 10px;
-        background: #ffffff;
-        font-weight: 500;
-    }}
-
-    QComboBox QListView {{
-        border: 1px solid #d0d0d0;
-        border-radius: 4px;
-        padding: 4px;
-        background: #ffffff;
-    }}
-
-    QComboBox QListView::item {{
-        padding: 6px 10px;
-        color: #1a1a1a;
-    }}
-
-    QComboBox QListView::item:hover {{
-        background: {blue};
-        color: {text};
-    }}
-
-    QComboBox QListView::item:selected,
-    QComboBox QListView::item:selected:!active {{
-        background:{blue};
-        color:{text};
-    }}
-    """)
-    batch_layout.addWidget(proc_combo)
-
+    for label, handler, attr_name in action_batch_configs:
+        btn = ActionButtonedit(label, primary=False)
+        btn.clicked.connect(handler)
+        btn.setMinimumHeight(34)
+        btn.setMaximumHeight(34)
+        batch_layout.addWidget(btn)
+        setattr(main_window, attr_name, btn)
+    
     batch_layout.addStretch(1)
-
-    handler_map = {
-        1: main_window.remove_all_outliers_button_pushed,
-        2: main_window.update_all_mu_filters_button_pushed,
-        3: main_window.remove_flagged_mu_button_pushed,
-        4: main_window.remove_duplicates_within_grids_button_pushed,
-        5: main_window.remove_duplicates_between_grids_button_pushed,
-    }
-
-    def _on_choice(idx: int):
-        if idx in handler_map:
-            handler_map[idx]()  
-            proc_combo.setCurrentIndex(0)
-
-    proc_combo.currentIndexChanged.connect(_on_choice)    
 
     return batch_tab
 
@@ -361,8 +374,8 @@ def create_visualization_tab(main_window):
     viz_tab = QWidget()
     viz_tab.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
     viz_layout = QVBoxLayout(viz_tab)
-    viz_layout.setContentsMargins(15, 15, 15, 15)
     viz_layout.setSpacing(10)
+    viz_layout.setContentsMargins(0, 0, 0, 0)
 
     # Visualization content
     viz_header = SectionHeader("Visualization")
@@ -744,6 +757,7 @@ def create_mu_checkbox(main_window, array_idx, mu_idx, text, sil_value, is_check
 
     return checkbox
 
+
 def _add_floating_save_btn(main_window):
     """
     在窗口右上角放一个悬浮 Save 按钮，点击后仍调用 main_window.save_button_pushed。
@@ -769,3 +783,20 @@ def _add_floating_save_btn(main_window):
     main_window.resizeEvent = new_resize
 
     main_window.floating_save_btn = btn
+    
+    
+def find_sidebar(main_window):
+    """Find the sidebar component in the application hierarchy."""
+    # First try to find it in the parent (main window)
+    if main_window.parent():
+        sidebar = main_window.parent().findChild(Sidebar, "cleanSidebar")
+        if sidebar:
+            return sidebar
+
+    # If not found in parent, try to find it globally in the application
+    for widget in QApplication.topLevelWidgets():
+        sidebar = widget.findChild(Sidebar, "cleanSidebar")
+        if sidebar:
+            return sidebar
+    return None
+

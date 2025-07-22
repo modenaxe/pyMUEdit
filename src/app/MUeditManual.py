@@ -18,13 +18,14 @@ from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
     QFileDialog,
+    QLayout,
     QStackedWidget,
     QProgressDialog, # moy
 )
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
-from ui.MUeditManualUI import setup_ui
+from ui.MUeditManualUI import setup_ui, find_sidebar
 from core.utils.manual_editing.getsil import getsil
 from core.utils.manual_editing.refinesil import refinesil
 from core.utils.manual_editing.extendfilter import extendfilter
@@ -426,7 +427,7 @@ class MUeditManual(QMainWindow):
             # Create container widget for checkboxes in this array
             checkbox_container = QWidget()
             checkbox_layout = QVBoxLayout(checkbox_container)
-            checkbox_layout.setContentsMargins(10, 5, 10, 5)
+            checkbox_layout.setContentsMargins(5, 2, 5, 2)
             checkbox_layout.setSpacing(5)
 
             # Add "Check All" checkbox at the top
@@ -459,7 +460,7 @@ class MUeditManual(QMainWindow):
                 checkbox_text = f"MU_{mu_idx+1} (SIL: {sil_value:.4f})"
 
                 checkbox = QCheckBox(checkbox_text)
-                checkbox.setStyleSheet("color: #333333; font-family: 'Poppins'; font-size: 14pt;")
+                checkbox.setStyleSheet("color: #333333; font-family: 'Poppins'; font-size: 12pt;")
                 checkbox.setObjectName(mu_identifier)  # Keep the full identifier in objectName
                 checkbox.setProperty("array_idx", array_idx)  # Store array index for check all functionality
                 checkbox.stateChanged.connect(self.mu_checkbox_state_changed)
@@ -2649,6 +2650,25 @@ class MUeditManual(QMainWindow):
                 self.clear_layout(item.layout())
             elif item.spacerItem():
                 pass
+    
+    def showEvent(self, event):
+        """Event triggered when the widget is shown."""
+        self.sub_panel.show()
+        sidebar = find_sidebar(self)
+        sidebar.setFixedWidth(340)
+
+        # Call the parent method
+        super().showEvent(event)
+    
+    def hideEvent(self, event):
+        """Event triggered when the widget is hidden."""
+        self.sub_panel.hide()
+        sidebar = find_sidebar(self)
+        sidebar.setFixedWidth(180)
+
+        # Call the parent method
+        super().hideEvent(event)
+
 
 
 if __name__ == "__main__":
