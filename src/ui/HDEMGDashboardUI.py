@@ -163,7 +163,7 @@ def _create_left_sidebar(main_window):
         elif key == "manual_edit":
             mu_edit_btn = button
         
-    sidebar.layout.addStretch(1)     # Sidebar 类自带 main_layout
+    # sidebar.layout.addStretch(1)     # Sidebar 类自带 main_layout
 
     # ----------- MU-Editing 子面板（默认隐藏）-----------
     subpanel = QWidget()
@@ -185,11 +185,18 @@ def _create_left_sidebar(main_window):
     _sub_btn("Batch Processing",1)
     _sub_btn("Visualization",   2)
 
-    sidebar.layout.addWidget(subpanel)        # 添到最底
+    if mu_edit_btn is not None:
+        # 找到真正装 mu_edit_btn 的布局
+        parent_layout = mu_edit_btn.parentWidget().layout()
+        row          = parent_layout.indexOf(mu_edit_btn)
+        parent_layout.insertWidget(row + 1, subpanel)
+    else:
+        sidebar.layout.addWidget(subpanel)
+    # sidebar.layout.addWidget(subpanel)        # 添到最底
 
     # 把子面板引用挂到 main_window，后面可用
     main_window.mu_edit_subpanel = subpanel  
-
+    sidebar.layout.addStretch(1)
 
     def _switch(idx:int):
         if hasattr(main_window, "mu_edit_tabs"):
