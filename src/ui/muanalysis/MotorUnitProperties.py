@@ -231,6 +231,7 @@ class MotorUnitPropertiesButton(QWidget):
 
     def init_ui(self):
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(10,0,10,0)
 
         # Subtitle
         subtitle_label = AnalysisText.create_subtitle("MOTOR UNIT ANALYSIS")
