@@ -285,6 +285,10 @@ class MUAnalysis(QWidget):
 
         """
         )
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setContentsMargins(10, 10, 10, 10)
+        sidebar_layout.setSpacing(10)
+        
         file_section = FileSection(sidebar, self.mu, self.analysis_plot)
         # Connect the reset button's signal to the MUAnalysisFunc method
         file_section.reset_btn.reset_requested.connect(
@@ -292,9 +296,11 @@ class MUAnalysis(QWidget):
         )
         results_section = ResultsPanel(sidebar, self.result_combo, self.results_table)
 
-        sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.addWidget(file_section, stretch=1)
         sidebar_layout.addWidget(results_section, stretch=4)
+        sidebar_layout.addStretch(1)
+        sidebar.setMaximumWidth(300)
+        
         return sidebar
 
     def calc_result(self, title="title", data=[{}]):
