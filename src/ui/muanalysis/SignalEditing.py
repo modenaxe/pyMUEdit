@@ -15,7 +15,7 @@ from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
+from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown, AnalysisLabeledDropdown
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
 class SignalEditing(QWidget):
@@ -67,12 +67,12 @@ class SignalEditing(QWidget):
         filter_emg_layout = QHBoxLayout(filter_emg)
         filter_emg_layout.setContentsMargins(0, 0, 0, 0)
 
-        filter_emg_order = AnalysisInput("Filter Order", parent=window)
+        filter_emg_order = AnalysisInput("Filter Order", "2", parent=window)
         filter_emg_order.set("2")
         filter_emg_layout.addWidget(filter_emg_order)
         self.filter_emg_order = filter_emg_order
 
-        filter_emg_freq = AnalysisInput("BandPass Freq", parent=window)
+        filter_emg_freq = AnalysisInput("BandPass Freq", "20-500", parent=window)
         filter_emg_freq.set("20-500")
         filter_emg_layout.addWidget(filter_emg_freq)
         self.filter_emg_freq = filter_emg_freq
@@ -101,12 +101,12 @@ class SignalEditing(QWidget):
         filter_refsig_layout = QHBoxLayout(filter_refsig)
         filter_refsig_layout.setContentsMargins(0, 0, 0, 0)
 
-        filter_refsig_order = AnalysisInput("Filter Order", parent=window)
+        filter_refsig_order = AnalysisInput("Filter Order", "4", parent=window)
         filter_refsig_order.set("4")
         filter_refsig_layout.addWidget(filter_refsig_order)
         self.filter_refsig_order = filter_refsig_order 
 
-        filter_refsig_freq = AnalysisInput("Cutoff Freq", parent=window)
+        filter_refsig_freq = AnalysisInput("Cutoff Freq", "15", parent=window)
         filter_refsig_freq.set("15")
         filter_refsig_layout.addWidget(filter_refsig_freq)
         self.filter_refsig_freq = filter_refsig_freq
@@ -127,12 +127,12 @@ class SignalEditing(QWidget):
         remove_offset_layout = QHBoxLayout(remove_offset)
         remove_offset_layout.setContentsMargins(0, 0, 0, 0)
 
-        remove_offset_value = AnalysisInput("Offset Value", parent=window)
+        remove_offset_value = AnalysisInput("Offset Value", "4", parent=window)
         remove_offset_value.set("4")
         remove_offset_layout.addWidget(remove_offset_value)
         self.remove_offset_value = remove_offset_value
 
-        remove_auto_offset = AnalysisInput("Automatic Offset", parent=window)
+        remove_auto_offset = AnalysisInput("Automatic Offset", "0", parent=window)
         remove_auto_offset.set("0")
         remove_offset_layout.addWidget(remove_auto_offset)
         self.remove_auto_offset = remove_auto_offset
@@ -153,17 +153,17 @@ class SignalEditing(QWidget):
         convert.setStyleSheet(f"padding: 0px")
         window_layout.addWidget(convert)
         convert_layout = QHBoxLayout(convert)
-        convert_layout.setContentsMargins(5, 0, 0, 0)
+        convert_layout.setContentsMargins(0, 0, 0, 0)
         # ficing dropdown
-        convert_operator = AnalysisDropdown.labeled_dropdown(
+        convert_operator = AnalysisLabeledDropdown(
             "Operator", 
             ["Multiply", "Divide"], 
             parent=self
         )
-        convert_layout.addWidget(convert_operator)
+        convert_layout.addWidget(convert_operator, stretch=1)
         self.convert_operator = convert_operator
 
-        convert_factor = AnalysisInput("Factor", parent=window)
+        convert_factor = AnalysisInput("Factor", "2.5", parent=window)
         convert_factor.set("2.5")
         convert_layout.addWidget(convert_factor)
         self.convert_factor = convert_factor
@@ -185,7 +185,7 @@ class SignalEditing(QWidget):
         percent_layout = QHBoxLayout(percent)
         percent_layout.setContentsMargins(0, 0, 0, 0)
 
-        percent_mvc_value = AnalysisInput("MVC Value", parent=window)
+        percent_mvc_value = AnalysisInput("MVC Value", "0.0", parent=window)
         percent_mvc_value.set("0.0")
         percent_layout.addWidget(percent_mvc_value)
         self.percent_mvc_value = percent_mvc_value
@@ -196,23 +196,27 @@ class SignalEditing(QWidget):
         percent_v_layout.setContentsMargins(0, 0, 0, 0)
         percent_v_layout.addStretch()
 
-        percent_btn = GeneralButton("To Percent", lambda: self.to_percent(), parent=self)
-        percent_v_layout.addWidget(percent_btn)
-        percent_layout.addWidget(percent_v, stretch=1)
+        percent_h = QFrame()
+        percent_h_layout = QHBoxLayout(percent_h)
+        percent_h_layout.setContentsMargins(0, 0, 0, 0)
 
+        percent_warning = AnalysisText.create_italic_text("*Only for absolute\nvalued RefSigs")
+        percent_h_layout.addWidget(percent_warning)
+
+        percent_btn = GeneralButton("To Percent", lambda: self.to_percent(), parent=self)
+        percent_h_layout.addWidget(percent_btn)
+
+        percent_v_layout.addWidget(percent_h)
+
+        percent_layout.addWidget(percent_v, stretch=1)
 
         window_layout.addStretch()
         window.exec()
         
-    # displays a popup warning 
-    def display_warning(self, label="", text=""):
-        ErrorDialog(text, 'Error').exec_()
-
-
     # returns boolean value based on whethere or not there's a valid file loaded
     def valid_file(self):
         if not self.mu.file:
-            self.display_warning("Invalid File", "No file has been loaded")
+            ErrorDialog("No file has been loaded", "Error").exec_()
             return False 
         return True 
 
@@ -237,13 +241,11 @@ class SignalEditing(QWidget):
         order = self.is_int(self.filter_emg_order.get())
         lo, hi = map(self.is_int, self.filter_emg_freq.get().split("-", maxsplit=1))
         if not order or order - 1 < 0:
-            self.display_warning("Invalid Input", "EMG signal filter order must be a non-negative integer")
+            ErrorDialog("EMG signal filter order must be a non-negative integer", "Error").exec_()
+            self.display_warning("Invalid Input", "EMG signal ")
             return 
         elif not lo or not hi or lo - 1 <= 0 or hi - 1<= 0 or lo >= hi:
-            self.display_warning(
-                "Invalid Input", 
-                "EMG signal bandpass frequencies must be non-zero positive integers written in the form `x-y` where the left limit must be smaller than the right limit."
-            )
+            ErrorDialog("EMG signal bandpass frequencies must be non-zero positive integers written in the form `x-y` where the left limit must be smaller than the right limit.", "Error").exec_()
             return
 
         # main code (copied over from openhdemg)
@@ -420,8 +422,31 @@ class SignalEditing(QWidget):
         
         print("converting")
 
+        try:
+            # converting factor 
+            factor = float(self.convert_factor.get())
+            if (self.convert_operator.get() == "Multiply"):
+                self.mu.file["REF_SIGNAL"] = (self.mu.file["REF_SIGNAL"] * factor)
+            elif (self.convert_operator.get() == "Divide"):
+                self.mu.file["REF_SIGNAL"] = (self.mu.file["REF_SIGNAL"] / factor)
+
+            # updating the plot (replotting)
+            self.mu.plot_refsig(self.mu.file, self.analysis_plot)
+        except ValueError as e:
+            ErrorDialog("Conversion factor must be a valid number.", "Error").exec_()
+
+
     def to_percent(self):
         if not self.valid_file(): 
             return
         
         print("to percenting")
+        try:
+            percent = float(self.percent_mvc_value.get())
+            self.mu.file["REF_SIGNAL"] = (self.mu.file["REF_SIGNAL"] * 100 / percent)
+
+            # plotting 
+            self.mu.plot_refsig(self.mu.file, self.analysis_plot)
+        except ValueError as e:
+            ErrorDialog("MVC value must be a valid float.", "Error").exec_()
+

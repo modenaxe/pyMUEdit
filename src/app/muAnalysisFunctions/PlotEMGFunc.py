@@ -161,3 +161,334 @@ def plot_emgsig(
     # TL : function now plots it and doesn't return a figure, similar to plot_idr and plog_refsig in MUAnalysisFunc
     canvas = SaveablePlot(fig)
     analysis_plot.display_plot(canvas)
+
+#OPENHDEMG
+def plot_idr(
+    emgfile,
+    munumber="all",
+    addrefsig=True,
+    timeinseconds=True,
+    figsize=[20, 15],
+    tight_layout=True,
+    line2d_kwargs_ax1=None,
+    line2d_kwargs_ax2=None,
+    axes_kwargs=None,
+    showimmediately=False,
+):
+    idr = compute_idr(emgfile=emgfile)
+    if isinstance(munumber, str):
+        if emgfile["NUMBER_OF_MUS"] == 1:
+            munumber = 0
+        else:
+            munumber = [*range(0, emgfile["NUMBER_OF_MUS"])]
+    if isinstance(munumber, list) and len(munumber) == 1:
+        munumber = munumber[0]
+    figname = "IDR"
+    fig, ax1 = plt.subplots(
+        figsize=(figsize[0] / 2.54, figsize[1] / 2.54), num=figname,
+    )
+    if isinstance(munumber, int):
+        ax1.plot(
+            idr[munumber]["timesec" if timeinseconds else "mupulses"],
+            idr[munumber]["idr"],
+            ".", markersize=12,
+        )
+        ax1.set_ylabel(f"MU {munumber} (pps)")
+        ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
+    elif isinstance(munumber, list):
+        idr_all = pd.DataFrame({key: df['idr'] for key, df in idr.items()})
+        idr_all = idr_all[munumber]
+        norm_idr_all = min_max_scaling(data=idr_all, col_by_col=False)
+        for count, thisMU in enumerate(munumber):
+            norm_idr = norm_idr_all[thisMU]
+            if norm_idr.mean() <= 0.5:
+                norm_idr = norm_idr + (0.5 - norm_idr.mean()) + count
+            else:
+                norm_idr = norm_idr - (norm_idr.mean() - 0.5) + count
+            ax1.plot(
+                idr[thisMU]["timesec" if timeinseconds else "mupulses"][1:],
+                norm_idr.dropna(),
+                ".", markersize=8,
+            )
+        ax1.set_yticks(np.arange(0.5, len(munumber) + 0.5, 1))
+        ax1.set_yticklabels([str(mu) for mu in munumber])
+        ax1.set_ylabel("Motor units")
+        ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
+    else:
+        raise TypeError(
+            "While calling the plot_idr function, you should pass an " +
+            "integer, a list or 'all' to munumber"
+        )
+    if addrefsig:
+        if not isinstance(emgfile["REF_SIGNAL"], pd.DataFrame):
+            raise TypeError(
+                "REF_SIGNAL is probably absent or it is not contained in a " +
+                "dataframe"
+            )
+        x_axis = (
+            emgfile["REF_SIGNAL"].index / emgfile["FSAMP"]
+            if timeinseconds
+            else emgfile["REF_SIGNAL"].index
+        )
+        ax2 = ax1.twinx()
+        ax2.plot(x_axis, emgfile["REF_SIGNAL"][0])
+        ax2.set_ylabel("MVC")
+        ax2.set_zorder(0)
+        ax1.set_zorder(1)
+        ax1.patch.set_alpha(0)
+    if tight_layout:
+        plt.tight_layout()
+    if showimmediately:
+        plt.show()
+    return fig
+
+#OPENHDEMG
+def compute_idr(emgfile):
+    # Compute the instantaneous discharge rate (IDR) from the MUPULSES
+    if isinstance(emgfile["MUPULSES"], list):
+        # Empty dict to fill with dataframes containing the MUPULSES
+        # information
+        idr = {x: np.nan**2 for x in range(emgfile["NUMBER_OF_MUS"])}
+
+        for mu in range(emgfile["NUMBER_OF_MUS"]):
+            # Manage the exception of a single MU and add MUPULSES in column 0
+            df = pd.DataFrame(
+                emgfile["MUPULSES"][mu]
+                if emgfile["NUMBER_OF_MUS"] > 1
+                else np.transpose(np.array(emgfile["MUPULSES"]))
+            )
+
+            # Calculate difference in MUPULSES and add it in column 1
+            df[1] = df[0].diff()
+            # Calculate time in seconds and add it in column 2
+            df[2] = df[0] / emgfile["FSAMP"]
+            # Calculate the idr and add it in column 3
+            df[3] = emgfile["FSAMP"] / df[1]
+
+            df = df.rename(
+                columns={
+                    0: "mupulses",
+                    1: "diff_mupulses",
+                    2: "timesec",
+                    3: "idr",
+                },
+            )
+
+            # Add the idr to the idr dict
+            idr[mu] = df
+
+        return idr
+
+    else:
+        raise Exception(
+            "MUPULSES is probably absent or it is not contained in a list"
+        )
+
+#OPENHDEMG
+def min_max_scaling(data=None, series_or_df=None, col_by_col=False):
+    # Create a deepcopy of the original data
+    if data is not None:
+        data = copy.deepcopy(data)
+
+    elif series_or_df is not None:
+        data = copy.deepcopy(series_or_df)
+
+        # Warn for the use of deprecated parameters
+        msg = (
+            "The 'series_or_df' parameter is deprecated since v0.1.1 and " +
+            "will be removed after v0.2.0. Please use 'data' instead."
+        )
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
+    # Automatically act depending on the data received
+    if isinstance(data, pd.Series):
+        data = (data - data.min()) / (data.max() - data.min())
+
+        return data
+
+    elif isinstance(data, pd.DataFrame):
+        if col_by_col:
+            for col in data.columns:
+                data[col] = (
+                    (data[col] - data[col].min()) /
+                    (data[col].max() - data[col].min())
+                )
+
+            return data
+
+        else:
+            data = (
+                (data - data.min().min()) /
+                (data.max().max() - data.min().min())
+            )
+
+            return data
+
+    elif isinstance(data, np.ndarray):
+        if col_by_col:
+            # Check if data is 1D 2D or nD and act accordingly
+            if len(data.shape) == 1:
+                data = (data - data.min()) / (data.max() - data.min())
+
+                return data
+
+            elif len(data.shape) == 2:
+                dims = any(d == 0 or d == 1 for d in data.shape)
+                if dims:  # Only 1 column
+                    data = (data - data.min()) / (data.max() - data.min())
+                else:  # Multiple columns
+                    for col in range(data.shape[1]):
+                        data[:, col] = (
+                            (data[:, col] - data[:, col].min()) /
+                            (data[:, col].max() - data[:, col].min())
+                        )
+
+                return data
+
+            elif len(data.shape) > 2:
+                raise ValueError(
+                    "col_by_col is supported only for 1 and 2D arrays. Set " +
+                    "col_by_col=False to normalise the whole data instead."
+                )
+
+        else:
+            data = (data - data.min()) / (data.max() - data.min())
+
+            return data
+
+    else:
+        raise TypeError(
+            "data must be one of pd.series, pd.dataframe or np.ndarray. " +
+            f"{type(data)} was passed instead."
+        )
+
+def plot_mupulses(
+    emgfile,
+    munumber="all",
+    linewidths=0,
+    linelengths=0.9,
+    addrefsig=True,
+    timeinseconds=True,
+    figsize=[20, 15],
+    tight_layout=True,
+    line2d_kwargs_ax1=None,
+    line2d_kwargs_ax2=None,
+    axes_kwargs=None,
+    showimmediately=True,
+):
+    # Warn for the use of a deprecated parameter
+    if linewidths > 0:
+        msg = (
+            "The linewidths parameter is deprecated since v0.1.1 and will " +
+            "be removed after v0.2.0. Please use line2d_kwargs_ax1 instead. " +
+            "See examples in the plot_mupulses documentation."
+        )
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
+    # Check to have the correct input
+    if isinstance(emgfile["MUPULSES"], list):
+        mupulses = emgfile["MUPULSES"]
+    else:
+        raise TypeError(
+            "MUPULSES is probably absent or it is not contained in a np.array"
+        )
+
+    # Check linelengths value
+    if linelengths < 0 or linelengths > 1:
+        raise ValueError(
+            "linelengths must be a number between 0 and 1."
+        )
+
+    # Check if all the MUs have to be plotted and create the y labels
+    if isinstance(munumber, str):
+        # Manage exception of single MU
+        if emgfile["NUMBER_OF_MUS"] > 1:
+            y_tick_lab = [*range(0, emgfile["NUMBER_OF_MUS"])]
+            ylab = "Motor units"
+            munumber = [*range(emgfile["NUMBER_OF_MUS"])]
+        else:
+            munumber = 0
+
+    if isinstance(munumber, int):
+        mupulses = [mupulses[munumber]]
+        y_tick_lab = []
+        ylab = f"MU n. {munumber}"
+    elif isinstance(munumber, list):
+        if len(munumber) > 1:
+            mupulses = [mupulses[mu] for mu in munumber]
+            y_tick_lab = munumber
+            ylab = "Motor units"
+        else:
+            mupulses = [mupulses[munumber[0]]]
+            y_tick_lab = []
+            ylab = f"MU n. {munumber[0]}"
+    else:
+        raise TypeError(
+            "While calling the plot_mupulses function, you should pass an " +
+            "integer, a list or 'all' to munumber"
+        )
+
+    # Convert x axes in seconds if timeinseconds==True.
+    # This has to be done both for the REF_SIGNAL and the mupulses, for the
+    # MUPULSES we need to convert the point of firing from samples to seconds.
+    if timeinseconds:
+        mupulses = [n / emgfile["FSAMP"] for n in mupulses]
+        x_axis = emgfile["RAW_SIGNAL"].index / emgfile["FSAMP"]
+    else:
+        x_axis = emgfile["RAW_SIGNAL"].index
+
+    # Create colors list for the firings and plot them
+    colors1 = ["C{}".format(i) for i in range(len(mupulses))]
+
+    # Use the subplot to allow the use of twinx
+    figname = ("MUs pulses")
+    fig, ax1 = plt.subplots(
+        figsize=(figsize[0] / 2.54, figsize[1] / 2.54), num=figname,
+    )
+
+    # Plot the MUPULSES.
+    # Iterate over each row and plot events manually to allow the use of
+    # the Figure_Layout_Manager.
+    for i, (events, color) in enumerate(zip(mupulses, colors1)):
+        # The `y` position for this row (increasing by 1 for each new row)
+        delta = (1-linelengths) / 2
+        y_pos = i
+        # Draw each event as a vertical line
+        for event in events:
+            ax1.plot(
+                [event, event],
+                [y_pos + delta, y_pos + delta + linelengths],
+                color=color, linewidth=linewidths,
+                **(line2d_kwargs_ax1 or {})
+            )
+
+    # Ensure correct and complete ticks on the left y axis
+    ax1.set_yticks(np.arange(0.5, len(mupulses) + 0.5, 1))
+    ax1.set_yticklabels([str(mu) for mu in y_tick_lab])
+    # Set axes labels
+    ax1.set_ylabel(ylab)
+    ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
+
+    if addrefsig:
+        if not isinstance(emgfile["REF_SIGNAL"], pd.DataFrame):
+            raise TypeError(
+                "REF_SIGNAL is probably absent or it is not contained in a " +
+                "dataframe"
+            )
+        ax2 = ax1.twinx()
+        ax2.plot(x_axis, emgfile["REF_SIGNAL"][0])
+        ax2.set_ylabel("MVC")
+
+        # Set z-order so that ax2 is in the background
+        ax2.set_zorder(0)
+        ax1.set_zorder(1)
+        ax1.patch.set_alpha(0)
+
+    # Set tight layout if requested
+    if tight_layout:
+        plt.tight_layout()
+
+    if showimmediately:
+        plt.show()
+
+    return fig

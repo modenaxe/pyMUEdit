@@ -23,6 +23,7 @@ class AnalysisPlot(QWidget):
 
         # setting up toggle button  
         self.plot = None
+        self.resize = None
         self.toggle_btn = GeneralButton("Revert", lambda: self.revert(), parent=self)
         self.toggle_btn.set_width(100)
         self.toggle_btn.hide()
@@ -36,6 +37,10 @@ class AnalysisPlot(QWidget):
     def load_file_prompt(self):
         self.canvas = AnalysisText.create_prompt("Press Load File to View Data")
         self.layout.addWidget(self.canvas)
+
+    # used to help toggle resize button
+    def set_reseize(self, button):
+        self.resize = button
 
     # removes the canvas, or the last thing in the widget 
     def remove_canvas(self):
@@ -54,6 +59,7 @@ class AnalysisPlot(QWidget):
         self.layout.addWidget(self.canvas)
 
         self.toggle_btn.hide()
+        self.resize.show()
 
     ############### DISPLAY FIG/PLOT ##############
     # when calling display_fig or dislay_plot, make sure you first turn it into 
@@ -81,5 +87,6 @@ class AnalysisPlot(QWidget):
         self.plot = plot 
         self.layout.addWidget(self.plot)
 
+        self.resize.hide()
         self.toggle_btn.show()
 

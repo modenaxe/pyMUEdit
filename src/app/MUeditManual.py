@@ -16,6 +16,7 @@ from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
     QFileDialog,
+    QMessageBox,
 )
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -27,7 +28,9 @@ from core.utils.manual_editing.extendfilter import extendfilter
 from core.utils.manual_editing.selection_tools import SelectionTool, process_selection
 from core.utils.decomposition.remove_outliers import remove_outliers
 from core.utils.decomposition.remove_duplicates import remove_duplicates
-from core.utils.decomposition.remove_duplicates_between_arrays import remove_duplicates_between_arrays
+from core.utils.decomposition.remove_duplicates_between_arrays import (
+    remove_duplicates_between_arrays,
+)
 from core.utils.decomposition.extend_emg import extend_emg
 from core.utils.decomposition.whiten_emg import whiten_emg
 
@@ -134,7 +137,9 @@ class MUeditManual(QMainWindow):
     def select_file_button_pushed(self):
         """Open file dialog to select file for editing and automatically import it."""
         file_dialog = QFileDialog()
-        file_path, _ = file_dialog.getOpenFileName(self, "Select file", "", "MAT Files (*.mat);;All Files (*.*)")
+        file_path, _ = file_dialog.getOpenFileName(
+            self, "Select file", "", "MAT Files (*.mat);;All Files (*.*)"
+        )
 
         if file_path:
             self.pathname = os.path.dirname(file_path) + "/"
@@ -161,7 +166,9 @@ class MUeditManual(QMainWindow):
                 self.import_decomposed_file(files)
 
             # Calculate array numbers for each channel
-            self.MUedition["edition"]["arraynb"] = np.zeros(self.MUedition["signal"]["data"].shape[0], dtype=int)
+            self.MUedition["edition"]["arraynb"] = np.zeros(
+                self.MUedition["signal"]["data"].shape[0], dtype=int
+            )
             ch1 = 0
 
             # Use scalar ngrid value
@@ -175,7 +182,10 @@ class MUeditManual(QMainWindow):
 
             # Update reference dropdown
             self.reference_dropdown.clear()
-            if "auxiliary" in self.MUedition["signal"] and self.MUedition["signal"]["auxiliary"].size > 0:
+            if (
+                "auxiliary" in self.MUedition["signal"]
+                and self.MUedition["signal"]["auxiliary"].size > 0
+            ):
                 if "auxiliaryname" in self.MUedition["signal"]:
                     aux_names = self.MUedition["signal"]["auxiliaryname"][0]
                     for i in range(aux_names.shape[0]):
@@ -231,7 +241,9 @@ class MUeditManual(QMainWindow):
         # Add checkboxes for each MU
         if not self.MUedition or len(self.MUedition["edition"]["Pulsetrain"]) == 0:
             no_mu_label = QLabel("No MUs loaded")
-            no_mu_label.setStyleSheet("color: #333333; font-family: 'Poppins'; font-size: 16pt;")
+            no_mu_label.setStyleSheet(
+                "color: #333333; font-family: 'Poppins'; font-size: 16pt;"
+            )
             self.mu_checkbox_layout.addWidget(no_mu_label)
             # Add stretch to keep items at the top
             self.mu_checkbox_layout.addStretch(1)
@@ -270,19 +282,29 @@ class MUeditManual(QMainWindow):
 
             # Add MU checkboxes for this array
             has_checkboxes = False
-            for mu_idx in range(self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]):
+            for mu_idx in range(
+                self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]
+            ):
                 has_checkboxes = True
                 mu_identifier = f"Array_{array_idx+1}_MU_{mu_idx+1}"
 
                 # Get SIL value if available
-                sil_value = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
+                sil_value = self.MUedition["edition"]["silval"].get(
+                    (array_idx, mu_idx), 0
+                )
                 # Simplified display text without array_number
                 checkbox_text = f"MU_{mu_idx+1} (SIL: {sil_value:.4f})"
 
                 checkbox = QCheckBox(checkbox_text)
-                checkbox.setStyleSheet("color: #333333; font-family: 'Poppins'; font-size: 14pt;")
-                checkbox.setObjectName(mu_identifier)  # Keep the full identifier in objectName
-                checkbox.setProperty("array_idx", array_idx)  # Store array index for check all functionality
+                checkbox.setStyleSheet(
+                    "color: #333333; font-family: 'Poppins'; font-size: 14pt;"
+                )
+                checkbox.setObjectName(
+                    mu_identifier
+                )  # Keep the full identifier in objectName
+                checkbox.setProperty(
+                    "array_idx", array_idx
+                )  # Store array index for check all functionality
                 checkbox.stateChanged.connect(self.mu_checkbox_state_changed)
 
                 self.mu_checkboxes.append(checkbox)
@@ -402,7 +424,9 @@ class MUeditManual(QMainWindow):
 
         # Calculate time vector
         signal_length = self.MUedition["signal"]["data"].shape[1]
-        self.MUedition["edition"]["time"] = np.linspace(0, signal_length / fsamp, signal_length)
+        self.MUedition["edition"]["time"] = np.linspace(
+            0, signal_length / fsamp, signal_length
+        )
 
         # Copy Pulsetrain data
         pulsetrain_data = self.MUedition["signal"]["Pulsetrain"][0]
@@ -441,10 +465,14 @@ class MUeditManual(QMainWindow):
             self.MUedition["edition"]["silvalcon"] = {}
 
         # Calculate SIL value
-        discharge_times = self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
+        discharge_times = self.MUedition["edition"]["Dischargetimes"].get(
+            (array_idx, mu_idx), np.array([])
+        )
 
         # Store it back
-        self.MUedition["edition"]["Dischargetimes"][(array_idx, mu_idx)] = discharge_times
+        self.MUedition["edition"]["Dischargetimes"][
+            (array_idx, mu_idx)
+        ] = discharge_times
 
         if len(discharge_times) > 2:
             try:
@@ -460,21 +488,29 @@ class MUeditManual(QMainWindow):
 
                 # Calculate continuous silhouette values
                 self.MUedition["edition"]["silvalcon"][(array_idx, mu_idx)] = refinesil(
-                    self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :], discharge_times, fsamp
+                    self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :],
+                    discharge_times,
+                    fsamp,
                 )
 
             except Exception as e:
                 print(f"Error calculating SIL for array {array_idx}, MU {mu_idx}: {e}")
                 self.MUedition["edition"]["silval"][(array_idx, mu_idx)] = 0
-                self.MUedition["edition"]["silvalcon"][(array_idx, mu_idx)] = np.zeros((1, 2))
+                self.MUedition["edition"]["silvalcon"][(array_idx, mu_idx)] = np.zeros(
+                    (1, 2)
+                )
         else:
             self.MUedition["edition"]["silval"][(array_idx, mu_idx)] = 0
-            self.MUedition["edition"]["silvalcon"][(array_idx, mu_idx)] = np.zeros((1, 2))
+            self.MUedition["edition"]["silvalcon"][(array_idx, mu_idx)] = np.zeros(
+                (1, 2)
+            )
 
         # Update the checkbox text if it exists
         for checkbox in self.mu_checkboxes:
             if checkbox.objectName() == f"Array_{array_idx+1}_MU_{mu_idx+1}":
-                sil_value = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
+                sil_value = self.MUedition["edition"]["silval"].get(
+                    (array_idx, mu_idx), 0
+                )
                 checkbox.setText(f"MU_{mu_idx+1} (SIL: {sil_value:.4f})")
                 break
 
@@ -505,17 +541,23 @@ class MUeditManual(QMainWindow):
 
             # Get the correct pulse train for this MU
             pulse_train_array = self.MUedition["edition"]["Pulsetrain"][array_idx]
-            pulse_train = pulse_train_array[mu_idx, :]  # Use 2D indexing to get the full row
+            pulse_train = pulse_train_array[
+                mu_idx, :
+            ]  # Use 2D indexing to get the full row
 
             # Store the current MU in backup for undo functionality
             self.Backup["Pulsetrain"] = pulse_train.copy()
             self.Backup["Dischargetimes"] = (
-                self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
+                self.MUedition["edition"]["Dischargetimes"]
+                .get((array_idx, mu_idx), np.array([]))
+                .copy()
             )
 
             # Update SIL info
             sil_value = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
-            self.sil_info.setText(f"Array_{array_idx+1}_MU_{mu_idx+1} - SIL = {sil_value:.4f}")
+            self.sil_info.setText(
+                f"Array_{array_idx+1}_MU_{mu_idx+1} - SIL = {sil_value:.4f}"
+            )
 
             # Show SIL plot if checkbox is checked
             if self.sil_checkbox.isChecked():
@@ -524,14 +566,21 @@ class MUeditManual(QMainWindow):
 
                 # Clear and update SIL plot
                 self.sil_plot.clear()
-                sil_data = self.MUedition["edition"]["silvalcon"].get((array_idx, mu_idx), np.array([]))
+                sil_data = self.MUedition["edition"]["silvalcon"].get(
+                    (array_idx, mu_idx), np.array([])
+                )
 
-                if hasattr(sil_data, "shape") and sil_data.shape[0] > 0 and sil_data.shape[1] > 1:
+                if (
+                    hasattr(sil_data, "shape")
+                    and sil_data.shape[0] > 0
+                    and sil_data.shape[1] > 1
+                ):
                     # Extract time and SIL values
                     time_indices = sil_data[:, 0].astype(int)
                     # Make sure indices are valid
                     valid_indices = np.where(
-                        (time_indices >= 0) & (time_indices < len(self.MUedition["edition"]["time"]))
+                        (time_indices >= 0)
+                        & (time_indices < len(self.MUedition["edition"]["time"]))
                     )[0]
                     if len(valid_indices) > 0:
                         time_indices = time_indices[valid_indices]
@@ -543,12 +592,18 @@ class MUeditManual(QMainWindow):
                         for i in range(len(x_values)):
                             bar_width = 0.5  # seconds
                             bar = pg.BarGraphItem(
-                                x=[x_values[i]], height=[sil_values[i]], width=bar_width, brush="#262626", pen="#333333"
+                                x=[x_values[i]],
+                                height=[sil_values[i]],
+                                width=bar_width,
+                                brush="#262626",
+                                pen="#333333",
                             )
                             self.sil_plot.addItem(bar)
 
                         # Add a line at SIL=0.9
-                        threshold_line = pg.InfiniteLine(pos=0.9, angle=0, pen=pg.mkPen(color="#76AC30", width=2))
+                        threshold_line = pg.InfiniteLine(
+                            pos=0.9, angle=0, pen=pg.mkPen(color="#76AC30", width=2)
+                        )
                         self.sil_plot.addItem(threshold_line)
 
                         # Set axis ranges
@@ -561,7 +616,9 @@ class MUeditManual(QMainWindow):
             self.spiketrain_plot.clear()
             time_vector = self.MUedition["edition"]["time"]
 
-            if isinstance(time_vector, np.ndarray) and isinstance(pulse_train, np.ndarray):
+            if isinstance(time_vector, np.ndarray) and isinstance(
+                pulse_train, np.ndarray
+            ):
                 self.spiketrain_plot.plot(
                     time_vector,
                     pulse_train,
@@ -569,23 +626,32 @@ class MUeditManual(QMainWindow):
                 )
 
                 # Plot reference signal if available
-                if "target" in self.MUedition["signal"] and self.MUedition["signal"]["target"].size > 0:
+                if (
+                    "target" in self.MUedition["signal"]
+                    and self.MUedition["signal"]["target"].size > 0
+                ):
                     target_data = self.MUedition["signal"]["target"]
                     if target_data.ndim > 1:
                         target_data = target_data[0]
 
-                    if isinstance(target_data, np.ndarray) and len(target_data) == len(time_vector):
+                    if isinstance(target_data, np.ndarray) and len(target_data) == len(
+                        time_vector
+                    ):
                         target_max = np.max(target_data)
                         if target_max > 0:
                             target_normalized = target_data / target_max
                             self.spiketrain_plot.plot(
                                 time_vector,
                                 target_normalized,
-                                pen=pg.mkPen(color="#4CAF50", width=1, style=Qt.PenStyle.DashLine),
+                                pen=pg.mkPen(
+                                    color="#4CAF50", width=1, style=Qt.PenStyle.DashLine
+                                ),
                             )
 
             # Plot discharge times
-            discharge_times = self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
+            discharge_times = self.MUedition["edition"]["Dischargetimes"].get(
+                (array_idx, mu_idx), np.array([])
+            )
             if len(discharge_times) > 0:
                 scatter = pg.ScatterPlotItem()
 
@@ -607,7 +673,13 @@ class MUeditManual(QMainWindow):
                             y_values.append(pulse_train[local_max_idx])
 
                 if len(x_values) > 0:
-                    scatter.addPoints(x=x_values, y=y_values, pen=None, brush=pg.mkBrush("#D95535"), size=10)
+                    scatter.addPoints(
+                        x=x_values,
+                        y=y_values,
+                        pen=None,
+                        brush=pg.mkBrush("#D95535"),
+                        size=10,
+                    )
                     self.spiketrain_plot.addItem(scatter)
 
             # Show and update discharge rate plot
@@ -618,15 +690,24 @@ class MUeditManual(QMainWindow):
                 # Calculate discharge times for plotting
                 distime = np.zeros(len(discharge_times) - 1)
                 for i in range(len(discharge_times) - 1):
-                    midpoint = (discharge_times[i + 1] - discharge_times[i]) // 2 + discharge_times[i]
-                    distime[i] = midpoint / float(self.MUedition["signal"]["fsamp"][0, 0])
+                    midpoint = (
+                        discharge_times[i + 1] - discharge_times[i]
+                    ) // 2 + discharge_times[i]
+                    distime[i] = midpoint / float(
+                        self.MUedition["signal"]["fsamp"][0, 0]
+                    )
 
                 # Calculate discharge rates
-                dr = 1.0 / (np.diff(discharge_times) / float(self.MUedition["signal"]["fsamp"][0, 0]))
+                dr = 1.0 / (
+                    np.diff(discharge_times)
+                    / float(self.MUedition["signal"]["fsamp"][0, 0])
+                )
 
                 # Plot as scatter plot
                 scatter_dr = pg.ScatterPlotItem()
-                scatter_dr.addPoints(x=distime, y=dr, pen=None, brush=pg.mkBrush("#D95535"), size=10)
+                scatter_dr.addPoints(
+                    x=distime, y=dr, pen=None, brush=pg.mkBrush("#D95535"), size=10
+                )
                 self.dr_plot.addItem(scatter_dr)
 
                 # Set y-axis range with margin
@@ -648,11 +729,15 @@ class MUeditManual(QMainWindow):
                 mu_idx = int(parts[3]) - 1
 
                 # Get pulse train data
-                pulse_train = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :]
+                pulse_train = self.MUedition["edition"]["Pulsetrain"][array_idx][
+                    mu_idx, :
+                ]
                 time_vector = self.MUedition["edition"]["time"]
 
                 # Create a new plot for this MU
-                plot_widget = self.create_plot_widget(f"Array_{array_idx+1}_MU_{mu_idx+1}")
+                plot_widget = self.create_plot_widget(
+                    f"Array_{array_idx+1}_MU_{mu_idx+1}"
+                )
                 plot_widget.setFixedHeight(200)  # Fixed height for each plot
 
                 # Plot pulse train with consistent style
@@ -663,7 +748,9 @@ class MUeditManual(QMainWindow):
                 )
 
                 # Plot discharge times
-                discharge_times = self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
+                discharge_times = self.MUedition["edition"]["Dischargetimes"].get(
+                    (array_idx, mu_idx), np.array([])
+                )
                 if len(discharge_times) > 0:
                     scatter = pg.ScatterPlotItem()
 
@@ -685,7 +772,13 @@ class MUeditManual(QMainWindow):
                                 y_values.append(pulse_train[local_max_idx])
 
                     if len(x_values) > 0:
-                        scatter.addPoints(x=x_values, y=y_values, pen=None, brush=pg.mkBrush("#D95535"), size=8)
+                        scatter.addPoints(
+                            x=x_values,
+                            y=y_values,
+                            pen=None,
+                            brush=pg.mkBrush("#D95535"),
+                            size=8,
+                        )
                         plot_widget.addItem(scatter)
 
                 # Add the plot to the layout
@@ -747,7 +840,9 @@ class MUeditManual(QMainWindow):
             checkbox.blockSignals(False)
 
         # Update the display based on selection
-        self.display_selected_mus([cb.objectName() for cb in self.mu_checkboxes if cb.isChecked()])
+        self.display_selected_mus(
+            [cb.objectName() for cb in self.mu_checkboxes if cb.isChecked()]
+        )
 
     def reference_dropdown_value_changed(self):
         """Handle change in reference signal."""
@@ -806,7 +901,9 @@ class MUeditManual(QMainWindow):
         center = self.graphstart + duration / 2
         duration = duration * 1.5
 
-        if duration > (self.MUedition["edition"]["time"][-1] - self.MUedition["edition"]["time"][0]):
+        if duration > (
+            self.MUedition["edition"]["time"][-1] - self.MUedition["edition"]["time"][0]
+        ):
             self.graphstart = self.MUedition["edition"]["time"][0]
             self.graphend = self.MUedition["edition"]["time"][-1]
         else:
@@ -914,9 +1011,13 @@ class MUeditManual(QMainWindow):
         mu_idx = int(parts[3]) - 1
 
         # Store current state for undo
-        self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
+        self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][
+            mu_idx, :
+        ].copy()
         self.Backup["Dischargetimes"] = (
-            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
+            self.MUedition["edition"]["Dischargetimes"]
+            .get((array_idx, mu_idx), np.array([]))
+            .copy()
         )
 
         # Create selection tool
@@ -953,9 +1054,13 @@ class MUeditManual(QMainWindow):
         mu_idx = int(parts[3]) - 1
 
         # Store current state for undo
-        self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
+        self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][
+            mu_idx, :
+        ].copy()
         self.Backup["Dischargetimes"] = (
-            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
+            self.MUedition["edition"]["Dischargetimes"]
+            .get((array_idx, mu_idx), np.array([]))
+            .copy()
         )
 
         # Create selection tool
@@ -992,9 +1097,13 @@ class MUeditManual(QMainWindow):
         mu_idx = int(parts[3]) - 1
 
         # Store current state for undo
-        self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
+        self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][
+            mu_idx, :
+        ].copy()
         self.Backup["Dischargetimes"] = (
-            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
+            self.MUedition["edition"]["Dischargetimes"]
+            .get((array_idx, mu_idx), np.array([]))
+            .copy()
         )
 
         # Create selection tool
@@ -1006,10 +1115,14 @@ class MUeditManual(QMainWindow):
             ),
         )
 
-    def handle_selection_complete(self, action_type, array_idx, mu_idx, x_min, x_max, y_min, y_max):
+    def handle_selection_complete(
+        self, action_type, array_idx, mu_idx, x_min, x_max, y_min, y_max
+    ):
         """Handle the completion of a selection and process it."""
         # Process the selection
-        process_selection(self.MUedition, action_type, array_idx, mu_idx, x_min, x_max, y_min, y_max)
+        process_selection(
+            self.MUedition, action_type, array_idx, mu_idx, x_min, x_max, y_min, y_max
+        )
 
         # Update the display
         for checkbox in self.mu_checkboxes:
@@ -1051,31 +1164,44 @@ class MUeditManual(QMainWindow):
         mu_idx = int(parts[3]) - 1
 
         # Store current state for undo
-        self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
+        self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][
+            mu_idx, :
+        ].copy()
         self.Backup["Dischargetimes"] = (
-            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
+            self.MUedition["edition"]["Dischargetimes"]
+            .get((array_idx, mu_idx), np.array([]))
+            .copy()
         )
 
         # Get discharge times
-        if (array_idx, mu_idx) not in self.MUedition["edition"]["Dischargetimes"] or len(
-            self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]
-        ) <= 1:
+        if (array_idx, mu_idx) not in self.MUedition["edition"][
+            "Dischargetimes"
+        ] or len(self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]) <= 1:
             return
 
         # Create dummy PulseT and Distime arrays for remoutliers function
-        pulse_trains = np.zeros((1, self.MUedition["edition"]["Pulsetrain"][array_idx].shape[1]))
-        pulse_trains[0, :] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :]
+        pulse_trains = np.zeros(
+            (1, self.MUedition["edition"]["Pulsetrain"][array_idx].shape[1])
+        )
+        pulse_trains[0, :] = self.MUedition["edition"]["Pulsetrain"][array_idx][
+            mu_idx, :
+        ]
 
         distime_list = [self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]]
 
         # Apply remoutliers
         filtered_distime = remove_outliers(
-            pulse_trains, distime_list, 0.3, self.MUedition["signal"]["fsamp"]  # Threshold for CoV of Discharge rate
+            pulse_trains,
+            distime_list,
+            0.3,
+            self.MUedition["signal"]["fsamp"],  # Threshold for CoV of Discharge rate
         )
 
         # Update discharge times
         if filtered_distime and len(filtered_distime) > 0:
-            self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = filtered_distime[0]
+            self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = (
+                filtered_distime[0]
+            )
 
             # Update the display
             self.mu_checkbox_state_changed()
@@ -1105,21 +1231,28 @@ class MUeditManual(QMainWindow):
         mu_idx = int(parts[3]) - 1
 
         # Store current state for undo
-        self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
+        self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][
+            mu_idx, :
+        ].copy()
         self.Backup["Dischargetimes"] = (
-            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
+            self.MUedition["edition"]["Dischargetimes"]
+            .get((array_idx, mu_idx), np.array([]))
+            .copy()
         )
 
         # Get the indices for the current view
         idx = np.where(
-            (self.MUedition["edition"]["time"] > self.graphstart) & (self.MUedition["edition"]["time"] < self.graphend)
+            (self.MUedition["edition"]["time"] > self.graphstart)
+            & (self.MUedition["edition"]["time"] < self.graphend)
         )[0]
 
         if len(idx) == 0:
             return
 
         # Get EMG data for the current array and view
-        emg_data = self.MUedition["signal"]["data"][self.MUedition["edition"]["arraynb"] == array_idx, :]
+        emg_data = self.MUedition["signal"]["data"][
+            self.MUedition["edition"]["arraynb"] == array_idx, :
+        ]
         emg_mask = self.MUedition["signal"]["EMGmask"][array_idx]
         emg_data = emg_data[emg_mask == 0, :]  # Use only non-rejected channels
 
@@ -1139,7 +1272,9 @@ class MUeditManual(QMainWindow):
 
         # Handle spike locking
         if self.Backup["lock"] == 1:
-            self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = updated_pulse_train
+            self.MUedition["edition"]["Pulsetrain"][array_idx][
+                mu_idx, :
+            ] = updated_pulse_train
 
             # Reset the lock
             self.Backup["lock"] = 0
@@ -1148,8 +1283,12 @@ class MUeditManual(QMainWindow):
             )
         else:
             # Update both pulse train and discharge times
-            self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = updated_pulse_train
-            self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = updated_discharge_times
+            self.MUedition["edition"]["Pulsetrain"][array_idx][
+                mu_idx, :
+            ] = updated_pulse_train
+            self.MUedition["edition"]["Dischargetimes"][
+                array_idx, mu_idx
+            ] = updated_discharge_times
 
         # Recalculate SIL values
         self.calculate_silval(array_idx, mu_idx)
@@ -1182,19 +1321,26 @@ class MUeditManual(QMainWindow):
         mu_idx = int(parts[3]) - 1
 
         # Store current state for undo
-        self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
+        self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][
+            mu_idx, :
+        ].copy()
         self.Backup["Dischargetimes"] = (
-            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
+            self.MUedition["edition"]["Dischargetimes"]
+            .get((array_idx, mu_idx), np.array([]))
+            .copy()
         )
 
         # Get EMG data for the current array
-        emg_data = self.MUedition["signal"]["data"][self.MUedition["edition"]["arraynb"] == array_idx, :]
+        emg_data = self.MUedition["signal"]["data"][
+            self.MUedition["edition"]["arraynb"] == array_idx, :
+        ]
         emg_mask = self.MUedition["signal"]["EMGmask"][array_idx]
         emg_data = emg_data[emg_mask == 0, :]  # Use only non-rejected channels
 
         # Get the current view indices
         current_idx = np.where(
-            (self.MUedition["edition"]["time"] > self.graphstart) & (self.MUedition["edition"]["time"] < self.graphend)
+            (self.MUedition["edition"]["time"] > self.graphstart)
+            & (self.MUedition["edition"]["time"] < self.graphend)
         )[0]
 
         if len(current_idx) == 0:
@@ -1234,8 +1380,12 @@ class MUeditManual(QMainWindow):
             )
 
             # Update the data
-            self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = updated_pulse_train
-            self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = updated_discharge_times
+            self.MUedition["edition"]["Pulsetrain"][array_idx][
+                mu_idx, :
+            ] = updated_pulse_train
+            self.MUedition["edition"]["Dischargetimes"][
+                array_idx, mu_idx
+            ] = updated_discharge_times
 
             # Update the display to show progress
             self.mu_checkbox_state_changed()
@@ -1263,8 +1413,12 @@ class MUeditManual(QMainWindow):
             )
 
             # Update the data
-            self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = updated_pulse_train
-            self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = updated_discharge_times
+            self.MUedition["edition"]["Pulsetrain"][array_idx][
+                mu_idx, :
+            ] = updated_pulse_train
+            self.MUedition["edition"]["Dischargetimes"][
+                array_idx, mu_idx
+            ] = updated_discharge_times
 
             # Update the display to show progress
             self.mu_checkbox_state_changed()
@@ -1301,8 +1455,12 @@ class MUeditManual(QMainWindow):
         mu_idx = int(parts[3]) - 1
 
         # Restore from backup
-        self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = self.Backup["Pulsetrain"].copy()
-        self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = self.Backup["Dischargetimes"].copy()
+        self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = self.Backup[
+            "Pulsetrain"
+        ].copy()
+        self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = self.Backup[
+            "Dischargetimes"
+        ].copy()
 
         # Recalculate SIL
         self.calculate_silval(array_idx, mu_idx)
@@ -1328,9 +1486,13 @@ class MUeditManual(QMainWindow):
                 mu_idx = int(parts[3]) - 1
 
                 # Store current state for undo (only for the last MU - limitation)
-                self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :].copy()
+                self.Backup["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"][
+                    array_idx
+                ][mu_idx, :].copy()
                 self.Backup["Dischargetimes"] = (
-                    self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([])).copy()
+                    self.MUedition["edition"]["Dischargetimes"]
+                    .get((array_idx, mu_idx), np.array([]))
+                    .copy()
                 )
 
                 # Extract the sampling frequency as a scalar
@@ -1341,10 +1503,14 @@ class MUeditManual(QMainWindow):
 
                 # Set pulse train to zeros and minimal discharge times
                 self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = 0
-                self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = np.array([1, fsamp])
+                self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = (
+                    np.array([1, fsamp])
+                )
 
                 # Update SIL in checkbox text
-                sil_value = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
+                sil_value = self.MUedition["edition"]["silval"].get(
+                    (array_idx, mu_idx), 0
+                )
                 checkbox.setText(f"{mu_text} (SIL: {sil_value:.4f}) - FLAGGED")
 
         # Update the display
@@ -1377,17 +1543,27 @@ class MUeditManual(QMainWindow):
 
             for mu_idx in range(num_mus):
                 progress.setValue(int(processed_mus / total_mus * 100))
-                progress.setLabelText(f"Removing outliers for Array #{array_idx+1} MU #{mu_idx+1}")
+                progress.setLabelText(
+                    f"Removing outliers for Array #{array_idx+1} MU #{mu_idx+1}"
+                )
                 QApplication.processEvents()
 
                 if progress.wasCanceled():
                     break
 
                 # Create dummy arrays for remoutliers function
-                pulse_trains = np.zeros((1, self.MUedition["edition"]["Pulsetrain"][array_idx].shape[1]))
-                pulse_trains[0, :] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :]
+                pulse_trains = np.zeros(
+                    (1, self.MUedition["edition"]["Pulsetrain"][array_idx].shape[1])
+                )
+                pulse_trains[0, :] = self.MUedition["edition"]["Pulsetrain"][array_idx][
+                    mu_idx, :
+                ]
 
-                distime_list = [self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))]
+                distime_list = [
+                    self.MUedition["edition"]["Dischargetimes"].get(
+                        (array_idx, mu_idx), np.array([])
+                    )
+                ]
 
                 # Apply remoutliers if there are discharge times
                 if len(distime_list[0]) > 1:
@@ -1400,7 +1576,9 @@ class MUeditManual(QMainWindow):
 
                     # Update discharge times
                     if filtered_distime and len(filtered_distime) > 0:
-                        self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = filtered_distime[0]
+                        self.MUedition["edition"]["Dischargetimes"][
+                            array_idx, mu_idx
+                        ] = filtered_distime[0]
 
                     # Update SIL values
                     self.calculate_silval(array_idx, mu_idx)
@@ -1437,7 +1615,9 @@ class MUeditManual(QMainWindow):
         processed_mus = 0
         for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
             # Get EMG data for this array
-            emg_data = self.MUedition["signal"]["data"][self.MUedition["edition"]["arraynb"] == array_idx, :]
+            emg_data = self.MUedition["signal"]["data"][
+                self.MUedition["edition"]["arraynb"] == array_idx, :
+            ]
             emg_mask = self.MUedition["signal"]["EMGmask"][array_idx]
             emg_data = emg_data[emg_mask == 0, :]  # Use only non-rejected channels
 
@@ -1445,14 +1625,18 @@ class MUeditManual(QMainWindow):
 
             for mu_idx in range(num_mus):
                 progress.setValue(int(processed_mus / total_mus * 100))
-                progress.setLabelText(f"Updating filter for Array #{array_idx+1} MU #{mu_idx+1}")
+                progress.setLabelText(
+                    f"Updating filter for Array #{array_idx+1} MU #{mu_idx+1}"
+                )
                 QApplication.processEvents()
 
                 if progress.wasCanceled():
                     break
 
                 # Get discharge times
-                discharge_times = self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
+                discharge_times = self.MUedition["edition"]["Dischargetimes"].get(
+                    (array_idx, mu_idx), np.array([])
+                )
 
                 if len(discharge_times) > 1:
                     # Create extension factor
@@ -1460,7 +1644,10 @@ class MUeditManual(QMainWindow):
 
                     # Extend the EMG signal
                     extended_emg = np.zeros(
-                        [emg_data.shape[0] * extension_factor, emg_data.shape[1] + extension_factor - 1]
+                        [
+                            emg_data.shape[0] * extension_factor,
+                            emg_data.shape[1] + extension_factor - 1,
+                        ]
                     )
                     extended_emg = extend_emg(extended_emg, emg_data, extension_factor)
 
@@ -1472,10 +1659,14 @@ class MUeditManual(QMainWindow):
                     _, _, dewhitening_matrix = whiten_emg(extended_emg)
 
                     # Calculate motor unit filter
-                    mu_filter = np.sum(extended_emg[:, discharge_times], axis=1, keepdims=True)
+                    mu_filter = np.sum(
+                        extended_emg[:, discharge_times], axis=1, keepdims=True
+                    )
 
                     # Calculate pulse train
-                    pulse_train = ((dewhitening_matrix @ mu_filter).T @ inverse_cov) @ extended_emg
+                    pulse_train = (
+                        (dewhitening_matrix @ mu_filter).T @ inverse_cov
+                    ) @ extended_emg
                     pulse_train = pulse_train[0, : emg_data.shape[1]]
 
                     # Square and rectify
@@ -1484,7 +1675,10 @@ class MUeditManual(QMainWindow):
                     # Find peaks
                     from scipy.signal import find_peaks
 
-                    peaks, _ = find_peaks(pulse_train, distance=round(0.005 * self.MUedition["signal"]["fsamp"]))
+                    peaks, _ = find_peaks(
+                        pulse_train,
+                        distance=round(0.005 * self.MUedition["signal"]["fsamp"]),
+                    )
 
                     # Normalize using top peaks
                     if len(peaks) >= 10:
@@ -1497,7 +1691,9 @@ class MUeditManual(QMainWindow):
                     if len(peaks) >= 2:
                         from sklearn.cluster import KMeans
 
-                        kmeans = KMeans(n_clusters=2, random_state=0).fit(pulse_train[peaks].reshape(-1, 1))
+                        kmeans = KMeans(n_clusters=2, random_state=0).fit(
+                            pulse_train[peaks].reshape(-1, 1)
+                        )
                         labels = kmeans.labels_
                         centroids = kmeans.cluster_centers_
 
@@ -1506,14 +1702,20 @@ class MUeditManual(QMainWindow):
                         spikes = peaks[labels == high_centroid_idx]
 
                         # Remove outliers
-                        threshold = np.mean(pulse_train[spikes]) + 3 * np.std(pulse_train[spikes])
+                        threshold = np.mean(pulse_train[spikes]) + 3 * np.std(
+                            pulse_train[spikes]
+                        )
                         spikes = spikes[pulse_train[spikes] <= threshold]
                     else:
                         spikes = peaks
 
                     # Update the pulse train and discharge times
-                    self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = pulse_train
-                    self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = spikes
+                    self.MUedition["edition"]["Pulsetrain"][array_idx][
+                        mu_idx, :
+                    ] = pulse_train
+                    self.MUedition["edition"]["Dischargetimes"][
+                        array_idx, mu_idx
+                    ] = spikes
 
                     # Recalculate SIL
                     self.calculate_silval(array_idx, mu_idx)
@@ -1568,7 +1770,9 @@ class MUeditManual(QMainWindow):
             # Check each MU
             for mu_idx in range(array_pulse_train.shape[0]):
                 # Get discharge times
-                discharge_times = self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
+                discharge_times = self.MUedition["edition"]["Dischargetimes"].get(
+                    (array_idx, mu_idx), np.array([])
+                )
 
                 # Check if it's flagged for deletion (0 pulse train and minimal discharge times)
                 if (
@@ -1585,16 +1789,22 @@ class MUeditManual(QMainWindow):
 
                 # Keep corresponding discharge times and SIL values
                 for mu_idx, new_idx in enumerate(np.where(keep_mask)[0]):
-                    if (array_idx, new_idx) in self.MUedition["edition"]["Dischargetimes"]:
-                        clean_dischargetimes[array_idx, mu_idx] = self.MUedition["edition"]["Dischargetimes"][
-                            array_idx, new_idx
-                        ]
+                    if (array_idx, new_idx) in self.MUedition["edition"][
+                        "Dischargetimes"
+                    ]:
+                        clean_dischargetimes[array_idx, mu_idx] = self.MUedition[
+                            "edition"
+                        ]["Dischargetimes"][array_idx, new_idx]
 
                     if (array_idx, new_idx) in self.MUedition["edition"]["silval"]:
-                        clean_silval[array_idx, mu_idx] = self.MUedition["edition"]["silval"][array_idx, new_idx]
+                        clean_silval[array_idx, mu_idx] = self.MUedition["edition"][
+                            "silval"
+                        ][array_idx, new_idx]
 
                     if (array_idx, new_idx) in self.MUedition["edition"]["silvalcon"]:
-                        clean_silvalcon[array_idx, mu_idx] = self.MUedition["edition"]["silvalcon"][array_idx, new_idx]
+                        clean_silvalcon[array_idx, mu_idx] = self.MUedition["edition"][
+                            "silvalcon"
+                        ][array_idx, new_idx]
             else:
                 # Add empty array if all MUs are flagged
                 clean_pulsetrain.append(np.zeros((0, array_pulse_train.shape[1])))
@@ -1633,7 +1843,9 @@ class MUeditManual(QMainWindow):
             discharge_times = []
             for mu_idx in range(pulse_train.shape[0]):
                 if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
-                    discharge_times.append(self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx])
+                    discharge_times.append(
+                        self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]
+                    )
                 else:
                     discharge_times.append(np.array([]))
 
@@ -1654,7 +1866,9 @@ class MUeditManual(QMainWindow):
 
             # Update discharge times and SIL values
             for mu_idx in range(unique_pulse_train.shape[0]):  # type:ignore
-                self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = unique_discharge_times[mu_idx]
+                self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = (
+                    unique_discharge_times[mu_idx]
+                )
                 self.calculate_silval(array_idx, mu_idx)
 
         # Update the MU checkboxes
@@ -1677,18 +1891,26 @@ class MUeditManual(QMainWindow):
             mu_count += self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]
 
         # Create arrays for remduplicatesbgrids
-        all_pulse_trains = np.zeros((mu_count, self.MUedition["edition"]["time"].shape[0]))
+        all_pulse_trains = np.zeros(
+            (mu_count, self.MUedition["edition"]["time"].shape[0])
+        )
         all_discharge_times = []
         muscle = np.zeros(mu_count, dtype=int)
 
         # Collect all MUs
         mu_idx_global = 0
         for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
-            for mu_idx in range(self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]):
-                all_pulse_trains[mu_idx_global] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx]
+            for mu_idx in range(
+                self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]
+            ):
+                all_pulse_trains[mu_idx_global] = self.MUedition["edition"][
+                    "Pulsetrain"
+                ][array_idx][mu_idx]
 
                 if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
-                    all_discharge_times.append(self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx])
+                    all_discharge_times.append(
+                        self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]
+                    )
                 else:
                     all_discharge_times.append(np.array([]))
 
@@ -1696,8 +1918,16 @@ class MUeditManual(QMainWindow):
                 mu_idx_global += 1
 
         # Remove duplicates between arrays
-        unique_discharge_times, unique_pulse_train, unique_muscle = remove_duplicates_between_arrays(
-            all_pulse_trains, all_discharge_times, muscle, round(fsamp / 40), 0.00025, 0.3, fsamp  # Duplicate threshold
+        unique_discharge_times, unique_pulse_train, unique_muscle = (
+            remove_duplicates_between_arrays(
+                all_pulse_trains,
+                all_discharge_times,
+                muscle,
+                round(fsamp / 40),
+                0.00025,
+                0.3,
+                fsamp,  # Duplicate threshold
+            )
         )
 
         # Recreate data structures
@@ -1718,7 +1948,9 @@ class MUeditManual(QMainWindow):
                 # Get discharge times for this array
                 for mu_idx, global_idx in enumerate(array_indices):
                     if global_idx < len(unique_discharge_times):
-                        new_dischargetimes[array_idx, mu_idx] = unique_discharge_times[global_idx]
+                        new_dischargetimes[array_idx, mu_idx] = unique_discharge_times[
+                            global_idx
+                        ]
 
                     # Calculate SIL values
                     self.calculate_silval(array_idx, mu_idx)
@@ -1758,7 +1990,9 @@ class MUeditManual(QMainWindow):
         layout = QVBoxLayout(dialog)
 
         # Create a figure with subplots for each array
-        fig, axes = plt.subplots(1, len(self.MUedition["edition"]["Pulsetrain"]), figsize=(15, 8))
+        fig, axes = plt.subplots(
+            1, len(self.MUedition["edition"]["Pulsetrain"]), figsize=(15, 8)
+        )
         if len(self.MUedition["edition"]["Pulsetrain"]) == 1:
             axes = [axes]
 
@@ -1776,7 +2010,10 @@ class MUeditManual(QMainWindow):
             ax.spines["right"].set_color("#f0f0f0")
 
             # Plot target reference
-            if "target" in self.MUedition["signal"] and self.MUedition["signal"]["target"].size > 0:
+            if (
+                "target" in self.MUedition["signal"]
+                and self.MUedition["signal"]["target"].size > 0
+            ):
                 # Get target data and ensure it's a 1D array
                 target_data = self.MUedition["signal"]["target"]
                 if target_data.ndim > 1:
@@ -1788,7 +2025,8 @@ class MUeditManual(QMainWindow):
                     target_normalized = target_data / target_max
                     ax.plot(
                         self.MUedition["edition"]["time"],
-                        target_normalized * self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0],
+                        target_normalized
+                        * self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0],
                         "--",
                         linewidth=1,
                         color="#D95535",
@@ -1796,14 +2034,24 @@ class MUeditManual(QMainWindow):
 
             # Create firing times array
             firings = np.full(
-                (self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0], len(self.MUedition["edition"]["time"])),
+                (
+                    self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0],
+                    len(self.MUedition["edition"]["time"]),
+                ),
                 np.nan,
             )
 
             # Fill with MU indices at discharge times
-            for mu_idx in range(self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]):
+            for mu_idx in range(
+                self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]
+            ):
                 if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
-                    firings[mu_idx, self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]] = mu_idx + 1
+                    firings[
+                        mu_idx,
+                        self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx],
+                    ] = (
+                        mu_idx + 1
+                    )
 
             # Plot as raster plot
             for mu_idx in range(firings.shape[0]):
@@ -1827,11 +2075,15 @@ class MUeditManual(QMainWindow):
                 ax.set_ylabel("MU #", color="#f0f0f0")
 
             # Set y-axis limits with margin
-            ax.set_ylim(0, self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0] + 1)
+            ax.set_ylim(
+                0, self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0] + 1
+            )
 
         # Add a overall title
         fig.suptitle(
-            f'Raster plots for {len(self.MUedition["edition"]["Pulsetrain"])} arrays', color="#f0f0f0", fontsize=16
+            f'Raster plots for {len(self.MUedition["edition"]["Pulsetrain"])} arrays',
+            color="#f0f0f0",
+            fontsize=16,
         )
 
         # Add the figure to the dialog
@@ -1853,7 +2105,9 @@ class MUeditManual(QMainWindow):
         layout = QVBoxLayout(dialog)
 
         # Create a figure with subplots for each array
-        fig, axes = plt.subplots(1, len(self.MUedition["edition"]["Pulsetrain"]), figsize=(15, 8))
+        fig, axes = plt.subplots(
+            1, len(self.MUedition["edition"]["Pulsetrain"]), figsize=(15, 8)
+        )
         if len(self.MUedition["edition"]["Pulsetrain"]) == 1:
             axes = [axes]
 
@@ -1887,12 +2141,16 @@ class MUeditManual(QMainWindow):
             ax.spines["right"].set_color("#f0f0f0")
 
             # Process each MU in this array
-            for mu_idx in range(self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]):
+            for mu_idx in range(
+                self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]
+            ):
                 # Create binary spike train
                 firing = np.zeros(len(self.MUedition["edition"]["time"]))
 
                 if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
-                    discharge_times = self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]
+                    discharge_times = self.MUedition["edition"]["Dischargetimes"][
+                        array_idx, mu_idx
+                    ]
                     if len(discharge_times) > 0:
                         firing[discharge_times] = 1
 
@@ -1902,9 +2160,20 @@ class MUeditManual(QMainWindow):
                 # Determine line style - highlight current MUs
                 mu_text = f"Array_{array_idx+1}_MU_{mu_idx+1}"
                 if mu_text in checked_mus:
-                    ax.plot(self.MUedition["edition"]["time"], smoothed_dr, color="#D95535", linewidth=3)
+                    ax.plot(
+                        self.MUedition["edition"]["time"],
+                        smoothed_dr,
+                        color="#D95535",
+                        linewidth=3,
+                    )
                 else:
-                    ax.plot(self.MUedition["edition"]["time"], smoothed_dr, color="#f0f0f0", linewidth=1, alpha=0.7)
+                    ax.plot(
+                        self.MUedition["edition"]["time"],
+                        smoothed_dr,
+                        color="#f0f0f0",
+                        linewidth=1,
+                        alpha=0.7,
+                    )
 
             # Set labels
             ax.set_title(
@@ -1961,7 +2230,9 @@ class MUeditManual(QMainWindow):
             # Check each MU from the end to avoid indexing issues when removing
             for mu_idx in range(array_pulse_train.shape[0] - 1, -1, -1):
                 # Get discharge times
-                discharge_times = self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
+                discharge_times = self.MUedition["edition"]["Dischargetimes"].get(
+                    (array_idx, mu_idx), np.array([])
+                )
 
                 # Check if it's flagged for deletion (0 pulse train and minimal discharge times)
                 if (
@@ -1973,12 +2244,18 @@ class MUeditManual(QMainWindow):
 
                     # Remove this MU
                     self.MUedition["edition"]["Pulsetrain"][array_idx] = np.delete(
-                        self.MUedition["edition"]["Pulsetrain"][array_idx], mu_idx, axis=0
+                        self.MUedition["edition"]["Pulsetrain"][array_idx],
+                        mu_idx,
+                        axis=0,
                     )
 
                     # Remove from discharge times and SIL values
-                    if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
-                        del self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]
+                    if (array_idx, mu_idx) in self.MUedition["edition"][
+                        "Dischargetimes"
+                    ]:
+                        del self.MUedition["edition"]["Dischargetimes"][
+                            array_idx, mu_idx
+                        ]
 
                     if (array_idx, mu_idx) in self.MUedition["edition"]["silval"]:
                         del self.MUedition["edition"]["silval"][array_idx, mu_idx]
@@ -1988,23 +2265,35 @@ class MUeditManual(QMainWindow):
 
                     # Shift higher motor units down
                     for shift_mu in range(mu_idx + 1, array_pulse_train.shape[0]):
-                        if (array_idx, shift_mu) in self.MUedition["edition"]["Dischargetimes"]:
-                            self.MUedition["edition"]["Dischargetimes"][array_idx, shift_mu - 1] = self.MUedition[
-                                "edition"
-                            ]["Dischargetimes"][array_idx, shift_mu]
-                            del self.MUedition["edition"]["Dischargetimes"][array_idx, shift_mu]
+                        if (array_idx, shift_mu) in self.MUedition["edition"][
+                            "Dischargetimes"
+                        ]:
+                            self.MUedition["edition"]["Dischargetimes"][
+                                array_idx, shift_mu - 1
+                            ] = self.MUedition["edition"]["Dischargetimes"][
+                                array_idx, shift_mu
+                            ]
+                            del self.MUedition["edition"]["Dischargetimes"][
+                                array_idx, shift_mu
+                            ]
 
                         if (array_idx, shift_mu) in self.MUedition["edition"]["silval"]:
-                            self.MUedition["edition"]["silval"][array_idx, shift_mu - 1] = self.MUedition["edition"][
-                                "silval"
-                            ][array_idx, shift_mu]
+                            self.MUedition["edition"]["silval"][
+                                array_idx, shift_mu - 1
+                            ] = self.MUedition["edition"]["silval"][array_idx, shift_mu]
                             del self.MUedition["edition"]["silval"][array_idx, shift_mu]
 
-                        if (array_idx, shift_mu) in self.MUedition["edition"]["silvalcon"]:
-                            self.MUedition["edition"]["silvalcon"][array_idx, shift_mu - 1] = self.MUedition["edition"][
-                                "silvalcon"
-                            ][array_idx, shift_mu]
-                            del self.MUedition["edition"]["silvalcon"][array_idx, shift_mu]
+                        if (array_idx, shift_mu) in self.MUedition["edition"][
+                            "silvalcon"
+                        ]:
+                            self.MUedition["edition"]["silvalcon"][
+                                array_idx, shift_mu - 1
+                            ] = self.MUedition["edition"]["silvalcon"][
+                                array_idx, shift_mu
+                            ]
+                            del self.MUedition["edition"]["silvalcon"][
+                                array_idx, shift_mu
+                            ]
 
         progress.setValue(100)
 
@@ -2015,7 +2304,9 @@ class MUeditManual(QMainWindow):
         if "edited" in self.filename:
             savename = os.path.join(self.pathname or "", self.filename)
         else:
-            savename = os.path.join(self.pathname or "", os.path.splitext(self.filename)[0] + "_edited.mat")
+            savename = os.path.join(
+                self.pathname or "", os.path.splitext(self.filename)[0] + "_edited.mat"
+            )
 
         # Prepare data for saving
         signal = self.MUedition["signal"]
@@ -2023,12 +2314,16 @@ class MUeditManual(QMainWindow):
         edition = self.MUedition["edition"]
 
         # Save the data
-        sio.savemat(savename, {"signal": signal, "parameters": parameters, "edition": edition})
+        sio.savemat(
+            savename, {"signal": signal, "parameters": parameters, "edition": edition}
+        )
 
         # Show a confirmation message
         from PyQt5.QtWidgets import QMessageBox
 
-        QMessageBox.information(self, "Save Complete", f"Data saved to {savename}", QMessageBox.Ok)
+        QMessageBox.information(
+            self, "Save Complete", f"Data saved to {savename}", QMessageBox.Ok
+        )
 
 
 if __name__ == "__main__":

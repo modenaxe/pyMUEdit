@@ -2,14 +2,10 @@ import sys
 
 # Fix matplotlib backend BEFORE importing matplotlib
 import matplotlib
-matplotlib.use('Qt5Agg')  # Use Qt5 backend to match PyQt5
 
-from PyQt5.QtWidgets import (
-    QFileDialog,
-    QLabel,
-    QMessageBox,
-    QDialog
-)
+matplotlib.use("Qt5Agg")  # Use Qt5 backend to match PyQt5
+
+from PyQt5.QtWidgets import QFileDialog, QLabel, QMessageBox, QDialog
 from scipy.io import loadmat
 import pandas as pd
 import numpy as np
@@ -26,9 +22,9 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
 
+
 # This class holds all the functions used for file uploading
 class FileUploadFunc:
-
     """Methods for handling the emgFile and its intital display to centre"""
 
     # made file a class var, to be accessed via FileUploadFunc.file, so that it can be used across other classes
@@ -44,6 +40,76 @@ class FileUploadFunc:
         # MVC value for calculations
         self.mvc_value = None
 
+    def data_loaded(self):
+        return FileUploadFunc.file is not None
+
+    def remove_mus_by_range(self, input_text):
+        if not self.data_loaded():
+            raise ValueError("No file loaded.")
+
+        emgfile = FileUploadFunc.file
+        mus_to_remove = []
+        parts = input_text.split(",")
+        for part in parts:
+            part = part.strip()
+            if not part:
+                continue
+
+            sub_parts = [p.strip() for p in part.split("-")]
+
+            # In MU Analysis, we don't have arrays, so we expect 'mu' or 'start-end'
+            if len(sub_parts) == 1:  # Single MU
+                mu_idx = int(sub_parts[0]) - 1
+                if mu_idx < 0:
+                    raise ValueError("Indices must be positive.")
+                mus_to_remove.append(mu_idx)
+            elif len(sub_parts) == 2:  # MU range: start-end
+                mu_start_idx = int(sub_parts[0]) - 1
+                mu_end_idx = int(sub_parts[1]) - 1
+                if mu_start_idx < 0 or mu_end_idx < 0:
+                    raise ValueError("Indices must be positive.")
+                if mu_end_idx < mu_start_idx:
+                    raise ValueError("End of range cannot be smaller than start.")
+                for mu_idx in range(mu_start_idx, mu_end_idx + 1):
+                    mus_to_remove.append(mu_idx)
+            else:
+                raise ValueError("Each part must be in 'mu' or 'start-end' format.")
+
+        mus_to_remove = sorted(list(set(mus_to_remove)))
+
+        num_mus = emgfile["NUMBER_OF_MUS"]
+
+        valid_mu_indices_to_remove = [i for i in mus_to_remove if i < num_mus]
+
+        indices_to_keep = [
+            i for i in range(num_mus) if i not in valid_mu_indices_to_remove
+        ]
+
+        if len(indices_to_keep) == num_mus:
+            return  # No valid MUs to remove
+
+        # Update BINARY_MUS_FIRING
+        emgfile["BINARY_MUS_FIRING"] = emgfile["BINARY_MUS_FIRING"].iloc[
+            :, indices_to_keep
+        ]
+        emgfile["BINARY_MUS_FIRING"].columns = range(len(indices_to_keep))
+
+        # Update IPTS
+        emgfile["IPTS"] = emgfile["IPTS"].iloc[:, indices_to_keep]
+        emgfile["IPTS"].columns = range(len(indices_to_keep))
+
+        # Update MUPULSES
+        emgfile["MUPULSES"] = [emgfile["MUPULSES"][i] for i in indices_to_keep]
+
+        # Update ACCURACY
+        if not emgfile["ACCURACY"].empty:
+            emgfile["ACCURACY"] = (
+                emgfile["ACCURACY"].iloc[indices_to_keep].reset_index(drop=True)
+            )
+
+        # Update NUMBER_OF_MUS
+        emgfile["NUMBER_OF_MUS"] = len(indices_to_keep)
+
     # Triggerd of file upload button: opens file explorer
     # Checks if file is valid or not
     # passes to import_data to set center screen
@@ -51,7 +117,9 @@ class FileUploadFunc:
         """Open file dialog to select file for editing and automatically import it."""
         FileUploadFunc.file = None
         file_dialog = QFileDialog()
-        file_path, _ = file_dialog.getOpenFileName(None, "Select file", "", "MAT Files (*.mat);;All Files (*.*)")
+        file_path, _ = file_dialog.getOpenFileName(
+            None, "Select file", "", "MAT Files (*.mat);;All Files (*.*)"
+        )
 
         if file_path:
             # this is where self. file gets set (inside emg_from_otb)
@@ -70,56 +138,11 @@ class FileUploadFunc:
             canvas = QMessageBox()
             canvas.setIcon(QMessageBox.Critical)
             canvas.setText("Error")
-            canvas.setInformativeText('Loaded file has errors')
+            canvas.setInformativeText("Loaded file has errors")
             canvas.setWindowTitle("Error")
             canvas.exec_()
 
     # OPENHDEMG
-    def compute_sil(self, ipts, mupulses, ignore_negative_ipts=False):
-        # Manage exception of no firings
-        if len(mupulses) == 0:
-            return np.nan
-
-        # Extract source and peaks and align source and peaks based on IPTS
-        source = ipts.to_numpy()
-
-        if ignore_negative_ipts:
-            # Ignore negative values, this is particularly needed for negative
-            # unbalanced sources.
-            source = source * np.abs(source)
-
-        peaks_idxs = mupulses - ipts.index[0]
-
-        # Create clusters
-        peak_cluster = source[peaks_idxs]
-        noise_cluster = np.delete(source, peaks_idxs)
-
-        # Create centroids for each cluster
-        peak_centroid = np.mean(peak_cluster)
-        noise_centroid = np.mean(noise_cluster)
-
-        # Calculate within-cluster sums of point-to-centroid distances using the
-        # squared Euclidean distance metric. It is defined as the sum of the
-        # squares of the differences between the corresponding elements of the two
-        # vectors.
-        intra_sums = cdist(
-            peak_cluster.reshape(-1, 1),
-            peak_centroid.reshape(-1, 1),
-            metric="sqeuclidean",
-        ).sum()
-
-        # Calculate between-cluster sums of point-to-centroid distances
-        inter_sums = cdist(
-            peak_cluster.reshape(-1, 1),
-            noise_centroid.reshape(-1, 1),
-            metric="sqeuclidean",
-        ).sum()
-
-        # Calculate silhouette coefficient
-        sil = (inter_sums - intra_sums) / max(intra_sums, inter_sums)
-
-        return sil
-
     def get_otb_refsignal(self, df, refsig):
         assert refsig[0] in [
             True,
@@ -171,7 +194,9 @@ class FileUploadFunc:
                     )
                     return pd.DataFrame(columns=[0])
         else:
-            warnings.warn("\nNot searched for reference signal, it might be necessary for some analyses\n")
+            warnings.warn(
+                "\nNot searched for reference signal, it might be necessary for some analyses\n"
+            )
             return pd.DataFrame(columns=[0])
 
     # OPENHDEMG
@@ -215,9 +240,7 @@ class FileUploadFunc:
 
                 return IED
         # If no matrix is found and we exit the loop:
-        warnings.warn(
-            "OTB recording grid not found, IED could not be inferred"
-        )
+        warnings.warn("OTB recording grid not found, IED could not be inferred")
         return np.nan
 
     # OPENHDEMG
@@ -225,7 +248,9 @@ class FileUploadFunc:
         # Drop all the known columns different from the raw EMG signal.
         # This is a workaround since the OTBiolab+ software does not export a
         # unique name for the raw EMG signal.
-        base_pattern = "Source for decomposition|Decomposition of|acquired data|performed path"
+        base_pattern = (
+            "Source for decomposition|Decomposition of|acquired data|performed path"
+        )
         if extras_regex is None:
             pattern = base_pattern
         else:
@@ -273,6 +298,7 @@ class FileUploadFunc:
         else:
             EXTRAS = df.filter(regex=extras)
             return EXTRAS
+
     def mupulses_from_binary(self, binarymusfiring):
         # Create empty list of lists to fill with ndarrays containing the MUPULSES
         # (point of firing)
@@ -292,13 +318,14 @@ class FileUploadFunc:
 
     # OPENHDEMG: edited
     # I will put my intials (AC) next to edited code
-    def emg_from_otb(self,
-    filepath,
-    ext_factor=8,
-    refsig=[True, "fullsampled"],
-    version="1.5.9.3",
-    extras=None,
-    ignore_negative_ipts=False,
+    def emg_from_otb(
+        self,
+        filepath,
+        ext_factor=8,
+        refsig=[True, "fullsampled"],
+        version="1.5.9.3",
+        extras=None,
+        ignore_negative_ipts=False,
     ):
         # AC : if the file is invalid we return early and let import_data know to show error
         try:
@@ -352,7 +379,7 @@ class FileUploadFunc:
             # Get IPTS and BINARY_MUS_FIRING
             IPTS, BINARY_MUS_FIRING = self.get_otb_decomposition(df=df)
             # Align BINARY_MUS_FIRING to IPTS
-            BINARY_MUS_FIRING = BINARY_MUS_FIRING.shift(- int(ext_factor))
+            BINARY_MUS_FIRING = BINARY_MUS_FIRING.shift(-int(ext_factor))
             BINARY_MUS_FIRING.fillna(value=0, inplace=True)
 
             # Get MUPULSES
@@ -368,7 +395,8 @@ class FileUploadFunc:
             if NUMBER_OF_MUS > 0:
                 to_append = []
                 for mu in range(NUMBER_OF_MUS):
-                    sil = self.compute_sil(
+                    func = CommonOpenFunc()
+                    sil = func.compute_sil(
                         ipts=IPTS[mu],
                         mupulses=MUPULSES[mu],
                         ignore_negative_ipts=ignore_negative_ipts,
@@ -404,18 +432,19 @@ class FileUploadFunc:
 
     # OPENHDEMG: edited
     # I will put my intials (AC) next to edited code throughout this
-    def plot_idr(self,
-    emgfile,
-    analysis_plot,
-    munumber="all",
-    addrefsig=True,
-    timeinseconds=True,
-    figsize=[20, 15],
-    tight_layout=True,
-    line2d_kwargs_ax1=None,
-    line2d_kwargs_ax2=None,
-    axes_kwargs=None,
-    showimmediately=False,
+    def plot_idr(
+        self,
+        emgfile,
+        analysis_plot,
+        munumber="all",
+        addrefsig=True,
+        timeinseconds=True,
+        figsize=[20, 15],
+        tight_layout=True,
+        line2d_kwargs_ax1=None,
+        line2d_kwargs_ax2=None,
+        axes_kwargs=None,
+        showimmediately=False,
     ):
         # Compute the IDR
         common = CommonOpenFunc()
@@ -434,20 +463,21 @@ class FileUploadFunc:
 
         # Use the subplot function to allow for the use of twinx()
         # AC : Probably should change this, use for debugging
-        figname = 'aditi_unique_name'
+        figname = "aditi_unique_name"
         # AC : This is to stop plots from overlaying repeateadly. plt has some strange behaviour so watch out for this in future work
-        plt.close()  
+        plt.close()
         fig, ax1 = plt.subplots(
-            figsize=(figsize[0] / 2.54, figsize[1] / 2.54), num=figname,
+            figsize=(figsize[0] / 2.54, figsize[1] / 2.54),
+            num=figname,
         )
-
 
         # Check if we have a single MU or a list of MUs to plot.
         if isinstance(munumber, int):
             ax1.plot(
                 idr[munumber]["timesec" if timeinseconds else "mupulses"],
                 idr[munumber]["idr"],
-                ".", markersize=12,
+                ".",
+                markersize=12,
             )
 
             ax1.set_ylabel("MU {} (pps)".format(munumber))
@@ -456,7 +486,7 @@ class FileUploadFunc:
 
         elif isinstance(munumber, list):
             # Extract the 'idr' column from each df and create a new df of idrs
-            idr_all = pd.DataFrame({key: df['idr'] for key, df in idr.items()})
+            idr_all = pd.DataFrame({key: df["idr"] for key, df in idr.items()})
             idr_all = idr_all[munumber]
             # Normalise the df
             common = CommonOpenFunc()
@@ -475,7 +505,8 @@ class FileUploadFunc:
                     # Ignore first nan with [1:]
                     idr[thisMU]["timesec" if timeinseconds else "mupulses"][1:],
                     norm_idr.dropna(),
-                    ".", markersize=8,
+                    ".",
+                    markersize=8,
                 )
 
             # Ensure correct and complete ticks on the left y axis
@@ -488,16 +519,16 @@ class FileUploadFunc:
 
         else:
             raise TypeError(
-                "While calling the plot_idr function, you should pass an " +
-                "integer, a list or 'all' to munumber"
+                "While calling the plot_idr function, you should pass an "
+                + "integer, a list or 'all' to munumber"
             )
 
         # Plot the ref signal
         if addrefsig:
             if not isinstance(emgfile["REF_SIGNAL"], pd.DataFrame):
                 raise TypeError(
-                    "REF_SIGNAL is probably absent or it is not contained in a " +
-                    "dataframe"
+                    "REF_SIGNAL is probably absent or it is not contained in a "
+                    + "dataframe"
                 )
 
             x_axis = (
@@ -526,10 +557,9 @@ class FileUploadFunc:
         if self.original_file_path is None:
             print("No file loaded to reset.")
             return
-            
+
         dialog = ConfirmationDialog(
-            "This will reset the current analysis.",
-            "Confirm Reset"
+            "This will reset the current analysis.", "Confirm Reset"
         )
         if dialog.exec_() == QDialog.Accepted:
             # User clicked 'Reset'
@@ -542,13 +572,13 @@ class FileUploadFunc:
         if self.original_file_path is None:
             print("No original file path stored. Cannot reset.")
             return
-            
+
         print("--- DEBUG: Resetting analysis data by reloading original file ---")
-        
+
         # Clear any transformation data (MVC value, etc.)
         self.mvc_value = None
         # Add any other transformation data clearing logic here
-        
+
         # Reload the original file to reset any transformations
         valid = self.emg_from_otb(self.original_file_path)
         if valid:
@@ -561,11 +591,11 @@ class FileUploadFunc:
             error_dialog = QMessageBox()
             error_dialog.setIcon(QMessageBox.Critical)
             error_dialog.setText("Reset Error")
-            error_dialog.setInformativeText('Failed to reload the original file')
+            error_dialog.setInformativeText("Failed to reload the original file")
             error_dialog.setWindowTitle("Error")
             error_dialog.exec_()
 
-    # OPENHDEMG: Edited 
+    # OPENHDEMG: Edited
     def plot_refsig(
         self,
         emgfile,
@@ -578,7 +608,7 @@ class FileUploadFunc:
         showimmediately=False,
     ):
         """
-        Plots the refsig graph 
+        Plots the refsig graph
         """
 
         # Check to have the REF_SIGNAL in a pandas dataframe
@@ -586,8 +616,8 @@ class FileUploadFunc:
             refsig = emgfile["REF_SIGNAL"]
         else:
             raise TypeError(
-                "REF_SIGNAL is probably absent or it is not contained in a " +
-                "dataframe"
+                "REF_SIGNAL is probably absent or it is not contained in a "
+                + "dataframe"
             )
 
         # Here we produce an x axis in seconds or samples
@@ -596,9 +626,9 @@ class FileUploadFunc:
         else:
             x_axis = refsig.index
 
-        # TL : just did this because aditi seemed to do it too  
-        figname = "troy_unique_name" 
-        plt.close() # TL : taking aditi's advice from earlier on
+        # TL : just did this because aditi seemed to do it too
+        figname = "troy_unique_name"
+        plt.close()  # TL : taking aditi's advice from earlier on
         fig, ax1 = plt.subplots(
             figsize=(figsize[0] / 2.54, figsize[1] / 2.54),
             num=figname,
@@ -609,6 +639,11 @@ class FileUploadFunc:
         ax1.set_ylabel("MVC")
         ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
 
-        # the actual plotting 
+        # the actual plotting
         canvas = SaveablePlot(fig)
-        analysis_plot.display_fig(canvas)
+        analysis_plot.display_plot(canvas)
+
+
+    def updateEMGFile(self, emgfile):
+            print(f"updating original file")
+            FileUploadFunc.file = emgfile

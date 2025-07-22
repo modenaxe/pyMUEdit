@@ -1,38 +1,49 @@
 from PyQt5.QtWidgets import (
-    QWidget, 
-    QLabel, 
+    QWidget,
+    QLabel,
     QVBoxLayout,
-    QHBoxLayout, 
-    QPushButton, 
+    QHBoxLayout,
+    QPushButton,
     QLineEdit,
     QDialog,
+    QComboBox
 )
 from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal
+import numpy as np
+import pandas as pd
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
+from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import PropertiesInnerDialogButton
+from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
+from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
+from core.muAnalysisCore.AnalysisResultsHist import store
+from app.muAnalysisFunctions.ResizeFunc import ResizeFunc
+from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
+
 
 class MotorUnitPropertiesDialog(QDialog):
-
     """Dialog for entering Motor Unit Properties including MVC value"""
 
     mvc_updated = pyqtSignal(float)  # Signal emitted when MVC is updated
 
-    def __init__(self, parent=None, analysis_plot=None, current_mvc=None):
+    def __init__(self, parent=None, analysis_plot=None, current_mvc=None, emgfile=None):
         super().__init__(parent)
         self.current_mvc = current_mvc
         # passing instance of MUPropertiesFunc to be used in parts of dialog
         self.analysis_plot = analysis_plot
+        self.emgfile = emgfile
         self.init_ui(MUPropertiesFunc())
 
     def init_ui(self, func):
         self.setWindowTitle("Motor Unit Properties")
         self.setMinimumWidth(550)
         self.setModal(True)
-        self.setWindowFlags(Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(
+            Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint
+        )
         self.setStyleSheet(f"background-color: {CleanTheme.ANALYSIS_BG_SIDEBAR};")
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
@@ -48,41 +59,127 @@ class MotorUnitPropertiesDialog(QDialog):
         mvc_label = QLabel("Enter MVC [N]:")
         mvc_label.setFont(QFont("Arial", 12, QFont.Bold))
         mvc_label.setStyleSheet(f"color: {CleanTheme.ANALYSIS_BG_CARD};")
-        self.mvc_input = PropertiesInnerDialogText("Enter Maximum Voluntary Contraction value...")
+        self.mvc_input = PropertiesInnerDialogText(
+            "Enter Maximum Voluntary Contraction value..."
+        )
         if self.current_mvc is not None:
             self.mvc_input.setText(str(self.current_mvc))
             print(str(self.current_mvc))
         box.addWidget(mvc_label)
         box.addWidget(self.mvc_input)
 
-        #basic properties
+        dr_section = QHBoxLayout()
+
+        dr_button = GeneralButton(
+            "Discharge Rate", lambda: self.handle_discharge_rate()
+        )
+        dr_section.addWidget(dr_button)
+
+        self.dr_event_dropdown = AnalysisDropdown(
+            "Event",
+            items=["rec", "derec", "rec_derec", "steady", "rec_derec_steady"],
+            parent=self,
+        )
+        self.dr_event_dropdown.setMinimumHeight(32)
+        dr_section.addWidget(self.dr_event_dropdown)
+
+        # Firings at Rec textbox
+        self.dr_firings_rec = PropertiesInnerDialogText("Firings at Rec")
+        dr_section.addWidget(self.dr_firings_rec)
+
+        # Firings at Start/End Steady textbox
+        self.dr_firings_steady = PropertiesInnerDialogText(
+            "Firings at Start/End Steady"
+        )
+        dr_section.addWidget(self.dr_firings_steady)
+
         layout.addLayout(box)
+        layout.addLayout(dr_section)
         func.set_mvc(self.mvc_input)
+        
         basic_prop = MotorUnitPropertiesBasic(self.analysis_plot, func, self)
         layout.addLayout(basic_prop)
 
+    def handle_discharge_rate(self):
+        event = self.dr_event_dropdown.currentText()
+        firings_rec = self.dr_firings_rec.text()
+        firings_steady = self.dr_firings_steady.text()
+
+        if not event or event == "Event" or not firings_rec or not firings_steady:
+            ErrorDialog("Complete all inputs", "Error").exec_()
+            return
+        try:
+            n_firings_RecDerec = int(firings_rec)
+            n_firings_steady = int(firings_steady)
+        except ValueError:
+            ErrorDialog("Firings values must be integers", "Error").exec_()
+            return
+        # Get EMG file/data context
+        if self.emgfile is None:
+            ErrorDialog("EMG data not loaded.", "Error").exec_()
+            return
+
+        if event in ["steady", "rec_derec_steady"]:
+            self.accept()
+            # Show the range selection dialog
+            ResizeFunc.get_range(
+                self.analysis_plot,
+                lambda start, end: self.compute_and_display_dr(
+                    n_firings_RecDerec, n_firings_steady, event, (start, end)
+                ),
+            )
+        else:
+            # For non-steady events, just compute normally
+            self.compute_and_display_dr(
+                n_firings_RecDerec, n_firings_steady, event, None
+            )
+
+    def compute_and_display_dr(
+        self, n_firings_RecDerec, n_firings_steady, event, time_range
+    ):
+        # Compute discharge rate
+        func = MUPropertiesFunc()
+        try:
+            dr_df = func.compute_dr(
+                emgfile=self.emgfile,
+                n_firings_RecDerec=n_firings_RecDerec,
+                n_firings_steady=n_firings_steady,
+                event_=event,
+                time_range=time_range,
+            )
+        except Exception as e:
+            ErrorDialog(f"Error computing discharge rate: {str(e)}", "Error").exec_()
+            return
+        # Append result to results panel (top of history)
+        store.append_analysis_hist(
+            f"Discharge Rate (event: {event})", dr_df.to_dict("records")
+        )
+
     def save_mvc(self):
         pass
+
 
 # basic properties section
 # has firing at rec, firing at start/end input and basic properties button
 # button leads to functions found in app.MUPropertiesFun
 class MotorUnitPropertiesBasic(QHBoxLayout):
-
     """Basic Properties analysis layout"""
 
     def __init__(self, analysis_plot, func, over):
         super().__init__()
-        button = GeneralButton("Basic Properties", lambda: func.basic_prop(analysis_plot, rec_input, steady_input, over))
-        rec_input = PropertiesInnerDialogText('Firings at Rec')
-        steady_input = PropertiesInnerDialogText('Firings at Start/End Steady')
+        button = GeneralButton(
+            "Basic Properties",
+            lambda: func.basic_prop(analysis_plot, rec_input, steady_input, over),
+        )
+        rec_input = PropertiesInnerDialogText("Firings at Rec")
+        steady_input = PropertiesInnerDialogText("Firings at Start/End Steady")
         self.addWidget(button)
         self.addWidget(rec_input)
         self.addWidget(steady_input)
 
+
 # general class for any inner inputs inside dialog
 class PropertiesInnerDialogText(QLineEdit):
-
     """Inputs within Motor Unit Properties dialogs"""
 
     def __init__(self, text):
@@ -90,7 +187,8 @@ class PropertiesInnerDialogText(QLineEdit):
         self.setMinimumHeight(32)
         self.setPlaceholderText(text)
         self.setFont(QFont("Arial", 11))
-        self.setStyleSheet(f"""
+        self.setStyleSheet(
+            f"""
             QLineEdit {{
                 padding: 10px;
                 border: 2px solid {CleanTheme.BORDER};
@@ -102,43 +200,63 @@ class PropertiesInnerDialogText(QLineEdit):
             QLineEdit:focus {{
                 border-color: {CleanTheme.ANALYSIS_BG_BUTTON};
             }}
-        """)
+        """
+        )
+
+        
+# class that holds the inputs to compute threshold
+class ComputeThresholdSection(QHBoxLayout):
+    def __init__(self, func):
+        super().__init__()
+        event_ = AnalysisDropdown("Event", items=['rt', 'dert', 'rt_dert'])
+        type_ =  AnalysisDropdown("Type", items=['abs', 'rel', 'abs_rel'])
+        button = GeneralButton("Compute Thresholds", lambda: func.compute_thresh(event_.get_value(), type_.get_value()))
+
+        self.addWidget(button)
+        self.addWidget(event_)
+        self.addWidget(type_)
+        
+
 
 class MotorUnitPropertiesButton(QWidget):
-
     """Button widget for opening Motor Unit Properties dialog"""
-    
+
     mvc_updated = pyqtSignal(float)  # Signal emitted when MVC is updated
-    
+
     def __init__(self, analysis_plot, parent=None):
         super().__init__(parent)
         self.current_mvc = None
         self.analysis_plot = analysis_plot
         self.init_ui()
-        
+
     def init_ui(self):
         layout = QVBoxLayout(self)
-        
+
         # Subtitle
         subtitle_label = AnalysisText.create_subtitle("MOTOR UNIT ANALYSIS")
         subtitle_label.setObjectName("motorUnitAnalysisSubTitle")
         layout.addWidget(subtitle_label)
 
-        mu_properties_btn = GeneralButton("Motor Unit Properties", lambda: self.open_mu_properties())
+        mu_properties_btn = GeneralButton(
+            "Motor Unit Properties", lambda: self.open_mu_properties()
+        )
         layout.addWidget(mu_properties_btn)
-        
+
     def open_mu_properties(self):
         # Open the Motor Unit Properties dialog
-        dialog = MotorUnitPropertiesDialog(self, self.analysis_plot, self.current_mvc)
+        emgfile = FileUploadFunc.file
+        dialog = MotorUnitPropertiesDialog(
+            self, self.analysis_plot, self.current_mvc, emgfile=emgfile
+        )
         dialog.mvc_updated.connect(self.update_mvc)
         dialog.exec_()
-        
+
     def update_mvc(self, mvc_value):
         # Update the MVC value
         self.current_mvc = mvc_value
         print(f"MVC updated to: {mvc_value} N")
         self.mvc_updated.emit(mvc_value)
-        
+
     def get_mvc(self):
         # Get the current MVC value
-        return self.current_mvc 
+        return self.current_mvc
