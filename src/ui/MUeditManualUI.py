@@ -1,6 +1,7 @@
 import pyqtgraph as pg
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
+    QGraphicsSceneMouseEvent,
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
@@ -632,6 +633,7 @@ def setup_display_panel(main_window):
     main_window.action_buttons = {}
     for text, handler, attr_name in action_button_configs:
         btn = ActionButtonedit(text, primary=False)
+        btn.setFocusPolicy(Qt.NoFocus)
         btn.clicked.connect(handler)
         btn.setMinimumHeight(36)
         btn.setMaximumHeight(36)
@@ -698,7 +700,7 @@ def create_plot_widget(main_window, y_label, x_label=""):
     class NewViewBox(pg.ViewBox):
         def __init__(self, zoom_slider, *args, **kwargs):
             super().__init__(*args, **kwargs)
-            self.zoom_slider = zoom_slider        
+            self.zoom_slider = zoom_slider      
     
         def wheelEvent(self, event):
             event.accept()
@@ -709,7 +711,14 @@ def create_plot_widget(main_window, y_label, x_label=""):
                 self.zoom_slider.set_slider_value(cur + 1)
             elif delta < 0:
                 self.zoom_slider.set_slider_value(cur - 1)
-                
+        
+        def keyPressEvent(self, event):
+            if event.key() in (Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Up, Qt.Key.Key_Down):
+                QApplication.sendEvent(main_window, event)
+                event.ignore()
+            super().keyPressEvent(event)
+                    
+                    
     plot = pg.PlotWidget(viewBox=NewViewBox(main_window.zoom_slider))
     plot.setBackground("w")  # White background
     if y_label:

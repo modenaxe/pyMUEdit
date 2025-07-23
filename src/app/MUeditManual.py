@@ -233,6 +233,10 @@ class MUeditManual(QMainWindow):
             self.scroll_left_btn.click()
         elif event.key() == Qt.Key.Key_Right:
             self.scroll_right_btn.click()
+        elif event.key() == Qt.Key.Key_Up:
+            self.zoom_slider.slider_increase()
+        elif event.key() == Qt.Key.Key_Down:
+            self.zoom_slider.slider_decrease()
         elif event.key() == Qt.Key.Key_A:
             self.add_spikes_btn.click()
         elif event.key() == Qt.Key.Key_D:
