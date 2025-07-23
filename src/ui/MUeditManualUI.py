@@ -17,6 +17,7 @@ from PyQt5.QtWidgets import (
     QSpacerItem,
     QApplication,
     QLayout,
+    QToolButton,
 )
 from PyQt5.QtGui  import QIcon          # 图标
 from PyQt5.QtCore import QSize   
@@ -29,6 +30,7 @@ from ui.components import (
     CleanCard,
     CollapsiblePanel,
     VisualizationPanel,
+    VisualizationPanelForEdit,
     Sidebar,
     SettingsGroup,
     SectionHeader,
@@ -470,12 +472,12 @@ def create_visualization_tab(main_window):
 
 def setup_display_panel(main_window):
     """Set up the display panel with all controls and plots using modern UI components."""
-    # Use a VisualizationPanel instead of a basic CleanCard for better semantics
-    main_window.display_panel = VisualizationPanel("EMG Signal Analysis")
+    # Use a VisualizationPanelForEdit instead of a basic CleanCard for better semantics
+    main_window.display_panel = VisualizationPanelForEdit("EMG Signal Edit")
     title_lbl = main_window.display_panel.title_label  
 
     font = title_lbl.font()
-    font.setPointSize(20)       
+    font.setPointSize(15)       
     font.setBold(True)      
     title_lbl.setFont(font)
     
@@ -485,12 +487,12 @@ def setup_display_panel(main_window):
     main_window.select_file_title_btn.clicked.connect(
         main_window.select_file_button_pushed
     )
+
     header = None
     if hasattr(main_window.display_panel, "_header"):
-        header = main_window.display_panel._header.layout() 
+        header = main_window.display_panel.header.layout
 
-    if header:                            
-        header.addStretch(1)               
+    if header:
         header.addWidget(main_window.select_file_title_btn)
     else:                             
         from PyQt5.QtWidgets import QLabel
@@ -543,8 +545,14 @@ def setup_display_panel(main_window):
     undo_layout.addStretch(1)
 
     undo_layout.addWidget(main_window.zoom_slider)
-    
-    display_layout.addWidget(undo_row)                        # ★★ 只 add 一次
+
+    subheader = None
+    if hasattr(main_window.display_panel, "subheader"):
+        subheader = main_window.display_panel.subheader.layout
+
+    if subheader:
+        subheader.addWidget(undo_row)
+    # replace display_layout.addWidget(undo_row)                        # ★★ 只 add 一次
 
     ICON_DIR = Path(__file__).resolve().parent.parent / "public"
     def _ico(name):    
@@ -556,6 +564,30 @@ def setup_display_panel(main_window):
         btn.setText("")           
         btn.setIcon(_ico(name))      
         btn.setIconSize(QSize(18, 18))   
+
+    help_row = QHBoxLayout()
+    help_row.addStretch()
+    main_window.help_button = QToolButton()
+    main_window.help_button.setText("?")
+    main_window.help_button.setFixedSize(30, 30)
+    main_window.help_button.setStyleSheet("""
+        QToolButton {
+            font-weight: bold;
+            font-size: 22px;
+            border: 1px solid #f0f0f0;
+            border-radius: 12px;
+            background-color: white;
+        }
+        QToolButton:hover {
+            background-color: #ddd;
+        }
+    """)
+    main_window.help_button.clicked.connect(
+        main_window.help_button_pushed
+    )
+
+    help_row.addWidget(main_window.help_button)
+    display_layout.addLayout(help_row)
 
     # SIL info display
     main_window.sil_info = QLineEdit()
@@ -777,7 +809,7 @@ def _add_floating_save_btn(main_window):
     btn.setFixedSize(80, 40)
     btn.clicked.connect(main_window.save_button_pushed)
 
-    margin = 16
+    margin = 20
     def _reposition():
         x = main_window.width() - btn.width() - margin
         y = margin

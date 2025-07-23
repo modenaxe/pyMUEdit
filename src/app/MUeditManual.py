@@ -44,6 +44,7 @@ from ui.components import (
     SuccessDialog,
     ErrorDialog,
     MessageDialog,
+    HelpDialog,
 )
 import json
 
@@ -374,7 +375,10 @@ class MUeditManual(QMainWindow):
         self.extend_mu_filter_btn.setEnabled(enabled)
         self.lock_spikes_btn.setEnabled(enabled)
         if hasattr(self, "selection_tool"): self.selection_tool.disable()
-        
+    
+    def help_button_pushed(self):
+        HelpDialog()
+
     def update_mu_checkboxes(self):
         """Update the MU checkboxes based on loaded data using collapsible panels."""
         # Initialize array panels list if it doesn't exist
