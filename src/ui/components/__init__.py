@@ -13,6 +13,7 @@ from .SidebarButton import SidebarButton
 from .SectionHeader import SectionHeader
 from .VisualizationCard import VisualizationCard
 from .VisualizationPanel import VisualizationPanel
+from .VisualizationPanelForEdit import VisualizationPanelForEdit
 from .ActionButton import ActionButton
 from .CleanScrollBar import CleanScrollBar
 from .GoodSlider import GoodSlider
@@ -20,6 +21,7 @@ from .WarningDialog import WarningDialog
 from .SuccessDialog import SuccessDialog
 from .ErrorDialog import ErrorDialog
 from .MessageDialog import MessageDialog
+from .HelpDialog import HelpDialog
 from .toggle_switch import ToggleSwitch
 # Export all components
 __all__ = [
@@ -37,11 +39,13 @@ __all__ = [
     "SectionHeader",
     "VisualizationCard",
     "VisualizationPanel",
+    "VisualizationPanelForEdit",
     "ActionButton",
     "CleanScrollBar",
     "GoodSlider",
     "WarningDialog",
     "SuccessDialog",
     "ErrorDialog",
-    "MessageDialog"
+    "MessageDialog",
+    "HelpDialog",
 ]
