@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import (
     QFrame, QVBoxLayout, QWidget, QGraphicsDropShadowEffect, QSizePolicy
 )
+from PyQt5.QtCore import Qt
 from .CleanTheme import CleanTheme
 from .SectionHeaderForEdit import SectionHeaderForEdit
 
