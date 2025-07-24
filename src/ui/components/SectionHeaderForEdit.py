@@ -17,7 +17,7 @@ class SectionHeaderForEdit(QWidget):
         """
         super().__init__(parent)
         self.layout = QHBoxLayout(self)  # type:ignore
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setContentsMargins(0, 0, 15, 0)
         self.layout.setSpacing(0)
 
         # Create title label

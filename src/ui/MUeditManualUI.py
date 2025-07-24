@@ -62,7 +62,7 @@ def setup_ui(main_window):
     # Set window properties
     main_window.setWindowTitle("MUedit - Manual Editing")
     main_window.setGeometry(100, 100, 1500, 850)
-    main_window.setStyleSheet(f"background-color: {CleanTheme.BG_MAIN};")
+    main_window.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
 
     # Configure PyQtGraph globally
     pg.setConfigOption("background", "w")  # White background
@@ -75,7 +75,7 @@ def setup_ui(main_window):
     main_window.central_widget = QWidget()
     main_window.setCentralWidget(main_window.central_widget)
     main_layout = QHBoxLayout(main_window.central_widget)
-    main_layout.setContentsMargins(8, 8, 8, 8)
+    main_layout.setContentsMargins(0, 0, 0, 0)
     main_layout.setSpacing(8)
 
     # Set up control panel and display panel
@@ -473,11 +473,13 @@ def create_visualization_tab(main_window):
 def setup_display_panel(main_window):
     """Set up the display panel with all controls and plots using modern UI components."""
     # Use a VisualizationPanelForEdit instead of a basic CleanCard for better semantics
+    # main_window.setStyleSheet(f"border: 1px solid blue;")
     main_window.display_panel = VisualizationPanelForEdit("EMG Signal Edit")
     title_lbl = main_window.display_panel.title_label  
+    # main_window.display_panel.setStyleSheet("border: 1px solid red;")
 
     font = title_lbl.font()
-    font.setPointSize(30)       
+    font.setPointSize(20)       
     font.setBold(True)      
     title_lbl.setFont(font)
     
@@ -499,16 +501,15 @@ def setup_display_panel(main_window):
     hdr = QWidget()
     h_lay = QHBoxLayout(hdr)
     h_lay.setContentsMargins(0, 0, 0, 0)
-    h_lay.setSpacing(20)
+    h_lay.setSpacing(0)
 
-    h_lay.addWidget(main_window.display_panel.title_label)  
-    h_lay.addSpacing(20)                                
-    h_lay.addWidget(select_btn, 3)      # stretch=3
-    h_lay.addStretch(1)
-    h_lay.addWidget(save_btn,   0)
+    # h_lay.addWidget(main_window.display_panel.title_label)  
+    main_window.display_panel.header.layout.addWidget(hdr)
+    h_lay.addStretch()
+    h_lay.addWidget(select_btn) 
+    h_lay.addWidget(save_btn)
 
-
-    main_window.display_panel.content_layout.insertWidget(0, hdr)
+    # main_window.display_panel.content_layout.insertWidget(0, hdr)
 
     # Create main container for all visualization elements
     display_widget = QWidget()
@@ -517,10 +518,10 @@ def setup_display_panel(main_window):
     display_layout.setSpacing(15)
 
     main_window.undo_title_btn = ActionButtonedit("Undo", primary=False) # alex
-    main_window.undo_title_btn.setFixedHeight(28)
+    main_window.undo_title_btn.setFixedHeight(24)
     main_window.undo_title_btn.clicked.connect(main_window.undo_button_pushed)
     main_window.redo_title_btn = ActionButtonedit("Redo", primary=False) # new redo btn moy
-    main_window.redo_title_btn.setFixedHeight(28)
+    main_window.redo_title_btn.setFixedHeight(24)
     main_window.redo_title_btn.clicked.connect(main_window.redo_button_pushed)
     
     # Zoom Silder
@@ -528,7 +529,7 @@ def setup_display_panel(main_window):
     
     undo_row = QWidget(parent=display_widget)                 # ★★ parent 指定为 display_widget
     undo_layout = QHBoxLayout(undo_row)
-    undo_layout.setContentsMargins(0, 6, 0, 6)
+    undo_layout.setContentsMargins(0, 0, 0, 0)
     undo_layout.setSpacing(8) 
 
     undo_layout.addWidget(main_window.undo_title_btn)

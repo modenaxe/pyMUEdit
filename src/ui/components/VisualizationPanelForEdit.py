@@ -1,62 +1,87 @@
-from PyQt5.QtWidgets import QVBoxLayout
+from PyQt5.QtWidgets import (
+    QFrame, QVBoxLayout, QWidget, QGraphicsDropShadowEffect, QSizePolicy
+)
 from .CleanTheme import CleanTheme
-from .CleanCard import CleanCard
 from .SectionHeaderForEdit import SectionHeaderForEdit
 
-class VisualizationPanelForEdit(CleanCard):
-    """
-    A panel for visualizations with a header and plot area
 
-    This component provides a clean card with a header and area for plots
-    or other visualization widgets.
+class VisualizationPanelForEdit(QWidget):
+    """
+    A standalone visualization panel with a card style, header, and content_layout.
     """
 
-    def __init__(self, title, plot_widget=None, parent=None):
-        """
-        Initialize a visualization panel
-
-        Args:
-            title (str): The title for the panel
-            plot_widget (QWidget, optional): The plot widget to add
-            parent (QWidget, optional): Parent widget
-        """
+    def __init__(self, title: str, plot_widget: QWidget = None, parent=None):
         super().__init__(parent)
 
-        # Create layout
-        self.panel_layout = QVBoxLayout()
-        self.panel_layout.setContentsMargins(0, 0, 0, 0)
-        self.panel_layout.setSpacing(0)
+        # Outer layout of the whole panel
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.setSpacing(0)
 
-        # Create header
+        # Card frame
+        self.card_frame = QFrame()
+        self.card_frame.setObjectName("visualizationCard")
+        self.card_frame.setFrameShape(QFrame.StyledPanel)
+        self.card_frame.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.card_frame.setStyleSheet(
+            f"""
+            QFrame#visualizationCard {{
+                background-color: {CleanTheme.BG_CARD};
+                border: 1px solid {CleanTheme.BORDER};
+                border-radius: 8px;
+            }}
+            """
+        )
+
+        # Drop shadow effect
+        shadow = QGraphicsDropShadowEffect(self.card_frame)
+        shadow.setBlurRadius(8)
+        shadow.setColor(CleanTheme.SHADOW)
+        shadow.setOffset(0, 2)
+        self.card_frame.setGraphicsEffect(shadow)
+
+        outer_layout.addWidget(self.card_frame)
+
+        # Main card layout
+        card_layout = QVBoxLayout(self.card_frame)
+        card_layout.setContentsMargins(0, 0, 0, 15)
+        card_layout.setSpacing(0)
+
+        # Header
         self.header = SectionHeaderForEdit(title)
         self.header.setStyleSheet(f"background-color: #f0f0f0;")
-        self.panel_layout.addWidget(self.header)
+        card_layout.addWidget(self.header)
         self.title_label = self.header.title_label
 
-        # Create subheader
+        # subHeader
         self.subheader = SectionHeaderForEdit("")
-        self.panel_layout.addWidget(self.subheader)
+        card_layout.addWidget(self.subheader)
 
-        # Add plot widget if provided
+        # Content widget and layout (equivalent to CleanCard's)
+        self.content_widget = QWidget()
+        self.content_layout = QVBoxLayout(self.content_widget)
+        self.content_layout.setContentsMargins(15, 0, 25, 0)
+        self.content_layout.setSpacing(0)
+        card_layout.addWidget(self.content_widget)
+
+        # Optional: add plot widget
+        self.plot_widget = None
         if plot_widget:
-            self.plot_widget = plot_widget
-            self.panel_layout.addWidget(self.plot_widget)
+            self.set_plot_widget(plot_widget)
 
-        # Add to card content
-        self.content_layout.addLayout(self.panel_layout)
-        self.content_widget.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
-
-    def set_plot_widget(self, plot_widget):
+    def set_plot_widget(self, plot_widget: QWidget):
         """
-        Set or replace the plot widget
-
-        Args:
-            plot_widget (QWidget): The plot widget to set
+        Set or replace the plot widget.
         """
-        if hasattr(self, "plot_widget"):
-            # Remove existing plot widget
-            self.panel_layout.removeWidget(self.plot_widget)
+        if self.plot_widget:
+            self.content_layout.removeWidget(self.plot_widget)
             self.plot_widget.deleteLater()
 
         self.plot_widget = plot_widget
-        self.panel_layout.addWidget(self.plot_widget)
+        self.content_layout.addWidget(self.plot_widget)
+
+    def add_content(self, widget: QWidget):
+        """
+        Add any widget to the content layout.
+        """
+        self.content_layout.addWidget(widget)
