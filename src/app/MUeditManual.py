@@ -2585,12 +2585,27 @@ class MUeditManual(QMainWindow):
         edition = copy.deepcopy(self.MUedition["edition"])
 
 
+        # 在保存前重置所有未删除（即实际存在的MU）的Flag为0（直接操作edition）
+        for array_idx, pt in enumerate(edition["Pulsetrain"]):
+            n_mu = pt.shape[0]
+            flag_arr = edition["Flag"][array_idx]
+            for i in range(n_mu):
+                flag_arr[i] = 0
+            # 不动flag_arr[n_mu:]，保持原来长度
+
+
         # 解决单个MU保存后读取失败的问题，Convert Pulsetrain to MATLAB-compatible 1xN cell array
         pulsetrain_list = self.MUedition["edition"]["Pulsetrain"]
         pulsetrain_matlab_cell = np.empty((1, len(pulsetrain_list)), dtype=object)
         for i, pt in enumerate(pulsetrain_list):
             pulsetrain_matlab_cell[0, i] = pt
         edition["Pulsetrain"] = pulsetrain_matlab_cell  # overwrite with proper format
+        # #保存flag字段
+        # flag_list = self.MUedition["edition"]["Flag"]
+        # flag_matlab_cell = np.empty((1, len(flag_list)), dtype=object)
+        # for i, pt in enumerate(flag_list):
+        #     flag_matlab_cell[0, i] = pt
+        # edition["Flag"] = flag_matlab_cell  # overwrite with proper format
 
         #字符串存储，解决.mat文件无法存储字典格式
         for field in ("Dischargetimes", "silval", "silvalcon"): #将这三个字典转为字符串存储
