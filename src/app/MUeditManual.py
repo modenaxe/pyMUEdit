@@ -97,7 +97,7 @@ class MUeditManual(QMainWindow):
 
     def compare_current_initial_data(self, current_data, initial_data): #不相等时返回True
         # 字段名列表（可根据实际情况增减）
-        fields = ["Pulsetrain", "Dischargetimes", "silval", "silvalcon", "Flag", "time", "arraynb"]
+        fields = ["Pulsetrain", "Dischargetimes", "silval", "silvalcon", "time", "arraynb"]
         for field in fields:
             val1 = current_data.get(field)
             val2 = initial_data.get(field)
@@ -2079,15 +2079,11 @@ class MUeditManual(QMainWindow):
         clean_dischargetimes = {}
         clean_silval = {}
         clean_silvalcon = {}
-        clean_flag = [] #添加flag剪裁
-        
-        # Create a flag for checking if remaining MU is empty
-        array_empty_flag = True
 
         # Process each array
         for array_idx in range(total_arrays):
             progress.setValue(int(array_idx / total_arrays * 100))
-            progress.setLabelText(f"Processing Array #{array_idx+1}")
+            progress.setLabelText(f"Processing Array #{array_idx + 1}")
             QApplication.processEvents()
 
             if progress.wasCanceled():
@@ -2095,27 +2091,17 @@ class MUeditManual(QMainWindow):
                 print("Batch processing interruption!")
                 return
 
-            # # Get the pulse trains for this array
-            # array_pulse_train = self.MUedition["edition"]["Pulsetrain"][array_idx]
-            #
-            # # Get the Flag tag array for this array
-            # array_flag = np.array(self.MUedition["edition"]["Flag"][array_idx])
-            #
-            # # Create a mask for non-flagged MUs
-            # keep_mask = np.ones(array_pulse_train.shape[0], dtype=bool)
-
+            # Get the pulse trains for this array
             array_pulse_train = self.MUedition["edition"]["Pulsetrain"][array_idx]
-            n_mu = array_pulse_train.shape[0]
 
-            # flag转np.array，并同步pulsetrain长度
-            array_flag_full = np.array(self.MUedition["edition"]["Flag"][array_idx])
-            if len(array_flag_full) != n_mu:
-                array_flag = array_flag_full[:n_mu]
-            else:
-                array_flag = array_flag_full
+            # Get the Flag tag array for this array
+            array_flag = self.MUedition["edition"]["Flag"][array_idx]
 
+            # Create a mask for non-flagged MUs
+            keep_mask = np.ones(array_pulse_train.shape[0], dtype=bool)
 
-            keep_mask = np.ones(n_mu, dtype=bool)
+            # Create a flag for checking if remaining MU is empty
+            array_empty_flag = True
 
             # Check each MU
             for mu_idx in range(array_pulse_train.shape[0]):
@@ -2124,21 +2110,18 @@ class MUeditManual(QMainWindow):
 
                 # Check if it's flagged for deletion (0 pulse train and minimal discharge times)
                 if (
-                    # np.all(array_pulse_train[mu_idx, :] == 0)
-                    # and len(discharge_times) == 2
-                    # and discharge_times[0] == 1
-                    # and discharge_times[1] == self.MUedition["signal"]["fsamp"]
-                    array_flag[mu_idx] == 1
+                        # np.all(array_pulse_train[mu_idx, :] == 0)
+                        # and len(discharge_times) == 2
+                        # and discharge_times[0] == 1
+                        # and discharge_times[1] == self.MUedition["signal"]["fsamp"]
+                        array_flag[mu_idx] == 1
                 ):
                     keep_mask[mu_idx] = False
-
 
             # Keep only non-flagged MUs
             if np.any(keep_mask):
                 array_empty_flag = False
                 clean_pulsetrain.append(array_pulse_train[keep_mask])
-                clean_flag.append(array_flag[keep_mask].tolist())    #将flag也类似pulsetrain处理，使pulsetrain和flag一一对应
-                
 
                 # Keep corresponding discharge times and SIL values
                 for mu_idx, new_idx in enumerate(np.where(keep_mask)[0]):
@@ -2155,11 +2138,10 @@ class MUeditManual(QMainWindow):
             else:
                 # Add empty array if all MUs are flagged
                 clean_pulsetrain.append(np.zeros((0, array_pulse_train.shape[1])))
-                clean_flag.append([])
         progress.setValue(100)
-        
+
         if array_empty_flag:
-            WarningDialog(text="You Are Trying to Remove All MUs!\nPlease Check Your Flagged MU.", enableCheckBox=False)
+            WarningDialog(text="You Are Trying to Remove All MUs!\nPlease Check Your Flagged MU.")
             return
 
         # Update the data
@@ -2167,7 +2149,6 @@ class MUeditManual(QMainWindow):
         self.MUedition["edition"]["Dischargetimes"] = clean_dischargetimes
         self.MUedition["edition"]["silval"] = clean_silval
         self.MUedition["edition"]["silvalcon"] = clean_silvalcon
-        self.MUedition["edition"]["Flag"] = clean_flag
 
         self.update_save_button()
         # Update the MU checkboxes
