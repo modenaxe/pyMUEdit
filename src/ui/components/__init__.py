@@ -23,6 +23,7 @@ from .ErrorDialog import ErrorDialog
 from .MessageDialog import MessageDialog
 from .HelpDialog import HelpDialog
 from .toggle_switch import ToggleSwitch
+from .SectionHeaderForEdit import SectionHeaderForEdit
 # Export all components
 __all__ = [
     "CleanTheme",
@@ -37,6 +38,7 @@ __all__ = [
     "Sidebar",
     "SidebarButton",
     "SectionHeader",
+    "SectionHeaderForEdit",
     "VisualizationCard",
     "VisualizationPanel",
     "VisualizationPanelForEdit",
