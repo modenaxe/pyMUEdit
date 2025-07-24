@@ -44,7 +44,7 @@ class VisualizationPanelForEdit(QWidget):
 
         # Main card layout
         card_layout = QVBoxLayout(self.card_frame)
-        card_layout.setContentsMargins(0, 0, 0, 15)
+        card_layout.setContentsMargins(0, 0, 0, 0)
         card_layout.setSpacing(0)
 
         # Header
@@ -60,7 +60,7 @@ class VisualizationPanelForEdit(QWidget):
         # Content widget and layout (equivalent to CleanCard's)
         self.content_widget = QWidget()
         self.content_layout = QVBoxLayout(self.content_widget)
-        self.content_layout.setContentsMargins(15, 0, 25, 0)
+        self.content_layout.setContentsMargins(15, 0, 25, 15)
         self.content_layout.setSpacing(0)
         card_layout.addWidget(self.content_widget)
 
