@@ -29,7 +29,6 @@ from ui.components import (
     ActionButton,
     CleanCard,
     CollapsiblePanel,
-    VisualizationPanel,
     VisualizationPanelForEdit,
     Sidebar,
     SettingsGroup,
@@ -615,8 +614,6 @@ def setup_display_panel(main_window):
     
     display_layout.addLayout(help_sil_layout)
 
-    #display_layout.addWidget(main_window.sil_info)
-
     # Create a scroll area for plots when multiple MUs are selected
     plots_scroll_area = QScrollArea()
     plots_scroll_area.setWidgetResizable(True)
@@ -647,11 +644,7 @@ def setup_display_panel(main_window):
 
     # Action buttons - use a card with a proper title
     action_card = CleanCard()
-    action_card.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
-
-    # Add header to the card
-    action_header = SectionHeader("Editing Actions")
-    action_card.content_layout.addWidget(action_header)
+    action_card.setStyleSheet(f"background-color: {CleanTheme.BG_CARD}; border: none;")
 
     # Add button container
     action_container = QWidget()
@@ -726,7 +719,7 @@ def setup_display_panel(main_window):
         # Store reference to button in main_window
         setattr(main_window, attr_name, btn)
 
-    display_layout.addWidget(nav_frame)
+    #display_layout.addWidget(nav_frame)
 
     # Add all visualization elements to the panel
     main_window.display_panel.set_plot_widget(display_widget)
