@@ -500,7 +500,7 @@ def setup_display_panel(main_window):
 
     hdr = QWidget()
     h_lay = QHBoxLayout(hdr)
-    h_lay.setContentsMargins(0, 0, 0, 0)
+    h_lay.setContentsMargins(0, 0, 15, 0)
     h_lay.setSpacing(0)
 
     # h_lay.addWidget(main_window.display_panel.title_label)  
