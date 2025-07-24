@@ -85,7 +85,7 @@ def setup_ui(main_window):
     main_window.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
 #   新增悬浮save块
-    _add_floating_save_btn(main_window)
+    # _add_floating_save_btn(main_window)
 
 
 def setup_control_panel(main_window):
@@ -407,11 +407,11 @@ def create_visualization_tab(main_window):
     row2_lay = QHBoxLayout(row2)
     row2_lay.setContentsMargins(0,0,0,0)
     row2_lay.setSpacing(6)
-    apply_lbl = QLabel("Apply SIL")                         # 左侧文字
+    apply_lbl = QLabel("Apply SIL")                 
     apply_lbl.setStyleSheet(f"color:{CleanTheme.TEXT_PRIMARY};")
 
-    main_window.sil_switch = ToggleSwitch()          # ① 创建
-    main_window.sil_switch.toggled.connect(          # ② 连接信号
+    main_window.sil_switch = ToggleSwitch()        
+    main_window.sil_switch.toggled.connect(    
         main_window.sil_checkbox_value_changed)
     main_window.sil_checkbox = main_window.sil_switch
     row2_lay.addWidget(apply_lbl)
@@ -461,47 +461,38 @@ def setup_display_panel(main_window):
     title_lbl = main_window.display_panel.title_label  
 
     font = title_lbl.font()
-    font.setPointSize(20)       
+    font.setPointSize(30)       
     font.setBold(True)      
     title_lbl.setFont(font)
     
     main_window.select_file_title_btn = ActionButton("Press here to select file", primary=False)
     main_window.select_file_title_btn.setFixedHeight(40)
-
+    select_btn = main_window.select_file_title_btn
     main_window.select_file_title_btn.clicked.connect(
         main_window.select_file_button_pushed
     )
-    header = None
-    if hasattr(main_window.display_panel, "_header"):
-        header = main_window.display_panel._header.layout() 
 
-    if header:                            
-        header.addStretch(1)               
-        header.addWidget(main_window.select_file_title_btn)
-    else:                             
-        from PyQt5.QtWidgets import QLabel
-        title_lbl = main_window.display_panel.findChild(QLabel)
-        
-        def _repos():
-            if title_lbl is not None:  
-                # x = title_lbl.geometry().right()
-                fm = title_lbl.fontMetrics()
-                text_w = fm.horizontalAdvance(title_lbl.text())
-                x = title_lbl.geometry().left() + text_w + 40
-            else:                                           
-                x = 10
-            main_window.select_file_title_btn.move(x, 10)  
+    save_btn = ActionButton("Save", primary=True)  #shr
+    save_btn.setFixedHeight(40)
+    save_btn.clicked.connect(main_window.save_button_pushed)
+    main_window.floating_save_btn = save_btn
 
-        main_window.select_file_title_btn.setParent(main_window.display_panel)
-        _repos()                                                # 初始摆放
+    select_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed) 
+    save_btn.setSizePolicy(QSizePolicy.Fixed,     QSizePolicy.Fixed) 
 
-        old_resize = main_window.display_panel.resizeEvent
-        def new_resize(ev):
-            if callable(old_resize):
-                old_resize(ev)
-            _repos()                                    
-        main_window.display_panel.resizeEvent = new_resize
+    hdr = QWidget()
+    h_lay = QHBoxLayout(hdr)
+    h_lay.setContentsMargins(0, 0, 0, 0)
+    h_lay.setSpacing(20)
 
+    h_lay.addWidget(main_window.display_panel.title_label)  
+    h_lay.addSpacing(20)                                
+    h_lay.addWidget(select_btn, 3)      # stretch=3
+    h_lay.addStretch(1)
+    h_lay.addWidget(save_btn,   0)
+
+
+    main_window.display_panel.content_layout.insertWidget(0, hdr)
 
     # Create main container for all visualization elements
     display_widget = QWidget()
