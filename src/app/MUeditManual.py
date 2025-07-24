@@ -88,17 +88,9 @@ class MUeditManual(QMainWindow):
     def check_current_data_save_by_dirty(self):
         if self.MUedition is None:
             return False
-        print("self.MUedition is None:")
-        print(self.MUedition is None)
         """比较当前数据与初始状态是否有变更"""
         current_data = self.MUedition["edition"]  #返回相反值，既相同时为False，不同时为True
-        print("current_data:")
-        print(current_data)
-        print("\ninitial_data:")
-        print(self.initial_data)
         answer = self.compare_current_initial_data(current_data, self.initial_data)
-        print("answer:")
-        print(answer)
         return answer
 
     def compare_current_initial_data(self, current_data, initial_data): #不相等时返回True
@@ -129,10 +121,6 @@ class MUeditManual(QMainWindow):
             else:
                 if val1 != val2:
                     return True
-            print("current_data:")
-            print(current_data["Flag"])
-            print("\ninitial_data:")
-            print(initial_data["Flag"])
         return False
 
     def update_save_button(self):
@@ -148,7 +136,6 @@ class MUeditManual(QMainWindow):
             self.floating_save_btn.setStyleSheet("""
                 QPushButton{background:#c0c0c0;color:#f2f2f2;border:none;border-radius:4px;padding:8px 15px;}
             """)
-        print("update_save_button运行中")
 
     def _push_undo(self, array_idx: int, mu_idx: int): # moy
         """Push the current MU state into the undo stack and clear the redo stack."""
@@ -2632,9 +2619,7 @@ class MUeditManual(QMainWindow):
         sio.savemat(savename, {"signal": signal, "parameters": parameters, "edition": edition})
         self.dirty_depth = 0 #shr
         self.initial_data = copy.deepcopy(self.MUedition["edition"])    #保存新的原始数据
-        print("准备运行update_save_button()")
         self.update_save_button()
-        print("update_save_button()已运行")
         # Show a confirmation message
         from PyQt5.QtWidgets import QMessageBox
         #QMessageBox.information(self, "Save Complete", f"Data saved to {savename}", QMessageBox.Ok)
