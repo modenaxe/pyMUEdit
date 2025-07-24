@@ -515,19 +515,44 @@ def setup_display_panel(main_window):
     display_widget = QWidget()
     display_layout = QVBoxLayout(display_widget)
     display_layout.setContentsMargins(0, 0, 0, 0)
-    display_layout.setSpacing(15)
+    display_layout.setSpacing(10)
 
-    main_window.undo_title_btn = ActionButtonedit("Undo", primary=False) # alex
+    ICON_DIR = Path(__file__).resolve().parent.parent / "public"
+    def _ico(name):    
+        return QIcon(str(ICON_DIR / f"{name}.png"))
+    main_window.undo_title_btn = ActionButtonedit("Undo", icon=_ico("undo"), primary=False) # alex
     main_window.undo_title_btn.setFixedHeight(24)
     main_window.undo_title_btn.clicked.connect(main_window.undo_button_pushed)
-    main_window.redo_title_btn = ActionButtonedit("Redo", primary=False) # new redo btn moy
+    main_window.redo_title_btn = ActionButtonedit("Redo", icon=_ico("redu"), primary=False) # new redo btn moy
     main_window.redo_title_btn.setFixedHeight(24)
     main_window.redo_title_btn.clicked.connect(main_window.redo_button_pushed)
+
+    for btn, name in (
+        (main_window.undo_title_btn, "undo"),
+        (main_window.redo_title_btn, "redo")):
+        btn.setText("")           
+        btn.setIcon(_ico(name))      
+        btn.setIconSize(QSize(18, 18))
+        btn.setStyleSheet("""
+            QPushButton {
+                border: none;
+                background-color: transparent;
+            }
+            QPushButton:hover {
+                background-color: #eee;
+            }
+        """)
     
     # Zoom Silder
     main_window.zoom_slider = GoodSlider(default=0, on_value_changed=main_window.slider_value_changed, display_value=False)
     
-    undo_row = QWidget(parent=display_widget)                 # ★★ parent 指定为 display_widget
+    undo_row = QWidget()
+    undo_row.setObjectName("undo_row")
+    undo_row.setStyleSheet("""
+        #undo_row {
+            border-bottom: 3px solid #f0f0f0;
+        }
+    """)
     undo_layout = QHBoxLayout(undo_row)
     undo_layout.setContentsMargins(0, 0, 0, 0)
     undo_layout.setSpacing(8) 
@@ -535,30 +560,21 @@ def setup_display_panel(main_window):
     undo_layout.addWidget(main_window.undo_title_btn)
     undo_layout.addWidget(main_window.redo_title_btn) # new redo btn moy
     undo_layout.addStretch(1)
-
     undo_layout.addWidget(main_window.zoom_slider)
 
     subheader = None
-    if hasattr(main_window.display_panel, "subheader"):
-        subheader = main_window.display_panel.subheader.layout
+    subheader = main_window.display_panel.subheader
+    subheader.title_label.setStyleSheet(f"border-bottom: 3px solid #f0f0f0;")
+    subheader_layout = subheader.layout
+    subheader_layout.addWidget(undo_row)
 
-    if subheader:
-        subheader.addWidget(undo_row)
-    # replace display_layout.addWidget(undo_row)                        # ★★ 只 add 一次
+    help_sil_layout = QVBoxLayout()
+    help_sil_layout.setContentsMargins(0, 0, 0, 0)
+    help_sil_layout.setSpacing(0)
 
-    ICON_DIR = Path(__file__).resolve().parent.parent / "public"
-    def _ico(name):    
-        return QIcon(str(ICON_DIR / f"{name}.png"))
-
-    for btn, name in (
-            (main_window.undo_title_btn, "undo"),
-            (main_window.redo_title_btn, "redo")):
-        btn.setText("")           
-        btn.setIcon(_ico(name))      
-        btn.setIconSize(QSize(18, 18))   
-
-    help_row = QHBoxLayout()
-    help_row.addStretch()
+    help_layout = QHBoxLayout()
+    help_layout.setContentsMargins(0, 15, 0, 0)
+    help_layout.addStretch()
     main_window.help_button = QToolButton()
     main_window.help_button.setText("?")
     main_window.help_button.setFixedSize(30, 30)
@@ -566,7 +582,7 @@ def setup_display_panel(main_window):
         QToolButton {
             font-weight: bold;
             font-size: 22px;
-            border: 1px solid #f0f0f0;
+            border: 2px solid #f0f0f0;
             border-radius: 12px;
             background-color: white;
         }
@@ -577,26 +593,29 @@ def setup_display_panel(main_window):
     main_window.help_button.clicked.connect(
         main_window.help_button_pushed
     )
+    help_layout.addWidget(main_window.help_button)
 
-    help_row.addWidget(main_window.help_button)
-    display_layout.addLayout(help_row)
+    help_widget = QWidget()
+    help_widget.setLayout(help_layout)
+    help_sil_layout.addWidget(help_widget)
 
     # SIL info display
-    main_window.sil_info = QLineEdit()
-    main_window.sil_info.setReadOnly(True)
+    main_window.sil_info = QLabel("Tile and SIL value")
     main_window.sil_info.setStyleSheet(
         f"""
-        QLineEdit {{
+        QLabel {{
             color: {CleanTheme.TEXT_PRIMARY};
-            background-color: {CleanTheme.BG_CARD};
-            border: 1px solid {CleanTheme.BORDER};
-            border-radius: 4px;
             padding: 8px;
-            font-size: 13px;
+            font-size: 20px;
         }}
         """
     )
-    display_layout.addWidget(main_window.sil_info)
+    main_window.sil_info.setAlignment(Qt.AlignCenter)
+    help_sil_layout.addWidget(main_window.sil_info, alignment = Qt.AlignCenter)
+    
+    display_layout.addLayout(help_sil_layout)
+
+    #display_layout.addWidget(main_window.sil_info)
 
     # Create a scroll area for plots when multiple MUs are selected
     plots_scroll_area = QScrollArea()
