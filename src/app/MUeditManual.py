@@ -18,13 +18,14 @@ from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
     QFileDialog,
+    QLayout,
     QStackedWidget,
     QProgressDialog, # moy
 )
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
-from ui.MUeditManualUI import setup_ui
+from ui.MUeditManualUI import setup_ui, find_sidebar
 from core.utils.manual_editing.getsil import getsil
 from core.utils.manual_editing.refinesil import refinesil
 from core.utils.manual_editing.extendfilter import extendfilter
@@ -43,6 +44,7 @@ from ui.components import (
     SuccessDialog,
     ErrorDialog,
     MessageDialog,
+    HelpDialog,
 )
 import json
 
@@ -85,19 +87,59 @@ class MUeditManual(QMainWindow):
         if parent:
             self.add_back_button()
 
-    def mark_dirty(self):
-        if not self.dirty:
-            self.dirty = True
-            self.update_save_button()
+    def check_current_data_save_by_dirty(self):
+        if self.MUedition is None:
+            return False
+        print("self.MUedition is None:")
+        print(self.MUedition is None)
+        """比较当前数据与初始状态是否有变更"""
+        current_data = self.MUedition["edition"]  #返回相反值，既相同时为False，不同时为True
+        print("current_data:")
+        print(current_data)
+        print("\ninitial_data:")
+        print(self.initial_data)
+        answer = self.compare_current_initial_data(current_data, self.initial_data)
+        print("answer:")
+        print(answer)
+        return answer
 
-    # ② 保存成功后调
-    def mark_clean(self):
-        if self.dirty:
-            self.dirty = False
-            self.update_save_button()
+    def compare_current_initial_data(self, current_data, initial_data): #不相等时返回True
+        # 字段名列表（可根据实际情况增减）
+        fields = ["Pulsetrain", "Dischargetimes", "silval", "silvalcon", "Flag", "time", "arraynb"]
+        for field in fields:
+            val1 = current_data.get(field)
+            val2 = initial_data.get(field)
+            # 比较list of numpy arrays
+            if isinstance(val1, list) and all(isinstance(x, np.ndarray) for x in val1):
+                if len(val1) != len(val2):
+                    return True
+                for arr1, arr2 in zip(val1, val2):
+                    if not np.array_equal(arr1, arr2, equal_nan=True):
+                        return True
+            # 比较dict
+            elif isinstance(val1, dict):
+                if val1.keys() != val2.keys():
+                    return True
+                for k in val1:
+                    if not np.array_equal(val1[k], val2[k], equal_nan=True):
+                        return True
+            # 比较numpy array
+            elif isinstance(val1, np.ndarray):
+                if not np.array_equal(val1, val2, equal_nan=True):
+                    return True
+            # 比较普通类型
+            else:
+                if val1 != val2:
+                    return True
+            print("current_data:")
+            print(current_data["Flag"])
+            print("\ninitial_data:")
+            print(initial_data["Flag"])
+        return False
 
     def update_save_button(self):
-        if self.dirty:
+        save_flag = self.check_current_data_save_by_dirty()
+        if save_flag:   #当前data与初始data相同，则禁止save；不同，则允许save
             self.floating_save_btn.setEnabled(True)
             self.floating_save_btn.setStyleSheet("""
                 QPushButton{background:#0072ee;color:#fff;border:none;border-radius:4px;padding:8px 15px;}
@@ -108,6 +150,7 @@ class MUeditManual(QMainWindow):
             self.floating_save_btn.setStyleSheet("""
                 QPushButton{background:#c0c0c0;color:#f2f2f2;border:none;border-radius:4px;padding:8px 15px;}
             """)
+        print("update_save_button运行中")
 
     def _push_undo(self, array_idx: int, mu_idx: int): # moy
         """Push the current MU state into the undo stack and clear the redo stack."""
@@ -119,8 +162,7 @@ class MUeditManual(QMainWindow):
         })
         self.redo_stack.clear() # Any new edits will invalidate the redo history
         self.dirty_depth += 1
-        if self.dirty_depth == 1:        # 0 -> 1
-            self.mark_dirty()
+        self.update_save_button()
 
     def _run_with_progress(self, title, task_fn): # add pop-up window moy
 
@@ -193,21 +235,25 @@ class MUeditManual(QMainWindow):
         elif event.key() == Qt.Key.Key_Right:
             self.scroll_right_btn.click()
         elif event.key() == Qt.Key.Key_Up:
-            self.zoom_in_btn.click()
+            self.zoom_slider.slider_increase()
         elif event.key() == Qt.Key.Key_Down:
-            self.zoom_out_btn.click()
+            self.zoom_slider.slider_decrease()
         elif event.key() == Qt.Key.Key_A:
             self.add_spikes_btn.click()
         elif event.key() == Qt.Key.Key_D:
             self.delete_spikes_btn.click()
         elif event.key() == Qt.Key.Key_R:
-            self.remove_outliers_btn.click()
+            self.remove_outliers_single_btn.click()
         elif event.key() == Qt.Key.Key_Space:
             self.update_mu_filter_btn.click()
         elif event.key() == Qt.Key.Key_S:
             self.lock_spikes_btn.click()
         elif event.key() == Qt.Key.Key_E:
             self.extend_mu_filter_btn.click()
+        elif event.key() == Qt.Key.Key_Z:
+            self.undo_title_btn.click()
+        elif event.key() == Qt.Key.Key_X:
+            self.redo_title_btn.click()
         else:
             super().keyPressEvent(event)
 
@@ -306,6 +352,9 @@ class MUeditManual(QMainWindow):
         except Exception as e:
             ErrorDialog(title_label="Import Error", text=f"Failed to load the file:\n{str(e)}")
 
+        #获取初始读取的数据值，对比作为save按钮的开关
+        self.initial_data = copy.deepcopy(self.MUedition["edition"])
+
         QApplication.restoreOverrideCursor()    #还原鼠标
         #origial error print
         # except Exception as e:
@@ -326,7 +375,10 @@ class MUeditManual(QMainWindow):
         self.extend_mu_filter_btn.setEnabled(enabled)
         self.lock_spikes_btn.setEnabled(enabled)
         if hasattr(self, "selection_tool"): self.selection_tool.disable()
-        
+    
+    def help_button_pushed(self):
+        HelpDialog()
+
     def update_mu_checkboxes(self):
         """Update the MU checkboxes based on loaded data using collapsible panels."""
         # Initialize array panels list if it doesn't exist
@@ -383,7 +435,7 @@ class MUeditManual(QMainWindow):
             # Create container widget for checkboxes in this array
             checkbox_container = QWidget()
             checkbox_layout = QVBoxLayout(checkbox_container)
-            checkbox_layout.setContentsMargins(10, 5, 10, 5)
+            checkbox_layout.setContentsMargins(5, 2, 5, 2)
             checkbox_layout.setSpacing(5)
 
             # Add "Check All" checkbox at the top
@@ -416,7 +468,7 @@ class MUeditManual(QMainWindow):
                 checkbox_text = f"MU_{mu_idx+1} (SIL: {sil_value:.4f})"
 
                 checkbox = QCheckBox(checkbox_text)
-                checkbox.setStyleSheet("color: #333333; font-family: 'Poppins'; font-size: 14pt;")
+                checkbox.setStyleSheet("color: #333333; font-family: 'Poppins'; font-size: 12pt;")
                 checkbox.setObjectName(mu_identifier)  # Keep the full identifier in objectName
                 checkbox.setProperty("array_idx", array_idx)  # Store array index for check all functionality
                 checkbox.stateChanged.connect(self.mu_checkbox_state_changed)
@@ -1314,7 +1366,7 @@ class MUeditManual(QMainWindow):
         #             # If the MU is currently checked, update the display
         #             self.mu_checkbox_state_changed()
         #         break
-        self.mark_dirty() #shr
+        self.update_save_button()
         self.update_display_mus()
 
     def lock_spikes_button_pushed(self):
@@ -1368,8 +1420,7 @@ class MUeditManual(QMainWindow):
 
             self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = filtered_distime[0]
             self.mu_checkbox_state_changed()
-            if removal_dict.get(mu_text, 0):  # shr
-                self.mark_dirty()
+            self.update_save_button()
             removal_summary.update(removal_dict)
         if removal_summary:
             summary_lines = [f"{mu}: Removed {cnt} outliers" for mu, cnt in removal_summary.items()]
@@ -1508,6 +1559,7 @@ class MUeditManual(QMainWindow):
             QApplication.restoreOverrideCursor()
             print(e)
             ErrorDialog(text="Fail to update filter.")
+        self.update_save_button()   #刷新save按钮状态
             
 
     def extend_mu_filter_button_pushed(self):
@@ -1657,6 +1709,7 @@ class MUeditManual(QMainWindow):
             QApplication.restoreOverrideCursor()
             print(e)
             ErrorDialog(text="Fail to extend filter.")
+        self.update_save_button()   #刷新save按钮状态
 
     def undo_button_pushed(self): # moy
         if not self.undo_stack:
@@ -1683,8 +1736,7 @@ class MUeditManual(QMainWindow):
         self.mu_checkbox_state_changed()
         if self.dirty_depth > 0:
             self.dirty_depth -= 1
-            if self.dirty_depth == 0: 
-                self.mark_clean()
+        self.update_save_button()
                 
     def redo_button_pushed(self):
         if not self.redo_stack:
@@ -1710,8 +1762,7 @@ class MUeditManual(QMainWindow):
         self.calculate_silval(a, m)
         self.mu_checkbox_state_changed()
         self.dirty_depth += 1
-        if self.dirty_depth == 1:        # 0 -> 1
-            self.mark_dirty()
+        self.update_save_button()
             
     def flag_mu_for_deletion_button_pushed(self):
         """Flag the selected motor units for deletion."""
@@ -1753,7 +1804,9 @@ class MUeditManual(QMainWindow):
                 
                 origin_name = "_".join(mu_text.split("_")[-2:])                
                 checkbox.setText(f"FLAGGED - {origin_name} (SIL: {sil_value:.4f})")
-        self.mark_dirty() #shr
+        
+    
+        self.update_save_button()
         # Update the display
         self.mu_checkbox_state_changed()
     
@@ -1800,7 +1853,7 @@ class MUeditManual(QMainWindow):
                 checkbox.setText(f"{origin_name} (SIL: {sil_value:.4f})")
 
         # Update the display
-        self.mark_dirty() #shr
+        self.update_save_button()
         self.mu_checkbox_state_changed()
 
     # Batch processing
@@ -1881,8 +1934,8 @@ class MUeditManual(QMainWindow):
 
         progress.setValue(100)
         SuccessDialog(text="All motor unit outliers have been removed successfully.")
-        dirty_depth += 1
-        self.mark_dirty() #shr
+        self.dirty_depth += 1
+        self.update_save_button()
         # Update the current MU display
         self.mu_checkbox_state_changed()
 
@@ -2015,7 +2068,7 @@ class MUeditManual(QMainWindow):
         progress.setValue(100)
 
         # Update the current MU display
-        self.mark_dirty() #shr
+        self.update_save_button()
         self.mu_checkbox_state_changed()
 
     def remove_flagged_mu_button_pushed(self):
@@ -2039,6 +2092,10 @@ class MUeditManual(QMainWindow):
         clean_dischargetimes = {}
         clean_silval = {}
         clean_silvalcon = {}
+        clean_flag = [] #添加flag剪裁
+        
+        # Create a flag for checking if remaining MU is empty
+        array_empty_flag = True
 
         # Process each array
         for array_idx in range(total_arrays):
@@ -2051,17 +2108,27 @@ class MUeditManual(QMainWindow):
                 print("Batch processing interruption!")
                 return
 
-            # Get the pulse trains for this array
+            # # Get the pulse trains for this array
+            # array_pulse_train = self.MUedition["edition"]["Pulsetrain"][array_idx]
+            #
+            # # Get the Flag tag array for this array
+            # array_flag = np.array(self.MUedition["edition"]["Flag"][array_idx])
+            #
+            # # Create a mask for non-flagged MUs
+            # keep_mask = np.ones(array_pulse_train.shape[0], dtype=bool)
+
             array_pulse_train = self.MUedition["edition"]["Pulsetrain"][array_idx]
-            
-            # Get the Flag tag array for this array
-            array_flag = self.MUedition["edition"]["Flag"][array_idx]
-            
-            # Create a mask for non-flagged MUs
-            keep_mask = np.ones(array_pulse_train.shape[0], dtype=bool)
-            
-            # Create a flag for checking if remaining MU is empty
-            array_empty_flag = True
+            n_mu = array_pulse_train.shape[0]
+
+            # flag转np.array，并同步pulsetrain长度
+            array_flag_full = np.array(self.MUedition["edition"]["Flag"][array_idx])
+            if len(array_flag_full) != n_mu:
+                array_flag = array_flag_full[:n_mu]
+            else:
+                array_flag = array_flag_full
+
+
+            keep_mask = np.ones(n_mu, dtype=bool)
 
             # Check each MU
             for mu_idx in range(array_pulse_train.shape[0]):
@@ -2077,11 +2144,14 @@ class MUeditManual(QMainWindow):
                     array_flag[mu_idx] == 1
                 ):
                     keep_mask[mu_idx] = False
+            
+            print("keep_mask", keep_mask)
 
             # Keep only non-flagged MUs
             if np.any(keep_mask):
                 array_empty_flag = False
                 clean_pulsetrain.append(array_pulse_train[keep_mask])
+                clean_flag.append(array_flag[keep_mask].tolist())    #将flag也类似pulsetrain处理，使pulsetrain和flag一一对应
                 
 
                 # Keep corresponding discharge times and SIL values
@@ -2099,10 +2169,11 @@ class MUeditManual(QMainWindow):
             else:
                 # Add empty array if all MUs are flagged
                 clean_pulsetrain.append(np.zeros((0, array_pulse_train.shape[1])))
+                clean_flag.append([])
         progress.setValue(100)
         
         if array_empty_flag:
-            WarningDialog(text="You Are Trying to Remove All MUs!\nPlease Check Your Flagged MU.")
+            WarningDialog(text="You Are Trying to Remove All MUs!\nPlease Check Your Flagged MU.", enableCheckBox=False)
             return
 
         # Update the data
@@ -2110,8 +2181,9 @@ class MUeditManual(QMainWindow):
         self.MUedition["edition"]["Dischargetimes"] = clean_dischargetimes
         self.MUedition["edition"]["silval"] = clean_silval
         self.MUedition["edition"]["silvalcon"] = clean_silvalcon
+        self.MUedition["edition"]["Flag"] = clean_flag
 
-        self.mark_dirty() #shr
+        self.update_save_button()
         # Update the MU checkboxes
         self.update_mu_checkboxes()
 
@@ -2166,7 +2238,7 @@ class MUeditManual(QMainWindow):
                     self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = unique_discharge_times[mu_idx]
                     self.calculate_silval(array_idx, mu_idx)
 
-            self.mark_dirty() #shr
+            self.update_save_button()
             # Update the MU checkboxes
             self.update_mu_checkboxes()
         self._run_with_progress("Removing duplicates within grids", _task)
@@ -2259,7 +2331,7 @@ class MUeditManual(QMainWindow):
             self.MUedition["edition"]["Pulsetrain"] = new_pulsetrain
             self.MUedition["edition"]["Dischargetimes"] = new_dischargetimes
 
-            self.mark_dirty() #shr
+            self.update_save_button()
             # Update the MU checkboxes
             self.update_mu_checkboxes()
         self._run_with_progress("Removing duplicates between grids", _task)
@@ -2545,6 +2617,7 @@ class MUeditManual(QMainWindow):
         parameters = copy.deepcopy(self.MUedition.get("parameters", {}))
         edition = copy.deepcopy(self.MUedition["edition"])
 
+
         # 解决单个MU保存后读取失败的问题，Convert Pulsetrain to MATLAB-compatible 1xN cell array
         pulsetrain_list = self.MUedition["edition"]["Pulsetrain"]
         pulsetrain_matlab_cell = np.empty((1, len(pulsetrain_list)), dtype=object)
@@ -2552,6 +2625,7 @@ class MUeditManual(QMainWindow):
             pulsetrain_matlab_cell[0, i] = pt
         edition["Pulsetrain"] = pulsetrain_matlab_cell  # overwrite with proper format
 
+        #字符串存储，解决.mat文件无法存储字典格式
         for field in ("Dischargetimes", "silval", "silvalcon"): #将这三个字典转为字符串存储
             if field in edition and isinstance(edition[field], dict):
                 # tuple key转str
@@ -2570,7 +2644,10 @@ class MUeditManual(QMainWindow):
         # Save the data
         sio.savemat(savename, {"signal": signal, "parameters": parameters, "edition": edition})
         self.dirty_depth = 0 #shr
-        self.mark_clean()
+        self.initial_data = copy.deepcopy(self.MUedition["edition"])    #保存新的原始数据
+        print("准备运行update_save_button()")
+        self.update_save_button()
+        print("update_save_button()已运行")
         # Show a confirmation message
         from PyQt5.QtWidgets import QMessageBox
         #QMessageBox.information(self, "Save Complete", f"Data saved to {savename}", QMessageBox.Ok)
@@ -2585,6 +2662,25 @@ class MUeditManual(QMainWindow):
                 self.clear_layout(item.layout())
             elif item.spacerItem():
                 pass
+    
+    def showEvent(self, event):
+        """Event triggered when the widget is shown."""
+        self.sub_panel.show()
+        sidebar = find_sidebar(self)
+        sidebar.setFixedWidth(340)
+
+        # Call the parent method
+        super().showEvent(event)
+    
+    def hideEvent(self, event):
+        """Event triggered when the widget is hidden."""
+        self.sub_panel.hide()
+        sidebar = find_sidebar(self)
+        sidebar.setFixedWidth(180)
+
+        # Call the parent method
+        super().hideEvent(event)
+
 
 
 if __name__ == "__main__":

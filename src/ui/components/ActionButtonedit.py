@@ -8,7 +8,7 @@ from .CleanTheme import CleanTheme
 class ActionButtonedit(QPushButton):
     """A clean, minimalist button for actions"""
 
-    def __init__(self, text, icon=None, primary=True, parent=None):
+    def __init__(self, text, icon=None, primary=True, parent=None, tabs=False):
         """
         Initialize an action button
 
@@ -70,7 +70,7 @@ class ActionButtonedit(QPushButton):
                     color: {CleanTheme.TEXT_PRIMARY};
                     border: 1px solid {CleanTheme.BORDER};
                     border-radius: 4px;
-                    padding: 8px 15px;
+                    
                 }}
                 QPushButton:hover {{
                     background-color: #f5f5f5;
@@ -90,6 +90,34 @@ class ActionButtonedit(QPushButton):
                 }}
             """
             )
+        if tabs:
+            self.setStyleSheet(
+                f"""
+                QPushButton {{
+                    background-color: transparent;
+                    color: #555555;
+                    border-radius: 4px;
+                }}
+                QPushButton:hover {{
+                    background-color: #f5f5f5;
+                }}
+    
+                QPushButton:pressed {{
+                    background-color: #e0e0e0;
+                }}
+
+                QPushButton[active="true"] {{
+                    background-color: #1976D2;
+                    color: white;
+                    border: 1px solid #1976D2;
+                }}
+
+                QPushButton[active="true"]:hover {{
+                    background-color: #1565C0;
+                }}
+            """
+            )
+            
             
     def set_active(self, active: bool):
         """Set the active visual state of the button."""
