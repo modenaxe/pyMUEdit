@@ -295,9 +295,9 @@ def process_selection(MUedition, action_type, array_idx, mu_idx, x_min, x_max, y
             #     MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]
             # )
                 
-            print(f"FOUND PEAKS: {peaks}, original_indices: {peaks}")
-        else:
-            print(f"NO FOUND PEAKS!!!!!!!!!!!!!!!!!!!!!!")
+            # print(f"FOUND PEAKS: {peaks}, original_indices: {peaks}")
+        # else:
+        #     print(f"NO FOUND PEAKS!!!!!!!!!!!!!!!!!!!!!!")
 
     elif action_type == "delete_spikes":
         
