@@ -2131,8 +2131,7 @@ class MUeditManual(QMainWindow):
                     array_flag[mu_idx] == 1
                 ):
                     keep_mask[mu_idx] = False
-            
-            print("keep_mask", keep_mask)
+
 
             # Keep only non-flagged MUs
             if np.any(keep_mask):
