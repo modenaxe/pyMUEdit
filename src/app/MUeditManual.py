@@ -18,13 +18,14 @@ from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
     QFileDialog,
+    QLayout,
     QStackedWidget,
     QProgressDialog, # moy
 )
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
-from ui.MUeditManualUI import setup_ui
+from ui.MUeditManualUI import setup_ui, find_sidebar
 from core.utils.manual_editing.getsil import getsil
 from core.utils.manual_editing.refinesil import refinesil
 from core.utils.manual_editing.extendfilter import extendfilter
@@ -43,6 +44,7 @@ from ui.components import (
     SuccessDialog,
     ErrorDialog,
     MessageDialog,
+    HelpDialog,
 )
 import json
 
@@ -220,21 +222,25 @@ class MUeditManual(QMainWindow):
         elif event.key() == Qt.Key.Key_Right:
             self.scroll_right_btn.click()
         elif event.key() == Qt.Key.Key_Up:
-            self.zoom_in_btn.click()
+            self.zoom_slider.slider_increase()
         elif event.key() == Qt.Key.Key_Down:
-            self.zoom_out_btn.click()
+            self.zoom_slider.slider_decrease()
         elif event.key() == Qt.Key.Key_A:
             self.add_spikes_btn.click()
         elif event.key() == Qt.Key.Key_D:
             self.delete_spikes_btn.click()
         elif event.key() == Qt.Key.Key_R:
-            self.remove_outliers_btn.click()
+            self.remove_outliers_single_btn.click()
         elif event.key() == Qt.Key.Key_Space:
             self.update_mu_filter_btn.click()
         elif event.key() == Qt.Key.Key_S:
             self.lock_spikes_btn.click()
         elif event.key() == Qt.Key.Key_E:
             self.extend_mu_filter_btn.click()
+        elif event.key() == Qt.Key.Key_Z:
+            self.undo_title_btn.click()
+        elif event.key() == Qt.Key.Key_X:
+            self.redo_title_btn.click()
         else:
             super().keyPressEvent(event)
 
@@ -356,7 +362,10 @@ class MUeditManual(QMainWindow):
         self.extend_mu_filter_btn.setEnabled(enabled)
         self.lock_spikes_btn.setEnabled(enabled)
         if hasattr(self, "selection_tool"): self.selection_tool.disable()
-        
+    
+    def help_button_pushed(self):
+        HelpDialog()
+
     def update_mu_checkboxes(self):
         """Update the MU checkboxes based on loaded data using collapsible panels."""
         # Initialize array panels list if it doesn't exist
@@ -413,7 +422,7 @@ class MUeditManual(QMainWindow):
             # Create container widget for checkboxes in this array
             checkbox_container = QWidget()
             checkbox_layout = QVBoxLayout(checkbox_container)
-            checkbox_layout.setContentsMargins(10, 5, 10, 5)
+            checkbox_layout.setContentsMargins(5, 2, 5, 2)
             checkbox_layout.setSpacing(5)
 
             # Add "Check All" checkbox at the top
@@ -446,7 +455,7 @@ class MUeditManual(QMainWindow):
                 checkbox_text = f"MU_{mu_idx+1} (SIL: {sil_value:.4f})"
 
                 checkbox = QCheckBox(checkbox_text)
-                checkbox.setStyleSheet("color: #333333; font-family: 'Poppins'; font-size: 14pt;")
+                checkbox.setStyleSheet("color: #333333; font-family: 'Poppins'; font-size: 12pt;")
                 checkbox.setObjectName(mu_identifier)  # Keep the full identifier in objectName
                 checkbox.setProperty("array_idx", array_idx)  # Store array index for check all functionality
                 checkbox.stateChanged.connect(self.mu_checkbox_state_changed)
@@ -1782,6 +1791,8 @@ class MUeditManual(QMainWindow):
                 
                 origin_name = "_".join(mu_text.split("_")[-2:])                
                 checkbox.setText(f"FLAGGED - {origin_name} (SIL: {sil_value:.4f})")
+        
+    
         self.update_save_button()
         # Update the display
         self.mu_checkbox_state_changed()
@@ -2069,6 +2080,9 @@ class MUeditManual(QMainWindow):
         clean_silval = {}
         clean_silvalcon = {}
         clean_flag = [] #添加flag剪裁
+        
+        # Create a flag for checking if remaining MU is empty
+        array_empty_flag = True
 
         # Process each array
         for array_idx in range(total_arrays):
@@ -2100,11 +2114,8 @@ class MUeditManual(QMainWindow):
             else:
                 array_flag = array_flag_full
 
-            keep_mask = np.ones(n_mu, dtype=bool)
-            array_empty_flag = True
 
-            # Create a flag for checking if remaining MU is empty
-            array_empty_flag = True
+            keep_mask = np.ones(n_mu, dtype=bool)
 
             # Check each MU
             for mu_idx in range(array_pulse_train.shape[0]):
@@ -2120,6 +2131,8 @@ class MUeditManual(QMainWindow):
                     array_flag[mu_idx] == 1
                 ):
                     keep_mask[mu_idx] = False
+            
+            print("keep_mask", keep_mask)
 
             # Keep only non-flagged MUs
             if np.any(keep_mask):
@@ -2147,7 +2160,7 @@ class MUeditManual(QMainWindow):
         progress.setValue(100)
         
         if array_empty_flag:
-            WarningDialog(text="You Are Trying to Remove All MUs!\nPlease Check Your Flagged MU.")
+            WarningDialog(text="You Are Trying to Remove All MUs!\nPlease Check Your Flagged MU.", enableCheckBox=False)
             return
 
         # Update the data
@@ -2634,6 +2647,25 @@ class MUeditManual(QMainWindow):
                 self.clear_layout(item.layout())
             elif item.spacerItem():
                 pass
+    
+    def showEvent(self, event):
+        """Event triggered when the widget is shown."""
+        self.sub_panel.show()
+        sidebar = find_sidebar(self)
+        sidebar.setFixedWidth(340)
+
+        # Call the parent method
+        super().showEvent(event)
+    
+    def hideEvent(self, event):
+        """Event triggered when the widget is hidden."""
+        self.sub_panel.hide()
+        sidebar = find_sidebar(self)
+        sidebar.setFixedWidth(180)
+
+        # Call the parent method
+        super().hideEvent(event)
+
 
 
 if __name__ == "__main__":

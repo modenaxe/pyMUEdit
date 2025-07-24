@@ -38,7 +38,12 @@ class GoodSlider(QWidget):
         layout.setContentsMargins(20, 10, 20, 10)
         layout.setSpacing(2)
 
-        self.slider = QSlider(orientation)
+        class NewSlider(QSlider):
+            def keyPressEvent(self, event):
+                if event.key() in (Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Up, Qt.Key.Key_Down):
+                    event.ignore()
+                    
+        self.slider = NewSlider(orientation)
         self.slider.setMinimum(minimum)
         self.slider.setMaximum(maximum)
         self.slider.setValue(default)
@@ -109,6 +114,12 @@ class GoodSlider(QWidget):
     
     def get_slider_value(self):
         return self.slider.value()
+    
+    def slider_increase(self):
+        self.slider.setValue(self.slider.value() + 1)
+    
+    def slider_decrease(self):
+        self.slider.setValue(self.slider.value() - 1)
     
     # show or hide the slider value
     def display_value(self, display_value):
