@@ -7,6 +7,8 @@ from PyQt5.QtWidgets import (
     QProgressBar,
     QScrollArea,
     QApplication,
+    QStackedWidget,
+    QStackedLayout
 )
 from PyQt5.QtCore import Qt
 import pyqtgraph as pg
@@ -94,11 +96,18 @@ def setup_left_panel(main_window):
 
     # Algorithm Selection panel
     algo_panel = CollapsiblePanel("Algorithm Selection")
-    algo_field = FormDropdown("Algorithm", ["Fast ICA", "Other Algorithm 1", "Other Algorithm 2"])
+    algo_field = FormDropdown("Algorithm", ["Fast ICA", "SCD", "Other Algorithm 2"])
     main_window.algo_combo = algo_field.dropdown
     main_window.algo_combo.setCurrentText("Fast ICA")  # Set initial value
     algo_panel.add_widget(algo_field)
     left_layout.addWidget(algo_panel)
+
+    algo_options_stack_widget = QStackedWidget()
+    main_window.algo_options_stack_widget = algo_options_stack_widget
+
+    # Fast ICA options
+    algo_fastICA_widget = QWidget()
+    algo_fastICA_panels = QVBoxLayout(algo_fastICA_widget)
 
     # Processing Options panel
     options_panel = CollapsiblePanel("Processing Options")
@@ -121,7 +130,8 @@ def setup_left_panel(main_window):
     main_window.reference_dropdown.setCurrentText("EMG amplitude")  # Set initial value
     options_panel.add_widget(reference_field)
 
-    left_layout.addWidget(options_panel)
+    algo_fastICA_panels.addWidget(options_panel)
+    #left_layout.addWidget(options_panel)
 
     # Advanced Options panel
     advanced_panel = CollapsiblePanel("Advanced Options")
@@ -150,7 +160,8 @@ def setup_left_panel(main_window):
     main_window.refine_mus_dropdown.setCurrentText("Yes")  # Set initial value
     advanced_panel.add_widget(refine_field)
 
-    left_layout.addWidget(advanced_panel)
+    algo_fastICA_panels.addWidget(advanced_panel)
+    #left_layout.addWidget(advanced_panel)
 
     # Parameters panel
     params_panel = CollapsiblePanel("Parameters")
@@ -184,7 +195,14 @@ def setup_left_panel(main_window):
     main_window.cov_threshold_field = cov_field.spinbox
     params_panel.add_widget(cov_field)
 
-    left_layout.addWidget(params_panel)
+    algo_fastICA_panels.addWidget(params_panel)
+    # left_layout.addWidget(params_panel)
+
+
+    # set up fastICA options
+    algo_options_stack_widget.addWidget(algo_fastICA_widget)
+    algo_options_stack_widget.setCurrentIndex(0)
+    left_layout.addWidget(algo_options_stack_widget)
 
     # Add stretch to push everything to the top
     left_layout.addStretch(1)
