@@ -659,12 +659,14 @@ def setup_display_panel(main_window):
         ("Delete spikes", main_window.delete_spikes_button_pushed, "delete_spikes_btn"),
         ("Delete DR", main_window.delete_dr_button_pushed, "delete_dr_btn"),
         ("Lock spikes", main_window.lock_spikes_button_pushed, "lock_spikes_btn"),
+        ("Remove outliers", main_window.remove_outliers_button_pushed, "remove_outliers_single_btn"),
         ("Update MU filter", main_window.update_mu_filter_button_pushed, "update_mu_filter_btn"),
         ("Extend MU filter", main_window.extend_mu_filter_button_pushed, "extend_mu_filter_btn"),
-        ("Remove outliers", main_window.remove_outliers_button_pushed, "remove_outliers_single_btn"),
         ("Undo", main_window.undo_button_pushed, "undo_btn"),
     ]
 
+    blue = "#0072ee"
+    hover = "#2383ff"
     # Create action buttons and store references
     main_window.action_buttons = {}
     for text, handler, attr_name in action_button_configs:
@@ -677,6 +679,26 @@ def setup_display_panel(main_window):
         # Store reference to button in main_window
         setattr(main_window, attr_name, btn)
         main_window.action_buttons[handler.__name__] = btn
+        if text in {"Add spikes", "Delete spikes", "Update MU filter", "Extend MU filter"}:
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    background: {blue};
+                    color: #ffffff;
+                    border: none;
+                    border-radius: 4px;
+                    padding: 8px 0px;
+                }}
+                QPushButton:hover {{
+                    background: {hover};
+                }}
+                QPushButton:pressed {{
+                    background: #005fd1;
+                }}
+            """)
+        if text in {"Delete spikes", "Delete DR", "Remove outliers"}:
+            spacer = QWidget()
+            spacer.setFixedWidth(20)
+            action_layout.addWidget(spacer)
 
     if hasattr(main_window, "lock_spikes_btn"):
         main_window.lock_spikes_btn.hide()   
