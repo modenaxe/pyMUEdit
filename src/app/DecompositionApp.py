@@ -154,7 +154,7 @@ class DecompositionApp(QMainWindow):
                 self.ui_plot_reference.clear()
 
                 # Plot the first few channels for preview
-                num_preview_channels = min(3, signal["data"].shape[0])
+                num_preview_channels = min(64, signal["data"].shape[0])
                 colors = ["b", "g", "r", "c", "m", "y"]
 
                 for i in range(num_preview_channels):

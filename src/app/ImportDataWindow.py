@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent
 import numpy as np
+import matplotlib.cm as cm
 import pyqtgraph as pg
 
 # Import UI setup function
@@ -220,7 +221,7 @@ class ImportDataWindow(QMainWindow):
                         self.preview_plot.clear()
 
                         # Plot the first few channels for preview
-                        num_preview_channels = min(3, signal["data"].shape[0])
+                        num_preview_channels = min(64, signal["data"].shape[0])
                         colors = ["b", "g", "r", "c", "m", "y"]
 
                         for i in range(num_preview_channels):
