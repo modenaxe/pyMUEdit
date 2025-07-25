@@ -209,7 +209,7 @@ class SegmentSessionPage(QWidget):
             colour = pg.mkColor(rgb + (alpha,))
 
             # Create new ROI region
-            roi = pg.LinearRegionItem(values=[i * 1000, i * 1000 + 500])
+            roi = pg.LinearRegionItem(values=[i * 3000, i * 3000 + 1500])
             roi.setZValue(10)
             roi.setBrush(pg.mkBrush(colour))
             # Allow it to be scaled and moved
