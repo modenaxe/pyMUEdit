@@ -254,7 +254,8 @@ class SegmentSessionPage(QWidget):
 
         # Save updated file
         signal = self.file["signal"][0, 0]
-        sio.savemat(self.filename, {"signal": signal}, do_compression=True)
+        save_filename = f"{self.filename.split('.')[0]}_concatenated.mat"
+        sio.savemat(save_filename, {"signal": signal}, do_compression=True)
 
     def split_clicked(self):
         num_segments = len(self.coordinates) // 2
@@ -276,7 +277,7 @@ class SegmentSessionPage(QWidget):
             self.file["signal"][0, 0]["path"] = self.file["signal"][0, 0]["target"]
 
             # Save the segment into a .mat file
-            save_filename = f"{self.filename}_{i + 1}.mat"
+            save_filename = f"{self.filename.split('.')[0]}_split_segment_{i + 1}.mat"
             signal = self.file["signal"][0, 0]
             sio.savemat(save_filename, {"signal": signal}, do_compression=True)
 
