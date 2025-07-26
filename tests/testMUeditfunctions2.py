@@ -42,6 +42,7 @@ expOutFilterExtendWhiten =  os.path.join(os.getcwd(), "ExpOut20FilterExtendWhite
 expOutConSphSkew = os.path.join(os.getcwd(), "ExpOut20ConSphSkew.mat")
 expOutConSphKurt = os.path.join(os.getcwd(), "ExpOut20ConSphKurt.mat")
 expOutConSphLogc = os.path.join(os.getcwd(), "ExpOut20ConSphLogc.mat")
+expOutGetSpikes = os.path.join(os.getcwd(), "ExpOut20GetSpikes.mat")
 
 INPUT20MVCFILE = "trial1_20MVC.otb+"
 INPUT40MVCFILE = "trial1_40MVC.otb+"
@@ -313,16 +314,14 @@ class Test20MVCfile(unittest.TestCase):
 
 
     def testGetSpikes(self):
-        initialWeights = 'from above'
-        whitenedSignal = 'from above'
-        fsamp = 42
-        icasig, spikes2 = get_spikes(initialWeights, whitenedSignal, fsamp)
+        expected = loadmat(expOutGetSpikes)
+        icasig, spikes2 = get_spikes(expected.get("w_skew")[:, 0], expected.get("X"), float(expected.get("signal")[0][0][3][0][0]))
 
-        expectedIcasig = 42
-        expectedSpikes2 = 42
+        npt.assert_allclose(icasig, expected.get("icasig")[0], err_msg="get_spikes failed to return the expected output for the icasig")
 
-        self.assertEqual(icasig, expectedIcasig, "get_spikes failed to return the expected output for the icasig")
-        self.assertEqual(spikes2, expectedSpikes2, "get_spikes failed to return the expected output for spikes2")
+        expected_spikes2 = set(expected.get("spikes2")[0] - 1)
+        actual_spikes2 = set(spikes2)
+        self.assertLess(len(expected_spikes2 ^ actual_spikes2), 0.05 * len(expected_spikes2 | actual_spikes2))
     
     def testMinCovISI(self):
         initialWeights = 'from above'
@@ -383,5 +382,6 @@ if __name__ == '__main__':
     suite.addTest(Test20MVCfile('testDemean'))
     #suite.addTest(Test20MVCfile('testpcaesig'))
     #suite.addTest(Test20MVCfile('testWhitenEMG'))
+    suite.addTest(Test20MVCfile('testGetSpikes'))
     
     unittest.TextTestRunner().run(suite)
