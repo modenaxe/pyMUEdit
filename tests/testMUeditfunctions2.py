@@ -43,6 +43,7 @@ expOutConSphSkew = os.path.join(os.getcwd(), "ExpOut20ConSphSkew.mat")
 expOutConSphKurt = os.path.join(os.getcwd(), "ExpOut20ConSphKurt.mat")
 expOutConSphLogc = os.path.join(os.getcwd(), "ExpOut20ConSphLogc.mat")
 expOutGetSpikes = os.path.join(os.getcwd(), "ExpOut20GetSpikes.mat")
+expOutMinimizeCOVISI = os.path.join(os.getcwd(), "ExpOut20MinimizeCOVISI.mat")
 
 INPUT20MVCFILE = "trial1_20MVC.otb+"
 INPUT40MVCFILE = "trial1_40MVC.otb+"
@@ -324,25 +325,15 @@ class Test20MVCfile(unittest.TestCase):
         self.assertLess(len(expected_spikes2 ^ actual_spikes2), 0.05 * len(expected_spikes2 | actual_spikes2))
     
     def testMinCovISI(self):
-        initialWeights = 'from above'
-        whitenedSignal = 'from above'
-        CoV = 42
-        fsamp = 42
-        # min_cov_isi has a different parameter list compared to minimizeCOVISI
-        # It now takes B, Z, fsamp, cov_n, spikes_n
-        # B wasnt accessed in the min cov isi function? is this the right version or did someone forget to push
-        B = 42  # Basis matrix
-        Z = whitenedSignal
-        spikes_n = 42
-        wlast, spikeslast, CoVlast = min_cov_isi(initialWeights, B, Z, fsamp, CoV, spikes_n)
+        expected = loadmat(expOutMinimizeCOVISI)
+        wlast, spikeslast, CoVlast = min_cov_isi(expected.get("Wini")[:, 0], expected.get("X"), float(expected.get("signal")[0][0][3][0][0]), expected.get("CoV"), expected.get("spikes2"))
 
-        expectedWlast = 42
-        expectedSpikeslast = 42
-        expectedCoVlast = 42
+        npt.assert_array_equal(wlast, expected.get("wlast")[:, 0], "min_cov_isi failed to return the expected output for the wlast")
+        npt.assert_array_equal(CoVlast, expected.get("CoVlast"), "min_cov_isi failed to return the expected output for the CoVlast")
 
-        self.assertEqual(wlast, expectedWlast, "min_cov_isi failed to return the expected output for the wlast")
-        self.assertEqual(spikeslast, expectedSpikeslast, "min_cov_isi failed to return the expected output for spikeslast")
-        self.assertEqual(CoVlast, expectedCoVlast, "min_cov_isi failed to return the expected output for the CoVlast")
+        expected_spikeslast = set(expected.get("spikeslast")[0] - 1)
+        actual_spikeslast = set(spikeslast)
+        self.assertLess(len(expected_spikeslast ^ actual_spikeslast), 0.05 * len(expected_spikeslast | actual_spikeslast))
 
     def testGetSilhouette(self):
         initialWeights = 'from above'
@@ -383,5 +374,6 @@ if __name__ == '__main__':
     #suite.addTest(Test20MVCfile('testpcaesig'))
     #suite.addTest(Test20MVCfile('testWhitenEMG'))
     suite.addTest(Test20MVCfile('testGetSpikes'))
+    suite.addTest(Test20MVCfile('testMinCovISI'))
     
     unittest.TextTestRunner().run(suite)
