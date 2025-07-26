@@ -19,3 +19,10 @@ save('ExpOut20FixedPointAlg.mat');
 
 [icasig, spikes2] = getspikes(w_skew, X, signal.fsamp);
 save('ExpOut20GetSpikes.mat');
+
+ISI = diff(spikes2 / signal.fsamp); % Interspike interval
+CoV = std(ISI) / mean(ISI); % Coefficient of variation
+Wini = sum(X(:,spikes2), 2); % update W by summing the spikes
+
+[wlast, spikeslast, CoVlast] = minimizeCOVISI(Wini, X, CoV, signal.fsamp);
+save('ExpOut20MinimizeCOVISI.mat');

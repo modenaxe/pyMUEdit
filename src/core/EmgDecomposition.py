@@ -409,7 +409,7 @@ class offline_EMG(EMG):
 
                 # minimisation of covariance of interspike intervals
                 self.decomp_dict["MU_filters"][interval][:, i], spikes, self.decomp_dict["CoVs"][interval, i] = (
-                    min_cov_isi(w_n_p1, self.decomp_dict["B_sep_mat"], Z, self.signal_dict["fsamp"], CoV, spikes)
+                    min_cov_isi(w_n_p1, Z, self.signal_dict["fsamp"], CoV, spikes)
                 )
 
                 self.decomp_dict["B_sep_mat"][:, i] = self.decomp_dict["w_sep_vect"].real
