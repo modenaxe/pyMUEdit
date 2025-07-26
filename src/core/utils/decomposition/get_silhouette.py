@@ -16,7 +16,7 @@ def get_silhouette(w_n, Z, fsamp):
     source_pred = np.multiply(source_pred, abs(source_pred))  # keep the negatives
 
     peaks, _ = scipy.signal.find_peaks(np.squeeze(source_pred), distance=np.round(fsamp * 0.02) + 1)
-    source_pred /= np.mean(maxk(source_pred[peaks], 1))
+    source_pred /= np.mean(maxk(source_pred[peaks], 10))
     if len(peaks) > 1:
 
         # two classes: 1) spikes 2) noise
