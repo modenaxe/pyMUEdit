@@ -249,7 +249,7 @@ class DecompositionApp(QMainWindow):
             self.edit_field.setText(f"Preparing data for editing and opening editor...")
 
             # Create the MUeditManual window
-            self.mu_edit_window = MUeditManual()
+            self.mu_edit_window = MUeditManual(filename=self.filename + "_fixed_for_editing.mat", pathname=self.pathname)
 
             # Show the window without preloading
             self.mu_edit_window.show()
