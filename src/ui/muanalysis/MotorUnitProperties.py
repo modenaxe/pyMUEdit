@@ -20,8 +20,9 @@ from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from core.muAnalysisCore.AnalysisResultsHist import store
-from app.muAnalysisFunctions.ResizeFunc import ResizeFunc
 from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
+from core.muAnalysisCore.SelectRange import SelectRange
+
 
 
 class MotorUnitPropertiesDialog(QDialog):
@@ -124,12 +125,11 @@ class MotorUnitPropertiesDialog(QDialog):
         if event in ["steady", "rec_derec_steady"]:
             self.accept()
             # Show the range selection dialog
-            ResizeFunc.get_range(
-                self.analysis_plot,
+            SelectRange(self.analysis_plot,
                 lambda start, end: self.compute_and_display_dr(
                     n_firings_RecDerec, n_firings_steady, event, (start, end)
-                ),
-            )
+                ))
+
         else:
             # For non-steady events, just compute normally
             self.compute_and_display_dr(
