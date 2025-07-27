@@ -16,6 +16,7 @@ import math
 class VisualisationPage(QWidget):
     def __init__(self, emg_obj, parent=None):
         super().__init__(parent)
+        self.parent_window = parent
         self.emg_obj = emg_obj
         self.emg_data = emg_obj.signal_dict["data"]
         self.channel_group_index = 0
@@ -156,6 +157,8 @@ class VisualisationPage(QWidget):
     def doneClicked(self):
         # Update the omitted channels
         self.emg_obj.rejected_channel_indices = self.viewer.rejected_channels
+        # Update preview plot in case of any changes
+        self.parent_window.update_preview_plot()
         self.close()
 
     def keyPressEvent(self, a0):
