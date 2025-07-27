@@ -6,12 +6,16 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from ui.components.SaveablePlot import SaveablePlot
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from PyQt5.QtCore import Qt
-
 class SelectRange:
 
     """Class to handle selecting range of points with clamping mechanism"""
 
     def __init__(self, analysis_plot, func):
+
+        if FileUploadFunc.file is None:
+            ErrorDialog("No file has been loaded", "Error").exec_()
+            return
+
         self.drag = True
         self.func = func
         self.analysis_plot = analysis_plot
@@ -22,12 +26,13 @@ class SelectRange:
         self.set_up_plot()
         val = self.ax.xaxis.get_view_interval()
         self.max = val[1]
-        self.line = [self.ax.axvline(x=0, color='r', picker=1), self.ax.axvline(x=self.max, color='r', picker=1)]
+        self.line = [self.ax.axvline(x=0, color='r', picker=5, linewidth=2), self.ax.axvline(x=self.max, color='r', picker=5, linewidth=2)]
         self.ax.axvspan(self.max, self.max, alpha=0.1, color='red')
         self.canvas.mpl_connect('key_press_event', lambda event: self.on_press(event))
         self.canvas.mpl_connect('pick_event', lambda event: self.click_on_line(event))
 
         analysis_plot.display_plot(self.canvas)
+        self.canvas.setFocus()
 
     # after pressing enter the graph returns to original view
     def on_press(self, event):
@@ -47,8 +52,6 @@ class SelectRange:
         ax.set_title(title, wrap=True)
         self.canvas = FigureCanvas(fig)
         self.ax = ax
-        self.canvas.setFocusPolicy(Qt.ClickFocus)
-        self.canvas.setFocus()
 
     # after a line is clicked it can be moved until clicked again
     def click_on_line(self, event):
