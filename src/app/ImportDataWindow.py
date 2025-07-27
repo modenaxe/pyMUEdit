@@ -146,7 +146,7 @@ class ImportDataWindow(QMainWindow):
 
         # Load the file (passing the whole path)
         self.load_file(self.pathname, self.filename)
-        
+
         # Pass file size in original units (bytes)
         self.file_size_bytes = file_size
 
@@ -190,7 +190,6 @@ class ImportDataWindow(QMainWindow):
                     os.makedirs(temp_dir)
                 self.emg_obj = EMG_offline_EMG(save_dir=temp_dir, to_filter=True)
 
-                fsamp = []
                 if ext == ".otb+":
                     # Call the open_otb_plus function with the correct parameters
                     self.emg_obj.open_otb_plus(full_path)
@@ -212,24 +211,8 @@ class ImportDataWindow(QMainWindow):
                 # Load file data into the plot
                 if "data" in signal and "fsamp" in signal:
                     try:
-                        # Create a time vector
-                        fsamp = signal["fsamp"]
-                        nsamples = signal["data"].shape[1]
-                        time = np.arange(nsamples) / fsamp
-
-                        # Plot first channel as preview
-                        self.preview_plot.clear()
-
-                        # Plot the first few channels for preview
-                        num_preview_channels = min(64, signal["data"].shape[0])
-                        colors = ["b", "g", "r", "c", "m", "y"]
-
-                        for i in range(num_preview_channels):
-                            self.preview_plot.plot(
-                                time, signal["data"][i, :], pen=pg.mkPen(color=colors[i % len(colors)], width=1)
-                            )
-
-                        self.preview_plot.setTitle(f"Signal Preview ({num_preview_channels} channels)")
+                        # Plot channels for previews
+                        self.update_preview_plot()
                     except Exception as e:
                         print(f"Error creating preview plot: {e}")
                 else:
@@ -252,7 +235,7 @@ class ImportDataWindow(QMainWindow):
                 self.set_configuration_button.setEnabled(True)
                 self.channel_view_button.setEnabled(True)
 
-                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj)
+                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj, parent=self)
 
                 if ext == ".mat":
                     self.segment_session = SegmentSessionPage(full_path)
@@ -271,6 +254,31 @@ class ImportDataWindow(QMainWindow):
             self.file_info_label.setText(f"Failed uploading {self.filename}")
             self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
             self.failure_message.setVisible(True)
+
+    def update_preview_plot(self):
+        signal = self.emg_obj.signal_dict
+
+        # Create a time vector
+        fsamp = signal["fsamp"]
+        nsamples = signal["data"].shape[1]
+        time = np.arange(nsamples) / fsamp
+
+        # Plot first channel as preview
+        self.preview_plot.clear()
+
+        # Plot all selected channels for preview
+        num_preview_channels = signal["data"].shape[0]
+        num_actual_channels = 0
+        colors = ["b", "g", "r", "c", "m", "y"]
+
+        for i in range(num_preview_channels):
+            if i not in self.emg_obj.rejected_channel_indices:
+                num_actual_channels += 1
+                self.preview_plot.plot(
+                    time, signal["data"][i, :], pen=pg.mkPen(color=colors[i % len(colors)], width=1)
+                )
+
+        self.preview_plot.setTitle(f"Signal Preview ({num_actual_channels} channels)")
 
     def save_mat_in_background(self, filename, data, compression=True, processing=False):
         """Save data as .mat file in a background thread."""

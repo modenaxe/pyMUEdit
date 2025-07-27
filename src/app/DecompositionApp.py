@@ -153,16 +153,19 @@ class DecompositionApp(QMainWindow):
                 # Plot first channel as preview
                 self.ui_plot_reference.clear()
 
-                # Plot the first few channels for preview
-                num_preview_channels = min(64, signal["data"].shape[0])
+                # Plot all selected channels for preview
+                num_preview_channels = signal["data"].shape[0]
+                num_actual_channels = 0
                 colors = ["b", "g", "r", "c", "m", "y"]
 
                 for i in range(num_preview_channels):
-                    self.ui_plot_reference.plot(
-                        time, signal["data"][i, :], pen=pg.mkPen(color=colors[i % len(colors)], width=1)
-                    )
+                     if i not in self.emg_obj.rejected_channel_indices:
+                        num_actual_channels += 1
+                        self.ui_plot_reference.plot(
+                            time, signal["data"][i, :], pen=pg.mkPen(color=colors[i % len(colors)], width=1)
+                        )
 
-                self.ui_plot_reference.setTitle(f"Signal Preview ({num_preview_channels} channels)")
+                self.ui_plot_reference.setTitle(f"Signal Preview ({num_actual_channels} channels)")
             except Exception as e:
                 print(f"Error creating preview plot: {e}")
 
