@@ -396,47 +396,6 @@ class ImportDataWindow(QMainWindow):
         else:
             print("No configuration dialog available")
 
-    # def segment_session_button_pushed(self):
-    #     self.segment_session = SegmentSession()
-
-    #     if self.pathname is not None and self.filename is not None:
-    #         self.segment_session.pathname.setText(self.pathname + self.filename + "_decomp.mat")
-
-    #     # Setup the dropdown contents before setting the current item
-    #     self.segment_session.reference_dropdown.clear()
-
-    #     signal = self.emg_obj.signal_dict
-    #     if "auxiliaryname" in signal:
-    #         for name in signal["auxiliaryname"]:
-    #             self.segment_session.reference_dropdown.addItem(name)
-    #     elif "target" in signal:
-    #         path_data = signal["path"]
-    #         target_data = signal["target"]
-
-    #         if isinstance(path_data, np.ndarray) and isinstance(target_data, np.ndarray):
-    #             path_reshaped = path_data.reshape(1, -1) if path_data.ndim == 1 else path_data
-    #             target_reshaped = target_data.reshape(1, -1) if target_data.ndim == 1 else target_data
-    #             signal["auxiliary"] = np.vstack((path_reshaped, target_reshaped))
-    #         else:
-    #             signal["auxiliary"] = np.vstack((np.array([path_data]), np.array([target_data])))
-
-    #         signal["auxiliaryname"] = ["Path", "Target"]
-    #         self.segment_session.reference_dropdown.addItem("EMG amplitude")
-    #         for name in signal["auxiliaryname"]:
-    #             self.segment_session.reference_dropdown.addItem(name)
-    #     else:
-    #         self.segment_session.reference_dropdown.addItem("EMG amplitude")
-
-    #     try:
-    #         if self.segment_session.pathname.text():
-    #             self.segment_session.file = sio.loadmat(self.segment_session.pathname.text())
-    #     except Exception as e:
-    #         print(f"Warning: Could not load file: {e}")
-
-    #     # Set current text after file is loaded
-    #     self.segment_session.initialize_with_file()
-    #     self.segment_session.show()
-
     def segment_session_button_pushed(self):
         if not self.emg_obj or "data" not in self.emg_obj.signal_dict or not self.pathname or not self.filename:
             self.edit_field.setText("No EMG data loaded for segment session.")
