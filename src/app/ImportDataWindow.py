@@ -9,6 +9,7 @@ import pyqtgraph as pg
 
 # Import UI setup function
 from ui.ImportDataWindowUI import setup_ui
+from ui.components.ConfigurationPanel import ConfigurationPanel
 from ui.components.SegmentSessionPage import SegmentSessionPage
 from ui.components.VisualisationPage import VisualisationPage
 
@@ -54,6 +55,7 @@ class ImportDataWindow(QMainWindow):
         # Config popup windows
         self.visualisation_page = None
         self.segment_session = None
+        self.config_panel = None
 
         # Create EMG object using the appropriate class
         temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp")
@@ -248,7 +250,6 @@ class ImportDataWindow(QMainWindow):
 
                 self.fileImported.emit(file_info)
 
-                self.set_configuration_button.setEnabled(True)
                 self.channel_view_button.setEnabled(True)
 
                 self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj)
@@ -256,6 +257,9 @@ class ImportDataWindow(QMainWindow):
                 if ext == ".mat":
                     self.segment_session = SegmentSessionPage(full_path)
                     self.segment_session_button.setEnabled(True)
+                else:
+                    self.config_panel = ConfigurationPanel(self.emg_obj)
+                    self.set_configuration_button.setEnabled(True)
 
             except Exception as e:
                 self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
@@ -373,60 +377,19 @@ class ImportDataWindow(QMainWindow):
             print(f"Failed to load channel viewer: {e}")
 
     def set_configuration_button_pushed(self):
-        if self.config:
+        if self.config_panel:
             try:
-                if self.pathname is not None and self.filename is not None:
-                    savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
-                    self.config["pathname"].setText(savename)
+                # if self.pathname is not None and self.filename is not None:
+                #     savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
+                #     self.config["pathname"].setText(savename)
 
                 # Show the dialog
-                self.MUdecomp["config"].show()
+                self.config_panel.show()
             except Exception as e:
                 print(f"Error showing configuration dialog: {e}")
                 traceback.print_exc()
         else:
             print("No configuration dialog available")
-
-    # def segment_session_button_pushed(self):
-    #     self.segment_session = SegmentSession()
-
-    #     if self.pathname is not None and self.filename is not None:
-    #         self.segment_session.pathname.setText(self.pathname + self.filename + "_decomp.mat")
-
-    #     # Setup the dropdown contents before setting the current item
-    #     self.segment_session.reference_dropdown.clear()
-
-    #     signal = self.emg_obj.signal_dict
-    #     if "auxiliaryname" in signal:
-    #         for name in signal["auxiliaryname"]:
-    #             self.segment_session.reference_dropdown.addItem(name)
-    #     elif "target" in signal:
-    #         path_data = signal["path"]
-    #         target_data = signal["target"]
-
-    #         if isinstance(path_data, np.ndarray) and isinstance(target_data, np.ndarray):
-    #             path_reshaped = path_data.reshape(1, -1) if path_data.ndim == 1 else path_data
-    #             target_reshaped = target_data.reshape(1, -1) if target_data.ndim == 1 else target_data
-    #             signal["auxiliary"] = np.vstack((path_reshaped, target_reshaped))
-    #         else:
-    #             signal["auxiliary"] = np.vstack((np.array([path_data]), np.array([target_data])))
-
-    #         signal["auxiliaryname"] = ["Path", "Target"]
-    #         self.segment_session.reference_dropdown.addItem("EMG amplitude")
-    #         for name in signal["auxiliaryname"]:
-    #             self.segment_session.reference_dropdown.addItem(name)
-    #     else:
-    #         self.segment_session.reference_dropdown.addItem("EMG amplitude")
-
-    #     try:
-    #         if self.segment_session.pathname.text():
-    #             self.segment_session.file = sio.loadmat(self.segment_session.pathname.text())
-    #     except Exception as e:
-    #         print(f"Warning: Could not load file: {e}")
-
-    #     # Set current text after file is loaded
-    #     self.segment_session.initialize_with_file()
-    #     self.segment_session.show()
 
     def segment_session_button_pushed(self):
         if not self.emg_obj or "data" not in self.emg_obj.signal_dict or not self.pathname or not self.filename:
