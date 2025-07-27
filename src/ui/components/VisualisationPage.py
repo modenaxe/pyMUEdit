@@ -107,10 +107,13 @@ class VisualisationPage(QWidget):
             self.right_button.setEnabled(False)
         groups = []
         increment = self.viewer.num_indices
-        for start in range(0, total_num_channels + 1, increment):
+        index = 0
+        for start in range(0, total_num_channels, increment):
             end = min(start + increment, total_num_channels)
             groups.append(f"Channels {start + 1}-{end}")
-        self.max_index = int((total_num_channels - (total_num_channels % increment)) / increment)
+            index += 1
+
+        self.max_index = index - 1
         return groups
 
     # Update the channel viewer based on channel range option selected
