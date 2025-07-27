@@ -33,7 +33,7 @@ from ui.muanalysis.FileSection import FileSection
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.muanalysis.SortMUs import SortMUs
 from ui.muanalysis.RemoveMUSection import RemoveMUSection
-
+from ui.muanalysis.ForceAnalysisSection import ForceAnalysisSection
 from ui.muanalysis.ResultsPanel import ResultsPanel
 
 from core.muAnalysisCore.AnalysisResultsHist import store
@@ -206,6 +206,12 @@ class MUAnalysis(QWidget):
         # signal editing
         signal_editing = SignalEditing(self.mu, self.analysis_plot, parent=sidebar)
         sidebar_layout.addWidget(signal_editing)
+
+        # force anaylsis 
+        force_analysis = ForceAnalysisSection(
+            sidebar, self.mu, self.analysis_plot
+        )
+        sidebar_layout.addWidget(force_analysis)
 
         # motor unit properties
         motor_unit_properties = MotorUnitPropertiesButton(

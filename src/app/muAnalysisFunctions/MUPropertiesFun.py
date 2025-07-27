@@ -92,7 +92,6 @@ class MUPropertiesFunc:
             mvc=value,
         )
         self.over.close()
-        self.analysis_plot.revert()
 
     # OPENHDEMG
     # adapted parts labelled with AC
