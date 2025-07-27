@@ -6,7 +6,6 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from ui.components.SaveablePlot import SaveablePlot
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from PyQt5.QtCore import Qt
-import datetime
 class SelectRange:
 
     """Class to handle selecting range of points with clamping mechanism"""
