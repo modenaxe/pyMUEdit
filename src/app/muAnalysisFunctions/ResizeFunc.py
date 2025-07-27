@@ -10,18 +10,6 @@ from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from PyQt5.QtCore import Qt
 
-
-class ResizeFunc:
-    """Static interface for resize functionality"""
-
-    @staticmethod
-    def get_range(analysis_plot, callback):
-        if FileUploadFunc.file is None:
-            ErrorDialog("No file has been loaded", "Error").exec_()
-            return
-        SelectRange(analysis_plot, callback)
-
-
 class Resize:
     """Class to handle resizing file functionality"""
 
