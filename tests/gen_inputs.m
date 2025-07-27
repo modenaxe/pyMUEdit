@@ -26,3 +26,6 @@ Wini = sum(X(:,spikes2), 2); % update W by summing the spikes
 
 [wlast, spikeslast, CoVlast] = minimizeCOVISI(Wini, X, CoV, signal.fsamp);
 save('ExpOut20MinimizeCOVISI.mat');
+
+[icasig, spikes2, sil] = calcSIL(X, wlast, signal.fsamp);
+save('ExpOut20CalcSIL.mat');

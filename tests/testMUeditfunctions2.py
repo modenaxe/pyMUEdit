@@ -44,6 +44,7 @@ expOutConSphKurt = os.path.join(os.getcwd(), "ExpOut20ConSphKurt.mat")
 expOutConSphLogc = os.path.join(os.getcwd(), "ExpOut20ConSphLogc.mat")
 expOutGetSpikes = os.path.join(os.getcwd(), "ExpOut20GetSpikes.mat")
 expOutMinimizeCOVISI = os.path.join(os.getcwd(), "ExpOut20MinimizeCOVISI.mat")
+expOutCalcSIL = os.path.join(os.getcwd(), "ExpOut20CalcSIL.mat")
 
 INPUT20MVCFILE = "trial1_20MVC.otb+"
 INPUT40MVCFILE = "trial1_40MVC.otb+"
@@ -59,6 +60,11 @@ emg.open_otb_plus(inputFile20)
 # print(emg.signal_dict)
 # Tests uses unmodified data from original open_otb_plus file where possible, which came from the provided data files trial1_20MVC.otb+ and trial1_40MVC.otb+
 class Test20MVCfile(unittest.TestCase): 
+
+    def assert_spikes_close(self, actual, desired, threshold=0.05, err_msg=None):
+        actual_set = set(actual)
+        desired_set = set(desired)
+        self.assertLess(len(actual_set ^ desired_set), threshold * len(actual_set | desired_set), err_msg)
 
     def testOpenOTBPlus(self):
         if not os.path.exists(expOutOpenOTBPlus):
@@ -319,36 +325,25 @@ class Test20MVCfile(unittest.TestCase):
         icasig, spikes2 = get_spikes(expected.get("w_skew")[:, 0], expected.get("X"), float(expected.get("signal")[0][0][3][0][0]))
 
         npt.assert_allclose(icasig, expected.get("icasig")[0], err_msg="get_spikes failed to return the expected output for the icasig")
-
-        expected_spikes2 = set(expected.get("spikes2")[0] - 1)
-        actual_spikes2 = set(spikes2)
-        self.assertLess(len(expected_spikes2 ^ actual_spikes2), 0.05 * len(expected_spikes2 | actual_spikes2))
+        self.assert_spikes_close(spikes2, expected.get("spikes2")[0] - 1)
     
     def testMinCovISI(self):
         expected = loadmat(expOutMinimizeCOVISI)
         wlast, spikeslast, CoVlast = min_cov_isi(expected.get("Wini")[:, 0], expected.get("X"), float(expected.get("signal")[0][0][3][0][0]), expected.get("CoV"), expected.get("spikes2"))
 
         npt.assert_array_equal(wlast, expected.get("wlast")[:, 0], "min_cov_isi failed to return the expected output for the wlast")
+        self.assert_spikes_close(spikeslast, expected.get("spikeslast")[0] - 1)
         npt.assert_array_equal(CoVlast, expected.get("CoVlast"), "min_cov_isi failed to return the expected output for the CoVlast")
 
-        expected_spikeslast = set(expected.get("spikeslast")[0] - 1)
-        actual_spikeslast = set(spikeslast)
-        self.assertLess(len(expected_spikeslast ^ actual_spikeslast), 0.05 * len(expected_spikeslast | actual_spikeslast))
-
     def testGetSilhouette(self):
-        initialWeights = 'from above'
-        whitenedSignal = 'from above'
-        fsamp = 42
+        expected = loadmat(expOutCalcSIL)
         # get_silhouette has different parameter order compared to calcSIL
-        icasig, spikes2, sil = get_silhouette(initialWeights, whitenedSignal, fsamp)
+        icasig, spikes2, sil = get_silhouette(expected.get("wlast")[:, 0], expected.get("X"), float(expected.get("signal")[0][0][3][0][0]))
 
-        expectedIcasig = 42
-        expectedSpikes2 = 42
-        expectedSil = 42
+        npt.assert_allclose(icasig, expected.get("icasig")[0], err_msg="get_silhouette failed to return the expected output for the icasig")
+        self.assert_spikes_close(spikes2, expected.get("spikes2")[0] - 1, err_msg="get_silhouette failed to return the expected output for spikes2")
+        npt.assert_allclose(sil, expected.get("sil"), rtol=2e-3, err_msg="get_silhouette failed to return the expected output for the SIL")
 
-        self.assertEqual(icasig, expectedIcasig, "get_silhouette failed to return the expected output for the icasig")
-        self.assertEqual(spikes2, expectedSpikes2, "get_silhouette failed to return the expected output for spikes2")
-        self.assertEqual(sil, expectedSil, "get_silhouette failed to return the expected output for the SIL")
 
     def testPeelOff(self):
         whitenedSignal = 'from above'
@@ -375,5 +370,6 @@ if __name__ == '__main__':
     #suite.addTest(Test20MVCfile('testWhitenEMG'))
     suite.addTest(Test20MVCfile('testGetSpikes'))
     suite.addTest(Test20MVCfile('testMinCovISI'))
+    suite.addTest(Test20MVCfile('testGetSilhouette'))
     
     unittest.TextTestRunner().run(suite)
