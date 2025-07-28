@@ -21,7 +21,7 @@ class Resize:
         if FileUploadFunc.file == None:
             ErrorDialog("No file has been loaded", "Error").exec_()
             return
-        SelectRange(self.analysis_plot, self.two_point)
+        SelectRange(self.analysis_plot, self.two_point, False)
 
     def two_point(self, x, y):
         self.resize_emgfile(FileUploadFunc.file, x, y)

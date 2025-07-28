@@ -128,7 +128,7 @@ class MotorUnitPropertiesDialog(QDialog):
             SelectRange(self.analysis_plot,
                 lambda start, end: self.compute_and_display_dr(
                     n_firings_RecDerec, n_firings_steady, event, (start, end)
-                ))
+                ), False)
 
         else:
             # For non-steady events, just compute normally

@@ -66,7 +66,7 @@ class MUPropertiesFunc:
         self.over = over
         self.analysis_plot = analysis_plot
         self.basic = [self.convert(rec), self.convert(start)]
-        SelectRange(analysis_plot, self.two_point)
+        SelectRange(analysis_plot, self.two_point, False)
         
     def compute_thresh(self, event_, type_):
         file = FileUploadFunc.file
