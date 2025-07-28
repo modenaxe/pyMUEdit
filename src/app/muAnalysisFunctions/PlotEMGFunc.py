@@ -260,6 +260,7 @@ def plot_mupulses(
     axes_kwargs=None,
     showimmediately=True,
 ):
+    common = CommonOpenFunc()
     # Warn for the use of a deprecated parameter
     if linewidths > 0:
         msg = (
@@ -359,6 +360,112 @@ def plot_mupulses(
                 "REF_SIGNAL is probably absent or it is not contained in a " +
                 "dataframe"
             )
+        ax2 = ax1.twinx()
+        ax2.plot(x_axis, emgfile["REF_SIGNAL"][0])
+        ax2.set_ylabel("MVC")
+
+        # Set z-order so that ax2 is in the background
+        ax2.set_zorder(0)
+        ax1.set_zorder(1)
+        ax1.patch.set_alpha(0)
+
+    # Set tight layout if requested
+    if tight_layout:
+        plt.tight_layout()
+
+    if showimmediately:
+        plt.show()
+
+    return fig
+
+# OPENHDEMG
+# plots the source? not entirely sure yet
+def plot_ipts(
+    emgfile,
+    munumber="all",
+    addrefsig=False,
+    timeinseconds=True,
+    figsize=[20, 15],
+    tight_layout=True,
+    line2d_kwargs_ax1=None,
+    line2d_kwargs_ax2=None,
+    axes_kwargs=None,
+    showimmediately=True,
+):
+    common = CommonOpenFunc()
+    # Check if all the MUs have to be plotted
+    if isinstance(munumber, str):
+        if emgfile["NUMBER_OF_MUS"] == 1:  # Manage exception of single MU
+            munumber = 0
+        else:
+            munumber = [*range(0, emgfile["NUMBER_OF_MUS"])]
+
+    # Check if we have a single mu or a list of mus to plot
+    if isinstance(munumber, list) and len(munumber) == 1:
+        munumber = munumber[0]
+
+    # Check to have the IPTS in a pandas dataframe
+    if isinstance(emgfile["IPTS"], pd.DataFrame):
+        ipts = emgfile["IPTS"]
+    else:
+        raise TypeError(
+            "IPTS is probably absent or it is not contained in a dataframe"
+        )
+
+    # Here we produce an x axis in seconds or samples
+    if timeinseconds:
+        x_axis = ipts.index / emgfile["FSAMP"]
+    else:
+        x_axis = ipts.index
+
+    # Use the subplot function to allow for the use of twinx()
+    figname = "IPTS"
+    fig, ax1 = plt.subplots(
+        figsize=(figsize[0] / 2.54, figsize[1] / 2.54), num=figname,
+    )
+
+    # Check if we have a single MU or a list of MUs to plot
+    if isinstance(munumber, int):
+        ax1.plot(x_axis, ipts[munumber])
+
+        ax1.set_ylabel("MU {}".format(munumber))
+        # Use set_ylabel because if the MU is empty,
+        # the channel number won't show.
+        ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
+
+    elif isinstance(munumber, list):
+        # Plot all the MUs.
+        for count, thisMU in enumerate(munumber):
+            norm_ipts = common.min_max_scaling(
+                ipts[thisMU], col_by_col=False,
+            )
+
+            # Add value to the previous channel to avoid overlapping
+            norm_ipts = norm_ipts + (0.5 - norm_ipts.mean()) + count
+            ax1.plot(x_axis, norm_ipts)
+
+        # Ensure correct and complete ticks on the left y axis
+        ax1.set_yticks(np.arange(0.5, len(munumber) + 0.5, 1))
+        ax1.set_yticklabels([str(x) for x in munumber])
+
+        # Set axes labels
+        ax1.set_ylabel("Motor units")
+        ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
+
+    else:
+        raise TypeError(
+            "While calling the plot_ipts function, you should pass an " +
+            "integer, a list or 'all' to munumber"
+        )
+
+    # Plot the ref signal
+    if addrefsig:
+        if not isinstance(emgfile["REF_SIGNAL"], pd.DataFrame):
+            raise TypeError(
+                "REF_SIGNAL is probably absent or it is not contained in a " +
+                "dataframe"
+            )
+
         ax2 = ax1.twinx()
         ax2.plot(x_axis, emgfile["REF_SIGNAL"][0])
         ax2.set_ylabel("MVC")

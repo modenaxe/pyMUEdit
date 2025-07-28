@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from app.muAnalysisFunctions.PlotEMGFunc import parse_channel_input, plot_emgsig, plot_idr, plot_mupulses
+from app.muAnalysisFunctions.PlotEMGFunc import parse_channel_input, plot_emgsig, plot_idr, plot_mupulses, plot_ipts
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
@@ -164,7 +164,7 @@ class PlotEMGToolDialog(QDialog):
         mupulses_row.addWidget(mupulses_btn)
         mupulses_row.addSpacing(8)
         self.linewidth_input = QLineEdit()
-        self.linewidth_input.setPlaceholderText("line width")
+        self.linewidth_input.setPlaceholderText("Line Width")
         self.linewidth_input.setFont(QFont("Arial", 11))
         self.linewidth_input.setMinimumHeight(button_height)
         self.linewidth_input.setFixedHeight(button_height)
@@ -177,6 +177,27 @@ class PlotEMGToolDialog(QDialog):
         button_input_col.addLayout(mupulses_row)
 
         layout.addLayout(button_input_col)
+        
+        # Row 5: Plot Source + MU number
+        source_row = QHBoxLayout()
+        source_btn = GeneralButton("Plot Source", self.handle_source_clicked, parent=self)
+        source_btn.setFixedWidth(button_width)
+        source_btn.setFixedHeight(button_height)
+        source_row.addWidget(source_btn)
+        source_row.addSpacing(8)
+        self.source_mu_input = QLineEdit()
+        self.source_mu_input.setPlaceholderText("MU Number (e.g. 1-3,5)")
+        self.source_mu_input.setFont(QFont("Arial", 11))
+        self.source_mu_input.setMinimumHeight(button_height)
+        self.source_mu_input.setFixedHeight(button_height)
+        self.source_mu_input.setFixedWidth(textbox_width)
+        self.source_mu_input.setStyleSheet("""
+            QLineEdit { padding: 8px; border: 2px solid #ced4da; border-radius: 6px; background-color: #ffffff; color: #212529; }
+        """)
+        source_row.addWidget(self.source_mu_input)
+        source_row.addStretch(1)
+        button_input_col.addLayout(source_row)
+
 
     def has_invalid_filter_inputs(self):
         # Returns True if either dropdown is not at its placeholder
@@ -306,6 +327,33 @@ class PlotEMGToolDialog(QDialog):
             else:
                 mus.append(int(part))
         return sorted(set(mus))
+    
+    def handle_source_clicked(self):
+        emgfile = FileUploadFunc.file
+        if emgfile is None:
+            ErrorDialog('No file has been loaded', 'Error').exec_()
+            return
+        mu_text = self.source_mu_input.text()
+        try:
+            munumber = self.parse_mu_input(mu_text)
+        except Exception:
+            ErrorDialog('invalid plot inputs', 'Error').exec_()
+            return
+        try:
+            fig = plot_ipts(
+                emgfile=emgfile,
+                munumber=munumber,
+                timeinseconds=self.time_seconds_checkbox.isChecked(),
+                addrefsig=self.ref_signal_checkbox.isChecked(),
+                tight_layout=True,
+                showimmediately=False
+            )
+            canvas = SaveablePlot(fig)
+            self.analysis_plot.display_plot(canvas)
+            plt.close(fig)
+        except Exception as e:
+            ErrorDialog('Error plotting Source', 'Error').exec_()
+
         
 # general class for any inner inputs inside dialog
 class PropertiesInnerDialogText(QLineEdit):
