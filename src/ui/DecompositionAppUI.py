@@ -105,9 +105,11 @@ def setup_left_panel(main_window):
     algo_options_stack_widget = QStackedWidget()
     main_window.algo_options_stack_widget = algo_options_stack_widget
 
-    # Fast ICA options
-    algo_fastICA_widget = QWidget()
-    algo_fastICA_panels = QVBoxLayout(algo_fastICA_widget)
+    main_window.algo_combo.currentIndexChanged.connect(algo_options_stack_widget.setCurrentIndex)
+
+    # ---------------------------------Fast ICA options---------------------------------
+    algo_fastICA_options_widget = QWidget()
+    algo_fastICA_panels = QVBoxLayout(algo_fastICA_options_widget)
 
     # Processing Options panel
     options_panel = CollapsiblePanel("Processing Options")
@@ -168,7 +170,6 @@ def setup_left_panel(main_window):
 
     iter_field = FormSpinBox("Iterations", 150, 1, 1000)
     main_window.number_iterations_field = iter_field.spinbox
-
     params_panel.add_widget(iter_field)
 
     windows_field = FormSpinBox("Windows", 1, 1, 100)
@@ -198,9 +199,85 @@ def setup_left_panel(main_window):
     algo_fastICA_panels.addWidget(params_panel)
     # left_layout.addWidget(params_panel)
 
+# ---------------------------------SCD options---------------------------------
 
-    # set up fastICA options
-    algo_options_stack_widget.addWidget(algo_fastICA_widget)
+    algo_SCD_options_widget = QWidget()
+    algo_SCD_panels = QVBoxLayout(algo_SCD_options_widget)
+
+    # Options Panel
+    options_panel = CollapsiblePanel("Processing Options")
+
+    device_field = FormDropdown("Device", ["CPU", "GPU"])
+    main_window.device_dropdown = device_field.dropdown
+    main_window.device_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
+    main_window.device_dropdown.setCurrentText("CPU")  # Set initial value
+    options_panel.add_widget(device_field)
+
+    algo_SCD_panels.addWidget(options_panel)
+
+    # Advanced Options panel
+    advanced_panel = CollapsiblePanel("Advanced Options")
+
+    filt_harms_field = FormDropdown("Filter Harmonics", ["Yes", "No"])
+    main_window.filt_harms_dropdown = filt_harms_field.dropdown
+    main_window.filt_harms_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
+    main_window.filt_harms_dropdown.setCurrentText("Yes")  # Set initial value
+    advanced_panel.add_widget(filt_harms_field)
+
+    use_coeff_var_fitness_field = FormDropdown("Use Coeff. Var. Fitness", ["Yes", "No"])
+    main_window.use_coeff_var_fitness_dropdown = use_coeff_var_fitness_field.dropdown
+    main_window.use_coeff_var_fitness_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
+    main_window.use_coeff_var_fitness_dropdown.setCurrentText("Yes")  # Set initial value
+    advanced_panel.add_widget(use_coeff_var_fitness_field)
+
+    remove_bad_fr_field = FormDropdown("Remove Bad Frequencies", ["Yes", "No"])
+    main_window.remove_bad_fr_dropdown = remove_bad_fr_field.dropdown
+    main_window.remove_bad_fr_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
+    main_window.remove_bad_fr_dropdown.setCurrentText("Yes")  # Set initial value
+    advanced_panel.add_widget(remove_bad_fr_field)
+
+    algo_SCD_panels.addWidget(advanced_panel)
+
+    # Parameters panel
+    params_panel = CollapsiblePanel("Parameters")
+
+    iter_field_scd = FormSpinBox("Iterations", 50, 1, 1000)
+    main_window.number_iterations_scd_field = iter_field_scd.spinbox
+    params_panel.add_widget(iter_field_scd)
+
+    acceptance_silhouette_field = FormDoubleSpinBox("Acceptance Silhoutte", 0.85, 0, 1, 0.05)
+    main_window.acceptance_silhouette_field = acceptance_silhouette_field.spinbox
+    params_panel.add_widget(acceptance_silhouette_field)
+
+    extension_factor_field = FormSpinBox("Extension Factor", 10, 1, 1000)
+    main_window.extension_factor_field = extension_factor_field.spinbox
+    params_panel.add_widget(extension_factor_field)
+
+    low_pass_cutoff_field = FormSpinBox("Low Pass Cutoff", value=1000, min_value=0, max_value=50000)
+    main_window.low_pass_cutoff_field = low_pass_cutoff_field.spinbox
+    params_panel.add_widget(low_pass_cutoff_field)
+
+    high_pass_cutoff_field = FormSpinBox("High Pass Cutoff", 10, 0, 50000)
+    main_window.high_pass_cutoff_field = high_pass_cutoff_field.spinbox
+    params_panel.add_widget(high_pass_cutoff_field)
+
+    powerline_frequency_field = FormSpinBox("Powerline Frequency", 50, 1, 50000)
+    main_window.powerline_frequency_field = powerline_frequency_field.spinbox
+    params_panel.add_widget(powerline_frequency_field)
+
+    peel_off_window_size_field = FormSpinBox("Peel Off Window Size (ms)", 20, 0, 10000)
+    main_window.peel_off_window_size_field = peel_off_window_size_field.spinbox
+    params_panel.add_widget(peel_off_window_size_field)
+
+    bandwidth_field = FormDoubleSpinBox("Bandwidth", 1.0, 0, 10)
+    main_window.bandwidth_field = bandwidth_field.spinbox
+    params_panel.add_widget(bandwidth_field)   
+
+    algo_SCD_panels.addWidget(params_panel)
+
+    # TODO: set up options for both algorithms
+    algo_options_stack_widget.addWidget(algo_fastICA_options_widget)
+    algo_options_stack_widget.addWidget(algo_SCD_options_widget)
     algo_options_stack_widget.setCurrentIndex(0)
     left_layout.addWidget(algo_options_stack_widget)
 
