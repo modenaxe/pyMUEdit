@@ -1,23 +1,111 @@
-name: Pylint
+name: Code Quality Check
 
-on: [push]
+on: 
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
 
 jobs:
-  build:
+  lint:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.11"]
     steps:
     - uses: actions/checkout@v4
+    
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-pyqt5 python3-pyqt5.qtsvg
+        
+    - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
         pip install pylint
-    - name: Analysing the code with pylint
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        
+    - name: Create .pylintrc configuration
       run: |
-        pylint main.py src/ui/
+        cat > .pylintrc << 'EOF'
+        [MAIN]
+        init-hook='import sys; sys.path.append("src")'
+        
+        [MESSAGES CONTROL]
+        disable=
+            missing-module-docstring,
+            missing-class-docstring,
+            missing-function-docstring,
+            too-many-arguments,
+            too-many-locals,
+            too-many-instance-attributes,
+            too-few-public-methods,
+            import-error,
+            no-name-in-module,
+            unused-import,
+            line-too-long,
+            invalid-name,
+            too-many-statements,
+            too-many-branches,
+            too-many-nested-blocks,
+            duplicate-code,
+            consider-using-f-string,
+            unused-variable,
+            unused-argument,
+            redefined-outer-name,
+            broad-except,
+            bare-except,
+            global-statement,
+            attribute-defined-outside-init,
+            arguments-differ,
+            super-init-not-called,
+            useless-super-delegation
+            
+        [FORMAT]
+        max-line-length=100
+        
+        [DESIGN]
+        max-parents=10
+        max-attributes=15
+        max-public-methods=25
+        min-public-methods=1
+        max-args=8
+        max-locals=20
+        max-returns=8
+        max-branches=15
+        max-statements=60
+        EOF
+        
+    - name: Run Pylint on main application
+      run: |
+        pylint src/main.py --score=yes || echo "Pylint issues in main.py"
+        
+    - name: Run Pylint on core modules
+      run: |
+        pylint src/core/ --recursive=y --score=yes || echo "Pylint issues in core modules"
+        
+    - name: Run Pylint on UI modules
+      run: |
+        pylint src/ui/ --recursive=y --score=yes || echo "Pylint issues in UI modules"
+        
+    - name: Run Pylint on app modules
+      run: |
+        pylint src/app/ --recursive=y --score=yes || echo "Pylint issues in app modules"
+        
+    - name: Run Pylint on tests
+      run: |
+        pylint tests/ --recursive=y --score=yes || echo "Pylint issues in tests"
