@@ -69,6 +69,7 @@ class MUeditManual(QMainWindow):
         self.redo_stack = []
         self.graphstart = None
         self.graphend = None
+        self.array_checkboxes = []# moy
         self.roi = None
         self.resetPlot = False
         self.current_selection = None
@@ -330,9 +331,12 @@ class MUeditManual(QMainWindow):
 
             # Set initial view limits
             self.graphstart = self.MUedition["edition"]["time"][0]
+            if hasattr(self, "pan_slider"):# moy
+                self.pan_slider.setSliderPosition(0)
             self.graphend = self.MUedition["edition"]["time"][-1]
 
             self.update_plot_limits()
+            self._sync_pan_slider()#moy
 
         except KeyError as ke:
             ErrorDialog(title_label="Missing Field", text=f"The .mat file is missing required fields:\n{ke}")
@@ -1013,6 +1017,7 @@ class MUeditManual(QMainWindow):
 
         # Update plot limits
         self.update_plot_limits()
+        self._sync_pan_slider()#moy
 
     # Helper function for creating plot widgets in multi-MU view
     def create_plot_widget(self, y_label, x_label="Time (s)"):
@@ -1116,6 +1121,7 @@ class MUeditManual(QMainWindow):
         self.graphstart = center - duration / 2
         self.graphend = center + duration / 2
         self.update_plot_limits()
+        self._sync_pan_slider()#moy
 
     def zoom_out_button_pushed(self):
         """Zoom out on the time axis."""
@@ -1134,24 +1140,89 @@ class MUeditManual(QMainWindow):
             self.graphend = center + duration / 2
 
         self.update_plot_limits()
-    
-    # Navigation actions
-    def slider_value_changed(self, value):
-
-        if not self.MUedition or self.graphend is None or self.graphstart is None:
-            return
-
-        max_len = self.MUedition["edition"]["time"][-1] - self.MUedition["edition"]["time"][0]
-        try:
-            center = (self.graphend + self.graphstart) / 2
-        except TypeError:
-            return
-        max_scale = 1000
-        len_scaled = (max_len / max_scale) * (max_scale ** ((100 - value)/100))
-        self.graphstart = center - len_scaled / 2
-        self.graphend = center + len_scaled / 2
-        self.update_plot_limits()
+        self._sync_pan_slider()#moy
         
+     # Navigation actions moy
+    def slider_value_changed(self, value):
+        if (not self.MUedition
+                or self.graphstart is None
+                or self.graphend   is None):
+            return
+
+        full_start = self.MUedition["edition"]["time"][0]
+        full_end   = self.MUedition["edition"]["time"][-1]
+        full_len   = full_end - full_start
+
+        if value <= self.zoom_slider.slider.minimum():
+            vb = self.spiketrain_plot.getViewBox()
+            vb.enableAutoRange(axis='xy')
+            self.graphstart, self.graphend = full_start, full_end
+            self.update_plot_limits()
+            self._sync_pan_slider()
+            return
+        
+        max_scale = 1000
+        center    = (self.graphstart + self.graphend) / 2
+        win_len   = (full_len / max_scale) * (max_scale ** ((100 - value) / 100))
+
+        self.graphstart = center - win_len / 2
+        self.graphend   = center + win_len / 2
+
+        self.update_plot_limits()
+        self._sync_pan_slider()
+    # --------------------------------------------------------------moy
+    def _sync_pan_slider(self):
+
+        if not hasattr(self, "pan_slider"):
+            return
+        if not self.MUedition:
+            return
+
+        if self.graphstart is None or self.graphend is None:
+            # print("Warning: graphstart or graphend not set yet. Skip syncing pan slider.")
+            return
+
+        times = self.MUedition["edition"]["time"]
+        full_start, full_end = times[0], times[-1]
+
+        win_len = self.graphend - self.graphstart
+
+        span = full_end - full_start - win_len
+
+        if span <= 0:
+            self.pan_slider.blockSignals(True)
+            self.pan_slider.setSliderPosition(0)
+            self.pan_slider.setEnabled(False)
+            self.pan_slider.blockSignals(False)
+            return
+
+        pos = int(round((self.graphstart - full_start) / span * 1000))
+
+        self.pan_slider.blockSignals(True)
+        self.pan_slider.setEnabled(True)
+        self.pan_slider.setSliderPosition(pos)
+        self.pan_slider.blockSignals(False)
+
+    #moy
+    def pan_slider_changed(self, value: int):
+        if (not self.MUedition
+                or self.graphstart is None
+                or self.graphend   is None):
+            return
+
+        full_start = self.MUedition["edition"]["time"][0]
+        full_end   = self.MUedition["edition"]["time"][-1]
+        window_len = self.graphend - self.graphstart
+
+        if full_end - full_start <= window_len:
+            return
+
+        left  = full_start + (full_end - full_start - window_len) * (value / 1000.0)
+        right = left + window_len
+
+        self.graphstart, self.graphend = left, right
+        self.update_plot_limits()
+        self._sync_pan_slider()#moy
 
     def scroll_left_button_pushed(self):
         """Scroll left on the time axis."""
@@ -1169,6 +1240,7 @@ class MUeditManual(QMainWindow):
             self.graphend = self.graphstart + duration
 
         self.update_plot_limits()
+        self._sync_pan_slider()#moy
 
     def scroll_right_button_pushed(self):
         """Scroll right on the time axis."""
@@ -1186,6 +1258,7 @@ class MUeditManual(QMainWindow):
             self.graphstart = self.graphend - duration
 
         self.update_plot_limits()
+        self._sync_pan_slider()#moy
 
     def update_plot_limits(self):
         """Update the limits of all plots to match the current view."""
@@ -1610,8 +1683,12 @@ class MUeditManual(QMainWindow):
             old_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
             # Zoom out to full signal
             self.graphstart = self.MUedition["edition"]["time"][0]
+            # moy
+            if hasattr(self, "pan_slider"):
+                self.pan_slider.setSliderPosition(0)
             self.graphend = self.MUedition["edition"]["time"][-1]
             self.update_plot_limits()
+            self._sync_pan_slider()#moy
 
             # Process the signal in windows to extend the filter
             signal_length = self.MUedition["edition"]["time"].shape[0]

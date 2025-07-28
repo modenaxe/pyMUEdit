@@ -641,10 +641,41 @@ def setup_display_panel(main_window):
     main_window.plots_layout.addWidget(main_window.dr_plot)
 
     display_layout.addWidget(plots_scroll_area, 1)  # 1 is stretch factor
+    # === NEW: horizontal pan‑slider just below all plots ==============moy
+    from PyQt5.QtWidgets import QSlider
+    main_window.pan_slider = QSlider(Qt.Horizontal, parent=display_widget)
+    main_window.pan_slider.setRange(0, 1000)      # 0 = far left, 1000 = far right
+    main_window.pan_slider.setSingleStep(1)
+    main_window.pan_slider.setPageStep(10)
+    main_window.pan_slider.setFixedHeight(18)
+    main_window.pan_slider.setStyleSheet("""
+        QSlider::handle:horizontal {
+            background-color: #8E8E93;
+            width: 150px;
+            height: 4px;
+            margin: -4px 0;
+            border-radius: 6px;
+        }
 
-    # Action buttons - use a card with a proper title
+        QSlider::groove:horizontal {
+            background: #E5E5EA;
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        QSlider::sub-page:horizontal {
+            background: #BEBEBF;E5E5EA
+            border-radius: 2px;
+        }
+    """)
+
+    main_window.pan_slider.valueChanged.connect(main_window.pan_slider_changed)
+    display_layout.addWidget(main_window.pan_slider)
+    # ==============================================================
+
+   # Action buttons - use a card with a proper title
     action_card = CleanCard()
-    action_card.setStyleSheet(f"background-color: {CleanTheme.BG_CARD}; border: none;")
+    action_card.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};border: none;")#moy
 
     # Add button container
     action_container = QWidget()
