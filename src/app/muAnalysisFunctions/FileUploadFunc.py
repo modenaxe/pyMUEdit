@@ -778,7 +778,7 @@ class FileUploadFunc:
 
         # the actual plotting
         canvas = SaveablePlot(fig)
-        analysis_plot.display_plot(canvas)
+        analysis_plot.display_fig(canvas)
 
 
     def updateEMGFile(self, emgfile):
