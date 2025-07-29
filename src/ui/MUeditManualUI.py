@@ -481,6 +481,25 @@ def setup_display_panel(main_window):
     font.setPointSize(20)       
     font.setBold(True)      
     title_lbl.setFont(font)
+
+    main_window.help_button = QToolButton()
+    main_window.help_button.setText("?")
+    main_window.help_button.setFixedSize(30, 30)
+    main_window.help_button.setStyleSheet("""
+        QToolButton {
+            font-weight: bold;
+            font-size: 22px;
+            border: 2px solid #f0f0f0;
+            border-radius: 12px;
+            background-color: white;
+        }
+        QToolButton:hover {
+            background-color: #ddd;
+        }
+    """)
+    main_window.help_button.clicked.connect(
+        main_window.help_button_pushed
+    )
     
     main_window.select_file_title_btn = ActionButton("Press here to select file", primary=False)
     main_window.select_file_title_btn.setFixedHeight(40)
@@ -504,6 +523,7 @@ def setup_display_panel(main_window):
 
     # h_lay.addWidget(main_window.display_panel.title_label)  
     main_window.display_panel.header.layout.addWidget(hdr)
+    h_lay.addWidget(main_window.help_button)
     h_lay.addStretch()
     h_lay.addWidget(select_btn) 
     h_lay.addWidget(save_btn)
@@ -574,26 +594,6 @@ def setup_display_panel(main_window):
     help_layout = QHBoxLayout()
     help_layout.setContentsMargins(0, 15, 0, 0)
     help_layout.addStretch()
-    main_window.help_button = QToolButton()
-    main_window.help_button.setText("?")
-    main_window.help_button.setFixedSize(30, 30)
-    main_window.help_button.setStyleSheet("""
-        QToolButton {
-            font-weight: bold;
-            font-size: 22px;
-            border: 2px solid #f0f0f0;
-            border-radius: 12px;
-            background-color: white;
-        }
-        QToolButton:hover {
-            background-color: #ddd;
-        }
-    """)
-    main_window.help_button.clicked.connect(
-        main_window.help_button_pushed
-    )
-    help_layout.addWidget(main_window.help_button)
-
     help_widget = QWidget()
     help_widget.setLayout(help_layout)
     help_sil_layout.addWidget(help_widget)
@@ -754,35 +754,9 @@ def setup_display_panel(main_window):
     nav_layout.setContentsMargins(10, 10, 10, 10)
     nav_layout.setSpacing(15)
 
-    # Define navigation buttons
-    nav_button_configs = [
-        ("< Scroll left", main_window.scroll_left_button_pushed, "scroll_left_btn"),
-        ("Zoom in", main_window.zoom_in_button_pushed, "zoom_in_btn"),
-        ("Zoom out", main_window.zoom_out_button_pushed, "zoom_out_btn"),
-        ("Scroll right >", main_window.scroll_right_button_pushed, "scroll_right_btn"),
-    ]
-
-    # Create navigation buttons and store references
-    for text, handler, attr_name in nav_button_configs:
-        btn = ActionButton(text, primary=False)
-        btn.clicked.connect(handler)
-        btn.setMinimumWidth(btn.sizeHint().width() + 20)  # Make buttons slightly wider
-        btn.setMinimumHeight(36)
-        nav_layout.addWidget(btn)
-        # Store reference to button in main_window
-        setattr(main_window, attr_name, btn)
-
-    #display_layout.addWidget(nav_frame)
-
     # Add all visualization elements to the panel
     main_window.display_panel.set_plot_widget(display_widget)
 
-    # === 旧 Undo / Zoom 控件统一隐藏 =============================
-    for attr in ("undo_btn", "zoom_in_btn", "zoom_out_btn"):
-        btn = getattr(main_window, attr, None)
-        if btn is not None:         
-            btn.hide()               
-    # =============================================================
 
 def create_plot_widget(main_window, y_label, x_label=""):
     """Create a standardized plot widget with consistent styling."""
