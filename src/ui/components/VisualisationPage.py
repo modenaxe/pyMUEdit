@@ -14,13 +14,15 @@ from .ChannelViewer import ChannelViewer
 import math
 
 class VisualisationPage(QWidget):
-    def __init__(self, emg_obj, parent=None):
+    def __init__(self, emg_obj, import_window, parent=None):
         super().__init__(parent)
         self.parent_window = parent
         self.emg_obj = emg_obj
         self.emg_data = emg_obj.signal_dict["data"]
         self.channel_group_index = 0
         self.max_index = 0
+
+        self.import_window = import_window
 
         self.setMinimumSize(1024, 700)
 
@@ -161,7 +163,7 @@ class VisualisationPage(QWidget):
         # Update the omitted channels
         self.emg_obj.rejected_channel_indices = self.viewer.rejected_channels
         # Update preview plot in case of any changes
-        self.parent_window.update_preview_plot()
+        self.import_window.update_preview_plot()
         self.close()
 
     def keyPressEvent(self, a0):

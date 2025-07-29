@@ -235,7 +235,7 @@ class ImportDataWindow(QMainWindow):
                 self.set_configuration_button.setEnabled(True)
                 self.channel_view_button.setEnabled(True)
 
-                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj, parent=self)
+                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj, import_window=self)
 
                 if ext == ".mat":
                     self.segment_session = SegmentSessionPage(full_path)
@@ -376,7 +376,7 @@ class ImportDataWindow(QMainWindow):
             if self.visualisation_page is not None:
                 self.visualisation_page.show()
             else:
-                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj)
+                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj, import_window=self)
                 self.visualisation_page.show()
         except Exception as e:
             print(f"Failed to load channel viewer: {e}")
