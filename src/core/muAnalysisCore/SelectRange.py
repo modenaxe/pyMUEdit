@@ -26,7 +26,7 @@ class SelectRange:
         self.set_up_plot()
         val = self.ax.xaxis.get_view_interval()
         self.max = val[1]
-        self.line = [self.ax.axvline(x=0, color='r', picker=5, linewidth=2), self.ax.axvline(x=self.max, color='r', picker=5, linewidth=2)]
+        self.line = [self.ax.axvline(x=0, color='r', picker=5, linewidth=1), self.ax.axvline(x=self.max, color='r', picker=5, linewidth=1)]
         if single:
             self.line[1].set_picker(False)
             self.line[1].set_linewidth(0)
