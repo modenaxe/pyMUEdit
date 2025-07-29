@@ -35,6 +35,7 @@ class QuattrocentoVisualisation(QLabel):
     def __init__(self, image_path, parent=None):
         super().__init__(parent)
         self.pixmap = QPixmap(image_path)
+        self.pixmap = self.pixmap.scaled(700, 500, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.setPixmap(self.pixmap)
         self.setFixedSize(self.pixmap.size())
         self.setScaledContents(True)
@@ -72,7 +73,7 @@ class ConfigurationPanel(QWidget):
         self.emg_obj = emg_obj
         self.data = emg_obj.signal_dict["data"]
 
-        self.setMinimumSize(1600, 750)
+        self.setMinimumSize(1300, 750)
 
         # Setup main layout
         main_layout = QVBoxLayout()
@@ -115,19 +116,19 @@ class ConfigurationPanel(QWidget):
         self.quattrocento_label = QuattrocentoVisualisation(image_path)
         # Create lamps for splitters 1 and 2
         self.quattrocento_label.add_lamp("Splitter #1",
-                                         QRect(33, 110, 440, 80), QColor(255, 0, 0, 100))
+                                         QRect(22, 75, 315, 65), QColor(255, 0, 0, 100))
         self.quattrocento_label.add_lamp("Splitter #2",
-                                         QRect(517, 110, 440, 80), QColor(255, 0, 0, 100))
+                                         QRect(365, 75, 315, 65), QColor(255, 0, 0, 100))
 
         # Create lamps for mixed inputs 1-4
         self.quattrocento_label.add_lamp("Multiple Inputs #1",
-                                         QRect(20, 342, 220, 60), QColor(255, 0, 0, 100))
+                                         QRect(14, 243, 155, 40), QColor(255, 0, 0, 100))
         self.quattrocento_label.add_lamp("Multiple Inputs #2",
-                                         QRect(257, 342, 220, 60), QColor(255, 0, 0, 100))
+                                         QRect(183, 243, 155, 40), QColor(255, 0, 0, 100))
         self.quattrocento_label.add_lamp("Multiple Inputs #3",
-                                         QRect(495, 342, 220, 60), QColor(255, 0, 0, 100))
+                                         QRect(351, 243, 155, 40), QColor(255, 0, 0, 100))
         self.quattrocento_label.add_lamp("Multiple Inputs #4",
-                                         QRect(733, 342, 220, 60), QColor(255, 0, 0, 100))
+                                         QRect(520, 243, 155, 40), QColor(255, 0, 0, 100))
         middle_container.layout.addWidget(self.quattrocento_label)
 
         # add number of channels input box
