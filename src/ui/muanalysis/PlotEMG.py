@@ -22,6 +22,7 @@ from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import PropertiesInnerDialogButton
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
+from ui.muanalysis.PlotMUAP import PlotMUAP
 import matplotlib.pyplot as plt
 
 
@@ -177,6 +178,9 @@ class PlotEMGToolDialog(QDialog):
         button_input_col.addLayout(mupulses_row)
 
         layout.addLayout(button_input_col)
+
+        plot_muap = PlotMUAP(self.analysis_plot)
+        layout.addWidget(plot_muap)
 
     def has_invalid_filter_inputs(self):
         # Returns True if either dropdown is not at its placeholder
