@@ -30,6 +30,7 @@ class SelectRange:
         if single:
             self.line[1].set_picker(False)
             self.line[1].set_linewidth(0)
+            self.ax.axvspan(self.max, self.max, alpha=0, color='red')
         else:
             self.ax.axvspan(self.max, self.max, alpha=0.1, color='red')
         self.canvas.mpl_connect('key_press_event', lambda event: self.on_press(event))

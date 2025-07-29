@@ -20,6 +20,8 @@ from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
 
 class ForceAnalysisSection(QWidget):
 
+    """used for the force analysis of rfd and MVC"""
+
     def __init__(self, sidebar, mu, analysis_plot):
         super().__init__(sidebar)
 
@@ -68,35 +70,34 @@ class ForceAnalysisSection(QWidget):
         if file == None:
             ErrorDialog("No file has been loaded", "Error").exec_()
             return
-        SelectRange(self.analysis_plot, self.one_point, True)
-
-    def one_point(self, start_, y):
-        ms = self.rfd_value.get()
         try:
+            ms = self.rfd_value.get()
             ms = ms.split(',')
             ms = [int(val.strip()) for val in ms]
         except:
             ErrorDialog("Invalid RFD values", "Error").exec_()
-            self.analysis_plot.revert()
         else:
-            emgfile = FileUploadFunc.file
-            # Create a dict to add the RFD
-            rfd_dict = dict.fromkeys(ms, None)
-            # Loop through the ms list and calculate the respective rfd.
-            for thisms in ms:
-                ms_insamples = round((int(thisms) * emgfile["FSAMP"]) / 1000)
+            SelectRange(self.analysis_plot, lambda start,end:self.one_point(start,end,ms), True)
 
-                n_0 = emgfile["REF_SIGNAL"].loc[start_]
-                n_next = emgfile["REF_SIGNAL"].loc[start_ + ms_insamples]
+    def one_point(self, start_, y, ms):
+        emgfile = FileUploadFunc.file
+        # Create a dict to add the RFD
+        rfd_dict = dict.fromkeys(ms, None)
+        # Loop through the ms list and calculate the respective rfd.
+        for thisms in ms:
+            ms_insamples = round((int(thisms) * emgfile["FSAMP"]) / 1000)
 
-                rfdval = (n_next - n_0) / (thisms / 1000)
-                # (ms/1000 to convert mSec in Sec)
+            n_0 = emgfile["REF_SIGNAL"].loc[start_]
+            n_next = emgfile["REF_SIGNAL"].loc[start_ + ms_insamples]
 
-                rfd_dict[thisms] = rfdval
+            rfdval = (n_next - n_0) / (thisms / 1000)
+            # (ms/1000 to convert mSec in Sec)
 
-            rfd = pd.DataFrame(rfd_dict)
-            print(rfd)
-            store.append_analysis_hist(
-            "RFD", rfd.to_dict("records")
-            )
-            # self.analysis_plot.revert()
+            rfd_dict[thisms] = rfdval
+
+        rfd = pd.DataFrame(rfd_dict)
+        print(rfd)
+        store.append_analysis_hist(
+        "RFD", rfd.to_dict("records")
+        )
+        self.analysis_plot.revert()
