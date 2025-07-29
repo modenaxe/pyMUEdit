@@ -693,7 +693,6 @@ def setup_display_panel(main_window):
         ("Remove outliers", main_window.remove_outliers_button_pushed, "remove_outliers_single_btn"),
         ("Update MU filter", main_window.update_mu_filter_button_pushed, "update_mu_filter_btn"),
         ("Extend MU filter", main_window.extend_mu_filter_button_pushed, "extend_mu_filter_btn"),
-        ("Undo", main_window.undo_button_pushed, "undo_btn"),
     ]
 
     blue = "#0072ee"
