@@ -219,9 +219,9 @@ class MUeditManual(QMainWindow):
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts."""
         if event.key() == Qt.Key.Key_Left:
-            self.scroll_left_btn.click()
+            self.scroll_left_button_pushed()
         elif event.key() == Qt.Key.Key_Right:
-            self.scroll_right_btn.click()
+            self.scroll_right_button_pushed()
         elif event.key() == Qt.Key.Key_Up:
             self.zoom_slider.slider_increase()
         elif event.key() == Qt.Key.Key_Down:
