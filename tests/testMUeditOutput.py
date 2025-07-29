@@ -1,117 +1,111 @@
+# 0. Copy input data (e.g. trial1_20MVC.otb+ into tests folder)
+# 1. generate muedit output:
+#   a) cd into tests folder
+#   b) edit parameters in gen_muedit_output.m file to reflect what you want to test
+#   c) run in terminal ==> "C:\...\matlab.exe" -nodisplay -nosplash -nodesktop -r "run('gen_muedit_output.m'); exit();"
+# 2. generate pymuedit output (this software):
+#   a) run src/main.py, change input parameters (e.g. iterations, ref signal, initialisation, filters, etc. to match muedit inputs)
+#   b) save results in tests folder
+# -- You should now have two .mat output files in tests folder; actual output (pymuedit) and expected output (muedit)
+
+# 3. run testMUeditOutput.py to compare these two files
+
+# Tests folder file structure should look like the following after (excluding other test files which are not used in this process):
+# tests/
+#   ActualFinalOutxyz.mat
+#   ExpFinalOutxyz.mat
+#   gen_muedit_output.m
+#   testMUeditOutput.py
+#   xyz.otb+
+
 import numpy as np
-import scipy.io
-import h5py
-import os
+from scipy.io import loadmat
 
-# === Hardcoded file paths ===
-FILE_1 = 'ActualFinalOut20_10iters.mat'  # v7 file
-FILE_2 = 'ExpFinalOut20-10_iters.mat'                 # v7.3 file (HDF5)
+# === File Paths (CHANGE AS NEEDED) ===
+FILE_1 = 'ActualFinalOut20_10iters.mat' #pymuedit output
+FILE_2 = 'ExpFinalOut20-10_iters.mat'   #muedit output
 
+# === fields to compare inside the 'signal' struct (some i have left out as they are unlikely to change (i.e. fsamp, IED, etc))===
 FIELDS_TO_COMPARE = [
     'data', 'auxiliary', 'path', 'target',
     'coordinates', 'EMGmask', 'Pulsetrain', 'Dischargetimes'
 ]
 
-def load_mat_signal_v7(file_path):
-    """Load signal struct from a v7 MATLAB file using scipy."""
-    mat = scipy.io.loadmat(file_path, struct_as_record=False, squeeze_me=True)
+def load_mat_signal(file_path):
+    """Load the 'signal' struct from a .mat file."""
+    mat = loadmat(file_path, struct_as_record=False, squeeze_me=True)
     if 'signal' not in mat:
-        raise ValueError(f"No 'signal' found in {file_path}")
+        raise ValueError(f"No 'signal' struct found in {file_path}")
     return mat['signal']
 
-def load_mat_signal_v73(file_path):
-    """Load signal group from a v7.3 MATLAB file using h5py."""
-    with h5py.File(file_path, 'r') as f:
-        if 'signal' not in f:
-            raise ValueError(f"'signal' group not found in {file_path}")
-        signal_group = f['signal']
-        signal_data = {}
-
-        for key in FIELDS_TO_COMPARE:
-            if key in signal_group:
-                data = signal_group[key]
-                signal_data[key] = read_h5_dataset(data)
-            else:
-                signal_data[key] = None
-
-        return signal_data
-
-def read_h5_dataset(dataset):
-    """Read HDF5 dataset and auto-transpose to match MATLAB v7 orientation."""
-    if isinstance(dataset, h5py.Dataset):
-        data = dataset[()]
-        if isinstance(data, np.ndarray) and data.ndim >= 2:
-            return data.T  # transpose to match MATLAB format
-        return data
-    elif isinstance(dataset, h5py.Group):
-        return {k: read_h5_dataset(dataset[k]) for k in dataset.keys()}
-    else:
-        return dataset
-
-def extract_field(signal_obj, field):
-    """Extract field from scipy struct or dictionary."""
-    if isinstance(signal_obj, dict):
-        return signal_obj.get(field, None)
-    else:
-        return getattr(signal_obj, field, None)
-
 def is_cell_array(obj):
+    """Check if the object is a MATLAB-style cell array."""
     return isinstance(obj, np.ndarray) and obj.dtype == object
 
-def flatten_if_1d_or_column(arr):
-    if isinstance(arr, np.ndarray):
-        if arr.ndim == 2 and 1 in arr.shape:
-            return arr.flatten()
-    return arr
-
 def compare_arrays(arr1, arr2, field_path="", atol=1e-8, rtol=1e-5):
+    """Compare arrays or nested cells recursively."""
     differences = []
-
-    arr1 = flatten_if_1d_or_column(arr1)
-    arr2 = flatten_if_1d_or_column(arr2)
 
     if is_cell_array(arr1) and is_cell_array(arr2):
         if arr1.shape != arr2.shape:
             differences.append(f"{field_path}: Cell shape mismatch {arr1.shape} vs {arr2.shape}")
             return differences
-        for idx, (a, b) in np.ndenumerate(zip(arr1.flat, arr2.flat)):
+        for idx in np.ndindex(arr1.shape):
+            a = arr1[idx]
+            b = arr2[idx]
             subfield = f"{field_path}[{idx}]"
             differences.extend(compare_arrays(a, b, subfield, atol, rtol))
+
     elif isinstance(arr1, np.ndarray) and isinstance(arr2, np.ndarray):
         if arr1.shape != arr2.shape:
-            differences.append(f"{field_path}: Shape mismatch {arr1.shape} vs {arr2.shape}")
+            differences.append(f"{field_path}: Array shape mismatch {arr1.shape} vs {arr2.shape}")
         elif not np.allclose(arr1, arr2, atol=atol, rtol=rtol, equal_nan=True):
             max_diff = np.max(np.abs(arr1 - arr2))
             mean_diff = np.mean(np.abs(arr1 - arr2))
-            differences.append(f"{field_path}: Value mismatch (max diff = {max_diff:.3e}, mean diff = {mean_diff:.3e})")
+            differences.append(
+                f"{field_path}: Values differ (max diff = {max_diff:.3e}, mean diff = {mean_diff:.3e})"
+            )
+
     else:
-        if not np.allclose(np.atleast_1d(arr1), np.atleast_1d(arr2), atol=atol, rtol=rtol, equal_nan=True):
-            differences.append(f"{field_path}: Scalar mismatch: {arr1} vs {arr2}")
+        # Convert both to arrays to allow broadcastable comparison
+        a1 = np.atleast_1d(arr1)
+        a2 = np.atleast_1d(arr2)
+
+        if a1.shape != a2.shape:
+            differences.append(f"{field_path}: Shape mismatch for scalar values {a1.shape} vs {a2.shape}")
+        elif not np.allclose(a1, a2, atol=atol, rtol=rtol, equal_nan=True):
+            max_diff = np.max(np.abs(a1 - a2))
+            mean_diff = np.mean(np.abs(a1 - a2))
+            differences.append(
+                f"{field_path}: Scalar values differ (max diff = {max_diff:.3e}, mean diff = {mean_diff:.3e})"
+            )
+
     return differences
 
 def compare_signals(signal1, signal2):
-    differences = []
+    """Compare key fields in two signal structs."""
+    all_differences = {}
     for field in FIELDS_TO_COMPARE:
-        val1 = extract_field(signal1, field)
-        val2 = extract_field(signal2, field)
+        val1 = getattr(signal1, field, None)
+        val2 = getattr(signal2, field, None)
 
         if val1 is None or val2 is None:
-            differences.append(f"{field}: Missing in one of the signals.")
+            all_differences[field] = [f"{field}: Missing in one of the signals."]
             continue
 
         diffs = compare_arrays(val1, val2, field_path=field)
-        differences.extend(diffs)
+        if diffs:
+            all_differences[field] = diffs
 
-    return differences
+    return all_differences
 
 if __name__ == "__main__":
-    print(f"Comparing:\n  FILE_1: {FILE_1} (v7)\n  FILE_2: {FILE_2} (v7.3 HDF5)\n")
-
+    print(f"Comparing '{FILE_1}' vs '{FILE_2}'...\n")
     try:
-        signal1 = load_mat_signal_v7(FILE_1)
-        signal2 = load_mat_signal_v73(FILE_2)
+        signal1 = load_mat_signal(FILE_1)
+        signal2 = load_mat_signal(FILE_2)
     except Exception as e:
-        print(f"❌ Error loading signals: {e}")
+        print(f"❌ Error loading files: {e}")
         exit(1)
 
     differences = compare_signals(signal1, signal2)
@@ -119,6 +113,14 @@ if __name__ == "__main__":
     if not differences:
         print("✅ All selected fields are equal within tolerance.")
     else:
-        print("❌ Differences found:")
-        for diff in differences:
-            print(" -", diff)
+        print("❌ Differences found:\n")
+
+        for field, diffs in differences.items():
+            print(f"Field: {field} ({len(diffs)} difference{'s' if len(diffs) > 1 else ''})")
+            for diff in diffs:
+                print("  -", diff)
+            print()
+
+        passed_fields = [f for f in FIELDS_TO_COMPARE if f not in differences]
+        if passed_fields:
+            print("✅ Fields with no differences:", ", ".join(passed_fields))
