@@ -63,7 +63,6 @@ class ForceAnalysisFunc():
             rfd_dict[thisms] = rfdval
 
         rfd = pd.DataFrame(rfd_dict)
-        print(rfd)
         store.append_analysis_hist(
         "RFD", rfd.to_dict("records")
         )
