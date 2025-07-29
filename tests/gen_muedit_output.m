@@ -1,4 +1,5 @@
-%TEN ITERATIONS TEST
+% GENERATES MUEDIT .MAT OUTPUT FILE FOR TESTING
+% TEN ITERATIONS TEST (change parameters as needed)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Decomposition of surface high-density EMG signals in motor unit discharge
@@ -47,7 +48,7 @@ clc;
 parameters.pathname = 'C:\Users\maxcf\COMP3900\capstone-project-25t2-3900-t11a-banana\tests\'; % add a '/' at the end for Mac OS, add a '\' at the end for Windows
 parameters.filename = 'trial1_20MVC.otb+'; % filename.otb+ or filename.mat
 
-% DECOMPOSITION PARAMETERS
+% DECOMPOSITION PARAMETERS --- CHANGE AS REQUIRED FOR TESTING AGAINST PYTHON OUTPUT
 parameters.NITER = 10;
 parameters.ref_exist = 1; % if ref_signal exist ref_exist = 1; if not ref_exist = 0 and manual selection of windows
 parameters.checkEMG = 0; % 0 = Consider all the channels ; 1 = Visual checking
@@ -343,5 +344,5 @@ end
 % Save file
 clearvars signalprocess i j PulseT distime distimenew distimea actind idx1 time ISI CoV maxiter nwin Wini f xwb temp muscle
 savename = 'ExpFinalOut20-10_iters.mat';
-save(savename, 'signal', 'parameters', '-v7.3');
+save(savename, 'signal', 'parameters'); %removed v7.3 compression
 close all
