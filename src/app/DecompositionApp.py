@@ -21,7 +21,8 @@ from ui.DecompositionAppUI import setup_ui
 # Import workers and other required modules
 from workers.SaveMatWorker import SaveMatWorker
 from workers.DecompositionWorker import DecompositionWorker
-from core.utils.config_and_input.prepare_parameters import prepare_parameters
+from core.scd.main import SCDDecompositionWorker
+from core.utils.config_and_input.prepare_parameters import prepare_parameters, prepare_parameters_scd
 from MUeditManual import MUeditManual
 
 
@@ -287,58 +288,106 @@ class DecompositionApp(QMainWindow):
             self.threads.remove(worker)
 
     def start_button_pushed(self):
+        algo_choice = self.algo_combo.currentText()
+        print(f"Algorithm chosen: {algo_choice}")
         # Reset iteration counter at the start of a new decomposition
         self.iteration_counter = 0
+        
+        if algo_choice == "Fast ICA":
+            # Get UI parameters
+            ui_params = {
+                "check_emg": self.check_emg_dropdown.currentText(),
+                "peeloff": self.peeloff_dropdown.currentText(),
+                "cov_filter": self.cov_filter_dropdown.currentText(),
+                "initialization": self.initialisation_dropdown.currentText(),
+                "refine_mu": self.refine_mus_dropdown.currentText(),
+                "duplicates_bgrids": "Yes",  # Set default value
+                "contrast_function": self.contrast_function_dropdown.currentText(),
+                "iterations": self.number_iterations_field.value(),
+                "windows": self.number_windows_field.value(),
+                "threshold_target": self.threshold_target_field.value(),
+                "extended_channels": self.nb_extended_channels_field.value(),
+                "duplicates_threshold": self.duplicate_threshold_field.value(),
+                "sil_threshold": self.sil_threshold_field.value(),
+                "cov_threshold": self.cov_threshold_field.value(),
+            }
 
-        # Get UI parameters
-        ui_params = {
-            "check_emg": self.check_emg_dropdown.currentText(),
-            "peeloff": self.peeloff_dropdown.currentText(),
-            "cov_filter": self.cov_filter_dropdown.currentText(),
-            "initialization": self.initialisation_dropdown.currentText(),
-            "refine_mu": self.refine_mus_dropdown.currentText(),
-            "duplicates_bgrids": "Yes",  # Set default value
-            "contrast_function": self.contrast_function_dropdown.currentText(),
-            "iterations": self.number_iterations_field.value(),
-            "windows": self.number_windows_field.value(),
-            "threshold_target": self.threshold_target_field.value(),
-            "extended_channels": self.nb_extended_channels_field.value(),
-            "duplicates_threshold": self.duplicate_threshold_field.value(),
-            "sil_threshold": self.sil_threshold_field.value(),
-            "cov_threshold": self.cov_threshold_field.value(),
-        }
+            # Store UI params for later use when saving results
+            self.ui_params = ui_params
 
-        # Store UI params for later use when saving results
-        self.ui_params = ui_params
+            # Convert UI parameters to algorithm parameters
+            parameters = prepare_parameters(ui_params)
 
-        # Convert UI parameters to algorithm parameters
-        parameters = prepare_parameters(ui_params)
+            print(parameters)
 
-        print(parameters)
+            # Check if we have a file and EMG object
+            if not self.emg_obj or not self.pathname or not self.filename:
+                self.edit_field.setText("Please select and load a file first")
+                return
 
-        # Check if we have a file and EMG object
-        if not self.emg_obj or not self.pathname or not self.filename:
-            self.edit_field.setText("Please select and load a file first")
-            return
+            # Disable the start button during processing
+            self.start_button.setEnabled(False)
+            self.edit_field.setText("Starting decomposition...")
+            self.status_text.setText("Processing...")
+            self.status_progress.setValue(10)
 
-        # Disable the start button during processing
-        self.start_button.setEnabled(False)
-        self.edit_field.setText("Starting decomposition...")
-        self.status_text.setText("Processing...")
-        self.status_progress.setValue(10)
+            # Pass the EMG object to the DecompositionWorker
+            self.decomp_worker = DecompositionWorker(self.emg_obj, parameters)
+            self.threads.append(self.decomp_worker)  # Keep a reference to prevent garbage collection
 
-        # Pass the EMG object to the DecompositionWorker
-        self.decomp_worker = DecompositionWorker(self.emg_obj, parameters)
-        self.threads.append(self.decomp_worker)  # Keep a reference to prevent garbage collection
+            # Connect signals
+            self.decomp_worker.progress.connect(self.update_progress)
+            self.decomp_worker.plot_update.connect(self.update_plots)
+            self.decomp_worker.finished.connect(self.on_decomposition_complete)
+            self.decomp_worker.error.connect(self.on_decomposition_error)
 
-        # Connect signals
-        self.decomp_worker.progress.connect(self.update_progress)
-        self.decomp_worker.plot_update.connect(self.update_plots)
-        self.decomp_worker.finished.connect(self.on_decomposition_complete)
-        self.decomp_worker.error.connect(self.on_decomposition_error)
+            # Start the worker thread
+            self.decomp_worker.start()
+        elif algo_choice == "SCD":
+            ui_params = {
+                "device": self.device_dropdown.currentText(),
+                "filt_harms": self.filt_harms_dropdown.currentText(),
+                "use_coeff_var_fitness": self.use_coeff_var_fitness_dropdown.currentText(),
+                "remove_bad_fr": self.remove_bad_fr_dropdown.currentText(),
+                "iterations": self.number_iterations_scd_field.value(),
+                "acceptance_silhouette": self.acceptance_silhouette_field.value(),
+                "extension_factor": self.extension_factor_field.value(),
+                "low_pass_cutoff": self.low_pass_cutoff_field.value(),
+                "high_pass_cutoff": self.high_pass_cutoff_field.value(),
+                "powerline_frequency": self.powerline_frequency_field.value(),
+                "peel_off_window_size": self.peel_off_window_size_field.value(),
+                "bandwidth": self.bandwidth_field.value()
+            }
 
-        # Start the worker thread
-        self.decomp_worker.start()
+            self.ui_params = ui_params
+
+            parameters = prepare_parameters_scd(ui_params)
+            print(parameters)
+
+            # Check if we have a file and EMG object
+            if not self.emg_obj or not self.pathname or not self.filename:
+                self.edit_field.setText("Please select and load a file first")
+                return
+
+            # Disable the start button during processing
+            self.start_button.setEnabled(False)
+            self.edit_field.setText("Starting decomposition...")
+            self.status_text.setText("Processing...")
+            self.status_progress.setValue(10)
+
+            # Pass the EMG object to the DecompositionWorker
+            self.decomp_worker = SCDDecompositionWorker(self.emg_obj, parameters)
+            self.threads.append(self.decomp_worker)  # Keep a reference to prevent garbage collection
+
+            # Connect signals
+            self.decomp_worker.progress.connect(self.update_progress)
+            self.decomp_worker.plot_update.connect(self.update_plots)
+            self.decomp_worker.finished.connect(self.on_decomposition_complete)
+            self.decomp_worker.error.connect(self.on_decomposition_error)
+
+            # Start the worker thread
+            self.decomp_worker.start()
+            
 
     def on_decomposition_complete(self, result):
         """Handle successful completion of decomposition"""
