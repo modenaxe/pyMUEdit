@@ -29,3 +29,25 @@ def prepare_parameters(ui_params):
     parameters["enable_plots"] = True  # Enable plots for debugging
 
     return parameters
+
+def prepare_parameters_scd(ui_params):
+    parameters = {}
+
+    # Convert UI dropdown values to text or booleans
+    parameters["device"] = "cpu" if ui_params.get("device") == "CPU" else "cuda"
+    parameters["filt_harms"] = True if ui_params.get("filt_harms") == "Yes" else False
+    parameters["use_coeff_var_fitness"] = True if ui_params.get("use_coeff_var_fitness") == "Yes" else False
+    parameters["remove_bad_fr"] = True if ui_params.get("remove_bad_fr") == "Yes" else False
+
+    # Get numeric values from UI spinbox values
+    parameters["iterations"] = ui_params.get("iterations", 75)
+    parameters["acceptance_silhouette"] = ui_params.get("acceptance_silhouette", 0.85)
+    parameters["extension_factor"] = ui_params.get("extension_factor", 10)
+    parameters["low_pass_cutoff"] = ui_params.get("low_pass_cutoff", 1000)
+    parameters["high_pass_cutoff"] = ui_params.get("high_pass_cutoff", 10)
+    parameters["powerline_frequency"] = ui_params.get("powerline_frequency", 50)
+    parameters["peel_off_window_size"] = ui_params.get("peel_off_window_size", 20)
+    parameters["bandwidth"] = ui_params.get("bandwidth", 1.0)
+
+    return parameters
+    
