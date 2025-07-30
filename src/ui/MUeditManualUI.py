@@ -481,6 +481,25 @@ def setup_display_panel(main_window):
     font.setPointSize(20)       
     font.setBold(True)      
     title_lbl.setFont(font)
+
+    main_window.help_button = QToolButton()
+    main_window.help_button.setText("?")
+    main_window.help_button.setFixedSize(30, 30)
+    main_window.help_button.setStyleSheet("""
+        QToolButton {
+            font-weight: bold;
+            font-size: 22px;
+            border: 2px solid #f0f0f0;
+            border-radius: 12px;
+            background-color: white;
+        }
+        QToolButton:hover {
+            background-color: #ddd;
+        }
+    """)
+    main_window.help_button.clicked.connect(
+        main_window.help_button_pushed
+    )
     
     main_window.select_file_title_btn = ActionButton("Press here to select file", primary=False)
     main_window.select_file_title_btn.setFixedHeight(40)
@@ -504,6 +523,7 @@ def setup_display_panel(main_window):
 
     # h_lay.addWidget(main_window.display_panel.title_label)  
     main_window.display_panel.header.layout.addWidget(hdr)
+    h_lay.addWidget(main_window.help_button)
     h_lay.addStretch()
     h_lay.addWidget(select_btn) 
     h_lay.addWidget(save_btn)
@@ -574,26 +594,6 @@ def setup_display_panel(main_window):
     help_layout = QHBoxLayout()
     help_layout.setContentsMargins(0, 15, 0, 0)
     help_layout.addStretch()
-    main_window.help_button = QToolButton()
-    main_window.help_button.setText("?")
-    main_window.help_button.setFixedSize(30, 30)
-    main_window.help_button.setStyleSheet("""
-        QToolButton {
-            font-weight: bold;
-            font-size: 22px;
-            border: 2px solid #f0f0f0;
-            border-radius: 12px;
-            background-color: white;
-        }
-        QToolButton:hover {
-            background-color: #ddd;
-        }
-    """)
-    main_window.help_button.clicked.connect(
-        main_window.help_button_pushed
-    )
-    help_layout.addWidget(main_window.help_button)
-
     help_widget = QWidget()
     help_widget.setLayout(help_layout)
     help_sil_layout.addWidget(help_widget)
@@ -641,10 +641,41 @@ def setup_display_panel(main_window):
     main_window.plots_layout.addWidget(main_window.dr_plot)
 
     display_layout.addWidget(plots_scroll_area, 1)  # 1 is stretch factor
+    # === NEW: horizontal pan‑slider just below all plots ==============moy
+    from PyQt5.QtWidgets import QSlider
+    main_window.pan_slider = QSlider(Qt.Horizontal, parent=display_widget)
+    main_window.pan_slider.setRange(0, 1000)      # 0 = far left, 1000 = far right
+    main_window.pan_slider.setSingleStep(1)
+    main_window.pan_slider.setPageStep(10)
+    main_window.pan_slider.setFixedHeight(18)
+    main_window.pan_slider.setStyleSheet("""
+        QSlider::handle:horizontal {
+            background-color: #8E8E93;
+            width: 150px;
+            height: 4px;
+            margin: -4px 0;
+            border-radius: 6px;
+        }
 
-    # Action buttons - use a card with a proper title
+        QSlider::groove:horizontal {
+            background: #E5E5EA;
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        QSlider::sub-page:horizontal {
+            background: #BEBEBF;E5E5EA
+            border-radius: 2px;
+        }
+    """)
+
+    main_window.pan_slider.valueChanged.connect(main_window.pan_slider_changed)
+    display_layout.addWidget(main_window.pan_slider)
+    # ==============================================================
+
+   # Action buttons - use a card with a proper title
     action_card = CleanCard()
-    action_card.setStyleSheet(f"background-color: {CleanTheme.BG_CARD}; border: none;")
+    action_card.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};border: none;")#moy
 
     # Add button container
     action_container = QWidget()
@@ -662,7 +693,6 @@ def setup_display_panel(main_window):
         ("Remove outliers", main_window.remove_outliers_button_pushed, "remove_outliers_single_btn"),
         ("Update MU filter", main_window.update_mu_filter_button_pushed, "update_mu_filter_btn"),
         ("Extend MU filter", main_window.extend_mu_filter_button_pushed, "extend_mu_filter_btn"),
-        ("Undo", main_window.undo_button_pushed, "undo_btn"),
     ]
 
     blue = "#0072ee"
@@ -723,35 +753,9 @@ def setup_display_panel(main_window):
     nav_layout.setContentsMargins(10, 10, 10, 10)
     nav_layout.setSpacing(15)
 
-    # Define navigation buttons
-    nav_button_configs = [
-        ("< Scroll left", main_window.scroll_left_button_pushed, "scroll_left_btn"),
-        ("Zoom in", main_window.zoom_in_button_pushed, "zoom_in_btn"),
-        ("Zoom out", main_window.zoom_out_button_pushed, "zoom_out_btn"),
-        ("Scroll right >", main_window.scroll_right_button_pushed, "scroll_right_btn"),
-    ]
-
-    # Create navigation buttons and store references
-    for text, handler, attr_name in nav_button_configs:
-        btn = ActionButton(text, primary=False)
-        btn.clicked.connect(handler)
-        btn.setMinimumWidth(btn.sizeHint().width() + 20)  # Make buttons slightly wider
-        btn.setMinimumHeight(36)
-        nav_layout.addWidget(btn)
-        # Store reference to button in main_window
-        setattr(main_window, attr_name, btn)
-
-    #display_layout.addWidget(nav_frame)
-
     # Add all visualization elements to the panel
     main_window.display_panel.set_plot_widget(display_widget)
 
-    # === 旧 Undo / Zoom 控件统一隐藏 =============================
-    for attr in ("undo_btn", "zoom_in_btn", "zoom_out_btn"):
-        btn = getattr(main_window, attr, None)
-        if btn is not None:         
-            btn.hide()               
-    # =============================================================
 
 def create_plot_widget(main_window, y_label, x_label=""):
     """Create a standardized plot widget with consistent styling."""
