@@ -58,6 +58,7 @@ class FixedPopupComboBox(QComboBox): # set a new class for dropout moy
 
 def setup_ui(main_window):
     """Setup the modern UI components for the MUedit Manual application."""
+    
     # Set window properties
     main_window.setWindowTitle("MUedit - Manual Editing")
     main_window.setGeometry(100, 100, 1500, 850)
@@ -67,8 +68,8 @@ def setup_ui(main_window):
     pg.setConfigOption("background", "w")  # White background
     pg.setConfigOption("foreground", CleanTheme.TEXT_PRIMARY)
 
-    # Enable anti-aliasing for better looking plots
-    pg.setConfigOption("antialias", True)
+    # Disable anti-aliasing for better performance
+    pg.setConfigOption("antialias", False)
 
     # Create main widget and layout
     main_window.central_widget = QWidget()
@@ -78,16 +79,18 @@ def setup_ui(main_window):
     main_layout.setSpacing(8)
 
     # Set up control panel and display panel
-    setup_control_panel(main_window)
     setup_display_panel(main_window)
+    setup_control_panel(main_window)
     attach_control_pannel_to_sidebar(main_window)
 
     # Add panels to main layout
     
     main_layout.addWidget(main_window.display_panel, 1)  # The 1 is the stretch factor
-
+    
     # Set up keyboard shortcuts
     main_window.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+    
+    
 
 #   新增悬浮save块
     # _add_floating_save_btn(main_window)
@@ -420,6 +423,7 @@ def create_visualization_tab(main_window):
 
     ref_panel.add_widget(ref_contents)
     viz_layout.addWidget(ref_panel)
+    main_window.action_buttons["sil_checkbox_value_changed"] = main_window.sil_switch
 
     # Create visualization buttons panel
     button_panel = CollapsiblePanel("Plot Options")
@@ -433,6 +437,23 @@ def create_visualization_tab(main_window):
     main_window.plot_firingrates_btn.clicked.connect(main_window.plot_mu_firingrates_button_pushed)
     button_panel.add_widget(main_window.plot_firingrates_btn)
     
+    
+    row3 = QWidget()
+    row3_lay = QHBoxLayout(row3)
+    row3_lay.setContentsMargins(0,0,0,0)
+    row3_lay.setSpacing(6)
+    
+    aa_lbl = QLabel("Always Anti-Aliasing on Plot")                 
+    aa_lbl.setStyleSheet(f"color:{CleanTheme.TEXT_PRIMARY};")
+    row3_lay.setContentsMargins(0,0,0,0)
+    row3_lay.setSpacing(6)
+    row3_lay.addWidget(aa_lbl)
+
+    main_window.aa_switch = ToggleSwitch()        
+    main_window.aa_switch.toggled.connect(main_window.aa_checkbox_value_changed)
+    row3_lay.addWidget(main_window.aa_switch)
+    
+    button_panel.add_widget(row3)
 
     viz_layout.addWidget(button_panel)
     viz_layout.addStretch()
@@ -690,6 +711,7 @@ def setup_display_panel(main_window):
         # Store reference to button in main_window
         setattr(main_window, attr_name, btn)
         main_window.action_buttons[handler.__name__] = btn
+        
         if text in {"Add spikes", "Delete spikes", "Update MU filter", "Extend MU filter"}:
             btn.set_blue()
         if text in {"Delete spikes", "Delete DR", "Remove outliers"}:
@@ -746,9 +768,9 @@ def create_plot_widget(main_window, y_label, x_label=""):
                 QApplication.sendEvent(main_window, event)
                 event.ignore()
             super().keyPressEvent(event)
-                    
-                    
+    
     plot = pg.PlotWidget(viewBox=NewViewBox(main_window.zoom_slider))
+
     plot.setBackground("w")  # White background
     if y_label:
         plot.setLabel("left", y_label)
