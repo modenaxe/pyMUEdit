@@ -19,6 +19,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.AnalysisCheckbox import AnalysisCheckbox 
 from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import PropertiesInnerDialogButton
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
@@ -59,21 +60,13 @@ class PlotEMGToolDialog(QDialog):
         # Left: Checkboxes (vertical)
         checkbox_col = QVBoxLayout()
         checkbox_col.setSpacing(10)
-        self.ref_signal_checkbox = QCheckBox("Reference signal")
-        self.ref_signal_checkbox.setFont(QFont("Arial", 11))
-        self.ref_signal_checkbox.setStyleSheet(f"""
-            QCheckBox {{ color: {CleanTheme.ANALYSIS_TEXT_BUTTON}; spacing: 8px; }}
-            QCheckBox::indicator {{ width: 16px; height: 16px; border: 2px solid #ced4da; border-radius: 3px; background-color: #ffffff; }}
-            QCheckBox::indicator:checked {{ background-color: {CleanTheme.ANALYSIS_BG_BUTTON}; border-color: {CleanTheme.ANALYSIS_BG_BUTTON}; }}
-        """)
+
+        # reference signal checkbox 
+        self.ref_signal_checkbox = AnalysisCheckbox("Reference signal")
         checkbox_col.addWidget(self.ref_signal_checkbox)
-        self.time_seconds_checkbox = QCheckBox("Time in seconds")
-        self.time_seconds_checkbox.setFont(QFont("Arial", 11))
-        self.time_seconds_checkbox.setStyleSheet(f"""
-            QCheckBox {{ color: {CleanTheme.ANALYSIS_TEXT_BUTTON}; spacing: 8px; }}
-            QCheckBox::indicator {{ width: 16px; height: 16px; border: 2px solid #ced4da; border-radius: 3px; background-color: #ffffff; }}
-            QCheckBox::indicator:checked {{ background-color: {CleanTheme.ANALYSIS_BG_BUTTON}; border-color: {CleanTheme.ANALYSIS_BG_BUTTON}; }}
-        """)
+
+        # time in seconds checkbox
+        self.time_seconds_checkbox = AnalysisCheckbox("Time in seconds")
         checkbox_col.addWidget(self.time_seconds_checkbox)
         filter_row_layout.addLayout(checkbox_col)
 
@@ -179,7 +172,11 @@ class PlotEMGToolDialog(QDialog):
 
         layout.addLayout(button_input_col)
 
-        plot_muap = PlotMUAP(self.analysis_plot)
+        plot_muap = PlotMUAP(
+            self.analysis_plot, 
+            self.matrix_code_dropdown, 
+            self.orientation_dropdown
+        )
         layout.addWidget(plot_muap)
 
     def has_invalid_filter_inputs(self):
@@ -355,6 +352,9 @@ class PlotEMGButton(QWidget):
         layout.setAlignment(plot_emg_btn, Qt.AlignmentFlag.AlignTop)
         
     def open_plot_emg_btn(self):
+        if FileUploadFunc.file == None:
+            ErrorDialog("No file has been loaded", "Error").exec_()
+
         # Open the Motor Unit Properties dialog
         dialog = PlotEMGToolDialog(self.analysis_plot)
         dialog.exec_()

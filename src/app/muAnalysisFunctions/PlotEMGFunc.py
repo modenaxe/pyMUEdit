@@ -376,3 +376,112 @@ def plot_mupulses(
         plt.show()
 
     return fig
+
+def extract_delsys_muaps(emgfile):
+    all_muaps = emgfile["EXTRAS"]
+    muaps_dict = {mu: None for mu in range(emgfile["NUMBER_OF_MUS"])}
+    for mu in range(emgfile["NUMBER_OF_MUS"]):
+        df = pd.DataFrame(all_muaps.filter(regex=f"MU_{mu}_CH_"))
+        df.columns = range(len(df.columns))
+        muaps_dict[mu] = {"col0": df}
+
+    return muaps_dict
+
+def plot_muaps(
+    sta_dict,
+    title="MUAPs from STA",
+    figsize=[20, 15],
+    tight_layout=False,
+    line2d_kwargs_ax1=None,
+    showimmediately=True,
+):
+    if isinstance(sta_dict, dict):
+        sta_dict = [sta_dict]
+
+    if not isinstance(sta_dict, list):
+        raise TypeError("sta_dict must be dict or list")
+
+    # Find the largest and smallest value to define common y axis limits.
+    ymax = 0
+    ymin = 0
+    # Loop each sta_dict and MU, c means matrix columns
+    for thisdict in sta_dict:
+        for c in thisdict:
+            max_ = thisdict[c].max().max()
+            min_ = thisdict[c].min().min()
+            if max_ > ymax:
+                ymax = max_
+            if min_ < ymin:
+                ymin = min_
+    # Manage exception of singular transformation
+    if ymax == 0 and ymin == 0:
+        ymax = 1
+        ymin = -1
+
+    # Obtain number of columns and rows
+    cols = len(sta_dict[0])
+    rows = len(sta_dict[0][next(iter(sta_dict[0]))].columns)
+
+    figname = get_unique_fig_name(title)
+    fig, axs = plt.subplots(
+        rows,
+        cols,
+        figsize=(figsize[0] / 2.54, figsize[1] / 2.54),
+        num=figname,
+    )
+
+    # Manage exception of arrays instead of matrices and check that they
+    # are correctly oriented.
+    if cols > 1 and rows > 1:
+        # Matrices
+        for thisdict in sta_dict:
+            # Plot all the MUAPs, c means matrix columns, r rows
+            for r in range(rows):
+                for pos, c in enumerate(thisdict.keys()):
+                    axs[r, pos].plot(thisdict[c].iloc[:, r])
+
+                    axs[r, pos].set_ylim(ymin, ymax)
+                    axs[r, pos].xaxis.set_visible(False)
+                    axs[r, pos].set(yticklabels=[])
+                    axs[r, pos].tick_params(left=False)
+
+    elif cols == 1 and rows > 1:
+        # Arrays
+        for thisdict in sta_dict:
+            # Plot all the MUAPs, c means matrix columns, r rows
+            for r in range(rows):
+                for pos, c in enumerate(thisdict.keys()):
+                    axs[r].plot(thisdict[c].iloc[:, r])
+
+                    axs[r].set_ylim(ymin, ymax)
+                    axs[r].xaxis.set_visible(False)
+                    axs[r].set(yticklabels=[])
+                    axs[r].tick_params(left=False)
+
+    elif cols > 1 and rows == 1:
+        raise ValueError(
+            "Arrays should be organised as 1 column, multiple rows. " +
+            "Not as 1 row, multiple columns."
+        )
+
+    else:
+        raise ValueError(
+            "Unacceptable number of rows and columns to plot"
+        )
+
+    # Initialise Figure_Subplots_Layout_Manager and update the figure if
+    # needed.
+    fig_manager = Figure_Subplots_Layout_Manager(figure=fig)
+    if line2d_kwargs_ax1 is not None:
+        fig_manager.set_line2d_from_kwargs(
+            line2d_kwargs_ax1=line2d_kwargs_ax1,
+        )
+    # Set appropriate layout
+    fig_manager.set_layout(tight_layout=tight_layout, despine="all")
+
+    # Show the figure
+    if showimmediately:
+        plt.show()
+
+    return fig
+

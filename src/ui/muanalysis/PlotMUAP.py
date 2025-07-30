@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import (
     QMessageBox,
 )
 import matplotlib.pyplot as plt
+from app.muAnalysisFunctions.PlotEMGFunc import extract_delsys_muaps
 from ui.components.SaveablePlot import SaveablePlot
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
@@ -24,13 +25,20 @@ class PlotMUAP(QWidget):
     """
     The code for plotting MUAPs.
     Comes in the form of a button and some inputs 
+
+    params:
+        - analysis_plot instance 
+        - matrix: dropdown instance, not the value 
+        - orientation: dropdown instance, not the value
     """
     # TODO: check of the params are correct
-    def __init__(self, analysis_plot, parent=None):
+    def __init__(self, analysis_plot, matrix, orientation, parent=None):
         super().__init__(parent)
 
         self.file = FileUploadFunc.file
         self.analysis_plot = analysis_plot
+        self.matrix = matrix 
+        self.orientation = orientation
 
         layout = QHBoxLayout(self)
         btn = GeneralButton("Plot MUAPs", self.plot, parent=self)
@@ -57,20 +65,20 @@ class PlotMUAP(QWidget):
 
     # TODO:  go through this
     def plot(self):
+        print("test")
         try:
             # DELSYS requires different MUAPS plot
             if self.file["SOURCE"] == "DELSYS":
                 figsize = [int(i) for i in self.size_fig.get().split(",")]
-                muaps_dict = openhdemg.extract_delsys_muaps(
-                    self.parent.resdict,
-                )
+                muaps_dict = extract_delsys_muaps(self.file)
+                # TODO: change
                 openhdemg.plot_muaps(
                     muaps_dict[int(self.muap_munum.get())],
                     figsize=figsize,
                 )
 
             else:
-                if self.mat_code.get() == "None":
+                if self.matrix.get() == "None":
                     # Get rows and columns and turn into list
                     list_rcs = [int(i) for i in self.matrix_rc.get().split(",")]
 
@@ -79,7 +87,7 @@ class PlotMUAP(QWidget):
                         sorted_file = openhdemg.sort_rawemg(
                             emgfile=self.parent.resdict,
                             code=self.mat_code.get(),
-                            orientation=int(self.mat_orientation.get()),
+                            orientation=int(self.orientation.get()),
                             n_rows=list_rcs[0],
                             n_cols=list_rcs[1],
                         )
@@ -119,7 +127,7 @@ class PlotMUAP(QWidget):
                 # Calculate STA dictionary
                 # Plot deviation
                 sta_dict = openhdemg.sta(
-                    emgfile=self.parent.resdict,
+                    emgfile=self.file,
                     sorted_rawemg=diff_file,
                     firings="all",
                     timewindow=int(self.muap_time.get()),
@@ -164,6 +172,5 @@ class PlotMUAP(QWidget):
                 error=e,
                 solution=str("Enter valid Matrix Column."),
             )
-
 
 
