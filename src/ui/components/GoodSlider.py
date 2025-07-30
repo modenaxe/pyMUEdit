@@ -1,3 +1,4 @@
+from PyQt5.QtGui import QResizeEvent
 from PyQt5.QtWidgets import (
     QWidget, QSlider, QHBoxLayout, QLabel, QStyleOptionSlider, QStyleOptionSlider, QStyle
 )
@@ -28,9 +29,6 @@ class GoodSlider(QWidget):
         super().__init__(parent)
         self.callback = on_value_changed
         self.display_value = not display_value
-        # self.setFixedSize(350, 80)
-        self.setMinimumWidth(350)
-        self.setMinimumHeight(60)
         self._init_ui(orientation, minimum, maximum, default)
 
     def _init_ui(self, orientation, minimum, maximum, default):
@@ -50,7 +48,11 @@ class GoodSlider(QWidget):
         self.slider.setSingleStep(1)
         self.slider.setFixedHeight(40)
         self.slider.valueChanged.connect(self._on_value_changed)
-
+        self.setStyleSheet("""
+            QWidget {
+                border: None
+            }
+        """)
         self.slider.setStyleSheet("""
             QSlider {
                 min-height: 30px;
@@ -89,6 +91,8 @@ class GoodSlider(QWidget):
                 border-color: #0056b3;
             }
         """)
+        
+
 
         layout.addWidget(self.slider)
         self.value_label = QLabel(f"{default}", self)

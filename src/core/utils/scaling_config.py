@@ -19,14 +19,17 @@ def get_adaptive_scale():
     # approximate physical resolution
     physical_width = int(logical_width * scale_factor)
     physical_height = int(logical_height * scale_factor)
+    
+    if sys.platform == 'darwin':
+        return "1"
 
     # use physical resolution to decide scaling
     if physical_width >= 2560:
-        return "1.5"
-    elif physical_width >= 1920:
         return "1.25"
+    elif physical_width >= 1920:
+        return "1"
     else:
-        return "1.0"
+        return "1"
 
 
 def apply_qt_scaling():
