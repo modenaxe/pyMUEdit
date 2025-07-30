@@ -14,6 +14,7 @@ from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from app.muAnalysisFunctions.PlotEMGFunc import parse_channel_input, plot_emgsig, plot_idr, plot_mupulses, plot_ipts
+from app.muAnalysisFunctions.PlotEMGFunc import plot_differentials, diff, double_diff, sort_rawemg
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
@@ -23,6 +24,7 @@ from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import Prope
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
 import matplotlib.pyplot as plt
+import traceback
 
 
 class PlotEMGToolDialog(QDialog):
@@ -36,7 +38,7 @@ class PlotEMGToolDialog(QDialog):
 
     def init_ui(self):
         self.setWindowTitle("Plot EMG Tool")
-        self.setMinimumWidth(550)
+        self.setMinimumWidth(700)
         self.setModal(True)
         self.setWindowFlags(
             Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint
@@ -81,7 +83,7 @@ class PlotEMGToolDialog(QDialog):
         dropdown_col.setSpacing(10)
         self.matrix_code_dropdown = AnalysisDropdown(
             "Matrix Code",
-            items=["GR08MM1305", "GR08MM1308", "None"],
+            items=["GR08MM1305", "GR04MM1305", "GR10MM0808"],
             parent=self
         )
         dropdown_col.addWidget(self.matrix_code_dropdown)
@@ -197,6 +199,38 @@ class PlotEMGToolDialog(QDialog):
         source_row.addWidget(self.source_mu_input)
         source_row.addStretch(1)
         button_input_col.addLayout(source_row)
+        
+        # Row 6: Derivation + Matrix Column + Config Dropdown
+        derivation_row = QHBoxLayout()
+        derivation_btn = GeneralButton("Derivation", self.handle_derivation_clicked, parent=self)
+        derivation_btn.setFixedWidth(button_width)
+        derivation_btn.setFixedHeight(button_height)
+        derivation_row.addWidget(derivation_btn)
+        derivation_row.addSpacing(8)
+
+        # Matrix column input
+        self.matrix_col_input = QLineEdit()
+        self.matrix_col_input.setPlaceholderText("Matrix Column ('0' or 'col0' etc.)")
+        self.matrix_col_input.setFont(QFont("Arial", 11))
+        self.matrix_col_input.setMinimumHeight(button_height)
+        self.matrix_col_input.setFixedHeight(button_height)
+        self.matrix_col_input.setFixedWidth(textbox_width)
+        self.matrix_col_input.setStyleSheet("""
+            QLineEdit { padding: 8px; border: 2px solid #ced4da; border-radius: 6px; background-color: #ffffff; color: #212529; }
+        """)
+        derivation_row.addWidget(self.matrix_col_input)
+        derivation_row.addSpacing(8)
+
+        # Configuration dropdown using custom AnalysisDropdown
+        self.derivation_config_dropdown = AnalysisDropdown(
+            "Configuration",
+            items=["Single Differential", "Double Differential"],
+            parent=self
+        )
+        derivation_row.addWidget(self.derivation_config_dropdown)
+
+        derivation_row.addStretch(1)
+        button_input_col.addLayout(derivation_row)
 
 
     def has_invalid_filter_inputs(self):
@@ -353,6 +387,83 @@ class PlotEMGToolDialog(QDialog):
             plt.close(fig)
         except Exception as e:
             ErrorDialog('Error plotting Source', 'Error').exec_()
+            
+    def handle_derivation_clicked(self):
+        emgfile = FileUploadFunc.file
+
+        if emgfile is None:
+            ErrorDialog('No file has been loaded', 'Error').exec_()
+            return
+
+        matrix_col_text = self.matrix_col_input.text().strip()
+        if self.derivation_config_dropdown.currentIndex() < 0:
+            ErrorDialog('invalid plot inputs (no differential selected)', 'Error').exec_()
+            return
+
+        if matrix_col_text == "":
+            ErrorDialog('invalid plot inputs (no column name given)', 'Error').exec_()
+            return
+
+        try:
+            if matrix_col_text.isdigit():
+                num = int(matrix_col_text)
+                if num < 0:
+                    raise ValueError()
+                column_name = f"col{num}"
+            else:
+                column_name = matrix_col_text
+        except Exception:
+            ErrorDialog('invalid plot inputs (invalid column input)', 'Error').exec_()
+            return
+
+        derivation_type = self.derivation_config_dropdown.currentText().lower().replace(" ", "_")
+
+        try:
+            if self.matrix_code_dropdown.currentText() != "":
+                code = self.matrix_code_dropdown.currentText()
+            else:
+                code = "GR08MM1305"
+            
+            if self.orientation_dropdown.currentText() != "":
+                orientation = int(self.orientation_dropdown.currentText())
+            else:
+                orientation = 180
+                
+            sorted_rawemg = sort_rawemg(
+                emgfile=emgfile,
+                code=code,
+                orientation=orientation,
+            )
+
+            if derivation_type == "single_differential":
+                differential_data = diff(sorted_rawemg=sorted_rawemg)
+            elif derivation_type == "double_differential":
+                differential_data = double_diff(sorted_rawemg=sorted_rawemg)
+            else:
+                ErrorDialog('Invalid derivation type selected', 'Error').exec_()
+                return
+
+            fig = plot_differentials(
+                emgfile=emgfile,
+                differential=differential_data,
+                column=column_name,
+                timeinseconds=self.time_seconds_checkbox.isChecked(),
+                addrefsig=self.ref_signal_checkbox.isChecked(),
+                tight_layout=True,
+                showimmediately=False
+            )
+
+            canvas = SaveablePlot(fig)
+            self.analysis_plot.display_plot(canvas)
+            plt.close(fig)
+
+        except Exception as e:
+            print("Full traceback:")
+            traceback.print_exc()
+            ErrorDialog(f'Error plotting Derivation:\n{str(e)}', 'Error').exec_()
+
+
+
 
         
 # general class for any inner inputs inside dialog
