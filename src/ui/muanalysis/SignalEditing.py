@@ -342,7 +342,7 @@ class SignalEditing(QWidget):
                     self.mu.file["REF_SIGNAL"][0] = self.mu.file["REF_SIGNAL"][0] - offset
                     self.mu.plot_refsig(self.mu.file, self.analysis_plot) 
                 else:
-                    SelectRange(self.analysis_plot, self.two_point)
+                    SelectRange(self.analysis_plot, self.two_point, False)
             else :
                 # subtracting 
                 offset = self.mu.file["REF_SIGNAL"].iloc[0:auto].mean()
