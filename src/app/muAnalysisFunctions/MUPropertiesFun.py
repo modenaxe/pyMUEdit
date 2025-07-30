@@ -62,11 +62,17 @@ class MUPropertiesFunc:
         ):
             ErrorDialog("You are missing Inputs", "Error").exec_()
             return
+        self.basic = [self.convert(rec), self.convert(start)]
+        try:
+            self.basic[0] = int(self.basic[0])
+            self.basic[1] = int(self.basic[1])
+        except:
+            ErrorDialog("incorrect input form", "Error").exec_()
+            return
         over.hide()
         self.over = over
         self.analysis_plot = analysis_plot
-        self.basic = [self.convert(rec), self.convert(start)]
-        SelectRange(analysis_plot, self.two_point)
+        SelectRange(analysis_plot, self.two_point, False)
         
     def compute_thresh(self, event_, type_):
         file = FileUploadFunc.file
