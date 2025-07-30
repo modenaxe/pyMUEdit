@@ -209,7 +209,7 @@ class MUAnalysis(QWidget):
 
         # force anaylsis 
         force_analysis = ForceAnalysisSection(
-            sidebar, self.mu, self.analysis_plot
+            sidebar, self.analysis_plot
         )
         sidebar_layout.addWidget(force_analysis)
 

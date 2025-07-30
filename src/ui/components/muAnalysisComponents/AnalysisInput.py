@@ -30,6 +30,7 @@ class AnalysisInput(QWidget):
             QLineEdit {{
                 background-color: {CleanTheme.ANALYSIS_BG_CARD};
                 color: {CleanTheme.TEXT_PRIMARY};
+                border: 1px solid {CleanTheme.BORDER};
                 border-radius: 4px;
                 padding-left: 10px;
                 height: 40px;
