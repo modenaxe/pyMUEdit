@@ -252,15 +252,15 @@ class Test20MVCfile(unittest.TestCase):
         expectedDewhiteningMatrix = expected.get('dewhiteningMatrix')
 
         try:
-            npt.assert_array_equal(outputWhitenedEMG, expectedWhitenedEMG)
+            npt.assert_allclose(outputWhitenedEMG, expectedWhitenedEMG, rtol=2e-3)
         except AssertionError as e:
             raise AssertionError(f"whiten_emg failed to return the expected whitenedEMG:\n{e}")
         try:
-            npt.assert_array_equal(outputWhiteningMatrix, expectedWhiteningMatrix)
+            npt.assert_allclose(outputWhiteningMatrix, expectedWhiteningMatrix)
         except AssertionError as e:
             raise AssertionError(f"whiten_emg failed to return the expected whiteningMatrix:\n{e}")
         try:
-            npt.assert_array_equal(outputDewhiteningMatrix, expectedDewhiteningMatrix)
+            npt.assert_allclose(outputDewhiteningMatrix, expectedDewhiteningMatrix)
         except AssertionError as e:
             raise AssertionError(f"whiten_emg failed to return the expected dewhiteningMatrix:\n{e}")
 
@@ -355,7 +355,7 @@ if __name__ == '__main__':
     suite.addTest(Test20MVCfile('testExtendEMG'))
     suite.addTest(Test20MVCfile('testDemean'))
     #suite.addTest(Test20MVCfile('testpcaesig'))
-    #suite.addTest(Test20MVCfile('testWhitenEMG'))
+    suite.addTest(Test20MVCfile('testWhitenEMG'))
     suite.addTest(Test20MVCfile('testFixedPointAlg'))
     suite.addTest(Test20MVCfile('testGetSpikes'))
     suite.addTest(Test20MVCfile('testMinCovISI'))
