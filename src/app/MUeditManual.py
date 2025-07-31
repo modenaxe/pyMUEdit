@@ -41,7 +41,7 @@ class MUeditManual(QMainWindow):
     # Add signal to return to dashboard if needed
     return_to_dashboard_requested = pyqtSignal()
 
-    def __init__(self, filename, pathname, parent=None):
+    def __init__(self, filename=None, pathname=None, parent=None):
         super().__init__(parent)
 
         # Initialize main data structures
@@ -155,7 +155,6 @@ class MUeditManual(QMainWindow):
 
         try:
             filepath = os.path.join(self.pathname, self.filename)
-            print(filepath)
             files = sio.loadmat(filepath)
 
             # Initialize the MUedition data structure
