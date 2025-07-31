@@ -1,8 +1,8 @@
 '''
-To run a test 
-1. makesure you have the correct output files from matlab in the tests folder, see below for how the files should be named (to make folder for it, but git wont take big files)
-2. scroll to bottom and uncomment the desired test
-3. make sure your current directory is tests 
+To run these tests:
+1. cd into the tests/ folder
+2. run `matlab -nodisplay -nosplash -nodesktop -r 'run(\'gen_inputs.m\'); exit()'` to generate the necessary .mat files
+3. execute this file
 '''
 
 import unittest
@@ -177,10 +177,10 @@ class Test20MVCfile(unittest.TestCase):
     def testNotchFilter(self):
         if not os.path.exists(expOutNotchSig):
             print("expected notch_filter output file not found!")
-        expected = loadmat(expOutNotchSig).get("filteredsignal")
-        output = notch_filter(expected.get("signal")[0][0][0], expected.get("signal")[0][0][3])
+        expected = loadmat(expOutNotchSig)
+        output = notch_filter(expected.get("signal")[0][0][0], float(expected.get("signal")[0][0][3][0][0]))
         try:
-            npt.assert_array_equal(np.asarray(output), expected)
+            npt.assert_allclose(np.asarray(output), expected.get("filteredsignal"))
         except AssertionError as e:
             raise AssertionError(f"notch_filter failed to return the expected signal:\n{e}")
         
@@ -350,7 +350,7 @@ if __name__ == '__main__':
     suite.addTest(Test20MVCfile('testOpenOTBPlus')) 
     # suite.addTest(Test20MVCfile('testConvolutiveSphering')) 
     # notchfilter, bandpass, extend and whitening will be merged into convolutivesphereing
-    #suite.addTest(Test20MVCfile('testNotchFilter')) 
+    suite.addTest(Test20MVCfile('testNotchFilter'))
     #suite.addTest(Test20MVCfile('testBandpassFilter'))
     #suite.addTest(Test20MVCfile('testExtendEMG'))
     suite.addTest(Test20MVCfile('testDemean'))
