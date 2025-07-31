@@ -84,6 +84,5 @@ class PICDialog(QDialog):
         avg_method = "all" if self.avg_method_dropdown.get() == "All" else "test_unit_average"
         clean = False if not self.clean_checkbox.checkState() else True
         
-        print("computing... takes a second...")
         compute_deltaf(average_method=avg_method, normalisation=normalisation, clean=clean)
         
