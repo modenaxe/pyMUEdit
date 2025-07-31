@@ -38,7 +38,7 @@ class GoodSlider(QWidget):
 
         class NewSlider(QSlider):
             def keyPressEvent(self, event):
-                if event.key() in (Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Up, Qt.Key.Key_Down):
+                if event.key():
                     event.ignore()
                     
         self.slider = NewSlider(orientation)

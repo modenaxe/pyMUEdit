@@ -1091,7 +1091,9 @@ class MUeditManual(QMainWindow):
             self.aa_fix = True
             pg.setConfigOptions(antialias=True)
             self.spiketrain_plot.removeItem(self.spiketrainCurves[1])
+            self.spiketrain_plot.removeItem(self.spiketrainCurves[3])
             self.spiketrain_plot.addItem(self.spiketrainCurves[0])
+            self.spiketrain_plot.addItem(self.spiketrainCurves[3])
         else:
             self.aa_fix = False
             self.slider_value_changed(self.zoom_slider.get_slider_value())
