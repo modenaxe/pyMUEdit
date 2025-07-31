@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import os
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from ui.components.SaveablePlot import SaveablePlot
+from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from PyQt5.QtCore import Qt
 class SelectRange:
@@ -42,7 +43,14 @@ class SelectRange:
     # after pressing enter the graph returns to original view
     def on_press(self, event):
         if event.key == 'enter':
-            self.func(round(self.line[0].get_xdata()[0]),round(self.line[1].get_xdata()[0]))
+            try:
+                self.func(round(self.line[0].get_xdata()[0]),round(self.line[1].get_xdata()[0]))
+            except:
+                ErrorDialog("Bad range of values", "Error").exec_()
+                self.analysis_plot.revert()
+                return
+            else:
+                self.analysis_plot.revert()
 
     # creates intervative canvas for the centre panel
     def set_up_plot(self):

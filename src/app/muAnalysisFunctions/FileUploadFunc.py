@@ -24,6 +24,7 @@ from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
+from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
 
 # This class holds all the functions used for file uploading
@@ -340,17 +341,21 @@ class FileUploadFunc:
         IPTS.columns = np.arange(len(IPTS.columns))
         # Verify to have the IPTS
         if IPTS.empty:
+            ErrorDialog("(IPTS) not found", "Error").exec_()
             raise ValueError(
                 "\nSource for decomposition (IPTS) not found in the .mat file\n"
             )
+            return
         # Extract the BINARY_MUS_FIRING and rename columns progressively
         BINARY_MUS_FIRING = df.filter(regex="Decomposition of")
         BINARY_MUS_FIRING.columns = np.arange(len(BINARY_MUS_FIRING.columns))
         # Verify to have the BINARY_MUS_FIRING
         if BINARY_MUS_FIRING.empty:
+            ErrorDialog("(BINARY_MUS_FIRING) not found", "Error").exec_()
             raise ValueError(
                 "\nDecomposition of (BINARY_MUS_FIRING) not found in the .mat file\n"
             )
+            return
         return IPTS, BINARY_MUS_FIRING
 
     # OPENHDEMG
@@ -413,6 +418,7 @@ class FileUploadFunc:
                 expectedchannels = int(OTBelectrodes_Nelectrodes[matrix])
                 break
         if expectedchannels is np.nan:
+            ErrorDialog("Matrix not recognised", "Error").exec_()
             raise ValueError("Matrix not recognised")
         if len(emg_df.columns) == expectedchannels:
             emg_df.columns = np.arange(len(emg_df.columns))
@@ -421,6 +427,7 @@ class FileUploadFunc:
         else:
             # This check here is usefull to control that only the appropriate
             # elements have been included in the .mat file exported from OTBiolab+.
+            ErrorDialog("Failure in searching the raw signal", "Error").exec_()
             raise ValueError(
                 "\nFailure in searching the raw signal, please check that it is present in the .mat file and that only the accepted parameters have been included\n"
             )
@@ -479,6 +486,7 @@ class FileUploadFunc:
             "1.5.9.3",
         ]
         if version not in valid_versions:
+            ErrorDialog(f"Specified version is not valid. Use one of:\n{valid_versions}", "Error").exec_()
             raise ValueError(
                 f"\nSpecified version is not valid. Use one of:\n{valid_versions}\n"
             )

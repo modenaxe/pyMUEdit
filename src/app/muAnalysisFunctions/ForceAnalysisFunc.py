@@ -66,4 +66,3 @@ class ForceAnalysisFunc():
         store.append_analysis_hist(
         "RFD", rfd.to_dict("records")
         )
-        self.analysis_plot.revert()
