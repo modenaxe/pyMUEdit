@@ -83,7 +83,7 @@ class PICDialog(QDialog):
         normalisation = "False" if self.normalisation_dropdown.get() == "False" else "ctrl_max_desc"
         avg_method = "all" if self.avg_method_dropdown.get() == "All" else "test_unit_average"
         clean = False if not self.clean_checkbox.checkState() else True
-        print(f"normalisation {normalisation}, avg method {avg_method}, clean {clean}")
         
+        print("computing... takes a second...")
         compute_deltaf(average_method=avg_method, normalisation=normalisation, clean=clean)
         

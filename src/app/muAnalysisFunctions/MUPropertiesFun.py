@@ -264,7 +264,7 @@ class MUPropertiesFunc:
         )
         covsteady = pd.DataFrame([{"COV_steady": covsteady}])
         exportable_df = pd.concat([exportable_df, covsteady], axis=1)
-        print(exportable_df)
+
         self.results.append_analysis_hist(
             "Basic Properties", exportable_df.to_dict("records")
         )

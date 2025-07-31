@@ -62,7 +62,6 @@ class MUAnalysis(QWidget):
         self.mu = FileUploadFunc()
         self.analysis_plot = AnalysisPlot()
         self.prop = MUPropertiesFunc()
-        print(self.analysis_plot)
 
         self.colors = {
             "bg_main": "#f8f9fa",
