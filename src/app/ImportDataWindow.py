@@ -9,7 +9,6 @@ import pyqtgraph as pg
 
 # Import UI setup function
 from ui.ImportDataWindowUI import setup_ui
-from ui.components.ConfigurationPanel import ConfigurationPanel
 from ui.components.SegmentSessionPage import SegmentSessionPage
 from ui.components.VisualisationPage import VisualisationPage
 
@@ -20,7 +19,6 @@ sys.path.append(project_root)
 sys.path.append(current_dir)
 
 # Import needed functions from other modules
-from core.utils.config_and_input.open_otb_plus import open_otb_plus
 from core.EmgDecomposition import offline_EMG as EMG_offline_EMG
 from workers.SaveMatWorker import SaveMatWorker
 from enum import Enum
@@ -194,7 +192,7 @@ class ImportDataWindow(QMainWindow):
                 fsamp = []
                 if ext == ".otb+":
                     # Call the open_otb_plus function with the correct parameters
-                    self.emg_obj.open_otb_plus(full_path)
+                    self.emg_obj.open_otb_plus(full_path, self)
 
                     # Create a default save name for .mat files
                     savename = os.path.join(path, file + "_processed.mat")
@@ -258,7 +256,6 @@ class ImportDataWindow(QMainWindow):
                     self.segment_session = SegmentSessionPage(full_path)
                     self.segment_session_button.setEnabled(True)
                 else:
-                    self.config_panel = ConfigurationPanel(self.emg_obj)
                     self.set_configuration_button.setEnabled(True)
 
             except Exception as e:
