@@ -1,58 +1,83 @@
 import numpy as np
-import scipy
+from scipy import fft
 
 
-def notch_filter(signal, fsamp, to_han=False):
+def process_channel(channel_data, fsamp):
     """
-    Implements a notch filter to remove frequency interference.
+    Process a single channel for notch filtering.
 
-    Identifies frequency components with magnitudes greater than 5 standard deviations
-    away from the median frequency component magnitude and removes them from the signal.
+    Args:
+        channel_data: Signal data for one channel
+        fsamp: Sampling frequency
+
+    Returns:
+        filtered_channel: Notch filtered channel data
     """
+    signal_length = len(channel_data)
+    bandwidth_as_index = int(round(4 / (fsamp / signal_length)))
+    half_bandwidth = bandwidth_as_index // 2
+    window_size = int(fsamp)
 
-    bandwidth_as_index = int(round(4 * (np.shape(signal)[1] / fsamp)))
-    filtered_signal = np.zeros([np.shape(signal)[0], np.shape(signal)[1]])
+    # Compute FFT
+    fourier_signal = fft.fft(channel_data)
+    fourier_interf = np.zeros(signal_length, dtype=complex)
 
-    for chan in range(np.shape(signal)[0]):
+    # Process in windows with vectorized operations
+    for interval in range(0, signal_length - window_size, window_size):
+        window_start = interval + 1
+        window_end = min(interval + window_size + 1, signal_length)
 
-        if to_han:
-            hwindow = scipy.signal.hann(np.shape(signal[chan, :])[0])
-            final_signal = signal[chan, :] * hwindow
-        else:
-            final_signal = signal[chan, :]
+        # Skip empty windows
+        if window_end <= window_start:
+            continue
 
-        fourier_signal = np.fft.fft(final_signal)
-        fourier_interf = np.zeros(len(fourier_signal), dtype="complex128")
-        interf2remove = np.zeros(len(fourier_signal), dtype=np.int32)
-        window = fsamp
-        tracker = 0
+        # Get window segment
+        window_segment = np.abs(fourier_signal[window_start:window_end])  # type:ignore
 
-        for interval in range(0, len(fourier_signal) - window + 1, window):
-            median_freq = np.median(abs(fourier_signal[interval + 1 : interval + window + 1]))
-            std_freq = np.std(abs(fourier_signal[interval + 1 : interval + window + 1]))
-            # interference is defined as when the magnitude of a given frequency component in the fourier spectrum
-            # is greater than 5 times the std, relative to the median magnitude
-            label_interf = list(
-                np.where(abs(fourier_signal[interval + 1 : interval + window + 1]) > median_freq + 5 * std_freq)[0]
-            )
-            # np.where gives tuple, element access to the array
-            # need to shift these labels to make sure they are not relative to the window only, but to the whole signal
-            label_interf = [x + interval + 1 for x in label_interf]
+        # Calculate statistics
+        median_freq = np.median(window_segment)
+        # ddof=1 makes `np.std` behave like matlab's `std`
+        std_freq = np.std(window_segment, ddof=1)
+        threshold = median_freq + 5 * std_freq
 
-            if label_interf:
-                for i in range(int(-np.floor(bandwidth_as_index / 2)), int(np.floor(bandwidth_as_index / 2) + 1)):
+        # Find interference indices (vectorized)
+        interference_indices = np.nonzero(window_segment > threshold)[0] + window_start
 
-                    temp_shifted_list = [x + i for x in label_interf]
-                    interf2remove[tracker : tracker + len(label_interf)] = temp_shifted_list
-                    tracker = tracker + len(label_interf)
+        # Apply bandwidth around each interference
+        for idx in interference_indices:
+            start_idx = max(0, idx - half_bandwidth)
+            end_idx = min(signal_length, idx + half_bandwidth + 1)
+            fourier_interf[start_idx:end_idx] = fourier_signal[start_idx:end_idx]
 
-        indexf2remove = np.where(np.logical_and(interf2remove >= 0, interf2remove <= len(fourier_signal) / 2))[0]
-        fourier_interf[interf2remove[indexf2remove]] = fourier_signal[interf2remove[indexf2remove]]
-        corrector = int(len(fourier_signal) - np.floor(len(fourier_signal) / 2) * 2)
-
-        fourier_interf[int(np.ceil(len(fourier_signal) / 2)) :] = np.flip(
-            np.conj(fourier_interf[1 : int(np.ceil(len(fourier_signal) / 2) + 1 - corrector)])
+    # Apply symmetry for real IFFT output
+    if np.any(fourier_interf != 0):
+        midpoint = signal_length // 2
+        # Skip DC component (index 0)
+        fourier_interf[signal_length - midpoint + 1 :] = np.conj(
+            fourier_interf[1:midpoint][::-1]
         )
-        filtered_signal[chan, :] = signal[chan, :] - np.fft.ifft(fourier_interf).real
 
-    return filtered_signal
+    # Apply IFFT and subtract from original
+    inverse_fft = fft.ifft(fourier_interf).real  # type:ignore
+    filtered_channel = channel_data - inverse_fft
+
+    return filtered_channel
+
+
+def notch_filter(signal, fsamp):
+    """
+    Notch filter implementation.
+
+    Args:
+        signal: Input EMG signal array (channels × samples)
+        fsamp: Sampling frequency in Hz
+
+    Returns:
+        filtered_signal: Notch filtered signal
+    """
+
+    # Ensure we have a 2D array
+    if signal.ndim == 1:
+        signal = signal.reshape(1, -1)
+
+    return [process_channel(channel, fsamp) for channel in signal]
