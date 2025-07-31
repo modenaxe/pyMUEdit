@@ -2,6 +2,7 @@ import scipy
 import numpy as np
 from typing import Dict, List, Tuple, Any, Optional, Union
 
+from app import ImportDataWindow
 from core.utils.config_and_input.open_mat import open_mat
 
 from .utils.config_and_input.open_otb_plus import open_otb_plus
@@ -101,14 +102,14 @@ class offline_EMG(EMG):
             "cov": 0,  # Coefficient of variation
         }
 
-    def open_otb_plus(self, inputfile: str) -> None:
+    def open_otb_plus(self, inputfile: str, import_window: ImportDataWindow) -> None:
         """
         Opens OTB file and extracts data.
         This is now a wrapper around the standalone open_otb_plus function.
         """
         print(f"Opening OTB file: {inputfile}")
 
-        self.signal_dict = open_otb_plus(inputfile)
+        self.signal_dict = open_otb_plus(inputfile, import_window)
         self.decomp_dict = {}  # initialising this dictionary here for later use
 
         # initialising a dictionary that is an empty nested list

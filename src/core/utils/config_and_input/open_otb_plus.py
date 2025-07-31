@@ -7,20 +7,25 @@ from typing import Any
 
 import numpy as np
 
+from app import ImportDataWindow
+from ui.components.ConfigurationPanel import ConfigurationPanel
+
 POWER_SUPPLY = 3.3  # volts, I assume?
 
 # The kinds of channels MUedit distinguishes between.
 
-# EMG data which is part of a grid.
-GRID_CHANNEL = 0
 # EMG data which is not part of a grid (or which is part of a grid that's too
 # small - grids with 16 channels get lumped in here too).
 NON_GRID_CHANNEL = 1
+# EMG data which is part of a grid.
+GRID_CHANNEL_16 = 2
+GRID_CHANNEL_32 = 3
+GRID_CHANNEL_64 = 4
 # Auxiliary data, e.g. force exerted by muscles.
-AUXILIARY_CHANNEL = 2
+AUXILIARY_CHANNEL = 5
 
 
-def open_otb_plus(inputfile: str) -> dict[str, Any]:
+def open_otb_plus(inputfile: str, import_window: ImportDataWindow) -> dict[str, Any]:
     """
     Opens OTB file and extracts data.
     Moved from offline_EMG class to a standalone function.
@@ -77,30 +82,21 @@ def open_otb_plus(inputfile: str) -> dict[str, Any]:
             adapter_gain = float(adapter.attrib["Gain"])
             start_index = int(adapter.attrib["ChannelStartIndex"])
 
+            # Logic taken from MUedit
             for channel in adapter:
                 index = start_index + int(channel.attrib["Index"])
-
                 description = channel.attrib["Description"]
-                # Logic taken from MUedit.
-                if (
-                    "General" in description
-                    or "iEMG" in description
-                    or "16" in description
-                ):
+                if "General" in description or "iEMG" in description:
                     chan_kinds[index] = NON_GRID_CHANNEL
-                elif (
-                    "32" in description
-                    or "64" in description
-                    or "Splitter" in description
-                ):
-                    chan_kinds[index] = GRID_CHANNEL
+                elif "16" in description:
+                    chan_kinds[index] = GRID_CHANNEL_16
+                elif "32" in description:
+                    chan_kinds[index] = GRID_CHANNEL_32
+                elif "64" in description or "Splitter" in description:
+                    chan_kinds[index] = GRID_CHANNEL_64
                 else:
                     chan_kinds[index] = AUXILIARY_CHANNEL
 
-                # Logic taken from MUedit.
-                #
-                # TODO: Is this needed? Our data's from a Quattrocentro but has AdapterIndexes
-                # that we can use normally.
                 if "QUATTROCENTO" in xml.attrib["Name"]:
                     prefix = channel.attrib["Prefix"]
                     if "MULTIPLE IN" in prefix:
@@ -145,21 +141,29 @@ def open_otb_plus(inputfile: str) -> dict[str, Any]:
             )
         print("Conversion complete")
 
-        grid_data = emg_data[chan_kinds == GRID_CHANNEL]
-        non_grid_data = emg_data[chan_kinds == NON_GRID_CHANNEL]
+        # get signal data components
+        grid_data = emg_data[(chan_kinds == GRID_CHANNEL_32) | (chan_kinds == GRID_CHANNEL_64)]
+        non_grid_data = emg_data[chan_kinds < GRID_CHANNEL_32]
         auxiliary_data = emg_data[chan_kinds == AUXILIARY_CHANNEL]
 
-        auxiliary_names = [
-            chan_names[i]
-            for i, kind in enumerate(chan_kinds)
-            if kind == AUXILIARY_CHANNEL
-        ]
+        chan_names_2 = []
+        chan_muscles_2 = []
+        auxiliary_names = []
+        # grid and muscle labelling
+        for i, grid in enumerate(chan_names):
+            if chan_kinds[i] == GRID_CHANNEL_32 or chan_kinds[i] == GRID_CHANNEL_64:
+                chan_names_2.append(grid)
+                chan_muscles_2.append(chan_muscles[i])
+            elif chan_kinds[i] == AUXILIARY_CHANNEL:
+                auxiliary_names.append(grid)
+
+        chan_names = chan_names_2
+        chan_muscles = chan_muscles_2
+        chan_adapters = chan_adapters[(chan_kinds == GRID_CHANNEL_32) | (chan_kinds == GRID_CHANNEL_64)]
 
         # The sets of adapters and muscles which are connected to / measured by grids.
-        grid_adapter_set = set(chan_adapters[chan_kinds == GRID_CHANNEL])
-        grid_muscle_set = set(
-            name for i, name in enumerate(chan_muscles) if chan_kinds[i] == GRID_CHANNEL
-        )
+        grid_adapter_set = sorted(set(chan_adapters))
+        grid_muscle_set = sorted(set(chan_muscles))
 
         # The name of each grid.
         grid_names = []
@@ -167,7 +171,7 @@ def open_otb_plus(inputfile: str) -> dict[str, Any]:
         grid_muscles = []
         if len(grid_adapter_set) >= len(grid_muscle_set):
             ngrids = len(grid_adapter_set)
-            for adapter in grid_adapter_set:
+            for i, adapter in enumerate(grid_adapter_set):
                 chan_index = next(
                     i
                     for i, other_adapter in enumerate(chan_adapters)
@@ -215,7 +219,7 @@ def open_otb_plus(inputfile: str) -> dict[str, Any]:
             target = None
 
     # create a dictionary containing all relevant signal parameters and data
-    return {
+    emg_obj = {
         "data": grid_data,
         "auxiliary": auxiliary_data,
         "emgnotgrid": non_grid_data,
@@ -228,3 +232,67 @@ def open_otb_plus(inputfile: str) -> dict[str, Any]:
         "path": path,
         "target": target,
     }  # discard the other muscle and grid entries, not relevant
+
+    # set the configuration (in the configuration panel)
+    import_window.config_panel = set_configuration(emg_obj, grid_adapter_set, grid_names, grid_muscles)
+
+    return emg_obj
+
+def set_configuration(emg_obj, grid_adapter_set, gridname, muscle):
+    config_panel = ConfigurationPanel(emg_obj)
+
+    # enable splitter 1 (and fill in data)
+    if 1 in grid_adapter_set:
+        i = grid_adapter_set.index(1)
+        config_panel.splitter1.checkbox.setChecked(True)
+        config_panel.splitter1.checkbox.setVisible(False)
+        config_panel.splitter1.setEnabled(True)
+        config_panel.splitter1.gridname_dropdown.dropdown.setCurrentText(gridname[i])
+        config_panel.splitter1.muscle_input.input.setText(muscle[i])
+
+    # enable splitter 2 (and fill in data)
+    if 2 in grid_adapter_set:
+        i = grid_adapter_set.index(2)
+        config_panel.splitter2.checkbox.setChecked(True)
+        config_panel.splitter2.checkbox.setVisible(False)
+        config_panel.splitter2.setEnabled(True)
+        config_panel.splitter2.gridname_dropdown.dropdown.setCurrentText(gridname[i])
+        config_panel.splitter2.muscle_input.input.setText(muscle[i])
+
+    # enable multiple input 1 (and fill in data)
+    if 3 in grid_adapter_set:
+        i = grid_adapter_set.index(3)
+        config_panel.mul_input_1.checkbox.setChecked(True)
+        config_panel.mul_input_1.checkbox.setVisible(False)
+        config_panel.mul_input_1.setEnabled(True)
+        config_panel.mul_input_1.gridname_dropdown.dropdown.setCurrentText(gridname[i])
+        config_panel.mul_input_1.muscle_input.input.setText(muscle[i])
+
+    # enable multiple input 2 (and fill in data)
+    if 4 in grid_adapter_set:
+        i = grid_adapter_set.index(4)
+        config_panel.mul_input_2.checkbox.setChecked(True)
+        config_panel.mul_input_2.checkbox.setVisible(False)
+        config_panel.mul_input_2.setEnabled(True)
+        config_panel.mul_input_2.gridname_dropdown.dropdown.setCurrentText(gridname[i])
+        config_panel.mul_input_2.muscle_input.input.setText(muscle[i])
+
+    # enable multiple input 3 (and fill in data)
+    if 5 in grid_adapter_set:
+        i = grid_adapter_set.index(5)
+        config_panel.mul_input_3.checkbox.setChecked(True)
+        config_panel.mul_input_3.checkbox.setVisible(False)
+        config_panel.mul_input_3.setEnabled(True)
+        config_panel.mul_input_3.gridname_dropdown.dropdown.setCurrentText(gridname[i])
+        config_panel.mul_input_3.muscle_input.input.setText(muscle[i])
+
+    # enable multiple input 4 (and fill in data)
+    if 6 in grid_adapter_set:
+        i = grid_adapter_set.index(6)
+        config_panel.mul_input_4.checkbox.setChecked(True)
+        config_panel.mul_input_4.checkbox.setVisible(False)
+        config_panel.mul_input_4.setEnabled(True)
+        config_panel.mul_input_4.gridname_dropdown.dropdown.setCurrentText(gridname[i])
+        config_panel.mul_input_4.muscle_input.input.setText(muscle[i])
+
+    return config_panel

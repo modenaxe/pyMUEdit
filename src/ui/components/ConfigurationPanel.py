@@ -2,7 +2,7 @@ import os
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, QCheckBox, QScrollArea
 from PyQt5.QtGui import QFont, QPixmap, QColor, QPainter, QPen
-from PyQt5.QtCore import Qt, QPoint, QRect
+from PyQt5.QtCore import Qt, QRectF
 
 from ui.components.ActionButton import ActionButton
 from ui.components.CleanCard import CleanCard
@@ -62,7 +62,7 @@ class QuattrocentoVisualisation(QLabel):
         for lamp in self.lamps.values():
             painter.setBrush(lamp[1])
             painter.setPen(QPen(lamp[1].darker(150), 2))
-            painter.drawRect(lamp[0])
+            painter.drawRoundedRect(lamp[0], 10, 10)
 
         painter.end()
 
@@ -71,7 +71,7 @@ class ConfigurationPanel(QWidget):
         super().__init__(parent)
 
         self.emg_obj = emg_obj
-        self.data = emg_obj.signal_dict["data"]
+        self.data = emg_obj["data"]
 
         self.setMinimumSize(1300, 750)
 
@@ -89,8 +89,12 @@ class ConfigurationPanel(QWidget):
         left_layout.setSpacing(15)
 
         # signal range dropdown panel
-        left_layout.addWidget(InputPanel("Splitter #1", "GR04MM1305", "", self.checkbox_state_change))
-        left_layout.addWidget(InputPanel("Splitter #2", "GR04MM1305", "", self.checkbox_state_change))
+        self.splitter1 = InputPanel("Splitter #1", "GR04MM1305", "", self.checkbox_state_change)
+        self.splitter1.setEnabled(False)
+        self.splitter2 = InputPanel("Splitter #2", "GR04MM1305", "", self.checkbox_state_change)
+        self.splitter2.setEnabled(False)
+        left_layout.addWidget(self.splitter1)
+        left_layout.addWidget(self.splitter2)
 
         left_layout.addStretch()
 
@@ -110,25 +114,27 @@ class ConfigurationPanel(QWidget):
         page_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         middle_container.layout.addWidget(page_title)
 
-        # create the quattrocento visualisation
         image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "Quattrocento.jpg")
+        if not os.path.exists(image_path):
+            raise FileExistsError("Quattrocento diagram not found")
 
+        # create the quattrocento visualisation
         self.quattrocento_label = QuattrocentoVisualisation(image_path)
         # Create lamps for splitters 1 and 2
         self.quattrocento_label.add_lamp("Splitter #1",
-                                         QRect(22, 75, 315, 65), QColor(255, 0, 0, 100))
+                                         QRectF(22, 75, 315, 65), QColor(255, 0, 0, 100))
         self.quattrocento_label.add_lamp("Splitter #2",
-                                         QRect(365, 75, 315, 65), QColor(255, 0, 0, 100))
+                                         QRectF(365, 75, 315, 65), QColor(255, 0, 0, 100))
 
         # Create lamps for mixed inputs 1-4
         self.quattrocento_label.add_lamp("Multiple Inputs #1",
-                                         QRect(14, 243, 155, 40), QColor(255, 0, 0, 100))
+                                         QRectF(14, 243, 155, 40), QColor(255, 0, 0, 100))
         self.quattrocento_label.add_lamp("Multiple Inputs #2",
-                                         QRect(183, 243, 155, 40), QColor(255, 0, 0, 100))
+                                         QRectF(183, 243, 155, 40), QColor(255, 0, 0, 100))
         self.quattrocento_label.add_lamp("Multiple Inputs #3",
-                                         QRect(351, 243, 155, 40), QColor(255, 0, 0, 100))
+                                         QRectF(351, 243, 155, 40), QColor(255, 0, 0, 100))
         self.quattrocento_label.add_lamp("Multiple Inputs #4",
-                                         QRect(520, 243, 155, 40), QColor(255, 0, 0, 100))
+                                         QRectF(520, 243, 155, 40), QColor(255, 0, 0, 100))
         middle_container.layout.addWidget(self.quattrocento_label)
 
         # add number of channels input box
@@ -151,14 +157,22 @@ class ConfigurationPanel(QWidget):
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(15)
 
-        right_layout.addWidget(InputPanel("Multiple Inputs #1", "GR04MM1305", "Tibialis Anterior",
-                                          self.checkbox_state_change))
-        right_layout.addWidget(InputPanel("Multiple Inputs #2", "GR04MM1305", "Tibialis Anterior",
-                                          self.checkbox_state_change))
-        right_layout.addWidget(InputPanel("Multiple Inputs #3", "GR04MM1305", "",
-                                          self.checkbox_state_change))
-        right_layout.addWidget(InputPanel("Multiple Inputs #4", "GR04MM1305", "",
-                                          self.checkbox_state_change))
+        self.mul_input_1 = InputPanel("Multiple Inputs #1", "GR04MM1305", "Tibialis Anterior",
+                                      self.checkbox_state_change)
+        self.mul_input_1.setEnabled(False)
+        self.mul_input_2 = InputPanel("Multiple Inputs #2", "GR04MM1305", "Tibialis Anterior",
+                                      self.checkbox_state_change)
+        self.mul_input_2.setEnabled(False)
+        self.mul_input_3 = InputPanel("Multiple Inputs #3", "GR04MM1305", "",
+                                      self.checkbox_state_change)
+        self.mul_input_3.setEnabled(False)
+        self.mul_input_4 = InputPanel("Multiple Inputs #4", "GR04MM1305", "",
+                                      self.checkbox_state_change)
+        self.mul_input_4.setEnabled(False)
+        right_layout.addWidget(self.mul_input_1)
+        right_layout.addWidget(self.mul_input_2)
+        right_layout.addWidget(self.mul_input_3)
+        right_layout.addWidget(self.mul_input_4)
 
         right_layout.addStretch()
         scroll_area.setWidget(right_container)
