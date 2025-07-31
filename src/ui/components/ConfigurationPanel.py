@@ -73,16 +73,22 @@ class ConfigurationPanel(QWidget):
         self.emg_obj = emg_obj
         self.data = emg_obj["data"]
 
-        self.setMinimumSize(1300, 750)
+        self.setMinimumSize(1200, 700)
 
         # Setup main layout
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(15, 15, 15, 15)
         main_layout.setSpacing(15)
 
+        # Add title
+        page_title = QLabel("Set Configuration")
+        page_title.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        page_title.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+        main_layout.addWidget(page_title)
+
         # left panel
         left_container = QWidget()
-        left_container.setMinimumWidth(250)
+        left_container.setMinimumWidth(200)
 
         left_layout = QVBoxLayout(left_container)
         left_layout.setContentsMargins(0, 0, 0, 0)
@@ -147,20 +153,20 @@ class ConfigurationPanel(QWidget):
         # right panel
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setMinimumWidth(250)
+        scroll_area.setMinimumWidth(200)
         CleanScrollBar.apply(scroll_area)
         right_container = QWidget()
-        right_container.setMinimumWidth(250)
+        right_container.setMinimumWidth(200)
         right_container.setContentsMargins(0, 0, 15, 0)
 
         right_layout = QVBoxLayout(right_container)
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(15)
 
-        self.mul_input_1 = InputPanel("Multiple Inputs #1", "GR04MM1305", "Tibialis Anterior",
+        self.mul_input_1 = InputPanel("Multiple Inputs #1", "GR04MM1305", "",
                                       self.checkbox_state_change)
         self.mul_input_1.setEnabled(False)
-        self.mul_input_2 = InputPanel("Multiple Inputs #2", "GR04MM1305", "Tibialis Anterior",
+        self.mul_input_2 = InputPanel("Multiple Inputs #2", "GR04MM1305", "",
                                       self.checkbox_state_change)
         self.mul_input_2.setEnabled(False)
         self.mul_input_3 = InputPanel("Multiple Inputs #3", "GR04MM1305", "",
