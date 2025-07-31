@@ -352,7 +352,7 @@ if __name__ == '__main__':
     # notchfilter, bandpass, extend and whitening will be merged into convolutivesphereing
     suite.addTest(Test20MVCfile('testNotchFilter'))
     #suite.addTest(Test20MVCfile('testBandpassFilter'))
-    #suite.addTest(Test20MVCfile('testExtendEMG'))
+    suite.addTest(Test20MVCfile('testExtendEMG'))
     suite.addTest(Test20MVCfile('testDemean'))
     #suite.addTest(Test20MVCfile('testpcaesig'))
     #suite.addTest(Test20MVCfile('testWhitenEMG'))
