@@ -43,6 +43,7 @@ class FileUploadFunc:
         # MVC value for calculations
         self.mvc_value = None
         self.json = False
+        self.unsortedFile = None # store unsorted file version here
 
     def data_loaded(self):
         return FileUploadFunc.file is not None
@@ -273,7 +274,8 @@ class FileUploadFunc:
         else:
             raise Exception("\nFile source not recognised\n")
         #AC
-        FileUploadFunc.file = emgfile
+        self.unsortedFile = emgfile
+        FileUploadFunc.file = self.sort_MUs(emgfile)
         return emgfile
 
     # OPENHDEMG
@@ -561,7 +563,8 @@ class FileUploadFunc:
         }
 
         # AC : we set file to the emgfile object and return 1 to indicate it is valid
-        FileUploadFunc.file = emgfile
+        self.unsortedFile = emgfile
+        FileUploadFunc.file = self.sort_MUs(emgfile) # sort imported MUs by recruitment order by default
         return 1
 
     # OPENHDEMG: edited
@@ -780,7 +783,68 @@ class FileUploadFunc:
         canvas = SaveablePlot(fig)
         analysis_plot.display_plot(canvas)
 
+    def sort_MUs(self, emgfile):
+        # code from openhdemg
+        if emgfile["NUMBER_OF_MUS"] <= 1:
+            return emgfile
 
+        # Create the object to store the sorted emgfile.
+        # Create a deepcopy to avoid changing the original emgfile
+        sorted_emgfile = copy.deepcopy(emgfile)
+        """
+        Need to be changed: ==>
+        emgfile =   {
+                    "SOURCE" : SOURCE,
+                    "RAW_SIGNAL" : RAW_SIGNAL,
+                    "REF_SIGNAL" : REF_SIGNAL,
+                    ==> "ACCURACY": ACCURACY,
+                    ==> "IPTS" : IPTS,
+                    ==> "MUPULSES" : MUPULSES,
+                    "FSAMP" : FSAMP,
+                    "IED" : IED,
+                    "EMG_LENGTH" : EMG_LENGTH,
+                    "NUMBER_OF_MUS" : NUMBER_OF_MUS,
+                    ==> "BINARY_MUS_FIRING" : BINARY_MUS_FIRING,
+                    }
+        """
+
+        # Identify the sorting_order by the first MUpulse of every MUs
+        df = []
+        for mu in range(emgfile["NUMBER_OF_MUS"]):
+            if len(emgfile["MUPULSES"][mu]) > 0:
+                df.append(emgfile["MUPULSES"][mu][0])
+            else:
+                df.append(np.inf)
+
+        df = pd.DataFrame(df, columns=["firstpulses"])
+        df.sort_values(by="firstpulses", inplace=True)
+        sorting_order = list(df.index)
+
+        # Sort ACCURACY (single column)
+        for origpos, newpos in enumerate(sorting_order):
+            sorted_emgfile["ACCURACY"].loc[origpos] = emgfile["ACCURACY"].loc[newpos]
+
+        # Sort IPTS (multiple columns, sort by columns, then reset columns' name)
+        sorted_emgfile["IPTS"] = sorted_emgfile["IPTS"].reindex(columns=sorting_order)
+        sorted_emgfile["IPTS"].columns = np.arange(emgfile["NUMBER_OF_MUS"])
+
+        # Sort BINARY_MUS_FIRING (multiple columns, sort by columns,
+        # then reset columns' name)
+        sorted_emgfile["BINARY_MUS_FIRING"] = sorted_emgfile["BINARY_MUS_FIRING"].reindex(
+            columns=sorting_order
+        )
+        sorted_emgfile["BINARY_MUS_FIRING"].columns = np.arange(emgfile["NUMBER_OF_MUS"])
+
+        # Sort MUPULSES.
+        # Preferable to use the sorting_order as a double-check in alternative to:
+        # sorted_emgfile["MUPULSES"] = sorted(
+        #   sorted_emgfile["MUPULSES"], key=min, reverse=False)
+        # )
+        for origpos, newpos in enumerate(sorting_order):
+            sorted_emgfile["MUPULSES"][origpos] = emgfile["MUPULSES"][newpos]
+
+        return sorted_emgfile
+    
     def updateEMGFile(self, emgfile):
             print(f"updating original file")
             FileUploadFunc.file = emgfile
