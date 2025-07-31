@@ -57,7 +57,6 @@ class ResultsTable(QAbstractTableModel):
             self.beginResetModel()
             self._data = self.df.iloc[index]['table']
             self.columns = list(self._data[0].keys()) 
-            print(self.columns)
             self.endResetModel() 
     
     def get_cur_results(self):
