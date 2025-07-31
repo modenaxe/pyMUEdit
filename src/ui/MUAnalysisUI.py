@@ -31,7 +31,6 @@ from ui.components.muAnalysisComponents.MajorHeading import MajorHeading
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.muanalysis.FileSection import FileSection
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from ui.muanalysis.SortMUs import SortMUs
 from ui.muanalysis.RemoveMUSection import RemoveMUSection
 from ui.muanalysis.ForceAnalysisSection import ForceAnalysisSection
 from ui.muanalysis.ResultsPanel import ResultsPanel
@@ -199,9 +198,6 @@ class MUAnalysis(QWidget):
             self.mu, self.analysis_plot, self.colors, parent=sidebar
         )
         sidebar_layout.addWidget(remove_mu_section)
-        # sort MUs
-        sort_MUs = SortMUs(self.mu, self.analysis_plot, parent=sidebar)
-        sidebar_layout.addWidget(sort_MUs)
 
         # signal editing
         signal_editing = SignalEditing(self.mu, self.analysis_plot, parent=sidebar)
