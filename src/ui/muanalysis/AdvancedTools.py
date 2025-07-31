@@ -13,7 +13,7 @@ from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
-
+from ui.muanalysis.PIC import PICDialog
 from app.muAnalysisFunctions.MotorUnitTrackingDialog import MotorUnitTrackingDialog
 
 class AdvancedTools(QWidget):
@@ -84,9 +84,22 @@ class AdvancedTools(QWidget):
             parent=self
         )
         adv_layout.addWidget(advanced_analysis_btn, stretch=1)
+        
+        self.analysis_tools_dropdown.currentTextChanged.connect(self.on_PIC_selection)
+    
+        
+    def on_PIC_selection(self):
+        disable = self.analysis_tools_dropdown.currentText() == "Persistent Inward Currents"
+        self.matrix_orientation_dropdown.setDisabled(disable)
+        self.matrix_code_dropdown.setDisabled(disable)
+        
+        
+        
 
     def show_popup(self):
-        if (self.analysis_tools_dropdown.currentText() == ""):
+        if self.analysis_tools_dropdown.currentText() == "Persistent Inward Currents":
+            self.show_analysis()
+        elif (self.analysis_tools_dropdown.currentText() == ""):
             self.show_error("Please choose an analysis tool.")
         elif (self.matrix_orientation_dropdown.currentText() == ""):
             self.show_error("Please choose a matrix orientation.")
@@ -106,8 +119,11 @@ class AdvancedTools(QWidget):
         elif selected_tool == "Conduction Velocity Estimation":
             QMessageBox.information(self, "Coming Soon", "Conduction Velocity Estimation is not implemented yet.")
         elif selected_tool == "Persistent Inward Currents":
-            QMessageBox.information(self, "Coming Soon", "Persistent Inward Currents is not implemented yet.")
+            dialog = PICDialog(self)
+            dialog.exec()
         else:
             ErrorDialog('Unknown analysis tool.', 'Error').exec_()
+            
+
 
 
