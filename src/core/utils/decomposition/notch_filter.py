@@ -80,4 +80,4 @@ def notch_filter(signal, fsamp):
     if signal.ndim == 1:
         signal = signal.reshape(1, -1)
 
-    return [process_channel(channel, fsamp) for channel in signal]
+    return np.array([process_channel(channel, fsamp) for channel in signal])
