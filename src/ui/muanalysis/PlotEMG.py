@@ -15,16 +15,18 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from app.muAnalysisFunctions.PlotEMGFunc import parse_channel_input, plot_emgsig, plot_idr, plot_mupulses, plot_ipts
 from app.muAnalysisFunctions.PlotEMGFunc import plot_differentials, diff, double_diff, sort_rawemg
+from app.muAnalysisFunctions.MUAPFunc import extract_delsys_muaps, muaps_from_sta, sta 
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
 from ui.components.muAnalysisComponents.AnalysisCheckbox import AnalysisCheckbox 
 from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import PropertiesInnerDialogButton
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
-from ui.muanalysis.PlotMUAP import PlotMUAP
+import settings
 import matplotlib.pyplot as plt
 import traceback
 
@@ -77,7 +79,7 @@ class PlotEMGToolDialog(QDialog):
         dropdown_col.setSpacing(10)
         self.matrix_code_dropdown = AnalysisDropdown(
             "Matrix Code",
-            items=["GR08MM1305", "GR04MM1305", "GR10MM0808"],
+            items=["Custom", "GR08MM1305", "GR04MM1305", "GR10MM0808"],
             parent=self
         )
         dropdown_col.addWidget(self.matrix_code_dropdown)
@@ -88,6 +90,17 @@ class PlotEMGToolDialog(QDialog):
         )
         dropdown_col.addWidget(self.orientation_dropdown)
         filter_row_layout.addLayout(dropdown_col)
+
+        # when the matrix order is custom, something has to appear
+        custom_col = QVBoxLayout()
+        self.custom_matrix = AnalysisInput(placeholder="Custom matrix code (e.g. `13,5`)")
+        self.custom_matrix.setVisible(False)
+        custom_col.addWidget(self.custom_matrix)
+        custom_col.addStretch(1)
+        self.matrix_code_dropdown.currentTextChanged.connect(self.select_custom)
+        filter_row_layout.addLayout(custom_col)
+
+        filter_row_layout.addStretch(1)
         layout.addLayout(filter_row_layout)
 
         # --- Plot EMGsig, REFsig, IDR, and MUPulses Buttons with Inputs (each in their own row, aligned) ---
@@ -101,24 +114,16 @@ class PlotEMGToolDialog(QDialog):
             GeneralButton("Plot MUPulses", dummy_action).sizeHint().width(),
         ) + 40  # Add extra width for longer text
         textbox_width = 280
-        button_height = 36
 
         # Row 1: Plot EMGsig + Channel Number
         emgsig_row = QHBoxLayout()
         emgsig_btn = GeneralButton("Plot EMGsig", self.handle_emgsig_clicked, parent=self)
         emgsig_btn.setFixedWidth(button_width)
-        emgsig_btn.setFixedHeight(button_height)
         emgsig_row.addWidget(emgsig_btn)
         emgsig_row.addSpacing(8)
-        self.channel_input = QLineEdit()
-        self.channel_input.setPlaceholderText("Channel Number (e.g. 1-3,5,7)")
-        self.channel_input.setFont(QFont("Arial", 11))
-        self.channel_input.setMinimumHeight(button_height)
-        self.channel_input.setFixedHeight(button_height)
-        self.channel_input.setFixedWidth(textbox_width)
-        self.channel_input.setStyleSheet("""
-            QLineEdit { padding: 8px; border: 2px solid #ced4da; border-radius: 6px; background-color: #ffffff; color: #212529; }
-        """)
+
+        self.channel_input = AnalysisInput(placeholder="Channel Number (e.g. 1-3,5,7)")
+        self.channel_input.set_width(textbox_width)
         emgsig_row.addWidget(self.channel_input)
         emgsig_row.addStretch(1)
         button_input_col.addLayout(emgsig_row)
@@ -127,7 +132,6 @@ class PlotEMGToolDialog(QDialog):
         refsig_row = QHBoxLayout()
         refsig_btn = GeneralButton("Plot REFsig", self.handle_refsig_clicked, parent=self)
         refsig_btn.setFixedWidth(button_width)
-        refsig_btn.setFixedHeight(button_height)
         refsig_row.addWidget(refsig_btn)
         refsig_row.addStretch(1)
         button_input_col.addLayout(refsig_row)
@@ -136,18 +140,11 @@ class PlotEMGToolDialog(QDialog):
         idr_row = QHBoxLayout()
         idr_btn = GeneralButton("Plot IDR", self.handle_idr_clicked, parent=self)
         idr_btn.setFixedWidth(button_width)
-        idr_btn.setFixedHeight(button_height)
         idr_row.addWidget(idr_btn)
         idr_row.addSpacing(8)
-        self.mu_input = QLineEdit()
-        self.mu_input.setPlaceholderText("MU number (e.g. 1-3,5)")
-        self.mu_input.setFont(QFont("Arial", 11))
-        self.mu_input.setMinimumHeight(button_height)
-        self.mu_input.setFixedHeight(button_height)
-        self.mu_input.setFixedWidth(textbox_width)
-        self.mu_input.setStyleSheet("""
-            QLineEdit { padding: 8px; border: 2px solid #ced4da; border-radius: 6px; background-color: #ffffff; color: #212529; }
-        """)
+
+        self.mu_input = AnalysisInput(placeholder="MU number (e.g. 1-3,5)") 
+        self.mu_input.set_width(textbox_width)
         idr_row.addWidget(self.mu_input)
         idr_row.addStretch(1)
         button_input_col.addLayout(idr_row)
@@ -156,18 +153,11 @@ class PlotEMGToolDialog(QDialog):
         mupulses_row = QHBoxLayout()
         mupulses_btn = GeneralButton("Plot MUPulses", self.handle_mupulses_clicked, parent=self)
         mupulses_btn.setFixedWidth(button_width)
-        mupulses_btn.setFixedHeight(button_height)
         mupulses_row.addWidget(mupulses_btn)
         mupulses_row.addSpacing(8)
-        self.linewidth_input = QLineEdit()
-        self.linewidth_input.setPlaceholderText("Line Width")
-        self.linewidth_input.setFont(QFont("Arial", 11))
-        self.linewidth_input.setMinimumHeight(button_height)
-        self.linewidth_input.setFixedHeight(button_height)
-        self.linewidth_input.setFixedWidth(textbox_width)
-        self.linewidth_input.setStyleSheet("""
-            QLineEdit { padding: 8px; border: 2px solid #ced4da; border-radius: 6px; background-color: #ffffff; color: #212529; }
-        """)
+
+        self.linewidth_input = AnalysisInput(placeholder="Line Width") 
+        self.linewidth_input.set_width(textbox_width)
         mupulses_row.addWidget(self.linewidth_input)
         mupulses_row.addStretch(1)
         button_input_col.addLayout(mupulses_row)
@@ -178,18 +168,11 @@ class PlotEMGToolDialog(QDialog):
         source_row = QHBoxLayout()
         source_btn = GeneralButton("Plot Source", self.handle_source_clicked, parent=self)
         source_btn.setFixedWidth(button_width)
-        source_btn.setFixedHeight(button_height)
         source_row.addWidget(source_btn)
         source_row.addSpacing(8)
-        self.source_mu_input = QLineEdit()
-        self.source_mu_input.setPlaceholderText("MU Number (e.g. 1-3,5)")
-        self.source_mu_input.setFont(QFont("Arial", 11))
-        self.source_mu_input.setMinimumHeight(button_height)
-        self.source_mu_input.setFixedHeight(button_height)
-        self.source_mu_input.setFixedWidth(textbox_width)
-        self.source_mu_input.setStyleSheet("""
-            QLineEdit { padding: 8px; border: 2px solid #ced4da; border-radius: 6px; background-color: #ffffff; color: #212529; }
-        """)
+
+        self.source_mu_input = AnalysisInput(placeholder="MU Number (e.g. 1-3,5)") 
+        self.source_mu_input.set_width(textbox_width)
         source_row.addWidget(self.source_mu_input)
         source_row.addStretch(1)
         button_input_col.addLayout(source_row)
@@ -198,20 +181,12 @@ class PlotEMGToolDialog(QDialog):
         derivation_row = QHBoxLayout()
         derivation_btn = GeneralButton("Derivation", self.handle_derivation_clicked, parent=self)
         derivation_btn.setFixedWidth(button_width)
-        derivation_btn.setFixedHeight(button_height)
         derivation_row.addWidget(derivation_btn)
         derivation_row.addSpacing(8)
 
         # Matrix column input
-        self.matrix_col_input = QLineEdit()
-        self.matrix_col_input.setPlaceholderText("Matrix Column ('0' or 'col0' etc.)")
-        self.matrix_col_input.setFont(QFont("Arial", 11))
-        self.matrix_col_input.setMinimumHeight(button_height)
-        self.matrix_col_input.setFixedHeight(button_height)
-        self.matrix_col_input.setFixedWidth(textbox_width)
-        self.matrix_col_input.setStyleSheet("""
-            QLineEdit { padding: 8px; border: 2px solid #ced4da; border-radius: 6px; background-color: #ffffff; color: #212529; }
-        """)
+        self.matrix_col_input = AnalysisInput(placeholder="Matrix Column ('0' or 'col0' etc.)")
+        self.matrix_col_input.set_width(textbox_width)
         derivation_row.addWidget(self.matrix_col_input)
         derivation_row.addSpacing(8)
 
@@ -227,12 +202,43 @@ class PlotEMGToolDialog(QDialog):
         button_input_col.addLayout(derivation_row)
 
 
-        plot_muap = PlotMUAP(
-            self.analysis_plot, 
-            self.matrix_code_dropdown, 
-            self.orientation_dropdown
-        )
-        layout.addWidget(plot_muap)
+        # --- PLOT MUAP --- 
+        # the button 
+        muap_row = QHBoxLayout(self)
+        muap_btn = GeneralButton("Plot MUAPs", self.plot_muaps, parent=self)
+        muap_row.addWidget(muap_btn, stretch=1)
+
+        # configuration dropdown
+        configuration_items = ["Monopolar", "Single differential", "Double differential"]
+        configuration_dropdown = AnalysisDropdown("Configuration", configuration_items, parent=self)
+        muap_row.addWidget(configuration_dropdown, stretch=1)
+        self.configuration_dropdown = configuration_dropdown
+
+        # mu number dropdown
+        mu_number_items = []
+        if FileUploadFunc.file["SOURCE"] in ["DEMUSE", "OTB", "CUSTOMCSV", "DELSYS"]:
+            for i in range(FileUploadFunc.file["NUMBER_OF_MUS"]):
+                mu_number_items.append(str(i))
+        mu_number_dropdown = AnalysisDropdown("MU Number", mu_number_items, parent=self)
+        muap_row.addWidget(mu_number_dropdown, stretch=1)
+        self.mu_number_dropdown = mu_number_dropdown
+
+        # timewindow dropdown
+        timewindow_items = ["25", "50", "100", "200"]
+        timewindow_dropdown = AnalysisDropdown("Timewindow (ms)", timewindow_items, parent=self)
+        muap_row.addWidget(timewindow_dropdown, stretch=1)
+        self.timewindow_dropdown = timewindow_dropdown
+
+        layout.addLayout(muap_row)
+
+
+    # function for when you select custom matrix code
+    def select_custom(self):
+        if self.matrix_code_dropdown.currentText() == "Custom":
+            self.custom_matrix.setVisible(True) 
+        else:
+            self.custom_matrix.setVisible(False)
+
 
     def has_invalid_filter_inputs(self):
         # Returns True if either dropdown is not at its placeholder
@@ -244,7 +250,7 @@ class PlotEMGToolDialog(QDialog):
         if self.has_invalid_filter_inputs():
             ErrorDialog('Invalid filter inputs', 'Error').exec_()
             return
-        raw_text = self.channel_input.text()
+        raw_text = self.channel_input.get()
         emgfile = FileUploadFunc.file
 
         if emgfile is None:
@@ -292,7 +298,7 @@ class PlotEMGToolDialog(QDialog):
         if emgfile is None:
             ErrorDialog('No file has been loaded', 'Error').exec_()
             return
-        mu_text = self.mu_input.text()
+        mu_text = self.mu_input.get()
         try:
             munumber = self.parse_mu_input(mu_text)
         except Exception:
@@ -317,7 +323,7 @@ class PlotEMGToolDialog(QDialog):
         if emgfile is None:
             ErrorDialog('No file has been loaded', 'Error').exec_()
             return
-        lw_text = self.linewidth_input.text()
+        lw_text = self.linewidth_input.get()
         try:
             linewidth = float(lw_text)
             if linewidth <= 0:
@@ -368,7 +374,7 @@ class PlotEMGToolDialog(QDialog):
         if emgfile is None:
             ErrorDialog('No file has been loaded', 'Error').exec_()
             return
-        mu_text = self.source_mu_input.text()
+        mu_text = self.source_mu_input.get()
         try:
             munumber = self.parse_mu_input(mu_text)
         except Exception:
@@ -396,7 +402,7 @@ class PlotEMGToolDialog(QDialog):
             ErrorDialog('No file has been loaded', 'Error').exec_()
             return
 
-        matrix_col_text = self.matrix_col_input.text().strip()
+        matrix_col_text = self.matrix_col_input.get().strip()
         if self.derivation_config_dropdown.currentIndex() < 0:
             ErrorDialog('invalid plot inputs (no differential selected)', 'Error').exec_()
             return
@@ -463,7 +469,84 @@ class PlotEMGToolDialog(QDialog):
             traceback.print_exc()
             ErrorDialog(f'Error plotting Derivation:\n{str(e)}', 'Error').exec_()
 
+    # plots muaps in the center plot 
+    def plot_muaps(self):
+        try:
+            # DELSYS requires different MUAPS plot
+            if FileUploadFunc.file["SOURCE"] == "DELSYS":
+                muaps_dict = extract_delsys_muaps(FileUploadFunc.file)
+                # TODO: apparently this actually plots it
+                muaps_from_sta(self.analysis_plot, muaps_dict[int(self.muap_munum.get())])
 
+            else:
+                if self.matrix_code_dropdown.currentText() == "Custom":
+                    # Get rows and columns and turn into list
+                    # TODO: check if it's valid
+                    list_rcs = [int(i) for i in self.custom_matrix.currentText().split(",")]
+
+                    try:
+                        # Sort emg file
+                        sorted_file = sort_rawemg(
+                            emgfile=FileUploadFunc.file,
+                            code=self.matrix_code_dropdown.currentText(),
+                            orientation=int(self.orientation_dropdown.currentText()),
+                            n_rows=list_rcs[0],
+                            n_cols=list_rcs[1],
+                        )
+
+                    except ValueError as e:
+                        ErrorDialog(
+                            "Number of specified rows and columns must match the number of channels", 
+                            "Invalid Input"
+                        ).exec_()
+                else:
+                    # Sort emg file
+                    sorted_file = sort_rawemg(
+                        emgfile=FileUploadFunc.file,
+                        code=self.matrix_code_dropdown.currentText(),
+                        orientation=int(self.orientation_dropdown.currentText()),
+                        custom_sorting_order=settings.custom_sorting_order,
+                    )
+
+                # calculate derivation
+                if self.configuration_dropdown.currentText() == "Single differential":
+                    diff_file = diff(sorted_rawemg=sorted_file)
+                elif self.configuration_dropdown.currentText() == "Double differential":
+                    diff_file = double_diff(sorted_rawemg=sorted_file,)
+                elif self.configuration_dropdown.currentText() == "Monopolar":
+                    diff_file = sorted_file
+
+                # Calculate STA dictionary
+                # Plot deviation
+                sta_dict = sta(
+
+                    emgfile=FileUploadFunc.file,
+                    sorted_rawemg=diff_file,
+                    firings="all",
+                    timewindow=int(self.timewindow_dropdown.currentText()),
+                )
+
+                # Plot MUAPS
+                muaps_from_sta(self.analysis_plot, sta_dict[int(self.mu_number_dropdown.currentText())])
+
+        except ValueError as e:
+            ErrorDialog(
+                """
+                Please ensure the following parameters are valid: \n 
+                - Matrix Code \n 
+                - Matrix Orientation \n  
+                - Figure size arguments \n 
+                - Timewindow \n 
+                - MU Number \n 
+                - Rows,Columns arguments \n 
+                """
+            , "Invalid Input").exec_()
+
+        except UnboundLocalError as e:
+            ErrorDialog("Please enter a valid configuration", "Invalid Input").exec_()
+
+        except KeyError as e:
+            ErrorDialog("Please enter a valid Matrix Column", "Invalid Input").exec_()
 
 
         

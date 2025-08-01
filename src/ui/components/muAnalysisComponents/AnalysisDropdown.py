@@ -51,9 +51,6 @@ class AnalysisDropdown(QComboBox):
         if items: self.addItems(items)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
-    def get_value(self):
-        return self.currentText()
-
 
 # too hard to convert the old class 'AnalysisDropdown' into a QWidget child class, that supports
 # labeled and non-labeled dropdowns, so I thought a new class would be better 
