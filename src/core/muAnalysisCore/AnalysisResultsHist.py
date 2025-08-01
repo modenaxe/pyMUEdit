@@ -1,7 +1,7 @@
 import pandas as pd
 import time
-import random
 from PyQt5.QtCore import QObject, pyqtSignal
+import numpy as np
 
 class AnalysisResultsHist(QObject):
 
@@ -26,6 +26,8 @@ class AnalysisResultsHist(QObject):
         
     def append_analysis_hist(self, title, table):
         timestamp = time.time()
+        table = self.data_clean(table)
+        
         row = pd.DataFrame([{
             'title': title,
             'timestamp': timestamp,
@@ -48,6 +50,17 @@ class AnalysisResultsHist(QObject):
     def clear_results(self):
         self.df = pd.DataFrame()
         self.data_cleared.emit()
+        
+    def data_clean(self, table):
+        for row in range(0, len(table)):
+            keys = list(table[row].keys())
+            for key in keys:
+                if np.isnan(table[row][key]):
+                    table[row][key] = ""
+                
+                if isinstance(table[row][key], float):
+                    table[row][key] = round(table[row][key], 2)
+        return table
     
     
 store = AnalysisResultsHist()
