@@ -2,7 +2,6 @@
 
 from typing import Optional, List, Tuple, Dict
 import torch
-from numba import jit
 
 from ..config.structures import Config, Data
 from ..processing.preprocess import (
@@ -34,9 +33,17 @@ class SwarmContrastiveDecomposition(torch.nn.Module):
     Class implementing a swarm contrastive decomposition
     """
 
-    def __init__(self):
+    def __init__(self, plot_function=None, logging_function=None):
+        """
+        Initialize the model with an optional function callback to be called for plotting.
+
+        Args:
+            plot_function: function to be called once at the end of each iteration for plotting.
+            logging_function: function to be called once at the end of each iteration for logging progress.
+        """
         super().__init__()
-        self.plot_function = None
+        self.plot_function = plot_function
+        self.logging_function = logging_function
 
     def preprocess_emg(self, emg: torch.Tensor) -> torch.Tensor:
         """Applies preprocessing steps to emg as specified by config"""
@@ -467,6 +474,9 @@ class SwarmContrastiveDecomposition(torch.nn.Module):
             # Print the message if mode is verbose
             if self.config.verbose_mode:
                 print(message)
+
+            if self.logging_function:
+                self.logging_function(message)
 
             # Finish finding sources if patience is broken
             if patience == self.config.iteration_patience:
