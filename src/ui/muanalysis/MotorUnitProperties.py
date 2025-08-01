@@ -65,7 +65,6 @@ class MotorUnitPropertiesDialog(QDialog):
         )
         if self.current_mvc is not None:
             self.mvc_input.setText(str(self.current_mvc))
-            print(str(self.current_mvc))
         box.addWidget(mvc_label)
         box.addWidget(self.mvc_input)
 

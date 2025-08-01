@@ -45,6 +45,10 @@ class AnalysisDropdown(QComboBox):
             QComboBox QAbstractItemView {{
                 border: 0px;
             }}
+            QComboBox:disabled {{
+                background-color: {CleanTheme.ANALYSIS_BG_DROPDOWN_DISABLED};
+                color: {CleanTheme.TEXT_PRIMARY}
+            }}
             """
         )
         self.setPlaceholderText(label)
