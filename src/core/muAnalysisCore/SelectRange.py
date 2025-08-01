@@ -43,7 +43,6 @@ class SelectRange:
     def on_press(self, event):
         if event.key == 'enter':
             self.func(round(self.line[0].get_xdata()[0]),round(self.line[1].get_xdata()[0]))
-            self.analysis_plot.revert()
 
     # creates intervative canvas for the centre panel
     def set_up_plot(self):

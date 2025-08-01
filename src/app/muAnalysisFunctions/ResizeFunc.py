@@ -26,6 +26,7 @@ class Resize:
     def two_point(self, x, y):
         self.resize_emgfile(FileUploadFunc.file, x, y)
         self.mu.plot_idr(FileUploadFunc.file, self.analysis_plot)
+        self.analysis_plot.revert()
 
     # AC
     def resize_emgfile(
