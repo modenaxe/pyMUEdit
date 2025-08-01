@@ -7,7 +7,7 @@ from typing import Any
 
 import numpy as np
 
-from app.ImportDataWindow import ImportDataWindow
+from app import ImportDataWindow
 from ui.components.ConfigurationPanel import ConfigurationPanel
 
 POWER_SUPPLY = 3.3  # volts, I assume?

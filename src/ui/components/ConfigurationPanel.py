@@ -31,6 +31,11 @@ class InputPanel(CollapsiblePanel):
         self.muscle_input.input.setText(musclename)
         self.add_widget(self.muscle_input)
 
+    # disable the Input Panel (but not the checkbox to make it still interactable)
+    def disable_panel(self):
+        for child in self.content_widget.findChildren(QWidget):
+            child.setEnabled(False)
+
 class QuattrocentoVisualisation(QLabel):
     def __init__(self, image_path, parent=None):
         super().__init__(parent)
@@ -96,9 +101,9 @@ class ConfigurationPanel(QWidget):
 
         # signal range dropdown panel
         self.splitter1 = InputPanel("Splitter #1", "GR04MM1305", "", self.checkbox_state_change)
-        self.splitter1.setEnabled(False)
+        self.splitter1.disable_panel()
         self.splitter2 = InputPanel("Splitter #2", "GR04MM1305", "", self.checkbox_state_change)
-        self.splitter2.setEnabled(False)
+        self.splitter2.disable_panel()
         left_layout.addWidget(self.splitter1)
         left_layout.addWidget(self.splitter2)
 
@@ -165,16 +170,16 @@ class ConfigurationPanel(QWidget):
 
         self.mul_input_1 = InputPanel("Multiple Inputs #1", "GR04MM1305", "",
                                       self.checkbox_state_change)
-        self.mul_input_1.setEnabled(False)
+        self.mul_input_1.disable_panel()
         self.mul_input_2 = InputPanel("Multiple Inputs #2", "GR04MM1305", "",
                                       self.checkbox_state_change)
-        self.mul_input_2.setEnabled(False)
+        self.mul_input_2.disable_panel()
         self.mul_input_3 = InputPanel("Multiple Inputs #3", "GR04MM1305", "",
                                       self.checkbox_state_change)
-        self.mul_input_3.setEnabled(False)
+        self.mul_input_3.disable_panel()
         self.mul_input_4 = InputPanel("Multiple Inputs #4", "GR04MM1305", "",
                                       self.checkbox_state_change)
-        self.mul_input_4.setEnabled(False)
+        self.mul_input_4.disable_panel()
         right_layout.addWidget(self.mul_input_1)
         right_layout.addWidget(self.mul_input_2)
         right_layout.addWidget(self.mul_input_3)
