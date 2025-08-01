@@ -21,6 +21,7 @@ class SCDDecompositionWorker(QThread):
     plot_update = pyqtSignal(object, object, object, object, object)
     finished = pyqtSignal(object)
     error = pyqtSignal(str)
+    progress_val = 0.1
 
     def __init__(self, emg_obj, parameters):
         """
@@ -33,6 +34,7 @@ class SCDDecompositionWorker(QThread):
         super().__init__()
         self.emg_obj = emg_obj
         self.parameters = parameters
+        self.progress_val = 0.1
 
     def run(self) -> None:
         try:
@@ -91,11 +93,10 @@ class SCDDecompositionWorker(QThread):
                 neural_data = neural_data[config.start_time * sampling_frequency : config.end_time * sampling_frequency, :]
 
             # Initiate the model and run
-            model = SwarmContrastiveDecomposition()
-            model.plot_function = self.send_plot_update
+            model = SwarmContrastiveDecomposition(self.send_plot_update, self.send_progress_update)
             predicted_timestamps, dictionary = model.run(neural_data, config)
 
-            self.results = dictionary
+            self.decomp = dictionary
             # print("---------------DICTIONARY---------------")
             # print(len(dictionary["timestamps"][0]))
             # print(dictionary)
@@ -109,15 +110,11 @@ class SCDDecompositionWorker(QThread):
             #TODO: Figure out formatting results and saving
             result = self.format_results()
             self.finished.emit(result)
-            
-            return
 
         except Exception as e:
             print(f"Exception in SCDDecompositionWorker: {str(e)}")
             traceback.print_exc()
             self.error.emit(str(e))
-
-        return dictionary, predicted_timestamps
     
     def send_plot_update(self, fICA_source, spikes, time2, sil, cov):
         """Send plot update signals to the main UI thread"""
@@ -126,6 +123,11 @@ class SCDDecompositionWorker(QThread):
         self.plot_update.emit(fICA_source, spikes, time2, sil, cov)
         # Process events to keep the UI responsive during long computations
         time.sleep(0.01)  # Small delay to prevent UI freezing
+
+    def send_progress_update(self, message):
+        self.progress_val += 0.8 / self.parameters["iterations"]
+        self.progress.emit(message, self.progress_val)
+
     
     def format_results(self):
         """Format results from offline_EMG to match MUedit's expected format."""
@@ -157,6 +159,8 @@ class SCDDecompositionWorker(QThread):
         result["Pulsetrain"] = {}
         result["Dischargetimes"] = {}
 
+        #TODO: map pulse trains and discharge times from results of SCD algorithm
+        # want to use self.decomp["source"] here for pulse trains, and self.decomp["timestamps"] for discharge times
         if len(self.emg_obj.mu_dict["pulse_trains"]) > 0:
             for electrode, pulse_trains in enumerate(self.emg_obj.mu_dict["pulse_trains"]):
                 if isinstance(pulse_trains, np.ndarray) and pulse_trains.shape[0] > 0:
