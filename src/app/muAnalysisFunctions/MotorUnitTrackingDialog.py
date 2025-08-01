@@ -3,6 +3,8 @@ from PyQt5.QtWidgets import (
     QFileDialog, QLineEdit, QCheckBox, QMessageBox, QSpacerItem, QSizePolicy,
     QTableWidget, QTableWidgetItem, QHeaderView, QComboBox
 )
+
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
@@ -16,7 +18,7 @@ import pandas as pd
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
-
+from app.muAnalysisFunctions.electrode_layouts import get_electrode_grid
 def load_otb_data(filepath):
     file_handler = FileUploadFunc()
     success = file_handler.emg_from_otb(filepath)
@@ -299,7 +301,7 @@ class MotorUnitTrackingDialog(QDialog):
             "color: green; font-weight: bold;" if self.inclusion_status[idx] == "Included" else "color: red; font-weight: bold;"
         )
     def plot_muap_grid_overlay(self, file1, mu_index1, file2, mu_index2, fig, canvas):
-    # --- Helper to compute MUAPs ---
+        # --- Helper to compute MUAPs ---
         def compute_muaps(file, mu_index):
             raw_signal = file.get("RAW_SIGNAL")
             mu_pulses = file.get("MUPULSES")
@@ -340,6 +342,7 @@ class MotorUnitTrackingDialog(QDialog):
                     muaps[ch, :] = np.mean(segments, axis=0)
             return muaps, fsamp
 
+        # --- Compute both overlays ---
         muaps1, fsamp1 = compute_muaps(file1, mu_index1)
         muaps2, fsamp2 = compute_muaps(file2, mu_index2)
         if muaps1 is None or muaps2 is None:
@@ -348,7 +351,6 @@ class MotorUnitTrackingDialog(QDialog):
             return
 
         # --- Robust y axis limits across BOTH ---
-                # --- Robust y axis limits across BOTH (matching the working single-grid approach) ---
         valid_muaps = np.concatenate([muaps1[np.isfinite(muaps1)], muaps2[np.isfinite(muaps2)]])
         if valid_muaps.size > 0:
             ymin = np.min(valid_muaps)
@@ -363,50 +365,39 @@ class MotorUnitTrackingDialog(QDialog):
         else:
             ymin, ymax = -1, 1
 
-
-        # --- Grid: 13 rows, 5 cols (top left blank, row 0 col 1–4: ch0–3, rows 1–12: ch4–63) ---
-        n_rows, n_cols = 13, 5
+        # --- Use official electrode grid mapping (GR08MM1305, 180° orientation) ---
+        grid = get_electrode_grid(code="GR08MM1305", orientation=180)
+        n_rows = len(grid)
+        n_cols = len(grid[0])
         window = 40
         time_ms = np.arange(-window, window + 1) * 1000.0 / fsamp1
 
         fig.clf()
         axs = fig.subplots(n_rows, n_cols, squeeze=False)
 
-        # Top-left blank
-        axs[0][0].axis('off')
-        # Row 0, col 1–4: channels 0–3
-        for i in range(4):
-            axs[0][i+1].plot(time_ms, muaps1[i, :], color='black', linewidth=1)
-            axs[0][i+1].plot(time_ms, muaps2[i, :], color='orange', linewidth=1)
-            axs[0][i+1].set_xticks([])
-            axs[0][i+1].set_yticks([])
-            axs[0][i+1].set_ylim([ymin, ymax])
-            for spine in axs[0][i+1].spines.values():
-                spine.set_visible(False)
-
-        # Rows 1–12, cols 0–4: channels 4–63
-        channel = 4
-        for r in range(1, 13):
-            for c in range(5):
-                if channel < 64:
-                    axs[r][c].plot(time_ms, muaps1[channel, :], color='black', linewidth=1)
-                    axs[r][c].plot(time_ms, muaps2[channel, :], color='orange', linewidth=1)
-                    axs[r][c].set_xticks([])
-                    axs[r][c].set_yticks([])
-                    axs[r][c].set_ylim([ymin, ymax])
-                    for spine in axs[r][c].spines.values():
-                        spine.set_visible(False)
-                    channel += 1
-                else:
+        for r in range(n_rows):
+            for c in range(n_cols):
+                ch = grid[r][c]
+                if np.isnan(ch):
                     axs[r][c].axis('off')
+                    continue
+                ch = int(ch)
+                axs[r][c].plot(time_ms, muaps1[ch, :], color='black', linewidth=1)
+                axs[r][c].plot(time_ms, muaps2[ch, :], color='orange', linewidth=1)
+                axs[r][c].set_xticks([])
+                axs[r][c].set_yticks([])
+                axs[r][c].set_ylim([ymin, ymax])
+                for spine in axs[r][c].spines.values():
+                    spine.set_visible(False)
 
-        # --- Make the grid fill all space! ---
+        # --- Make the grid fill all space ---
         fig.tight_layout(pad=0)
         fig.subplots_adjust(
-            top=1, bottom=0, left=0, right=1,  # Remove all outer margins
-            wspace=0.15, hspace=0.05           # Minimal space between subplots
+            top=1, bottom=0, left=0, right=1,
+            wspace=0.15, hspace=0.05
         )
         canvas.draw()
+
 
 
 
