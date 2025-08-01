@@ -44,8 +44,8 @@ class MotorUnitTrackingDialog(QDialog):
 
     def init_ui(self):
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(20, 20, 20, 20)
-        main_layout.setSpacing(10)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(5)
 
         # --- File and parameter controls (restored) ---
         file1_layout = QHBoxLayout()
@@ -95,7 +95,7 @@ class MotorUnitTrackingDialog(QDialog):
         main_layout.addItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
         track_btn = QPushButton("Track")
-        track_btn.setFixedHeight(40)
+        track_btn.setFixedHeight(32)
         track_btn.clicked.connect(self.on_track)
         main_layout.addWidget(track_btn)
 
@@ -301,43 +301,47 @@ class MotorUnitTrackingDialog(QDialog):
             "color: green; font-weight: bold;" if self.inclusion_status[idx] == "Included" else "color: red; font-weight: bold;"
         )
     def plot_muap_grid_overlay(self, file1, mu_index1, file2, mu_index2, fig, canvas):
-        def compute_muaps(file, mu_index):
+        def compute_muaps(file, mu_index, window):
             # Extract signals
             raw_signal = file.get("RAW_SIGNAL")
             mu_pulses = file.get("MUPULSES")
             fsamp = file.get("FSAMP", 2048)
+
             if raw_signal is None or mu_pulses is None:
                 return None, fsamp
+
             if isinstance(raw_signal, dict):
                 raw_signal = pd.DataFrame(raw_signal)
             if isinstance(raw_signal, pd.DataFrame):
                 raw_signal = raw_signal.values
             if not (isinstance(raw_signal, np.ndarray) and raw_signal.ndim == 2):
                 return None, fsamp
-            if not isinstance(mu_pulses, (list, tuple)) or mu_index >= len(mu_pulses):
-                pulses = []
-            else:
-                pulses = mu_pulses[mu_index]
+
+            pulses = mu_pulses[mu_index] if isinstance(mu_pulses, (list, tuple)) and mu_index < len(mu_pulses) else []
             pulses = np.array(pulses, dtype=int) if len(pulses) > 0 else np.array([], dtype=int)
-            window = 40
+
+            # Remove pulses too close to signal edges
+            valid_pulses = pulses[(pulses - window >= 0) & (pulses + window + 1 <= raw_signal.shape[0])]
+
             seg_len = 2 * window + 1
             n_channels = raw_signal.shape[1]
             max_channels = 64
             muaps = np.full((max_channels, seg_len), np.nan)
+
             for ch in range(min(n_channels, max_channels)):
                 segments = []
-                for p in pulses:
+                for p in valid_pulses:
                     start = p - window
                     end = p + window + 1
-                    if start >= 0 and end <= raw_signal.shape[0]:
-                        segments.append(raw_signal[start:end, ch])
+                    segments.append(raw_signal[start:end, ch])
                 if segments:
                     muaps[ch, :] = np.mean(segments, axis=0)
             return muaps, fsamp
 
-        # Compute overlays for both MUs
-        muaps1, fsamp1 = compute_muaps(file1, mu_index1)
-        muaps2, fsamp2 = compute_muaps(file2, mu_index2)
+        # Set your desired window here
+        window = 50  # You can change this to any positive integer
+        muaps1, fsamp1 = compute_muaps(file1, mu_index1, window)
+        muaps2, fsamp2 = compute_muaps(file2, mu_index2, window)
         fig.clear()
 
         if muaps1 is None or muaps2 is None:
@@ -350,10 +354,11 @@ class MotorUnitTrackingDialog(QDialog):
         grid = get_electrode_grid(code="GR08MM1305", orientation=180)
         n_rows = len(grid)
         n_cols = len(grid[0])
-        window = 40
+
+        # X-axis time in ms
         time_ms = np.arange(-window, window + 1) * 1000.0 / fsamp1
 
-        # Get global y limits
+        # Get global y-limits for normalization
         combined_muaps = np.concatenate([
             muaps1[np.isfinite(muaps1)],
             muaps2[np.isfinite(muaps2)]
@@ -370,7 +375,6 @@ class MotorUnitTrackingDialog(QDialog):
         else:
             ymin, ymax = -1, 1
 
-        # Build subplots as 2D axes array
         axs = fig.subplots(n_rows, n_cols, squeeze=False)
 
         for r in range(n_rows):
@@ -382,7 +386,6 @@ class MotorUnitTrackingDialog(QDialog):
                     ax.axis('off')
                     continue
                 ch = int(ch)
-                # Only plot if this channel exists
                 valid1 = muaps1[ch, :].shape[0] > 0 and np.any(np.isfinite(muaps1[ch, :]))
                 valid2 = muaps2[ch, :].shape[0] > 0 and np.any(np.isfinite(muaps2[ch, :]))
                 if valid1:
@@ -394,17 +397,12 @@ class MotorUnitTrackingDialog(QDialog):
                 ax.set_ylim([ymin, ymax])
                 for spine in ax.spines.values():
                     spine.set_visible(False)
-                # Optionally, show a small legend only in the top-left subplot
                 if r == 0 and c == 0:
                     ax.legend(frameon=False, fontsize=7, loc='upper left')
 
         fig.tight_layout(pad=0)
-        fig.subplots_adjust(
-            top=1, bottom=0, left=0, right=1,
-            wspace=0.15, hspace=0.05
-        )
+        fig.subplots_adjust(top=1, bottom=0, left=0, right=1, wspace=0.15, hspace=0.05)
         canvas.draw()
-
 
 
 
