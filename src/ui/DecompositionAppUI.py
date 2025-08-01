@@ -25,6 +25,7 @@ from ui.components import (
     SettingsGroup,
     CleanScrollBar,
 )
+from torch import cuda
 
 
 def setup_ui(main_window):
@@ -207,7 +208,9 @@ def setup_left_panel(main_window):
     # Options Panel
     options_panel = CollapsiblePanel("Processing Options")
 
-    device_field = FormDropdown("Device", ["CPU", "GPU"])
+    available_devices = ["CPU"]
+    if cuda.is_available(): available_devices.append("GPU")
+    device_field = FormDropdown("Device", available_devices)
     main_window.device_dropdown = device_field.dropdown
     main_window.device_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
     main_window.device_dropdown.setCurrentText("CPU")  # Set initial value
@@ -253,11 +256,11 @@ def setup_left_panel(main_window):
     main_window.extension_factor_field = extension_factor_field.spinbox
     params_panel.add_widget(extension_factor_field)
 
-    low_pass_cutoff_field = FormSpinBox("Low Pass Cutoff", value=1000, min_value=0, max_value=50000)
+    low_pass_cutoff_field = FormSpinBox("Low Pass Cutoff (hz)", value=1000, min_value=0, max_value=50000)
     main_window.low_pass_cutoff_field = low_pass_cutoff_field.spinbox
     params_panel.add_widget(low_pass_cutoff_field)
 
-    high_pass_cutoff_field = FormSpinBox("High Pass Cutoff", 10, 0, 50000)
+    high_pass_cutoff_field = FormSpinBox("High Pass Cutoff (hz)", 10, 0, 50000)
     main_window.high_pass_cutoff_field = high_pass_cutoff_field.spinbox
     params_panel.add_widget(high_pass_cutoff_field)
 
