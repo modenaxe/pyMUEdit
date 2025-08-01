@@ -127,15 +127,16 @@ class MotorUnitTrackingDialog(QDialog):
         plots_layout = QHBoxLayout()
         # Left: MUAP grids
         muap_grids_layout = QVBoxLayout()
-        muap_grids_layout.addWidget(QLabel("MUAP Grid (File 1)"))
-        self.muap_fig1, _ = plt.subplots(8, 8, figsize=(3, 3))
+      
+        
+        
+        muap_grids_layout.addWidget(QLabel("MUAP Overlay Grid"))
+        self.muap_fig1, _ = plt.subplots(8, 8, figsize=(3, 3))  # Size can be changed if needed
         self.muap_canvas1 = FigureCanvas(self.muap_fig1)
         muap_grids_layout.addWidget(self.muap_canvas1)
-        muap_grids_layout.addWidget(QLabel("MUAP Grid (File 2)"))
-        self.muap_fig2, _ = plt.subplots(8, 8, figsize=(3, 3))
-        self.muap_canvas2 = FigureCanvas(self.muap_fig2)
-        muap_grids_layout.addWidget(self.muap_canvas2)
+          
         plots_layout.addLayout(muap_grids_layout)
+        
         # Right: IDR plots
         idr_plots_layout = QVBoxLayout()
         self.fig1, self.ax1 = plt.subplots(figsize=(2, 1))
@@ -288,99 +289,108 @@ class MotorUnitTrackingDialog(QDialog):
         self.plot_idr(self.file1, ch1, self.ax1, self.canvas1)
         self.plot_idr(self.file2, ch2, self.ax2, self.canvas2)
         # MUAP grids
-        self.plot_muap_grid(self.file1, ch1, self.muap_fig1, self.muap_canvas1)
-        self.plot_muap_grid(self.file2, ch2, self.muap_fig2, self.muap_canvas2)
+        # self.plot_muap_grid(self.file1, ch1, self.muap_fig1, self.muap_canvas1)
+        # self.plot_muap_grid(self.file2, ch2, self.muap_fig2, self.muap_canvas2)
+        self.plot_muap_grid_overlay(self.file1, ch1, self.file2, ch2, self.muap_fig1, self.muap_canvas1)
+
         # Inclusion label
         self.inclusion_label.setText(self.inclusion_status[idx].upper())
         self.inclusion_label.setStyleSheet(
             "color: green; font-weight: bold;" if self.inclusion_status[idx] == "Included" else "color: red; font-weight: bold;"
         )
-    def plot_muap_grid(self, file, mu_index, fig, canvas):
-        raw_signal = file.get("RAW_SIGNAL")
-        mu_pulses = file.get("MUPULSES")
-        fsamp = file.get("FSAMP", 2048)
+    def plot_muap_grid_overlay(self, file1, mu_index1, file2, mu_index2, fig, canvas):
+    # --- Helper to compute MUAPs ---
+        def compute_muaps(file, mu_index):
+            raw_signal = file.get("RAW_SIGNAL")
+            mu_pulses = file.get("MUPULSES")
+            fsamp = file.get("FSAMP", 2048)
 
-        if raw_signal is None or mu_pulses is None:
+            if raw_signal is None or mu_pulses is None:
+                return None, fsamp
+
+            if isinstance(raw_signal, dict):
+                raw_signal = pd.DataFrame(raw_signal)
+            if isinstance(raw_signal, pd.DataFrame):
+                raw_signal = raw_signal.values
+            if not (isinstance(raw_signal, np.ndarray) and raw_signal.ndim == 2):
+                return None, fsamp
+
+            if isinstance(mu_pulses, (list, tuple)) and mu_index < len(mu_pulses):
+                pulses = mu_pulses[mu_index]
+            else:
+                pulses = []
+            if not isinstance(pulses, (list, np.ndarray)):
+                pulses = []
+            pulses = np.array(pulses, dtype=int)
+
+            window = 40
+            seg_len = 2 * window + 1
+            n_channels = raw_signal.shape[1]
+            max_channels = 64
+
+            muaps = np.full((max_channels, seg_len), np.nan)
+            for ch in range(min(n_channels, max_channels)):
+                segments = []
+                for p in pulses:
+                    start = p - window
+                    end = p + window + 1
+                    if start >= 0 and end <= raw_signal.shape[0]:
+                        segments.append(raw_signal[start:end, ch])
+                if segments:
+                    muaps[ch, :] = np.mean(segments, axis=0)
+            return muaps, fsamp
+
+        muaps1, fsamp1 = compute_muaps(file1, mu_index1)
+        muaps2, fsamp2 = compute_muaps(file2, mu_index2)
+        if muaps1 is None or muaps2 is None:
             fig.clf()
             canvas.draw()
-            print("DEBUG: raw_signal or mu_pulses is None")
             return
 
-        # Convert DataFrame to np.ndarray if needed
-        if isinstance(raw_signal, dict):
-            raw_signal = pd.DataFrame(raw_signal)
-        if isinstance(raw_signal, pd.DataFrame):
-            raw_signal = raw_signal.values
-        if not (isinstance(raw_signal, np.ndarray) and raw_signal.ndim == 2):
-            fig.clf()
-            canvas.draw()
-            print("DEBUG: raw_signal is not a 2D array after conversion")
-            return
-
-        # Get firing indices for this MU
-        if isinstance(mu_pulses, (list, tuple)) and mu_index < len(mu_pulses):
-            pulses = mu_pulses[mu_index]
-        else:
-            pulses = []
-        if not isinstance(pulses, (list, np.ndarray)):
-            pulses = []
-        pulses = np.array(pulses, dtype=int)
-
-        if pulses.size == 0:
-            fig.clf()
-            canvas.draw()
-            print(f"DEBUG: No pulses found for MU index {mu_index}")
-            return
-
-        window = 40
-        seg_len = 2 * window + 1
-        n_channels = raw_signal.shape[1]
-        max_channels = 64  # 64 channels expected
-
-        muaps = np.full((max_channels, seg_len), np.nan)
-        for ch in range(min(n_channels, max_channels)):
-            segments = []
-            for p in pulses:
-                start = p - window
-                end = p + window + 1
-                if start >= 0 and end <= raw_signal.shape[0]:
-                    segments.append(raw_signal[start:end, ch])
-            if segments:
-                muaps[ch, :] = np.mean(segments, axis=0)
-
-        valid_muaps = muaps[np.isfinite(muaps)]
+        # --- Robust y axis limits across BOTH ---
+                # --- Robust y axis limits across BOTH (matching the working single-grid approach) ---
+        valid_muaps = np.concatenate([muaps1[np.isfinite(muaps1)], muaps2[np.isfinite(muaps2)]])
         if valid_muaps.size > 0:
-            ymin = np.nanmin(valid_muaps)
-            ymax = np.nanmax(valid_muaps)
-            yrange = ymax - ymin
-            ymin -= 0.05 * yrange
-            ymax += 0.05 * yrange
+            ymin = np.min(valid_muaps)
+            ymax = np.max(valid_muaps)
+            if np.isclose(ymin, ymax):
+                ymin -= 1
+                ymax += 1
+            else:
+                yrange = ymax - ymin
+                ymin -= 0.05 * yrange
+                ymax += 0.05 * yrange
         else:
             ymin, ymax = -1, 1
 
-        # --- Grid layout: 13 rows, 5 columns ---
+
+        # --- Grid: 13 rows, 5 cols (top left blank, row 0 col 1–4: ch0–3, rows 1–12: ch4–63) ---
         n_rows, n_cols = 13, 5
+        window = 40
+        time_ms = np.arange(-window, window + 1) * 1000.0 / fsamp1
+
         fig.clf()
         axs = fig.subplots(n_rows, n_cols, squeeze=False)
-        time_ms = np.arange(-window, window + 1) * 1000.0 / fsamp
 
-        # Row 0, col 0: blank
+        # Top-left blank
         axs[0][0].axis('off')
-        # Row 0, cols 1–4: channels 0–3
+        # Row 0, col 1–4: channels 0–3
         for i in range(4):
-            axs[0][i + 1].plot(time_ms, muaps[i, :], color='black', linewidth=1)
-            axs[0][i + 1].set_xticks([])
-            axs[0][i + 1].set_yticks([])
-            axs[0][i + 1].set_ylim([ymin, ymax])
-            for spine in axs[0][i + 1].spines.values():
+            axs[0][i+1].plot(time_ms, muaps1[i, :], color='black', linewidth=1)
+            axs[0][i+1].plot(time_ms, muaps2[i, :], color='orange', linewidth=1)
+            axs[0][i+1].set_xticks([])
+            axs[0][i+1].set_yticks([])
+            axs[0][i+1].set_ylim([ymin, ymax])
+            for spine in axs[0][i+1].spines.values():
                 spine.set_visible(False)
 
         # Rows 1–12, cols 0–4: channels 4–63
         channel = 4
         for r in range(1, 13):
             for c in range(5):
-                if channel < max_channels:
-                    axs[r][c].plot(time_ms, muaps[channel, :], color='black', linewidth=1)
+                if channel < 64:
+                    axs[r][c].plot(time_ms, muaps1[channel, :], color='black', linewidth=1)
+                    axs[r][c].plot(time_ms, muaps2[channel, :], color='orange', linewidth=1)
                     axs[r][c].set_xticks([])
                     axs[r][c].set_yticks([])
                     axs[r][c].set_ylim([ymin, ymax])
@@ -390,8 +400,15 @@ class MotorUnitTrackingDialog(QDialog):
                 else:
                     axs[r][c].axis('off')
 
-        fig.tight_layout()
+        # --- Make the grid fill all space! ---
+        fig.tight_layout(pad=0)
+        fig.subplots_adjust(
+            top=1, bottom=0, left=0, right=1,  # Remove all outer margins
+            wspace=0.15, hspace=0.05           # Minimal space between subplots
+        )
         canvas.draw()
+
+
 
 
 
