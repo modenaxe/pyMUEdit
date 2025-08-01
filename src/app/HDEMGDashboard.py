@@ -2,13 +2,11 @@ import sys
 import traceback
 import os
 import datetime
-from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QPushButton, QStyle, QWidget, QVBoxLayout
+from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QPushButton, QWidget, QVBoxLayout
 from PyQt5.QtCore import Qt
-import pyqtgraph as pg
 
 # Import UI setup function
 from ui.HDEMGDashboardUI import setup_ui, update_sidebar_selection
-from core.EmgDecomposition import offline_EMG
 
 # Import for external windows/widgets
 from app.ImportDataWindow import ImportDataWindow
@@ -60,6 +58,9 @@ class HDEMGDashboard(QMainWindow):
         # Set up the UI (imported from main_window_ui.py)
         setup_ui(self)
 
+        # Create import view
+        self.create_import_view()
+
         # Now create the manual editing view
         self.create_manual_editing_view()
 
@@ -80,20 +81,6 @@ class HDEMGDashboard(QMainWindow):
             else:
                 print("WARNING: MotorUnitAnalysisWidget does not have 'set_export_window_opener' method.")
 
-        # Initialize Import Data page
-        if ImportDataWindow:
-            self.import_data_page = ImportDataWindow(parent=self)
-            # Use the correct windowflags
-            self.import_data_page.setWindowFlags(getattr(Qt.WindowType, "Widget"))
-            if hasattr(self.import_data_page, "return_to_dashboard_requested"):
-                self.import_data_page.return_to_dashboard_requested.connect(self.show_dashboard_view)
-            # Connect the new signal for decomposition
-            if hasattr(self.import_data_page, "decomposition_requested"):
-                self.import_data_page.decomposition_requested.connect(self.create_decomposition_view)
-            # Connect the fileImported signal to our recent datasets function
-            if hasattr(self.import_data_page, "fileImported"):
-                self.import_data_page.fileImported.connect(self.handle_file_imported)
-
         if DecompositionApp:
             self.decomposition_page = DecompositionApp()
             self.decomposition_page.setWindowFlags(getattr(Qt.WindowType, "Widget"))
@@ -110,9 +97,45 @@ class HDEMGDashboard(QMainWindow):
         filename = file_info.get("filename", "Unknown file")
         pathname = file_info.get("pathname", "")
         filesize = file_info.get("filesize", None)
-        
+
         # Add to recent datasets
         self.add_recent_dataset(filename, pathname, filesize)
+
+    def create_import_view(self):
+        try:
+            # Create a wrapper widget to hold the import view
+            wrapper = QWidget()
+            wrapper.setObjectName("import_data_page_wrapper")
+            wrapper_layout = QVBoxLayout(wrapper)
+            wrapper_layout.setContentsMargins(0, 0, 0, 0)
+
+            # Initialize Import Data page
+            import_page = ImportDataWindow(parent=self)
+
+            # Set window flags to make it a widget instead of a window
+            import_page.setWindowFlags(Qt.WindowType.Widget)
+
+            if hasattr(import_page, "return_to_dashboard_requested"):
+                import_page.return_to_dashboard_requested.connect(self.show_dashboard_view)
+            # Connect the new signal for decomposition
+            if hasattr(import_page, "decomposition_requested"):
+                import_page.decomposition_requested.connect(self.create_decomposition_view)
+            # Connect the fileImported signal to our recent datasets function
+            if hasattr(import_page, "fileImported"):
+                import_page.fileImported.connect(self.handle_file_imported)
+
+            # Add to layout
+            wrapper_layout.addWidget(import_page)
+
+            # Replace the placeholder with our real import view
+            self.import_data_page = wrapper
+
+            # Add the wrapper to the stacked widget
+            self.central_stacked_widget.addWidget(wrapper)
+
+        except Exception as e:
+            print(f"Error creating import view: {e}")
+            traceback.print_exc()
 
     def create_manual_editing_view(self):
         """Creates a manual editing view and adds it to the stacked widget."""
@@ -148,11 +171,7 @@ class HDEMGDashboard(QMainWindow):
             print(f"Error creating manual editing view: {e}")
             traceback.print_exc()
 
-    def enable_segment_session(self):
-        if self.decomp_app:
-            self.decomp_app.segment_session_button.setEnabled(True)
-
-    def create_decomposition_view(self, emg_obj, filename, pathname, imported_signal):
+    def create_decomposition_view(self, emg_obj, filename, pathname, imported_signal, config):
         """Creates a decomposition view with the provided data and adds it to the stacked widget."""
         try:
             print("Creating decomposition view with provided data")
@@ -169,6 +188,7 @@ class HDEMGDashboard(QMainWindow):
                 filename=filename,
                 pathname=pathname,
                 imported_signal=imported_signal,
+                config=config,
                 parent=self,  # Set parent for proper widget hierarchy
             )
 
@@ -212,11 +232,7 @@ class HDEMGDashboard(QMainWindow):
         self.sidebar_buttons["mu_analysis"].clicked.connect(self.show_mu_analysis_view)
         self.sidebar_buttons["decomposition"].clicked.connect(self.show_decomposition_view)
         self.sidebar_buttons["manual_edit"].clicked.connect(self.show_manual_editing_view)
-
-        if ImportDataWindow:
-            self.sidebar_buttons["import"].clicked.connect(self.show_import_data_view)
-        else:
-            self.sidebar_buttons["import"].setEnabled(False)
+        self.sidebar_buttons["import"].clicked.connect(self.show_import_data_view)
 
         if not MUAnalysis:
             self.sidebar_buttons["mu_analysis"].setEnabled(False)
@@ -283,12 +299,12 @@ class HDEMGDashboard(QMainWindow):
 
     def show_import_data_view(self):
         """Switches the central widget to the Import Data page."""
-        if ImportDataWindow is None or self.import_data_page is None:
-            print("ImportDataWindow not available.")
-            return
         print("Switching to Import Data view")
-        self.central_stacked_widget.setCurrentWidget(self.import_data_page)
-        update_sidebar_selection(self, "import")
+        if hasattr(self, "import_data_page") and self.import_data_page:
+            self.central_stacked_widget.setCurrentWidget(self.import_data_page)
+            update_sidebar_selection(self, "import")
+        else:
+            print("ImportDataWindow not available.")
 
     def show_manual_editing_view(self):
         """Switches to Manual Editing view."""
@@ -497,6 +513,7 @@ class HDEMGDashboard(QMainWindow):
                         'data': emg_data['data'],
                         'fsamp': emg_data['fsamp'],
                         'nChan': emg_data['nChan'],
+                        'electrodes': emg_data['electrodes'],
                     }
                     print(f"Restored EMG data for channel viewer: shape={emg_data['data'].shape}")
                 except Exception as e:
@@ -539,7 +556,6 @@ class HDEMGDashboard(QMainWindow):
             
             # Enable buttons
             decomp_app.start_button.setEnabled(True)
-            decomp_app.channel_view_button.setEnabled(True if decomp_app.emg_obj else False)
             
             # Create a wrapper widget to hold the DecompositionApp
             wrapper = QWidget()

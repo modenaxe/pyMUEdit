@@ -1,4 +1,6 @@
 venv
 __pycache__
 data/*.mat
+tests/*.mat
+tests/*.otb+
 .DS_Store
