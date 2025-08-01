@@ -1,6 +1,15 @@
 [dlgbox, signal] = openOTBplus('', 'trial1_20MVC.otb+', 0);
 save('ExpOut20OpentOTBplus.mat')
 
+filteredsignal = notchsignals(signal.data, signal.fsamp);
+save('ExpOut20NotchSignals.mat');
+
+esample = extend(signal.data, 3);
+save('ExpOut20Extend3.mat')
+
+esample = extend(signal.data, 10);
+save('ExpOut20Extend10.mat')
+
 demsignals = demean(signal.data);
 save('ExpOut20Demean.mat')
 
