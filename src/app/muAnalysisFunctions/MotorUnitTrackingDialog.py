@@ -295,86 +295,106 @@ class MotorUnitTrackingDialog(QDialog):
         self.inclusion_label.setStyleSheet(
             "color: green; font-weight: bold;" if self.inclusion_status[idx] == "Included" else "color: red; font-weight: bold;"
         )
-
     def plot_muap_grid(self, file, mu_index, fig, canvas):
         raw_signal = file.get("RAW_SIGNAL")
         mu_pulses = file.get("MUPULSES")
+        fsamp = file.get("FSAMP", 2048)
+
         if raw_signal is None or mu_pulses is None:
             fig.clf()
             canvas.draw()
+            print("DEBUG: raw_signal or mu_pulses is None")
             return
+
+        # Convert DataFrame to np.ndarray if needed
         if isinstance(raw_signal, dict):
             raw_signal = pd.DataFrame(raw_signal)
-        if not isinstance(raw_signal, (np.ndarray, pd.DataFrame)):
-            fig.clf()
-            canvas.draw()
-            return
         if isinstance(raw_signal, pd.DataFrame):
             raw_signal = raw_signal.values
         if not (isinstance(raw_signal, np.ndarray) and raw_signal.ndim == 2):
             fig.clf()
             canvas.draw()
+            print("DEBUG: raw_signal is not a 2D array after conversion")
             return
-        n_channels = raw_signal.shape[1]
-        pulses = []
+
+        # Get firing indices for this MU
         if isinstance(mu_pulses, (list, tuple)) and mu_index < len(mu_pulses):
             pulses = mu_pulses[mu_index]
+        else:
+            pulses = []
         if not isinstance(pulses, (list, np.ndarray)):
             pulses = []
-        window = 40
-        muaps = np.zeros((n_channels, 2 * window + 1))
-        valid_signal = (
-            isinstance(raw_signal, np.ndarray)
-            and raw_signal.ndim == 2
-        )
-        for ch in range(n_channels):
-            segments = []
-            if isinstance(pulses, (list, np.ndarray)):
-                for p in pulses:
-                    try:
-                        p_int = int(p)
-                    except Exception:
-                        continue
-                    start = p_int - window
-                    end = p_int + window + 1
-            if (
-                0 <= start < end <= raw_signal.shape[0]
-                and 0 <= ch < raw_signal.shape[1]
-                and (end - start) == (2 * window + 1)
-            ):
-                segments.append(raw_signal[start:end, ch])
+        pulses = np.array(pulses, dtype=int)
 
+        if pulses.size == 0:
+            fig.clf()
+            canvas.draw()
+            print(f"DEBUG: No pulses found for MU index {mu_index}")
+            return
+
+        window = 40
+        seg_len = 2 * window + 1
+        n_channels = raw_signal.shape[1]
+        max_channels = 64  # 64 channels expected
+
+        muaps = np.full((max_channels, seg_len), np.nan)
+        for ch in range(min(n_channels, max_channels)):
+            segments = []
+            for p in pulses:
+                start = p - window
+                end = p + window + 1
+                if start >= 0 and end <= raw_signal.shape[0]:
+                    segments.append(raw_signal[start:end, ch])
             if segments:
                 muaps[ch, :] = np.mean(segments, axis=0)
-            else:
-                muaps[ch, :] = np.nan
-        # Detect the grid layout from number of channels (or set manually)
-        if n_channels == 64:
-            n_rows, n_cols = 8, 8
-        elif n_channels == 32:
-            n_rows, n_cols = 4, 8
-        elif n_channels == 16:
-            n_rows, n_cols = 4, 4
-        else:
-            n_cols = int(np.ceil(np.sqrt(n_channels)))
-            n_rows = int(np.ceil(n_channels / n_cols))
 
+        valid_muaps = muaps[np.isfinite(muaps)]
+        if valid_muaps.size > 0:
+            ymin = np.nanmin(valid_muaps)
+            ymax = np.nanmax(valid_muaps)
+            yrange = ymax - ymin
+            ymin -= 0.05 * yrange
+            ymax += 0.05 * yrange
+        else:
+            ymin, ymax = -1, 1
+
+        # --- Grid layout: 13 rows, 5 columns ---
+        n_rows, n_cols = 13, 5
         fig.clf()
         axs = fig.subplots(n_rows, n_cols, squeeze=False)
+        time_ms = np.arange(-window, window + 1) * 1000.0 / fsamp
 
-        for ch in range(n_channels):
-            r, c = divmod(ch, n_cols)
-            axs[r][c].plot(muaps[ch, :], color='black', linewidth=1)
-            axs[r][c].set_xticks([])
-            axs[r][c].set_yticks([])
-            for spine in axs[r][c].spines.values():
+        # Row 0, col 0: blank
+        axs[0][0].axis('off')
+        # Row 0, cols 1–4: channels 0–3
+        for i in range(4):
+            axs[0][i + 1].plot(time_ms, muaps[i, :], color='black', linewidth=1)
+            axs[0][i + 1].set_xticks([])
+            axs[0][i + 1].set_yticks([])
+            axs[0][i + 1].set_ylim([ymin, ymax])
+            for spine in axs[0][i + 1].spines.values():
                 spine.set_visible(False)
-        for i in range(n_rows * n_cols):
-            if i >= n_channels:
-                r, c = divmod(i, n_cols)
-                axs[r][c].axis('off')
+
+        # Rows 1–12, cols 0–4: channels 4–63
+        channel = 4
+        for r in range(1, 13):
+            for c in range(5):
+                if channel < max_channels:
+                    axs[r][c].plot(time_ms, muaps[channel, :], color='black', linewidth=1)
+                    axs[r][c].set_xticks([])
+                    axs[r][c].set_yticks([])
+                    axs[r][c].set_ylim([ymin, ymax])
+                    for spine in axs[r][c].spines.values():
+                        spine.set_visible(False)
+                    channel += 1
+                else:
+                    axs[r][c].axis('off')
+
         fig.tight_layout()
         canvas.draw()
+
+
+
 
     def clear_all_plots(self):
         self.fig1.clf()
