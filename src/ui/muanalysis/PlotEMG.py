@@ -431,7 +431,6 @@ class PlotEMGToolDialog(QDialog):
                 timeinseconds=self.time_seconds_checkbox.isChecked(),
                 addrefsig=self.ref_signal_checkbox.isChecked(),
                 tight_layout=True,
-                showimmediately=False
             )
             canvas = SaveablePlot(fig)
             self.analysis_plot.display_plot(canvas)

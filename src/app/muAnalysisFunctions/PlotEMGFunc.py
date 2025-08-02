@@ -379,7 +379,6 @@ def plot_mupulses(
 
     return fig
 
-
 # OPENHDEMG
 # plots the source? not entirely sure yet
 def plot_ipts(
@@ -392,7 +391,7 @@ def plot_ipts(
     line2d_kwargs_ax1=None,
     line2d_kwargs_ax2=None,
     axes_kwargs=None,
-    showimmediately=True,
+    showimmediately = True,
 ):
     common = CommonOpenFunc()
     # Check if all the MUs have to be plotted
@@ -480,6 +479,11 @@ def plot_ipts(
     # Set tight layout if requested
     if tight_layout:
         plt.tight_layout()
+
+    if showimmediately:
+        plt.show()
+
+    return fig
 
 
 #OPENHDEMG
