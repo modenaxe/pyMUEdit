@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import (
     QToolButton,
 )
 from PyQt5.QtGui  import QIcon          # 图标
-from PyQt5.QtCore import QSize   
+from PyQt5.QtCore import QSize, QTimer  
 from pathlib import Path
 
 # Import custom components
@@ -734,6 +734,21 @@ def setup_display_panel(main_window):
     action_card.content_layout.addWidget(action_container)
     display_layout.addWidget(action_card)
 
+    main_window.tip_bar = QLabel("")
+    main_window.tip_bar.setFixedHeight(10)
+    main_window.tip_bar.setAlignment(Qt.AlignCenter)
+    main_window.tip_bar.setStyleSheet(f"""
+        background-color: {CleanTheme.BG_CARD};
+        color: black;
+        font-weight: bold;
+    """)
+    display_layout.addWidget(main_window.tip_bar)
+    
+    # Timer for tip bar
+    main_window.tip_timer = QTimer(main_window)
+    main_window.tip_timer.setSingleShot(True)
+    main_window.tip_timer.timeout.connect(main_window.clear_tip)
+
     # Navigation buttons - simple row of buttons in a frame
     nav_frame = QFrame()
     nav_frame.setFrameShape(QFrame.StyledPanel)
@@ -753,7 +768,6 @@ def setup_display_panel(main_window):
 
     # Add all visualization elements to the panel
     main_window.display_panel.set_plot_widget(display_widget)
-
 
 def create_plot_widget(main_window, y_label, x_label=""):
     """Create a standardized plot widget with consistent styling."""
