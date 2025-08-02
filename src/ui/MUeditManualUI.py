@@ -463,6 +463,23 @@ def create_visualization_tab(main_window):
     row3_lay.addWidget(main_window.aa_switch)
     
     button_panel.add_widget(row3)
+    
+    row4 = QWidget()
+    row4_lay = QHBoxLayout(row4)
+    row4_lay.setContentsMargins(0,0,0,0)
+    row4_lay.setSpacing(6)
+    
+    sps_lbl = QLabel("Spikes Plot Ascending")                 
+    sps_lbl.setStyleSheet(f"color:{CleanTheme.TEXT_PRIMARY};")
+    row4_lay.setContentsMargins(0,0,0,0)
+    row4_lay.setSpacing(6)
+    row4_lay.addWidget(sps_lbl)
+
+    main_window.sps_switch = ToggleSwitch(checked=True)        
+    main_window.sps_switch.toggled.connect(main_window.sps_checkbox_value_changed)
+    row4_lay.addWidget(main_window.sps_switch)
+    
+    button_panel.add_widget(row4)
 
     viz_layout.addWidget(button_panel)
     viz_layout.addStretch()
