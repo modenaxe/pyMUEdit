@@ -38,12 +38,6 @@ class SelectionTool:
         # Use the proper cursor enum value
         self.plot_widget.setCursor(Qt.CursorShape.CrossCursor)
 
-        # Add text item to guide the user
-        self.guide_text = pg.TextItem(
-            text=f"Drag to draw {action_type.replace('_', ' ')} selection", color=(215, 85, 55), anchor=(0, 0)
-        )
-        self.guide_text.setPos(plot_widget.viewRect().left(), plot_widget.viewRect().top())
-        plot_widget.addItem(self.guide_text)
 
     def mousePressEvent(self, event):
         """Handle mouse press to start drawing rectangle."""
@@ -63,6 +57,7 @@ class SelectionTool:
                     resizable=False,
                 )
                 self.plot_widget.addItem(self.selection_rect)
+                
             else:
                 # Reset existing rectangle
                 self.selection_rect.setPos(self.start_point.x(), self.start_point.y())
@@ -133,7 +128,7 @@ class SelectionTool:
                 # Calculate final rectangle
                 x_min = self.start_point.x() - x_length * x_ratio
                 x_max = self.start_point.x() + x_length * x_ratio
-                y_min = self.start_point.y() - y_length * 0.1
+                y_min = self.start_point.y() - y_length * 0.01
                 y_max = self.start_point.y() + y_length * 1
 
             # Call the callback with the selection bounds
@@ -152,10 +147,6 @@ class SelectionTool:
             self.plot_widget.removeItem(self.selection_rect)
             self.selection_rect = None
 
-        # Remove the guide text
-        if self.guide_text is not None:
-            self.plot_widget.removeItem(self.guide_text)
-            self.guide_text = None
             
     def disable(self):
         
