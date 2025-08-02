@@ -8,7 +8,7 @@ from .CleanTheme import CleanTheme
 class ActionButtonedit(QPushButton):
     """A clean, minimalist button for actions"""
 
-    def __init__(self, text, icon=None, primary=True, parent=None, tabs=False):
+    def __init__(self, text, icon=None, primary=True, parent=None, tabs=False, blue=False):
         """
         Initialize an action button
 
@@ -70,7 +70,6 @@ class ActionButtonedit(QPushButton):
                     color: {CleanTheme.TEXT_PRIMARY};
                     border: 1px solid {CleanTheme.BORDER};
                     border-radius: 4px;
-                    
                 }}
                 QPushButton:hover {{
                     background-color: #f5f5f5;
@@ -107,9 +106,8 @@ class ActionButtonedit(QPushButton):
                 }}
 
                 QPushButton[active="true"] {{
-                    background-color: #1976D2;
+                    background-color: #0072ee;
                     color: white;
-                    border: 1px solid #1976D2;
                 }}
 
                 QPushButton[active="true"]:hover {{
@@ -117,6 +115,9 @@ class ActionButtonedit(QPushButton):
                 }}
             """
             )
+        
+        if blue:
+            self.set_blue()
             
             
     def set_active(self, active: bool):
@@ -127,3 +128,36 @@ class ActionButtonedit(QPushButton):
         
     def get_active(self):
         return self.property("active")
+
+    def set_blue(self):
+        self.setStyleSheet(
+            f"""
+            QPushButton {{
+                background: #0072ee;
+                color: #ffffff;
+                border: none;
+                border-radius: 4px;
+                padding: 8px 0px;
+            }}
+            QPushButton:hover {{
+                background-color: #1565C0;
+                color: #ffffff;
+            }}
+
+            QPushButton:pressed {{
+                background-color: #e0e0e0;
+            }}
+
+            QPushButton:disabled {{
+                background-color: #f0f0f0;
+                color: #aaaaaa;
+                border: 1px solid #e0e0e0;
+            }}
+            
+            QPushButton[active="true"] {{
+                background-color: #c0ffc0;
+                border: 1px solid green;
+                color: darkgreen;
+            }}
+            """
+        )
