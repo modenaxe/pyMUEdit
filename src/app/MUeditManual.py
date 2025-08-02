@@ -273,6 +273,7 @@ class MUeditManual(QMainWindow):
         # Wrong Format
         if not self.filename.lower().endswith(".mat"):
             ErrorDialog(title_label="File Format Error", text="Selected file is not a valid .mat file.\nPlease choose a .mat file.")
+            QApplication.restoreOverrideCursor()  # 还原鼠标
             return
 
         try:
@@ -285,6 +286,7 @@ class MUeditManual(QMainWindow):
                     and "Pulsetrain" not in files  # 有些是顶层字段
             ):
                 raise KeyError("Missing 'signal' or 'Pulsetrain'")
+                QApplication.restoreOverrideCursor()  # 还原鼠标
 
             # Initialize the MUedition data structure
             self.MUedition = {"edition": {}, "signal": {}, "parameters": {}}
@@ -339,15 +341,18 @@ class MUeditManual(QMainWindow):
             self.update_plot_limits()
             self._sync_pan_slider()#moy
 
+            QApplication.restoreOverrideCursor()  # 还原鼠标
+
         except KeyError as ke:
             ErrorDialog(title_label="Missing Field", text=f"The .mat file is missing required fields:\n{ke}")
+            QApplication.restoreOverrideCursor()
         except Exception as e:
             ErrorDialog(title_label="Import Error", text=f"Failed to load the file:\n{str(e)}")
-
+            QApplication.restoreOverrideCursor()
         #获取初始读取的数据值，对比作为save按钮的开关
         self.initial_data = copy.deepcopy(self.MUedition["edition"])
 
-        QApplication.restoreOverrideCursor()    #还原鼠标
+
         #origial error print
         # except Exception as e:
         #     import traceback

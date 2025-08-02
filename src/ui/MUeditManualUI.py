@@ -776,6 +776,12 @@ def create_plot_widget(main_window, y_label, x_label=""):
     # Add grid
     plot.showGrid(x=True, y=True, alpha=0.3)
 
+    #禁用右键plot option中的选项
+    plot.setContextMenuActionVisible('Transforms',False)
+    plot.setContextMenuActionVisible('Downsample',False)
+    plot.setContextMenuActionVisible('Average',False)
+    plot.setContextMenuActionVisible('Alpha',False)
+
     return plot
 
 
