@@ -6,8 +6,22 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtCore import Qt 
 
 class ToggleSwitch(QWidget):
-    toggled = pyqtSignal(bool)   
+    toggled = pyqtSignal(bool)  
+    """iOS style Toggle Switch"""
     def __init__(self, parent=None, checked=False, bg_off="#d0d0d0", bg_on="#3a7afe"):
+        """
+        A minimalist iOS-style toggle switch with animated transitions
+
+        Emits:
+            toggled (bool): Emitted whenever the switch state changes
+
+        Args:
+            parent (QWidget, optional): Parent widget
+            checked (bool, optional): Initial state of the switch (on/off)
+            bg_off (str, optional): Hex color for the off-state background
+            bg_on (str, optional): Hex color for the on-state background
+        """
+        
         super().__init__(parent)
         self._checked = checked
         self._bg_off  = QColor(bg_off)
