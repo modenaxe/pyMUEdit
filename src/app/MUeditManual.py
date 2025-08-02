@@ -1620,7 +1620,7 @@ class MUeditManual(QMainWindow):
             
             QApplication.restoreOverrideCursor()
             
-            SuccessDialog(text="Update filter successfully!\nGreen means SIL improve. Blue means SIL decrease.")
+            # SuccessDialog(text="Update filter successfully!\nGreen means SIL improve. Blue means SIL decrease.")
         except Exception as e:
             QApplication.restoreOverrideCursor()
             print(e)

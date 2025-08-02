@@ -13,13 +13,13 @@ from PyQt5.QtWidgets import (
     QFrame,
     QComboBox,
     QListView, # moy
-    QSizePolicy, #shr
+    QSizePolicy,
     QSpacerItem,
     QApplication,
     QLayout,
     QToolButton,
 )
-from PyQt5.QtGui  import QIcon          # 图标
+from PyQt5.QtGui  import QIcon   
 from PyQt5.QtCore import QSize   
 from pathlib import Path
 
@@ -90,11 +90,6 @@ def setup_ui(main_window):
     # Set up keyboard shortcuts
     main_window.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
     
-    
-
-#   新增悬浮save块
-    # _add_floating_save_btn(main_window)
-
 
 def setup_control_panel(main_window):
     """Set up the control panel with all controls using modern UI components."""
@@ -178,7 +173,6 @@ def setup_control_panel(main_window):
     save_group.add_field(main_window.save_btn)
     control_layout.addWidget(save_group)
 
-    # 隐藏原来的save
     save_group.hide()
 
     # Set the control panel as the scroll area's widget
@@ -242,9 +236,6 @@ def attach_control_pannel_to_sidebar(main_window):
             name    = w.objectName() if w else item.layout().__class__.__name__
             factor  = sidebar.layout.stretch(i)
             print(f"index={i}, {name}, stretch={factor}")
-    
-    
-
 
 def create_tab_widget():
     """Create a styled tab widget."""
@@ -710,8 +701,7 @@ def setup_display_panel(main_window):
         action_layout.addWidget(btn)
         # Store reference to button in main_window
         setattr(main_window, attr_name, btn)
-        main_window.action_buttons[handler.__name__] = btn
-        
+        main_window.action_buttons[handler.__name__] = btn     
         if text in {"Add spikes", "Delete spikes", "Update MU filter", "Extend MU filter"}:
             btn.set_blue()
         if text in {"Delete spikes", "Delete DR", "Remove outliers"}:
@@ -815,35 +805,7 @@ def create_mu_checkbox(main_window, array_idx, mu_idx, text, sil_value, is_check
     checkbox.setChecked(is_checked)
     checkbox.stateChanged.connect(main_window.mu_checkbox_state_changed)
 
-    return checkbox
-
-
-def _add_floating_save_btn(main_window):
-    """
-    在窗口右上角放一个悬浮 Save 按钮，点击后仍调用 main_window.save_button_pushed。
-    不动侧边栏里的原有 Save。
-    """
-
-    btn = ActionButton("Save", primary=True, parent=main_window)
-    btn.setFixedSize(80, 40)
-    btn.clicked.connect(main_window.save_button_pushed)
-
-    margin = 20
-    def _reposition():
-        x = main_window.width() - btn.width() - margin
-        y = margin
-        btn.move(x, y)
-    _reposition()           
-
-    old_resize = main_window.resizeEvent
-    def new_resize(ev):
-        if callable(old_resize):
-            old_resize(ev)      
-        _reposition()
-    main_window.resizeEvent = new_resize
-
-    main_window.floating_save_btn = btn
-    
+    return checkbox    
     
 def find_sidebar(main_window):
     """Find the sidebar component in the application hierarchy."""
