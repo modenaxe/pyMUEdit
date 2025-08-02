@@ -2247,56 +2247,80 @@ class MUeditManual(QMainWindow):
         # import time # debug if this button real work moy
         # t0 = time.time()
         # print("[DEBUG] Start: remove_duplicates_within_grids")
-        def _task(): # function for progerss moy
-            if not self.MUedition:
+        if not self.MUedition:
+            return
+        
+        # Create a progress dialog
+        from PyQt5.QtWidgets import QProgressDialog
+
+        progress = QProgressDialog("Removing duplicates within grids...", "Cancel", 0, 100, self)
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.setMinimumDuration(0)
+        progress.setValue(0)
+
+        # Extract the sampling frequency as a scalar
+        if self.MUedition["signal"]["fsamp"].ndim > 1:
+            fsamp = float(self.MUedition["signal"]["fsamp"][0, 0])
+        else:
+            fsamp = float(self.MUedition["signal"]["fsamp"][0])
+
+        # Count total arrays
+        total_arrays = len(self.MUedition["edition"]["Pulsetrain"])
+
+        # Process each array
+        for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
+            progress.setValue(int(array_idx / total_arrays * 100))
+            progress.setLabelText(f"Processing Array #{array_idx + 1}")
+            QApplication.processEvents()
+
+            if progress.wasCanceled():
+                progress.close()
+                print("Batch processing interruption!")
                 return
+            
+            # Skip if there are no MUs
+            if self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0] == 0:
+                continue
 
-            # Extract the sampling frequency as a scalar
-            if self.MUedition["signal"]["fsamp"].ndim > 1:
-                fsamp = float(self.MUedition["signal"]["fsamp"][0, 0])
-            else:
-                fsamp = float(self.MUedition["signal"]["fsamp"][0])
+            # Create arrays for remduplicates
+            pulse_train = self.MUedition["edition"]["Pulsetrain"][array_idx]
 
-            # Process each array
-            for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
-                # Skip if there are no MUs
-                if self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0] == 0:
-                    continue
+            discharge_times = []
+            for mu_idx in range(pulse_train.shape[0]):
+                if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
+                    discharge_times.append(self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx])
+                else:
+                    discharge_times.append(np.array([]))
 
-                # Create arrays for remduplicates
-                pulse_train = self.MUedition["edition"]["Pulsetrain"][array_idx]
+            # Remove duplicates
+            unique_discharge_times, unique_pulse_train, _ = remove_duplicates(
+                pulse_train,
+                discharge_times,
+                discharge_times,
+                np.zeros([np.shape(pulse_train)[0], np.shape(pulse_train)[1]]),  # Placeholder for mu_filters (not used)
+                round(fsamp / 40),
+                0.00025,
+                0.3,  # Duplicate threshold
+                fsamp,
+            )
 
-                discharge_times = []
-                for mu_idx in range(pulse_train.shape[0]):
-                    if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
-                        discharge_times.append(self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx])
-                    else:
-                        discharge_times.append(np.array([]))
+            # Replace with unique MUs
+            if isinstance(unique_pulse_train, list):
+                if len(unique_pulse_train) == 0:
+                    unique_pulse_train = unique_pulse_train
+                else:
+                    unique_pulse_train = np.stack(unique_pulse_train)
+            self.MUedition["edition"]["Pulsetrain"][array_idx] = unique_pulse_train
 
-                # Remove duplicates
-                unique_discharge_times, unique_pulse_train, _ = remove_duplicates(
-                    pulse_train,
-                    discharge_times,
-                    discharge_times,
-                    np.zeros((1, 1)),  # Placeholder for mu_filters (not used)
-                    round(fsamp / 40),
-                    0.00025,
-                    0.3,  # Duplicate threshold
-                    fsamp,
-                )
+            # Update discharge times and SIL values
+            for mu_idx in range(unique_pulse_train.shape[0]):  # type:ignore
+                self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = unique_discharge_times[mu_idx]
+                self.calculate_silval(array_idx, mu_idx)
+        progress.setValue(100)
 
-                # Replace with unique MUs
-                self.MUedition["edition"]["Pulsetrain"][array_idx] = unique_pulse_train
-
-                # Update discharge times and SIL values
-                for mu_idx in range(unique_pulse_train.shape[0]):  # type:ignore
-                    self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = unique_discharge_times[mu_idx]
-                    self.calculate_silval(array_idx, mu_idx)
-
-            self.update_save_button()
-            # Update the MU checkboxes
-            self.update_mu_checkboxes()
-        self._run_with_progress("Removing duplicates within grids", _task)
+        self.update_save_button()
+        # Update the MU checkboxes
+        self.update_mu_checkboxes()
         # print(f"[DEBUG] Done: remove_duplicates_within_grids  (t={time.time()-t0:.2f}s)") # debug if this button real work moy
 
     def remove_duplicates_between_grids_button_pushed(self):
@@ -2305,94 +2329,111 @@ class MUeditManual(QMainWindow):
         # import time # debug if this button real work moy
         # t0 = time.time()
         # print("[DEBUG] Start: remove_duplicates_within_grids")
-        def _task(): # function for progerss moy
 
-            if not self.MUedition:
-                return
+        if not self.MUedition:
+            return
+        
+        # Create a progress dialog
+        from PyQt5.QtWidgets import QProgressDialog
 
-            # Extract the sampling frequency as a scalar
-            if self.MUedition["signal"]["fsamp"].ndim > 1:
-                fsamp = float(self.MUedition["signal"]["fsamp"][0, 0])
-            else:
-                fsamp = float(self.MUedition["signal"]["fsamp"][0])
+        progress = QProgressDialog("Removing duplicates_between_grids...", "Cancel", 0, 100, self)
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.setMinimumDuration(0)
+        progress.setValue(0)
 
-            # Count total MUs
-            mu_count = 0
-            for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
-                mu_count += self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]
+        # Extract the sampling frequency as a scalar
+        if self.MUedition["signal"]["fsamp"].ndim > 1:
+            fsamp = float(self.MUedition["signal"]["fsamp"][0, 0])
+        else:
+            fsamp = float(self.MUedition["signal"]["fsamp"][0])
 
-            # Create arrays for remduplicatesbgrids
-            all_pulse_trains = np.zeros((mu_count, self.MUedition["edition"]["time"].shape[0]))
-            all_discharge_times = []
-            muscle = np.zeros(mu_count, dtype=int)
+        # Count total arrays
+        total_arrays = len(self.MUedition["edition"]["Pulsetrain"])
 
-            # Collect all MUs
-            mu_idx_global = 0
-            for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
-                for mu_idx in range(self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]):
-                    all_pulse_trains[mu_idx_global] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx]
+        # Count total MUs
+        mu_count = 0
+        for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
+            mu_count += self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]
 
-                    if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
-                        all_discharge_times.append(self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx])
-                    else:
-                        all_discharge_times.append(np.array([]))
+        # Create arrays for remduplicatesbgrids
+        all_pulse_trains = np.zeros((mu_count, self.MUedition["edition"]["time"].shape[0]))
+        all_discharge_times = []
+        muscle = np.zeros(mu_count, dtype=int)
 
-                    muscle[mu_idx_global] = array_idx
-                    mu_idx_global += 1
+        # Collect all MUs
+        mu_idx_global = 0
+        for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
+            for mu_idx in range(self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]):
+                all_pulse_trains[mu_idx_global] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx]
 
-            # Remove duplicates between arrays
-            unique_discharge_times, unique_pulse_train, unique_muscle = remove_duplicates_between_arrays(
-                all_pulse_trains, all_discharge_times, muscle, round(fsamp / 40), 0.00025, 0.3, fsamp  # Duplicate threshold
-            )
-
-            # Recreate data structures
-            new_pulsetrain = []
-            new_dischargetimes = {}
-            new_silval = {}
-            new_silvalcon = {}
-
-            # Initialize arrays for each grid
-            for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
-                array_indices = np.where(unique_muscle == array_idx)[0]
-
-                if len(array_indices) > 0:
-                    # Get pulse trains for this array
-                    array_pulse_train = unique_pulse_train[array_indices]
-                    new_pulsetrain.append(array_pulse_train)
-
-                    # Get discharge times for this array
-                    for mu_idx, global_idx in enumerate(array_indices):
-                        if global_idx < len(unique_discharge_times):
-                            new_dischargetimes[array_idx, mu_idx] = unique_discharge_times[global_idx]
-
-                        # Calculate SIL values
-                        self.calculate_silval(array_idx, mu_idx)
+                if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
+                    all_discharge_times.append(self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx])
                 else:
-                    # Add empty array
-                    new_pulsetrain.append(
-                        np.zeros(
+                    all_discharge_times.append(np.array([]))
+
+                muscle[mu_idx_global] = array_idx
+                mu_idx_global += 1
+
+        progress.setLabelText(f"Canculating duplicates....")
+        QApplication.processEvents()
+
+        # Remove duplicates between arrays
+        unique_discharge_times, unique_pulse_train, unique_muscle = remove_duplicates_between_arrays(
+            all_pulse_trains, all_discharge_times, muscle, round(fsamp / 40), 0.00025, 0.3, fsamp  # Duplicate threshold
+        )
+
+        progress.setValue(50)
+        QApplication.processEvents()
+        
+        # Recreate data structures
+        new_pulsetrain = []
+        new_dischargetimes = {}
+
+        # Initialize arrays for each grid
+        for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
+            progress.setValue(int(array_idx / total_arrays * 50 + 50))
+            progress.setLabelText(f"Processing Array #{array_idx + 1}")
+            QApplication.processEvents()
+
+            array_indices = np.where(unique_muscle == array_idx)[0]
+
+            if len(array_indices) > 0:
+                # Get pulse trains for this array
+                array_pulse_train = unique_pulse_train[array_indices]
+                new_pulsetrain.append(array_pulse_train)
+
+                # Get discharge times for this array
+                for mu_idx, global_idx in enumerate(array_indices):
+                    if global_idx < len(unique_discharge_times):
+                        new_dischargetimes[array_idx, mu_idx] = unique_discharge_times[global_idx]
+
+                    # Calculate SIL values
+                    self.calculate_silval(array_idx, mu_idx)
+            else:
+                # Add empty array
+                new_pulsetrain.append(
+                    np.zeros(
+                        (
+                            0,
                             (
-                                0,
-                                (
-                                    unique_pulse_train.shape[1]
-                                    if unique_pulse_train.shape[0] > 0
-                                    else self.MUedition["edition"]["time"].shape[0]
-                                ),
-                            )
+                                unique_pulse_train.shape[1]
+                                if unique_pulse_train.shape[0] > 0
+                                else self.MUedition["edition"]["time"].shape[0]
+                            ),
                         )
                     )
+                )
 
-            # Update the data
-            self.MUedition["edition"]["Pulsetrain"] = new_pulsetrain
-            self.MUedition["edition"]["Dischargetimes"] = new_dischargetimes
+        # Update the data
+        self.MUedition["edition"]["Pulsetrain"] = new_pulsetrain
+        self.MUedition["edition"]["Dischargetimes"] = new_dischargetimes
 
-            self.update_save_button()
-            # Update the MU checkboxes
-            self.update_mu_checkboxes()
-        self._run_with_progress("Removing duplicates between grids", _task)
-
+        progress.setValue(100)
+        self.update_save_button()
+        # Update the MU checkboxes
+        self.update_mu_checkboxes()
         # print(f"[DEBUG] Done: remove_duplicates_within_grids  (t={time.time()-t0:.2f}s)") # debug if this button real work moy
-
+        
     # Visualization methods
     def plot_mu_spiketrains_button_pushed(self):
         """Plot all motor unit spike trains in a new window."""
