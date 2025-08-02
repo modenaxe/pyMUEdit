@@ -384,6 +384,7 @@ class MUeditManual(QMainWindow):
         self.update_mu_filter_btn.setEnabled(enabled)
         self.extend_mu_filter_btn.setEnabled(enabled)
         self.lock_spikes_btn.setEnabled(enabled)
+        self.sil_switch.setEnabled(enabled)
         if hasattr(self, "selection_tool"): self.selection_tool.disable()
     
     def help_button_pushed(self):
@@ -500,7 +501,7 @@ class MUeditManual(QMainWindow):
         if self.mu_checkboxes:
             self.mu_checkboxes[0].setChecked(True)
 
-    def mu_checkbox_state_changed(self, _state=None, *, pluse_train_color="#D95535"):
+    def mu_checkbox_state_changed(self, _state=None, *, pluse_train_color="#D95535", update_act_btn=True):
         """Handle changes in MU checkbox selection."""
         # Get all checked MUs
         checked_mus = []
@@ -523,7 +524,8 @@ class MUeditManual(QMainWindow):
             
         # Update the display based on selection
         self.display_selected_mus(checked_mus, pluse_train_color)
-        self.update_action_button_states()
+        if update_act_btn:
+            self.update_action_button_states()
     
     def update_display_mus(self, pluse_train_color="#D95535"):
         checked_mus = []
@@ -1825,7 +1827,7 @@ class MUeditManual(QMainWindow):
 
         # Refresh Display
         self.calculate_silval(a, m)
-        self.mu_checkbox_state_changed()
+        self.mu_checkbox_state_changed(update_act_btn=False)
         if self.dirty_depth > 0:
             self.dirty_depth -= 1
         self.update_save_button()
@@ -1852,7 +1854,7 @@ class MUeditManual(QMainWindow):
 
         # Refresh Display
         self.calculate_silval(a, m)
-        self.mu_checkbox_state_changed()
+        self.mu_checkbox_state_changed(update_act_btn=False)
         self.dirty_depth += 1
         self.update_save_button()
             
