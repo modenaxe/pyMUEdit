@@ -391,7 +391,7 @@ def plot_ipts(
     line2d_kwargs_ax1=None,
     line2d_kwargs_ax2=None,
     axes_kwargs=None,
-    showimmediately = True,
+    showimmediately=True,
 ):
     common = CommonOpenFunc()
     # Check if all the MUs have to be plotted
@@ -484,7 +484,6 @@ def plot_ipts(
         plt.show()
 
     return fig
-
 
 #OPENHDEMG
 def plot_differentials(
