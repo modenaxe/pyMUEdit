@@ -107,7 +107,7 @@ class PlotEMGToolDialog(QDialog):
         filter_row_layout.addWidget(dropdowns, stretch=1)
 
         layout.addWidget(filter_row)
-        layout.addSpacing(5)
+        # layout.addSpacing(5)
 
 
         # --- Plot EMGsig, REFsig, IDR, and MUPulses Buttons with Inputs (each in their own row, aligned) ---
@@ -162,8 +162,6 @@ class PlotEMGToolDialog(QDialog):
         idr_row.setContentsMargins(0, 0, 0, 0)
         left_layout.addWidget(idr)
 
-        left_layout.addStretch(1)
-
         # the input 
         self.mu_input = AnalysisInput(placeholder="MU number (e.g. 1-3,5)") 
         self.mu_input.set_width(textbox_width)
@@ -173,6 +171,22 @@ class PlotEMGToolDialog(QDialog):
         idr_btn = GeneralButton("Plot IDR", self.handle_idr_clicked, parent=self)
         idr_btn.setFixedWidth(button_width)
         idr_row.addWidget(idr_btn)
+
+        # left row 3: Plot Source + MU number
+        source = QWidget()
+        source_row = QHBoxLayout(source)
+        source_row.setContentsMargins(0, 0, 0, 0)
+        left_layout.addWidget(source)
+
+        # the dropdown
+        self.source_mu_input = AnalysisInput(placeholder="MU Number (e.g. 1-3,5)") 
+        self.source_mu_input.set_width(textbox_width)
+        source_row.addWidget(self.source_mu_input)
+
+        # the button 
+        source_btn = GeneralButton("Plot Source", self.handle_source_clicked, parent=self)
+        source_btn.setFixedWidth(button_width)
+        source_row.addWidget(source_btn)
 
         # right row 1: Plot MUPulses + line width
         mupulses = QWidget()
@@ -190,23 +204,7 @@ class PlotEMGToolDialog(QDialog):
         mupulses_btn.setFixedWidth(button_width)
         mupulses_row.addWidget(mupulses_btn)
 
-        # right row 2: Plot Source + MU number
-        source = QWidget()
-        source_row = QHBoxLayout(source)
-        source_row.setContentsMargins(0, 0, 0, 0)
-        right_layout.addWidget(source)
-
-        # the dropdown
-        self.source_mu_input = AnalysisInput(placeholder="MU Number (e.g. 1-3,5)") 
-        self.source_mu_input.set_width(textbox_width)
-        source_row.addWidget(self.source_mu_input)
-
-        # the button 
-        source_btn = GeneralButton("Plot Source", self.handle_source_clicked, parent=self)
-        source_btn.setFixedWidth(button_width)
-        source_row.addWidget(source_btn)
-
-       # right row 3: Plot REFsig (no input)
+       # right row 2: Plot REFsig (no input)
         refsig = QWidget()
         refsig_row = QHBoxLayout(refsig)
         refsig_row.setContentsMargins(0, 0, 0, 0)
@@ -217,6 +215,8 @@ class PlotEMGToolDialog(QDialog):
         refsig_btn = GeneralButton("Plot REFsig", self.handle_refsig_clicked, parent=self)
         refsig_btn.setFixedWidth(button_width)
         refsig_row.addWidget(refsig_btn)
+
+        right_layout.addStretch(1)
 
         # bottom row 1: Derivation + Matrix Column + Config Dropdown
         derivation = QWidget()
@@ -241,7 +241,6 @@ class PlotEMGToolDialog(QDialog):
         derivation_btn = GeneralButton("Derivation", self.handle_derivation_clicked, parent=self)
         derivation_btn.setFixedWidth(button_width)
         derivation_row.addWidget(derivation_btn)
-        # derivation_row.addSpacing(8)
 
         # bottom row 2: plot muap
         muap = QWidget()
@@ -518,20 +517,18 @@ class PlotEMGToolDialog(QDialog):
             # DELSYS requires different MUAPS plot
             if FileUploadFunc.file["SOURCE"] == "DELSYS":
                 muaps_dict = extract_delsys_muaps(FileUploadFunc.file)
-                # TODO: apparently this actually plots it
                 muaps_from_sta(self.analysis_plot, muaps_dict[int(self.muap_munum.get())])
 
             else:
                 if self.matrix_code_dropdown.currentText() == "Custom":
                     # Get rows and columns and turn into list
-                    # TODO: check if it's valid
                     list_rcs = [int(i) for i in self.custom_matrix.get().split(",")]
 
                     try:
                         # Sort emg file
                         sorted_file = sort_rawemg(
                             emgfile=FileUploadFunc.file,
-                            code=self.custom_matrix.get(),
+                            code=self.matrix_code_dropdown.currentText(),
                             orientation=int(self.orientation_dropdown.currentText()),
                             n_rows=list_rcs[0],
                             n_cols=list_rcs[1],
@@ -541,6 +538,7 @@ class PlotEMGToolDialog(QDialog):
                             "Number of specified rows and columns must match the number of channels", 
                             "Invalid Input"
                         ).exec_()
+                        return
                 else:
                     # Sort emg file
                     sorted_file = sort_rawemg(
@@ -561,7 +559,6 @@ class PlotEMGToolDialog(QDialog):
                 # Calculate STA dictionary
                 # Plot deviation
                 sta_dict = sta(
-
                     emgfile=FileUploadFunc.file,
                     sorted_rawemg=diff_file,
                     firings="all",
@@ -637,6 +634,7 @@ class PlotEMGButton(QWidget):
     def open_plot_emg_btn(self):
         if FileUploadFunc.file == None:
             ErrorDialog("No file has been loaded", "Error").exec_()
+            return
 
         # Open the Motor Unit Properties dialog
         dialog = PlotEMGToolDialog(self.analysis_plot)
