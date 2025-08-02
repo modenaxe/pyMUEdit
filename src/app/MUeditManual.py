@@ -76,6 +76,7 @@ class MUeditManual(QMainWindow):
         self.mu_checkboxes = []  # Initialize the mu_checkboxes list
         self.plot_display_mode = 0  # 0 for Single MU Seleted 
         self.update_plot_setRange = False
+        self.aa_fix = False
 
         # Set up the UI
         setup_ui(self)
@@ -272,6 +273,7 @@ class MUeditManual(QMainWindow):
         # Wrong Format
         if not self.filename.lower().endswith(".mat"):
             ErrorDialog(title_label="File Format Error", text="Selected file is not a valid .mat file.\nPlease choose a .mat file.")
+            QApplication.restoreOverrideCursor()  # 还原鼠标
             return
 
         try:
@@ -284,6 +286,7 @@ class MUeditManual(QMainWindow):
                     and "Pulsetrain" not in files  # 有些是顶层字段
             ):
                 raise KeyError("Missing 'signal' or 'Pulsetrain'")
+                QApplication.restoreOverrideCursor()  # 还原鼠标
 
             # Initialize the MUedition data structure
             self.MUedition = {"edition": {}, "signal": {}, "parameters": {}}
@@ -338,15 +341,18 @@ class MUeditManual(QMainWindow):
             self.update_plot_limits()
             self._sync_pan_slider()#moy
 
+            QApplication.restoreOverrideCursor()  # 还原鼠标
+
         except KeyError as ke:
             ErrorDialog(title_label="Missing Field", text=f"The .mat file is missing required fields:\n{ke}")
+            QApplication.restoreOverrideCursor()
         except Exception as e:
             ErrorDialog(title_label="Import Error", text=f"Failed to load the file:\n{str(e)}")
-
+            QApplication.restoreOverrideCursor()
         #获取初始读取的数据值，对比作为save按钮的开关
         self.initial_data = copy.deepcopy(self.MUedition["edition"])
 
-        QApplication.restoreOverrideCursor()    #还原鼠标
+
         #origial error print
         # except Exception as e:
         #     import traceback
@@ -513,7 +519,7 @@ class MUeditManual(QMainWindow):
                 checked_mus.append(checkbox.objectName())
                 
         self.display_selected_mus(checked_mus, pluse_train_color)
-        
+    
 
     def update_array_checkboxes(self):
         """Update the state of "Check All" checkboxes based on individual MU selections."""
@@ -722,7 +728,7 @@ class MUeditManual(QMainWindow):
         self.update_plot_setRange = False    
             
     def update_spike_train_plot(self, array_idx, mu_idx, pulse_train, color="#D95535"):
-        """Update pulse train plot only without touching layout or other widgets."""
+        """Update pulse train plot only without changing layout or other widgets."""
         print("update_spike_train_plot")
 
         # Clear existing plots
@@ -730,11 +736,25 @@ class MUeditManual(QMainWindow):
 
         # Show and update spike train plot
         time_vector = self.MUedition["edition"]["time"]
-        self.spiketrain_plot.plot(
+        curve_aa = pg.PlotDataItem(
             time_vector,
             pulse_train,
             pen=pg.mkPen(color="#333333", width=1),
+            autoDownsample=True,
+            antialias=True,
         )
+        curve_not_aa = pg.PlotDataItem(
+            time_vector,
+            pulse_train,
+            pen=pg.mkPen(color="#333333", width=1),
+            antialias=False,
+            autoDownsample=True
+        )      
+        self.spiketrainCurves = [curve_aa, curve_not_aa]
+        if pg.getConfigOption('antialias'):
+            self.spiketrain_plot.addItem(curve_aa)
+        else:
+            self.spiketrain_plot.addItem(curve_not_aa)
 
         if self.resetPlot:
             self.safe_set_range(self.spiketrain_plot, yrange=[min(pulse_train)*1.2, max(pulse_train)*1.2])
@@ -748,11 +768,15 @@ class MUeditManual(QMainWindow):
                 target_max = np.max(target_data)
                 if target_max > 0:
                     target_normalized = target_data / target_max
-                    self.spiketrain_plot.plot(
+                    curve = self.spiketrain_plot.plot(
                         time_vector,
                         target_normalized,
                         pen=pg.mkPen(color="#1B5E20", width=2, style=Qt.PenStyle.DashLine),
+                        antialias=True,
                     )
+                    curve.setDownsampling(auto=True, method="subsample")
+                    curve.setClipToView(True)
+                    self.spiketrainCurves.append(curve)
 
         # Plot discharge times
         discharge_times = self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
@@ -774,6 +798,7 @@ class MUeditManual(QMainWindow):
             if x_values:
                 scatter.addPoints(x=x_values, y=y_values, pen=None, brush=pg.mkBrush(color), size=10)
                 self.spiketrain_plot.addItem(scatter)
+            self.spiketrainCurves.append(scatter)
 
         self.spiketrain_plot.setFocus()
 
@@ -860,58 +885,9 @@ class MUeditManual(QMainWindow):
 
             # Show and update spike train plot
             self.plots_layout.addWidget(self.spiketrain_plot, stretch=2)
-            self.spiketrain_plot.clear()
-            time_vector = self.MUedition["edition"]["time"]
-            if isinstance(time_vector, np.ndarray) and isinstance(pulse_train, np.ndarray):
-                self.spiketrain_plot.plot(
-                    time_vector,
-                    pulse_train,
-                    pen=pg.mkPen(color="#333333", width=1),
-                )
-                if self.resetPlot:
-                    self.safe_set_range(self.spiketrain_plot, yrange=[min(pulse_train)*1.2, max(pulse_train)*1.2])
-                    
-                # Plot reference signal if available
-                if "target" in self.MUedition["signal"] and self.MUedition["signal"]["target"].size > 0:
-                    target_data = self.MUedition["signal"]["target"]
-                    if target_data.ndim > 1:
-                        target_data = target_data[0]
+            self.update_spike_train_plot(array_idx, mu_idx, pulse_train, pluse_train_color)
 
-                    if isinstance(target_data, np.ndarray) and len(target_data) == len(time_vector):
-                        target_max = np.max(target_data)
-                        if target_max > 0:
-                            target_normalized = target_data / target_max
-                            self.spiketrain_plot.plot(
-                                time_vector,
-                                target_normalized,
-                                pen=pg.mkPen(color="#1B5E20", width=2, style=Qt.PenStyle.DashLine), # change obvious color for reference dotted line in visulasition moy
-                            )
-            self.spiketrain_plot.getViewBox().enableAutoRange('xy', False)
-            # Plot discharge times
             discharge_times = self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
-            if len(discharge_times) > 0:
-                scatter = pg.ScatterPlotItem()
-
-                # Find local maxima around each discharge time
-                window_size = 3
-                x_values = []
-                y_values = []
-
-                for dt in discharge_times:
-                    if 0 <= dt < len(pulse_train):
-                        start = int(max(0, dt - window_size))
-                        end = int(min(len(pulse_train), dt + window_size + 1))
-
-                        window = pulse_train[start:end]
-                        if len(window) > 0:
-                            local_max_idx = start + np.argmax(window)
-
-                            x_values.append(time_vector[local_max_idx])
-                            y_values.append(pulse_train[local_max_idx])
-
-                if len(x_values) > 0:
-                    scatter.addPoints(x=x_values, y=y_values, pen=None, brush=pg.mkBrush(pluse_train_color), size=10)
-                    self.spiketrain_plot.addItem(scatter)
 
             # Show and update discharge rate plot
             self.plots_layout.addWidget(self.dr_plot, stretch=2)
@@ -956,6 +932,9 @@ class MUeditManual(QMainWindow):
         else:
             # Multiple MUs selected - show only pulse trains stacked vertically
             self.sil_info.setText(f"{len(checked_mus)} MUs selected")
+            
+            if len(checked_mus) == 0:
+                return
             
             container_height = self.plots_scroll_area.viewport().height()
             plot_height = container_height // min(3, len(checked_mus))
@@ -1108,7 +1087,22 @@ class MUeditManual(QMainWindow):
         """Toggle SIL plot visibility."""
         # Update the plots (visibility of SIL plot will be handled in display_selected_mus)
         self.mu_checkbox_state_changed()
-
+    
+    def aa_checkbox_value_changed(self, checked):
+        """Toggle plot anti-aliasing."""
+        if not self.MUedition:
+            return
+        if checked:
+            self.aa_fix = True
+            pg.setConfigOptions(antialias=True)
+            self.spiketrain_plot.removeItem(self.spiketrainCurves[1])
+            self.spiketrain_plot.removeItem(self.spiketrainCurves[3])
+            self.spiketrain_plot.addItem(self.spiketrainCurves[0])
+            self.spiketrain_plot.addItem(self.spiketrainCurves[3])
+        else:
+            self.aa_fix = False
+            self.slider_value_changed(self.zoom_slider.get_slider_value())
+        
     # Navigation actions
     def zoom_in_button_pushed(self):
         """Zoom in on the time axis."""
@@ -1148,10 +1142,27 @@ class MUeditManual(QMainWindow):
                 or self.graphstart is None
                 or self.graphend   is None):
             return
-
+        
         full_start = self.MUedition["edition"]["time"][0]
         full_end   = self.MUedition["edition"]["time"][-1]
         full_len   = full_end - full_start
+        
+        if not self.aa_fix:
+            if value > 30:
+                if not pg.getConfigOption('antialias'):
+                    pg.setConfigOptions(antialias=True)
+                    self.spiketrain_plot.removeItem(self.spiketrainCurves[1])
+                    self.spiketrain_plot.removeItem(self.spiketrainCurves[3])
+                    self.spiketrain_plot.addItem(self.spiketrainCurves[0])
+                    self.spiketrain_plot.addItem(self.spiketrainCurves[3])
+            else:
+                if pg.getConfigOption('antialias'):
+                    pg.setConfigOptions(antialias=False)
+                    self.spiketrain_plot.removeItem(self.spiketrainCurves[0])
+                    self.spiketrain_plot.removeItem(self.spiketrainCurves[3])
+                    self.spiketrain_plot.addItem(self.spiketrainCurves[1])
+                    self.spiketrain_plot.addItem(self.spiketrainCurves[3])
+        
 
         if value <= self.zoom_slider.slider.minimum():
             vb = self.spiketrain_plot.getViewBox()

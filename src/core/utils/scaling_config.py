@@ -19,16 +19,14 @@ def get_adaptive_scale():
     # approximate physical resolution
     physical_width = int(logical_width * scale_factor)
     physical_height = int(logical_height * scale_factor)
-    print(f"[DEBUG] Logical: {logical_width}x{logical_height}")
-    print(f"[DEBUG] devicePixelRatio: {scale_factor}")
-    print(f"[DEBUG] Physical: {physical_width}x{physical_height}")
+
     # use physical resolution to decide scaling
     if physical_width >= 2560:
-        return "1.5"
-    elif physical_width >= 1920:
         return "1.25"
+    elif physical_width >= 1920:
+        return "1"
     else:
-        return "1.0"
+        return "1"
 
 
 def apply_qt_scaling():
