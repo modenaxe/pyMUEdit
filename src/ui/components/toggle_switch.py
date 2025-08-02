@@ -23,6 +23,7 @@ class ToggleSwitch(QWidget):
         self._color_anim = QPropertyAnimation(self, b"progress", self)
         self._color_anim.setDuration(300)
         self._color_anim.setEasingCurve(QEasingCurve.InOutQuad)
+        self._disabled = False
 
     # --- 属性：xPos 用来做动画滑动 ---
     def getX(self):  return self._x_pos
@@ -48,6 +49,8 @@ class ToggleSwitch(QWidget):
 
     # --- 鼠标点击切换状态 ---
     def mousePressEvent(self, ev):
+        if self._disabled:
+            return
         self._checked = not self._checked
         self._anim.stop()
         self._anim.setStartValue(self._x_pos)
@@ -66,16 +69,28 @@ class ToggleSwitch(QWidget):
     def paintEvent(self, ev):
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
+        
         # 轨道
         mixed_color = self.mix_colors(self._bg_off, self._bg_on, self._progress)
+        
+        if self._disabled:
+            mixed_color = mixed_color.lighter(150)
+            
         p.setBrush(QBrush(mixed_color))
         
         p.setPen(QPen(Qt.transparent))
         p.drawRoundedRect(0,0,40,22,11,11)
         
+        if self._disabled:
+            overlay = QColor(160, 160, 160, 60) 
+            p.setBrush(QBrush(overlay))
+            p.setPen(Qt.NoPen)
+            p.drawRoundedRect(0, 0, 40, 22, 11, 11)
+        
         # 滑块
-        p.setBrush(QBrush(Qt.white))
-        p.drawEllipse(self._x_pos, 1, 20,20)
+        knob_color = QColor("#ffffff") if not self._disabled else QColor("#eeeeee")
+        p.setBrush(QBrush(knob_color))
+        p.drawEllipse(self._x_pos, 1, 20, 20)
 
     def isChecked(self) -> bool:
         return self._checked
@@ -84,3 +99,8 @@ class ToggleSwitch(QWidget):
         if state == self._checked:
             return
         self.mousePressEvent(None)
+    
+    def setEnabled(self, state: bool):
+        self._disabled = not state
+        print(f"toggle setEnabled {self._disabled}")
+        self.update()

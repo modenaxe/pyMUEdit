@@ -58,6 +58,7 @@ class FixedPopupComboBox(QComboBox): # set a new class for dropout moy
 
 def setup_ui(main_window):
     """Setup the modern UI components for the MUedit Manual application."""
+    
     # Set window properties
     main_window.setWindowTitle("MUedit - Manual Editing")
     main_window.setGeometry(100, 100, 1500, 850)
@@ -67,8 +68,8 @@ def setup_ui(main_window):
     pg.setConfigOption("background", "w")  # White background
     pg.setConfigOption("foreground", CleanTheme.TEXT_PRIMARY)
 
-    # Enable anti-aliasing for better looking plots
-    pg.setConfigOption("antialias", True)
+    # Disable anti-aliasing for better performance
+    pg.setConfigOption("antialias", False)
 
     # Create main widget and layout
     main_window.central_widget = QWidget()
@@ -78,16 +79,18 @@ def setup_ui(main_window):
     main_layout.setSpacing(8)
 
     # Set up control panel and display panel
-    setup_control_panel(main_window)
     setup_display_panel(main_window)
+    setup_control_panel(main_window)
     attach_control_pannel_to_sidebar(main_window)
 
     # Add panels to main layout
     
     main_layout.addWidget(main_window.display_panel, 1)  # The 1 is the stretch factor
-
+    
     # Set up keyboard shortcuts
     main_window.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+    
+    
 
 #   新增悬浮save块
     # _add_floating_save_btn(main_window)
@@ -269,7 +272,7 @@ def create_tab_widget():
         }}
         """
     )
-    tabs.setMaximumWidth(300)
+    tabs.setMaximumWidth(320)
     return tabs
 
 
@@ -294,7 +297,7 @@ def create_mu_selection_tab(main_window):
     checkbox_container = QWidget()
     checkbox_container.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
     main_window.mu_checkbox_layout = QVBoxLayout(checkbox_container)
-    main_window.mu_checkbox_layout.setContentsMargins(0, 0, 0, 0)
+    main_window.mu_checkbox_layout.setContentsMargins(0, 0, 2, 0)
     main_window.mu_checkbox_layout.setSpacing(5)
     main_window.mu_checkboxes = []  # Store references to checkboxes
 
@@ -308,30 +311,13 @@ def create_mu_selection_tab(main_window):
     mu_layout.addWidget(mu_scroll_area)
 
     # Add flag button in the MU selection tab
-    main_window.flag_mu_btn = ActionButtonedit("Flag selected MU(s) for deletion", primary=False)
+    main_window.flag_mu_btn = ActionButtonedit("Flag selected MU(s) for deletion", primary=False, blue=True)
     main_window.flag_mu_btn.clicked.connect(main_window.flag_mu_for_deletion_button_pushed)
     
     # Add unflag button in the MU selection tab
-    main_window.unflag_mu_btn = ActionButtonedit("UnFlag selected MU(s) for deletion", primary=False)
+    main_window.unflag_mu_btn = ActionButtonedit("UnFlag selected MU(s) for deletion", primary=False, blue=True)
     main_window.unflag_mu_btn.clicked.connect(main_window.unflag_mu_for_deletion_button_pushed)
-    blue = "#0072ee"
-    hover = "#2383ff"
-    for btn in (main_window.flag_mu_btn, main_window.unflag_mu_btn):
-        btn.setStyleSheet(f"""
-            QPushButton {{
-                background: {blue};
-                color: #ffffff;
-                border: none;
-                border-radius: 4px;
-                padding: 8px 0px;
-            }}
-            QPushButton:hover {{
-                background: {hover};
-            }}
-            QPushButton:pressed {{
-                background: #005fd1;
-            }}
-        """)    
+
     mu_layout.addWidget(main_window.flag_mu_btn)
     mu_layout.addWidget(main_window.unflag_mu_btn)
 
@@ -437,32 +423,38 @@ def create_visualization_tab(main_window):
 
     ref_panel.add_widget(ref_contents)
     viz_layout.addWidget(ref_panel)
+    main_window.action_buttons["sil_checkbox_value_changed"] = main_window.sil_switch
 
     # Create visualization buttons panel
     button_panel = CollapsiblePanel("Plot Options")
 
     # Add plot buttons to the panel
-    main_window.plot_spiketrains_btn = ActionButton("Plot MU spike trains", primary=False)
+    main_window.plot_spiketrains_btn = ActionButtonedit("Plot MU spike trains", primary=False, blue=True)
     main_window.plot_spiketrains_btn.clicked.connect(main_window.plot_mu_spiketrains_button_pushed)
     button_panel.add_widget(main_window.plot_spiketrains_btn)
 
-    main_window.plot_firingrates_btn = ActionButton("Plot MU firing rates", primary=False)
+    main_window.plot_firingrates_btn = ActionButtonedit("Plot MU firing rates", primary=False, blue=True)
     main_window.plot_firingrates_btn.clicked.connect(main_window.plot_mu_firingrates_button_pushed)
     button_panel.add_widget(main_window.plot_firingrates_btn)
-    blue_btn_qss = """
-    QPushButton{
-        background:#3a7afe;
-        color:#ffffff;
-        border:none;
-        border-radius:6px;
-        padding:6px 12px;
-        font-weight:600;
-    }
-    QPushButton:hover  { background:#5287ff; }
-    QPushButton:pressed{ background:#225cf5; }
-    """
-    main_window.plot_spiketrains_btn.setStyleSheet(blue_btn_qss)
-    main_window.plot_firingrates_btn.setStyleSheet(blue_btn_qss)
+    
+    
+    row3 = QWidget()
+    row3_lay = QHBoxLayout(row3)
+    row3_lay.setContentsMargins(0,0,0,0)
+    row3_lay.setSpacing(6)
+    
+    aa_lbl = QLabel("Always Anti-Aliasing on Plot")                 
+    aa_lbl.setStyleSheet(f"color:{CleanTheme.TEXT_PRIMARY};")
+    row3_lay.setContentsMargins(0,0,0,0)
+    row3_lay.setSpacing(6)
+    row3_lay.addWidget(aa_lbl)
+
+    main_window.aa_switch = ToggleSwitch()        
+    main_window.aa_switch.toggled.connect(main_window.aa_checkbox_value_changed)
+    row3_lay.addWidget(main_window.aa_switch)
+    
+    button_panel.add_widget(row3)
+
     viz_layout.addWidget(button_panel)
     viz_layout.addStretch()
 
@@ -567,25 +559,35 @@ def setup_display_panel(main_window):
     
     undo_row = QWidget()
     undo_row.setObjectName("undo_row")
-    undo_row.setStyleSheet("""
-        #undo_row {
-            border-bottom: 3px solid #f0f0f0;
-        }
-    """)
     undo_layout = QHBoxLayout(undo_row)
     undo_layout.setContentsMargins(0, 0, 0, 0)
-    undo_layout.setSpacing(8) 
-
-    undo_layout.addWidget(main_window.undo_title_btn)
-    undo_layout.addWidget(main_window.redo_title_btn) # new redo btn moy
-    undo_layout.addStretch(1)
-    undo_layout.addWidget(main_window.zoom_slider)
-
-    subheader = None
+    undo_layout.setSpacing(0) 
+    
+    undo_layout.addStretch(2)
+    undo_layout.addWidget(main_window.undo_title_btn, stretch=1)
+    undo_layout.addWidget(main_window.redo_title_btn, stretch=1) # new redo btn moy
+    undo_layout.addStretch(18)
+    undo_layout.addWidget(main_window.zoom_slider, stretch=6)
     subheader = main_window.display_panel.subheader
-    subheader.title_label.setStyleSheet(f"border-bottom: 3px solid #f0f0f0;")
+
+    subheader.title_label.hide()
     subheader_layout = subheader.layout
     subheader_layout.addWidget(undo_row)
+    subheader.setObjectName("subheader")
+    subheader.setStyleSheet("""
+        QWidget {
+            border-bottom: 2px solid qlineargradient(
+                x1:0, y1:0, x2:1, y2:0,
+                stop: 0 transparent,
+                stop: 0.05 transparent,
+                stop: 0.051 #f0f0f0,
+                stop: 0.949 #f0f0f0,
+                stop: 0.95 transparent,
+                stop: 1 transparent
+            );
+        }
+    """)
+
 
     help_sil_layout = QVBoxLayout()
     help_sil_layout.setContentsMargins(0, 0, 0, 0)
@@ -709,22 +711,9 @@ def setup_display_panel(main_window):
         # Store reference to button in main_window
         setattr(main_window, attr_name, btn)
         main_window.action_buttons[handler.__name__] = btn
+        
         if text in {"Add spikes", "Delete spikes", "Update MU filter", "Extend MU filter"}:
-            btn.setStyleSheet(f"""
-                QPushButton {{
-                    background: {blue};
-                    color: #ffffff;
-                    border: none;
-                    border-radius: 4px;
-                    padding: 8px 0px;
-                }}
-                QPushButton:hover {{
-                    background: {hover};
-                }}
-                QPushButton:pressed {{
-                    background: #005fd1;
-                }}
-            """)
+            btn.set_blue()
         if text in {"Delete spikes", "Delete DR", "Remove outliers"}:
             spacer = QWidget()
             spacer.setFixedWidth(20)
@@ -779,9 +768,9 @@ def create_plot_widget(main_window, y_label, x_label=""):
                 QApplication.sendEvent(main_window, event)
                 event.ignore()
             super().keyPressEvent(event)
-                    
-                    
+    
     plot = pg.PlotWidget(viewBox=NewViewBox(main_window.zoom_slider))
+
     plot.setBackground("w")  # White background
     if y_label:
         plot.setLabel("left", y_label)

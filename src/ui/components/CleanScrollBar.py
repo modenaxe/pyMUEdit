@@ -40,6 +40,7 @@ class CleanScrollBar:
                 background: #F0F0F0;
                 width: {width}px;
                 margin: {padding_margin}; /* Top and bottom padding */
+
                 border-radius: {width//2}px;
             }}
             QScrollBar::handle:vertical {{
