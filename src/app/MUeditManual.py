@@ -285,8 +285,8 @@ class MUeditManual(QMainWindow):
                     "Pulsetrain" not in files["signal"].dtype.names
                     and "Pulsetrain" not in files  # 有些是顶层字段
             ):
-                QApplication.restoreOverrideCursor()  # 还原鼠标
                 raise KeyError("Missing 'signal' or 'Pulsetrain'")
+                QApplication.restoreOverrideCursor()  # 还原鼠标
 
             # Initialize the MUedition data structure
             self.MUedition = {"edition": {}, "signal": {}, "parameters": {}}
