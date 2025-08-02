@@ -95,6 +95,15 @@ def setup_ui(main_window):
 #   新增悬浮save块
     # _add_floating_save_btn(main_window)
 
+from PyQt5.QtGui import QFont # alex
+# Apply Sil
+def set_standard_label_style(label, size=10, bold=False):
+    font = QFont("Segoe UI")
+    font.setPointSize(size)
+    font.setBold(bold)
+    label.setFont(font)
+    label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+
 
 def setup_control_panel(main_window):
     """Set up the control panel with all controls using modern UI components."""
@@ -137,7 +146,7 @@ def setup_control_panel(main_window):
     )
 
     # Select file button
-    main_window.select_file_btn = ActionButton("Select file", primary=True)
+    main_window.select_file_btn = ActionButtonedit("Select file", primary=True)
     main_window.select_file_btn.clicked.connect(main_window.select_file_button_pushed)
 
     file_select_layout.addWidget(main_window.file_path_field, 1)  # 1 is stretch factor
@@ -172,7 +181,7 @@ def setup_control_panel(main_window):
     # Save section using SettingsGroup
     save_group = SettingsGroup("Save the Edition")
 
-    main_window.save_btn = ActionButton("Save", primary=True)
+    main_window.save_btn = ActionButtonedit("Save", primary=True)
     main_window.save_btn.clicked.connect(main_window.save_button_pushed)
 
     save_group.add_field(main_window.save_btn)
@@ -382,7 +391,7 @@ def create_visualization_tab(main_window):
     row1_layout.setSpacing(6)
 
     reference_label = QLabel("Reference")
-    reference_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+    set_standard_label_style(reference_label)
 
     # Create a dropdown for reference selection
     main_window.reference_dropdown = FixedPopupComboBox() # change to new class moy
@@ -409,7 +418,7 @@ def create_visualization_tab(main_window):
     row2_lay.setContentsMargins(0,0,0,0)
     row2_lay.setSpacing(6)
     apply_lbl = QLabel("Apply SIL")                 
-    apply_lbl.setStyleSheet(f"color:{CleanTheme.TEXT_PRIMARY};")
+    set_standard_label_style(apply_lbl)
 
     main_window.sil_switch = ToggleSwitch()        
     main_window.sil_switch.toggled.connect(    
@@ -444,7 +453,7 @@ def create_visualization_tab(main_window):
     row3_lay.setSpacing(6)
     
     aa_lbl = QLabel("Always Anti-Aliasing on Plot")                 
-    aa_lbl.setStyleSheet(f"color:{CleanTheme.TEXT_PRIMARY};")
+    set_standard_label_style(aa_lbl)
     row3_lay.setContentsMargins(0,0,0,0)
     row3_lay.setSpacing(6)
     row3_lay.addWidget(aa_lbl)
@@ -493,14 +502,14 @@ def setup_display_panel(main_window):
         main_window.help_button_pushed
     )
     
-    main_window.select_file_title_btn = ActionButton("Press here to select file", primary=False)
+    main_window.select_file_title_btn = ActionButtonedit("Press here to select file", primary=False)
     main_window.select_file_title_btn.setFixedHeight(40)
     select_btn = main_window.select_file_title_btn
     main_window.select_file_title_btn.clicked.connect(
         main_window.select_file_button_pushed
     )
 
-    save_btn = ActionButton("Save", primary=True)  #shr
+    save_btn = ActionButtonedit("Save", primary=True)  #shr
     save_btn.setFixedHeight(40)
     save_btn.clicked.connect(main_window.save_button_pushed)
     main_window.floating_save_btn = save_btn
@@ -803,6 +812,9 @@ def create_mu_checkbox(main_window, array_idx, mu_idx, text, sil_value, is_check
         QCheckBox {{
             color: {CleanTheme.TEXT_PRIMARY};
             font-size: 13px;
+            font-family: "Segoe UI";
+            font-weight: normal;       /* 可选值：bold、normal */
+            font-style: normal;        /* 可选值：italic、normal */
             padding: 2px 0;
         }}
         QCheckBox::indicator {{

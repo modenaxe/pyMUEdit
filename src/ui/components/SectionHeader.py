@@ -17,11 +17,11 @@ class SectionHeader(QWidget):
         """
         super().__init__(parent)
         self.layout = QVBoxLayout(self)  # type:ignore
-        self.layout.setContentsMargins(0, 0, 0, 10)
+        self.layout.setContentsMargins(0, 30, 0, 10)
 
         # Create title label
         self.title_label = QLabel(title)
-        self.title_label.setFont(QFont("Segoe UI", 16, QFont.Normal))
+        self.title_label.setFont(QFont("Segoe UI", 14, QFont.Normal))
         self.title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
 
         self.layout.addWidget(self.title_label)
