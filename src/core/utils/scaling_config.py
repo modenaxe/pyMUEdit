@@ -19,9 +19,6 @@ def get_adaptive_scale():
     # approximate physical resolution
     physical_width = int(logical_width * scale_factor)
     physical_height = int(logical_height * scale_factor)
-    
-    if sys.platform == 'darwin':
-        return "1"
 
     # use physical resolution to decide scaling
     if physical_width >= 2560:
@@ -37,6 +34,9 @@ def apply_qt_scaling():
     Apply high DPI scaling and fixed Qt screen scale factor
     based on screen resolution.
     """
+    if sys.platform == "darwin":
+        print("[INFO] macOS detected — skipping QT scaling config")
+        return
     # Enable high DPI support before QApplication is created
     QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     QCoreApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
@@ -47,7 +47,8 @@ def apply_qt_scaling():
     temp_app.quit()
 
     # Apply fixed scaling
-    # os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "0"
+    if scale == "1.0":
+        os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "0"
     os.environ["QT_SCALE_FACTOR"] = "1"
     os.environ["QT_SCREEN_SCALE_FACTORS"] = scale
 

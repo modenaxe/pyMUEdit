@@ -64,7 +64,9 @@ class CollapsiblePanel(QFrame):
 
         # Title label
         self.title_label = QLabel(title)
-        self.title_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        font = QFont("Segoe UI")
+        font.setPointSize(11)
+        self.title_label.setFont(font)
         self.title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
         self.title_label.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
 
