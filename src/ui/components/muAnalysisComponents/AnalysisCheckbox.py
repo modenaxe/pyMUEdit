@@ -22,6 +22,7 @@ class AnalysisCheckbox(QCheckBox):
                 font-size: 11px;
                 color: {CleanTheme.ANALYSIS_TEXT_BUTTON}; 
                 spacing: 8px; 
+                margin: 8px 0px;
             }}
             QCheckBox::indicator {{ 
                 width: 16px; 
