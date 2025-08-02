@@ -470,7 +470,7 @@ def create_visualization_tab(main_window):
     row4_lay.setSpacing(6)
     
     sps_lbl = QLabel("Spikes Plot Ascending")                 
-    sps_lbl.setStyleSheet(f"color:{CleanTheme.TEXT_PRIMARY};")
+    set_standard_label_style(sps_lbl)
     row4_lay.setContentsMargins(0,0,0,0)
     row4_lay.setSpacing(6)
     row4_lay.addWidget(sps_lbl)
