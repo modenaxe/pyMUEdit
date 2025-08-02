@@ -89,6 +89,13 @@ class MUeditManual(QMainWindow):
         if parent:
             self.add_back_button()
 
+    def show_tip(self, text, duration_ms=3000):
+        self.tip_bar.setText(text)
+        self.tip_timer.start(duration_ms)
+
+    def clear_tip(self):
+        self.tip_bar.setText("")
+        
     def check_current_data_save_by_dirty(self):
         if self.MUedition is None:
             return False
@@ -1451,7 +1458,6 @@ class MUeditManual(QMainWindow):
     def remove_outliers_button_pushed(self):
         """Remove outliers from the current motor unit."""
         if not self.MUedition:
-            ErrorDialog(text="Please import file first!")
             return
 
         # Get the first checked MU
@@ -1495,14 +1501,15 @@ class MUeditManual(QMainWindow):
             removal_summary.update(removal_dict)
         if removal_summary:
             summary_lines = [f"{mu}: Removed {cnt} outliers" for mu, cnt in removal_summary.items()]
-            SuccessDialog(text="Remove outlier successfully!\n\n" + "\n".join(summary_lines))
+            self.show_tip("Remove outlier successfully!".join(summary_lines), duration_ms=4000)
+            #SuccessDialog(text="Remove outlier successfully!\n\n" + "\n".join(summary_lines))
         else:
-            SuccessDialog(text="No outliers were removed.")
+            self.show_tip("No outliers were removed.", duration_ms=4000)
+            #SuccessDialog(text="No outliers were removed.")
 
     def update_mu_filter_button_pushed(self):
         """Update the motor unit filter using the current discharge times."""
         if not self.MUedition:
-            ErrorDialog(text="Please import file first!")
             return
         
         # Ask whether lock spikes
@@ -1625,7 +1632,8 @@ class MUeditManual(QMainWindow):
             
             QApplication.restoreOverrideCursor()
             
-            SuccessDialog(text="Update filter successfully!\nGreen means SIL improve. Blue means SIL decrease.")
+            self.show_tip("Update filter successfully! Green means SIL improve. Blue means SIL decrease.", duration_ms=4000)
+            #SuccessDialog(text="Update filter successfully!\nGreen means SIL improve. Blue means SIL decrease.")
         except Exception as e:
             QApplication.restoreOverrideCursor()
             print(e)
@@ -1636,7 +1644,6 @@ class MUeditManual(QMainWindow):
     def extend_mu_filter_button_pushed(self):
         """Extend the motor unit filter to the entire signal."""
         if not self.MUedition:
-            ErrorDialog(text="Please import file first!")
             return
 
         # Get the first checked MU
@@ -1779,7 +1786,8 @@ class MUeditManual(QMainWindow):
 
             QApplication.restoreOverrideCursor()
             
-            SuccessDialog(text="extend filter successfully!\nGreen means SIL improve. Blue means SIL decrease.")
+            self.show_tip("Extend filter successfully! Green means SIL improve. Blue means SIL decrease.", duration_ms=4000)
+            #SuccessDialog(text="extend filter successfully!\nGreen means SIL improve. Blue means SIL decrease.")
         except Exception as e:
             QApplication.restoreOverrideCursor()
             print(e)
@@ -2008,7 +2016,9 @@ class MUeditManual(QMainWindow):
                 return
 
         progress.setValue(100)
-        SuccessDialog(text="All motor unit outliers have been removed successfully.")
+        # SuccessDialog(text="All motor unit outliers have been removed successfully.")
+        self.show_tip("All motor unit outliers have been removed successfully.", duration_ms=4000)
+
         self.dirty_depth += 1
         self.update_save_button()
         # Update the current MU display
@@ -2017,7 +2027,6 @@ class MUeditManual(QMainWindow):
     def update_all_mu_filters_button_pushed(self):
         """Update filters for all motor units."""
         if not self.MUedition:
-            ErrorDialog(text="Please import file first!")
             return
 
         original_pulsetrain = copy.deepcopy(self.MUedition["edition"]["Pulsetrain"])
@@ -2433,7 +2442,7 @@ class MUeditManual(QMainWindow):
         # Update the MU checkboxes
         self.update_mu_checkboxes()
         # print(f"[DEBUG] Done: remove_duplicates_within_grids  (t={time.time()-t0:.2f}s)") # debug if this button real work moy
-        
+
     # Visualization methods
     def plot_mu_spiketrains_button_pushed(self):
         """Plot all motor unit spike trains in a new window."""
