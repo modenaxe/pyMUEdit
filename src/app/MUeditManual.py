@@ -438,7 +438,7 @@ class MUeditManual(QMainWindow):
             # Add "Check All" checkbox at the top
             check_all_checkbox = QCheckBox("Check All")
             check_all_checkbox.setStyleSheet(
-                "color: #333333; font-family: 'Poppins'; font-size: 14pt; font-weight: bold;"
+                "color: #333333; font-family: 'Segoe UI'; font-size: 13pt; font-weight: normal;"
             )
             check_all_checkbox.setProperty("array_idx", array_idx)
             check_all_checkbox.stateChanged.connect(self.array_checkbox_state_changed)
@@ -465,7 +465,7 @@ class MUeditManual(QMainWindow):
                 checkbox_text = f"MU_{mu_idx+1} (SIL: {sil_value:.4f})"
 
                 checkbox = QCheckBox(checkbox_text)
-                checkbox.setStyleSheet("color: #333333; font-family: 'Poppins'; font-size: 12pt;")
+                checkbox.setStyleSheet("color: #333333; font-family: 'Segoe UI'; font-size: 12pt;")
                 checkbox.setObjectName(mu_identifier)  # Keep the full identifier in objectName
                 checkbox.setProperty("array_idx", array_idx)  # Store array index for check all functionality
                 checkbox.stateChanged.connect(self.mu_checkbox_state_changed)
