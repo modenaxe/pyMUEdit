@@ -391,7 +391,7 @@ def plot_ipts(
     line2d_kwargs_ax1=None,
     line2d_kwargs_ax2=None,
     axes_kwargs=None,
-    showimmediately=True,
+    showimmediately=False,
 ):
     common = CommonOpenFunc()
     # Check if all the MUs have to be plotted
