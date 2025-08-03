@@ -4,7 +4,7 @@ import copy # moy
 import numpy as np
 import scipy.io as sio
 import pyqtgraph as pg
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal, QTimer
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import (
     QDialog,
@@ -22,6 +22,7 @@ from PyQt5.QtWidgets import (
     QStackedWidget,
     QProgressDialog, # moy
 )
+
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -83,6 +84,7 @@ class MUeditManual(QMainWindow):
         self.RasterPlotDialog = None
         self.DischagePlotDialog = None
         self.spike_train_plot_sort_mode = True
+        self._save_flag = True
         
         # Set up the UI
         setup_ui(self)
@@ -148,6 +150,11 @@ class MUeditManual(QMainWindow):
 
     def update_save_button(self):
         save_flag = self.check_current_data_save_by_dirty()
+        if save_flag == self._save_flag:
+            return
+        else:
+            self._save_flag = save_flag
+            
         if save_flag:   #当前data与初始data相同，则禁止save；不同，则允许save
             self.floating_save_btn.setEnabled(True)
             self.floating_save_btn.setStyleSheet("""
@@ -155,10 +162,20 @@ class MUeditManual(QMainWindow):
                 QPushButton:hover{background:#2383ff;}
             """)
         else:
-            self.floating_save_btn.setEnabled(False)
+            self.floating_save_btn.setText("")
+            self.floating_save_btn.setIcon("success_icon.png", (36, 36))
             self.floating_save_btn.setStyleSheet("""
-                QPushButton{background:#c0c0c0;color:#f2f2f2;border:none;border-radius:4px;padding:8px 15px;}
+                QPushButton{background:#bbf795;color:#bbf795;border:none;border-radius:4px;}
             """)
+            QTimer.singleShot(1000, lambda: (
+                self.floating_save_btn.setEnabled(False),
+                self.floating_save_btn.setText("Save"),
+                self.floating_save_btn.clearIcon(),
+                self.floating_save_btn.setStyleSheet("""
+                    QPushButton{background:#c0c0c0;color:#f2f2f2;border:none;border-radius:4px;padding:8px 15px;}
+                """),
+            ))
+
 
     def _push_undo(self, array_idx: int, mu_idx: int): # moy
         """Push the current MU state into the undo stack and clear the redo stack."""
@@ -260,7 +277,9 @@ class MUeditManual(QMainWindow):
 
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts."""
-        if event.key() == Qt.Key.Key_Left:
+        if event.key() == Qt.Key.Key_S and event.modifiers() & Qt.ControlModifier:
+            self.save_btn.click()
+        elif event.key() == Qt.Key.Key_Left:
             self.scroll_left_button_pushed()
         elif event.key() == Qt.Key.Key_Right:
             self.scroll_right_button_pushed()
@@ -276,7 +295,7 @@ class MUeditManual(QMainWindow):
             self.remove_outliers_single_btn.click()
         elif event.key() == Qt.Key.Key_Space:
             self.update_mu_filter_btn.click()
-        elif event.key() == Qt.Key.Key_S:
+        elif event.key() == Qt.Key.Key_L:
             self.lock_spikes_btn.click()
         elif event.key() == Qt.Key.Key_E:
             self.extend_mu_filter_btn.click()
@@ -2577,7 +2596,7 @@ class MUeditManual(QMainWindow):
                 pivot = arr[high]
                 i = low
                 for j in range(low, high):
-                    if discharge_times[array_idx, arr[j]][0] < discharge_times[array_idx, pivot][0]:
+                    if min(discharge_times[array_idx, arr[j]]) < min(discharge_times[array_idx, pivot]):
                         arr[j], arr[i] = arr[i], arr[j]
                         i += 1
                         
@@ -2591,7 +2610,7 @@ class MUeditManual(QMainWindow):
             if not self.spike_train_plot_sort_mode:
                 arr_sorted_index = arr_sorted_index[::-1]
             # for idx in arr_sorted_index:
-            #     dis = self.MUedition["edition"]["Dischargetimes"][array_idx, idx][0]
+            #     dis = min(self.MUedition["edition"]["Dischargetimes"][array_idx, idx])
             #     print(f"{array_idx} + {idx}: {dis}")
             
             # Create firing times array
@@ -2757,6 +2776,7 @@ class MUeditManual(QMainWindow):
             self.file_path_field.setText(self.filename)
             self.select_file_title_btn.setText(self.filename)
             self.save_file(file_path)
+            SuccessDialog(title_label="Save Complete", text=f"Data saved to:\n{file_path}")
         
 
     def save_button_pushed(self):
@@ -2769,11 +2789,14 @@ class MUeditManual(QMainWindow):
             savename = os.path.join(self.pathname or "", self.filename)
         else:
             savename = os.path.join(self.pathname or "", os.path.splitext(self.filename)[0] + "_edited.mat")
-        
+            self.filename = self.filename + "_edited.mat"
+
         self.file_path_field.setText(self.filename)
         self.select_file_title_btn.setText(self.filename)
         
         self.save_file(savename)
+        self.show_tip("Save Complete! Data saved to: {filepath}", duration_ms=8000)
+        
             
             
     
@@ -2906,7 +2929,6 @@ class MUeditManual(QMainWindow):
         # Show a confirmation message
         from PyQt5.QtWidgets import QMessageBox
         #QMessageBox.information(self, "Save Complete", f"Data saved to {savename}", QMessageBox.Ok)
-        SuccessDialog(title_label="Save Complete", text=f"Data saved to:\n{filepath}")
         
     
     def clear_layout(self, layout):

@@ -116,5 +116,4 @@ class ToggleSwitch(QWidget):
     
     def setEnabled(self, state: bool):
         self._disabled = not state
-        print(f"toggle setEnabled {self._disabled}")
         self.update()

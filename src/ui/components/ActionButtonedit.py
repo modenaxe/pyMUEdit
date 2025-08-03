@@ -179,3 +179,13 @@ class ActionButtonedit(QPushButton):
             }}
             """
         )
+    
+    def setIcon(self, icon, size=None):
+        if isinstance(icon, str): 
+            icon = _ico(icon)
+        if size:
+            super().setIconSize(QSize(size[0], size[1]))
+        super().setIcon(icon)
+    
+    def clearIcon(self):
+        super().setIcon(QIcon())

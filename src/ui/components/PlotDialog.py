@@ -1,15 +1,12 @@
 from PyQt5.QtWidgets import (
     QDialog, QLabel, QPushButton, QVBoxLayout,
-    
-    QHBoxLayout, QCheckBox, QToolButton, QStyle, QWidget, QSpacerItem, QSizePolicy
+    QHBoxLayout, QCheckBox, QToolButton, QStyle, QWidget, QSpacerItem, QSizePolicy, QFileDialog
 )
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, QTimer
 from PyQt5.QtGui import QFont
 
-
-
 from ui.components.ActionButtonedit import ActionButtonedit
-
+from ui.components.ErrorDialog import ErrorDialog
 
 class PlotDialog(QDialog):
     def __init__(self, title):
@@ -41,6 +38,7 @@ class PlotDialog(QDialog):
         self.res_btn = ActionButtonedit(text="window_restore", icon="window_restore.png")
         self.min_btn = ActionButtonedit(text="window_restore", icon="window_minimize.png")
         self.close_btn = ActionButtonedit(text="window_close", icon="window_close.png")
+        self.save_btn = ActionButtonedit(text="window_close", icon="window_save.png")
         self.title = QLabel(title)
         
         self.spacer = QSpacerItem(20, 0)
@@ -60,6 +58,8 @@ class PlotDialog(QDialog):
         self.min_btn.clicked.connect(self.showMinimized)
         self.min_btn.setIconSize(QSize(20,20))
         
+        self.save_btn.clicked.connect(self._save_btn_pushed)
+        self.save_btn.setIconSize(QSize(28,28))
         
         btn_row = QWidget()
         self.btn_layout = QHBoxLayout()
@@ -68,6 +68,7 @@ class PlotDialog(QDialog):
         
         self.btn_layout.addWidget(self.title, stretch=1)
         self.btn_layout.addStretch()
+        self.btn_layout.addWidget(self.save_btn)
         self.btn_layout.addWidget(self.min_btn)
         self.btn_layout.addWidget(self.max_btn)
         self.btn_layout.addWidget(self.res_btn)
@@ -166,13 +167,34 @@ class PlotDialog(QDialog):
             """
         )
         self.close_btn.setMinimumSize(48, 48)
+        
+        self.save_btn.setStyleSheet(
+            f"""
+            QPushButton {{
+                background: transparent;
+                border: none;
+                border-radius: 4px;
+                padding: 8px 0px;
+            }}
+            QPushButton:hover {{
+                background-color: rgba(200, 200, 200, 128);
+            }}
+
+            QPushButton:pressed {{
+                background-color: rgba(100, 100, 100, 180);
+            }}
+            """
+        )
+        self.save_btn.setMinimumSize(48, 48)
+        
+        
         self.title.setStyleSheet("""
-        QLabel {
-            font-size: 24px;
-            font-weight: bold;
-            color: #333;
-            padding: 8px;
-        }
+            QLabel {
+                font-size: 24px;
+                font-weight: bold;
+                color: #333;
+                padding: 8px;
+            }
         """)
     
     
@@ -183,7 +205,6 @@ class PlotDialog(QDialog):
         self.center_layout.insertWidget(1, canvas)
         self.canvas = canvas
 
-    
     def toggle_buttons(self, flag):
         self.max_btn.setVisible(not flag)
         self.res_btn.setVisible(flag)
@@ -201,3 +222,31 @@ class PlotDialog(QDialog):
     
     def set_title(self, text):
         self.title.setText(text)
+        
+    
+    def _save_btn_pushed(self):
+        filepath, _ = QFileDialog.getSaveFileName(self, "Save Plot As PNG", "", "PNG (*.png);; All Files (*)")
+        if filepath:
+            try:
+                self.canvas.figure.savefig(filepath, dpi=300, bbox_inches='tight')
+                self.save_success()
+            except Exception as e:
+                ErrorDialog(f"Oops! Something went wrong: {e}")
+    
+    def save_success(self):
+        self.save_btn.setStyleSheet(
+            f"""
+            QPushButton {{
+                background: #bbf795;
+                color: #bbf795;
+                border: none;
+                border-radius: 4px;
+                padding: 8px 0px;
+            }}
+            """
+        )
+        self.save_btn.setIcon("save_success.png")
+        QTimer.singleShot(2000, lambda: (
+            self._set_style(),
+            self.save_btn.setIcon("window_save.png")
+        ))
