@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     x11vnc \
     xfce4 \
     xfce4-terminal \
+    dbus-x11 \
     libqt5gui5 \
     libqt5widgets5 \
     libqt5dbus5 \

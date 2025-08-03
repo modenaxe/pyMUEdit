@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=hdemg-app
+Comment=hdemg-app
+Exec=/usr/local/bin/python /app/src/main.py
+Terminal=false
+StartupNotify=false
+OnlyShowIn=XFCE;
+X-GNOME-Autostart-enabled=true
