@@ -669,7 +669,7 @@ def setup_display_panel(main_window):
     main_window.plots_layout.addWidget(main_window.dr_plot)
 
     display_layout.addWidget(plots_scroll_area, 1)  # 1 is stretch factor
-    # === NEW: horizontal pan‑slider just below all plots ==============moy
+    # horizontal pan‑slider just below all plots moy
     from PyQt5.QtWidgets import QSlider
     main_window.pan_slider = QSlider(Qt.Horizontal, parent=display_widget)
     main_window.pan_slider.setRange(0, 1000)      # 0 = far left, 1000 = far right
@@ -698,8 +698,10 @@ def setup_display_panel(main_window):
     """)
 
     main_window.pan_slider.valueChanged.connect(main_window.pan_slider_changed)
+    mid = (main_window.pan_slider.minimum() + main_window.pan_slider.maximum()) // 2
+    main_window.pan_slider.setValue(mid)
     display_layout.addWidget(main_window.pan_slider)
-    # ==============================================================
+
 
    # Action buttons - use a card with a proper title
     action_card = CleanCard()
