@@ -527,14 +527,20 @@ def setup_display_panel(main_window):
     save_btn.setFixedHeight(40)
     save_btn.clicked.connect(main_window.save_button_pushed)
     main_window.floating_save_btn = save_btn
+    
+    saveas_btn = ActionButtonedit("Save As", primary=True)  #shr
+    saveas_btn.setFixedHeight(40)
+    saveas_btn.clicked.connect(main_window.saveas_button_pushed)
+    main_window.floating_saveas_btn = saveas_btn
 
     select_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed) 
-    save_btn.setSizePolicy(QSizePolicy.Fixed,     QSizePolicy.Fixed) 
+    save_btn.setSizePolicy(QSizePolicy.Fixed,     QSizePolicy.Fixed)
+    saveas_btn.setSizePolicy(QSizePolicy.Fixed,     QSizePolicy.Fixed)  
 
     hdr = QWidget()
     h_lay = QHBoxLayout(hdr)
     h_lay.setContentsMargins(0, 0, 15, 0)
-    h_lay.setSpacing(0)
+    h_lay.setSpacing(5)
 
     spacer = QWidget()
     spacer.setFixedWidth(12)
@@ -546,6 +552,7 @@ def setup_display_panel(main_window):
     h_lay.addWidget(select_btn) 
     h_lay.addWidget(spacer)
     h_lay.addWidget(save_btn)
+    h_lay.addWidget(saveas_btn)
 
     # main_window.display_panel.content_layout.insertWidget(0, hdr)
 
