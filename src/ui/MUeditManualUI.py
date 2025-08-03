@@ -756,11 +756,12 @@ def setup_display_panel(main_window):
     main_window.tip_bar = QLabel("")
     main_window.tip_bar.setFixedHeight(10)
     main_window.tip_bar.setAlignment(Qt.AlignCenter)
-    main_window.tip_bar.setStyleSheet(f"""
+    set_standard_label_style(main_window.tip_bar, size=12)
+    '''main_window.tip_bar.setStyleSheet(f"""
         background-color: {CleanTheme.BG_CARD};
         color: black;
         font-weight: bold;
-    """)
+    """)'''
     display_layout.addWidget(main_window.tip_bar)
     
     # Timer for tip bar
