@@ -47,6 +47,7 @@ class SignalEditing(QWidget):
         window_layout = QVBoxLayout()
         window.setLayout(window_layout)
         window_layout.setSpacing(10)
+        self.window = window
 
         # title
         title = AnalysisText.create_title("Signal Editing") 
@@ -235,8 +236,6 @@ class SignalEditing(QWidget):
         if not self.valid_file(): 
             return
 
-        print("filtering emg signals")
-
         # determining if values are valid 
         order = self.is_int(self.filter_emg_order.get())
         lo, hi = map(self.is_int, self.filter_emg_freq.get().split("-", maxsplit=1))
@@ -279,8 +278,6 @@ class SignalEditing(QWidget):
         if not self.valid_file(): 
             return
         
-        print("filtering refsig")
-
         # determining if values are valid 
         order = self.is_int(self.filter_refsig_order.get())
         cutoff = self.is_int(self.filter_refsig_freq.get())
@@ -320,7 +317,6 @@ class SignalEditing(QWidget):
         if not self.valid_file(): 
             return
         
-        print("removing offset")
         try:
             # getting values (openhdemg doesn't accept floats)
             offset = int(self.remove_offset_value.get())
@@ -342,6 +338,7 @@ class SignalEditing(QWidget):
                     self.mu.file["REF_SIGNAL"][0] = self.mu.file["REF_SIGNAL"][0] - offset
                     self.mu.plot_refsig(self.mu.file, self.analysis_plot) 
                 else:
+                    self.window.accept()
                     SelectRange(self.analysis_plot, self.two_point, False)
             else :
                 # subtracting 
@@ -363,8 +360,6 @@ class SignalEditing(QWidget):
     def convert(self):
         if not self.valid_file(): 
             return
-        
-        print("converting")
 
         try:
             # converting factor 
@@ -384,7 +379,6 @@ class SignalEditing(QWidget):
         if not self.valid_file(): 
             return
         
-        print("to percenting")
         try:
             percent = float(self.percent_mvc_value.get())
             self.mu.file["REF_SIGNAL"] = (self.mu.file["REF_SIGNAL"] * 100 / percent)
