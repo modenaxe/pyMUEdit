@@ -756,7 +756,7 @@ def setup_display_panel(main_window):
     display_layout.addWidget(action_card)
 
     main_window.tip_bar = QLabel("")
-    main_window.tip_bar.setFixedHeight(10)
+    main_window.tip_bar.setFixedHeight(15)
     main_window.tip_bar.setAlignment(Qt.AlignCenter)
     set_standard_label_style(main_window.tip_bar, size=12)
     '''main_window.tip_bar.setStyleSheet(f"""
