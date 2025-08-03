@@ -443,7 +443,7 @@ class MUeditManual(QMainWindow):
         self.delete_spikes_btn.set_active(False)
         self.delete_dr_btn.setEnabled(enabled)
         self.delete_dr_btn.set_active(False)
-        self.remove_outliers_single_btn.setEnabled(enabled)
+        self.remove_outliers_single_btn.setEnabled(True)
         self.update_mu_filter_btn.setEnabled(enabled)
         self.extend_mu_filter_btn.setEnabled(enabled)
         self.lock_spikes_btn.setEnabled(enabled)
