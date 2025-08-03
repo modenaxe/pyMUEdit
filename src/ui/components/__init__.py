@@ -24,6 +24,7 @@ from .MessageDialog import MessageDialog
 from .HelpDialog import HelpDialog
 from .toggle_switch import ToggleSwitch
 from .SectionHeaderForEdit import SectionHeaderForEdit
+from .PlotDialog import PlotDialog
 # Export all components
 __all__ = [
     "CleanTheme",
@@ -43,6 +44,7 @@ __all__ = [
     "VisualizationPanel",
     "VisualizationPanelForEdit",
     "ActionButton",
+    "ActionButtonedit"
     "CleanScrollBar",
     "GoodSlider",
     "WarningDialog",
@@ -50,4 +52,5 @@ __all__ = [
     "ErrorDialog",
     "MessageDialog",
     "HelpDialog",
+    "PlotDialog",
 ]
