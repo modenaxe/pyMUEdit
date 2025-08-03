@@ -101,6 +101,12 @@ class MUeditManual(QMainWindow):
 
     def clear_tip(self):
         self.tip_bar.setText("")
+    
+    def center_pan_slider(self): # moy
+        if not hasattr(self, "pan_slider"):
+            return
+        mid = (self.pan_slider.minimum() + self.pan_slider.maximum()) // 2
+        self.pan_slider.setSliderPosition(mid)
         
     def check_current_data_save_by_dirty(self):
         if self.MUedition is None:
@@ -348,7 +354,7 @@ class MUeditManual(QMainWindow):
             # Set initial view limits
             self.graphstart = self.MUedition["edition"]["time"][0]
             if hasattr(self, "pan_slider"):# moy
-                self.pan_slider.setSliderPosition(0)
+                self.center_pan_slider()
             self.graphend = self.MUedition["edition"]["time"][-1]
 
             self.update_plot_limits()
@@ -1220,7 +1226,7 @@ class MUeditManual(QMainWindow):
 
         if span <= 0:
             self.pan_slider.blockSignals(True)
-            self.pan_slider.setSliderPosition(0)
+            self.center_pan_slider()
             self.pan_slider.setEnabled(False)
             self.pan_slider.blockSignals(False)
             return
@@ -1714,7 +1720,7 @@ class MUeditManual(QMainWindow):
             self.graphstart = self.MUedition["edition"]["time"][0]
             # moy
             if hasattr(self, "pan_slider"):
-                self.pan_slider.setSliderPosition(0)
+                self.center_pan_slider()
             self.graphend = self.MUedition["edition"]["time"][-1]
             self.update_plot_limits()
             self._sync_pan_slider()#moy
