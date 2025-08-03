@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import (
     QToolButton,
 )
 from PyQt5.QtGui  import QIcon          # 图标
-from PyQt5.QtCore import QSize   
+from PyQt5.QtCore import QSize, QTimer  
 from pathlib import Path
 
 # Import custom components
@@ -463,6 +463,23 @@ def create_visualization_tab(main_window):
     row3_lay.addWidget(main_window.aa_switch)
     
     button_panel.add_widget(row3)
+    
+    row4 = QWidget()
+    row4_lay = QHBoxLayout(row4)
+    row4_lay.setContentsMargins(0,0,0,0)
+    row4_lay.setSpacing(6)
+    
+    sps_lbl = QLabel("Spikes Plot Ascending")                 
+    set_standard_label_style(sps_lbl)
+    row4_lay.setContentsMargins(0,0,0,0)
+    row4_lay.setSpacing(6)
+    row4_lay.addWidget(sps_lbl)
+
+    main_window.sps_switch = ToggleSwitch(checked=True)        
+    main_window.sps_switch.toggled.connect(main_window.sps_checkbox_value_changed)
+    row4_lay.addWidget(main_window.sps_switch)
+    
+    button_panel.add_widget(row4)
 
     viz_layout.addWidget(button_panel)
     viz_layout.addStretch()
@@ -652,7 +669,7 @@ def setup_display_panel(main_window):
     main_window.plots_layout.addWidget(main_window.dr_plot)
 
     display_layout.addWidget(plots_scroll_area, 1)  # 1 is stretch factor
-    # === NEW: horizontal pan‑slider just below all plots ==============moy
+    # horizontal pan‑slider just below all plots moy
     from PyQt5.QtWidgets import QSlider
     main_window.pan_slider = QSlider(Qt.Horizontal, parent=display_widget)
     main_window.pan_slider.setRange(0, 1000)      # 0 = far left, 1000 = far right
@@ -681,8 +698,10 @@ def setup_display_panel(main_window):
     """)
 
     main_window.pan_slider.valueChanged.connect(main_window.pan_slider_changed)
+    mid = (main_window.pan_slider.minimum() + main_window.pan_slider.maximum()) // 2
+    main_window.pan_slider.setValue(mid)
     display_layout.addWidget(main_window.pan_slider)
-    # ==============================================================
+
 
    # Action buttons - use a card with a proper title
     action_card = CleanCard()
@@ -734,6 +753,21 @@ def setup_display_panel(main_window):
     action_card.content_layout.addWidget(action_container)
     display_layout.addWidget(action_card)
 
+    main_window.tip_bar = QLabel("")
+    main_window.tip_bar.setFixedHeight(10)
+    main_window.tip_bar.setAlignment(Qt.AlignCenter)
+    main_window.tip_bar.setStyleSheet(f"""
+        background-color: {CleanTheme.BG_CARD};
+        color: black;
+        font-weight: bold;
+    """)
+    display_layout.addWidget(main_window.tip_bar)
+    
+    # Timer for tip bar
+    main_window.tip_timer = QTimer(main_window)
+    main_window.tip_timer.setSingleShot(True)
+    main_window.tip_timer.timeout.connect(main_window.clear_tip)
+
     # Navigation buttons - simple row of buttons in a frame
     nav_frame = QFrame()
     nav_frame.setFrameShape(QFrame.StyledPanel)
@@ -753,7 +787,6 @@ def setup_display_panel(main_window):
 
     # Add all visualization elements to the panel
     main_window.display_panel.set_plot_widget(display_widget)
-
 
 def create_plot_widget(main_window, y_label, x_label=""):
     """Create a standardized plot widget with consistent styling."""
