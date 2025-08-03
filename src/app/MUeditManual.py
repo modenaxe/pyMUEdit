@@ -1813,7 +1813,11 @@ class MUeditManual(QMainWindow):
 
     def undo_button_pushed(self): # moy
         if not self.undo_stack:
-            WarningDialog(text="Nothing left to undo.")
+            WarningDialog(
+                text="Nothing left to undo.",
+                enableCheckBox=False, 
+                enableHelpButton=False   
+            )
             return
 
         last = self.undo_stack.pop()
@@ -1840,7 +1844,11 @@ class MUeditManual(QMainWindow):
                 
     def redo_button_pushed(self):
         if not self.redo_stack:
-            WarningDialog(text="Nothing left to redo.")
+            WarningDialog(
+                text="Nothing left to redo.",
+                enableCheckBox=False, 
+                enableHelpButton=False   
+            )
             return
         
         action = self.redo_stack.pop()
