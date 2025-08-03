@@ -13,7 +13,7 @@ from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.MajorHeading import MajorHeading
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from core.muAnalysisCore.AnalysisResultsHist import store
 
 
@@ -48,7 +48,7 @@ class ResultsPanel(QFrame):
         self.table_view.setModel(self.model)
         
         # title
-        title = MajorHeading("Results")
+        title = AnalysisText.create_major_title("Results") 
         
         # layout
         top_layout = QHBoxLayout()

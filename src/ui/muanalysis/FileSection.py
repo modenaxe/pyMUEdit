@@ -9,9 +9,9 @@ from PyQt5.QtWidgets import (
     QFrame
 )
 from PyQt5.QtGui import QFont
-from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
-from ui.components.muAnalysisComponents.MajorHeading import MajorHeading
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 
 # class containing the file section of the right sidebar
 # when button is clicked it calls mu class method, passing instance of the center layout as it needs
@@ -26,7 +26,7 @@ class FileSection(QFrame):
 
         layout = QVBoxLayout(self)
 
-        title_label = MajorHeading("File")
+        title_label = AnalysisText.create_major_title("File") 
         title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY}; border: none")
         title_label.setFont(QFont("Arial", 14, QFont.Bold))
         title_label.setObjectName("sidebarTitle")
