@@ -15,6 +15,7 @@ from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
 from app.muAnalysisFunctions.MotorUnitTrackingDialog import MotorUnitTrackingDialog
+from app.muAnalysisFunctions.ConductionVelocityDialog import ConductionVelocityDialog
 
 class AdvancedTools(QWidget):
 
@@ -104,9 +105,8 @@ class AdvancedTools(QWidget):
             dialog = MotorUnitTrackingDialog(self)
             dialog.exec_()
         elif selected_tool == "Conduction Velocity Estimation":
-            QMessageBox.information(self, "Coming Soon", "Conduction Velocity Estimation is not implemented yet.")
-        elif selected_tool == "Persistent Inward Currents":
-            QMessageBox.information(self, "Coming Soon", "Persistent Inward Currents is not implemented yet.")
+            dialog = ConductionVelocityDialog(self)
+            dialog.exec_()
         else:
             ErrorDialog('Unknown analysis tool.', 'Error').exec_()
 
