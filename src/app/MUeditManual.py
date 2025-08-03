@@ -1504,10 +1504,12 @@ class MUeditManual(QMainWindow):
     def lock_spikes_button_pushed(self):
         """Lock the current spikes to keep them during filter updates."""
         print("push lock spikes")
-        self.Backup["lock"] = 1
-        self.lock_spikes_btn.setStyleSheet(
-            "color: #f0f0f0; background-color: #7f7f7f; font-family: 'Poppins'; font-size: 18pt;"
-        )
+        if self.action_buttons["lock_spikes_button_pushed"].get_active():
+            self.Backup["lock"] = 0
+            self.action_buttons["lock_spikes_button_pushed"].set_active(False)
+        else: 
+            self.Backup["lock"] = 1
+            self.action_buttons["lock_spikes_button_pushed"].set_active(True) 
 
     def remove_outliers_button_pushed(self):
         """Remove outliers from the current motor unit."""
@@ -1567,21 +1569,21 @@ class MUeditManual(QMainWindow):
             return
         
         # Ask whether lock spikes
-        if self.Backup["lock_changable"] == 1:
-            dialog = MessageDialog(text="Do you want to lock splikes? ", HelpButtonTip="When updating the filter, the spikes in the non-edge part of the current display area are retained and not deleted.")
-            result = dialog.exec_()
-            if result == QDialog.Accepted:
-                print("Yes: lock")
-                print("push lock spikes")
-                self.Backup["lock"] = 1
-            elif dialog.user_clicked_no:
-                print("No: no lock")
-            elif dialog.user_closed_window:
-                print("cancel operation")
-                return
-            if dialog.checkbox_selected:
-                print("no ask again")
-                self.Backup["lock_changable"] = 0
+        # if self.Backup["lock_changable"] == 1:
+        #     dialog = MessageDialog(text="Do you want to lock splikes? ", HelpButtonTip="When updating the filter, the spikes in the non-edge part of the current display area are retained and not deleted.")
+        #     result = dialog.exec_()
+        #     if result == QDialog.Accepted:
+        #         print("Yes: lock")
+        #         print("push lock spikes")
+        #         self.Backup["lock"] = 1
+        #     elif dialog.user_clicked_no:
+        #         print("No: no lock")
+        #     elif dialog.user_closed_window:
+        #         print("cancel operation")
+        #         return
+        #     if dialog.checkbox_selected:
+        #         print("no ask again")
+        #         self.Backup["lock_changable"] = 0
 
         # Get the first checked MU
         checked_mus = []
