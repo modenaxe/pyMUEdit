@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (
     QMessageBox,
 )
 import matplotlib.pyplot as plt
+from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from ui.components.SaveablePlot import SaveablePlot
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
@@ -37,6 +38,11 @@ class SignalEditing(QWidget):
 
     # the popup
     def show_window(self):
+        # only opening if there's a file 
+        if FileUploadFunc.file == None:
+            ErrorDialog("No file has been loaded", "Error").exec_()
+            return
+
         window = QDialog()
         window.setWindowTitle("Signal Editing Window")
         window.setStyleSheet(
@@ -69,7 +75,7 @@ class SignalEditing(QWidget):
         filter_emg_layout.setContentsMargins(0, 0, 0, 0)
 
         filter_emg_order = AnalysisInput("Filter Order", "2", parent=window)
-        filter_emg_order.set("2")
+filter_emg_order.set("2")
         filter_emg_layout.addWidget(filter_emg_order)
         self.filter_emg_order = filter_emg_order
 

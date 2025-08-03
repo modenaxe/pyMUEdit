@@ -83,6 +83,7 @@ class AnalysisPlot(QWidget):
         # generating the new one 
         self.canvas = fig 
         self.layout.addWidget(self.canvas)
+        self.resize.show()
 
         self.toggle_btn.hide()
 
