@@ -45,14 +45,15 @@ class AnalysisDropdown(QComboBox):
             QComboBox QAbstractItemView {{
                 border: 0px;
             }}
+            QComboBox:disabled {{
+                background-color: {CleanTheme.ANALYSIS_BG_DROPDOWN_DISABLED};
+                color: {CleanTheme.TEXT_PRIMARY}
+            }}
             """
         )
         self.setPlaceholderText(label)
         if items: self.addItems(items)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-
-    def get_value(self):
-        return self.currentText()
 
 
 # too hard to convert the old class 'AnalysisDropdown' into a QWidget child class, that supports
