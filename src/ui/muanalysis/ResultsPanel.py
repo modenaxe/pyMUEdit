@@ -51,14 +51,17 @@ class ResultsPanel(QFrame):
         title = AnalysisText.create_major_title("Results") 
         
         # layout
-        top_layout = QHBoxLayout()
-        top_layout.setContentsMargins(5, 0, 5, 0)
-        top_layout.addWidget(title, stretch=2)
-        top_layout.addWidget(save_button, stretch=3)
-        top_layout.addStretch(1)
+        # top_layout = QVBoxLayout()
+        # top_layout.addWidget(title)
+        # # top_layout.addStretch(1)
+        # top_layout.addWidget(save_button)
+        # top_layout.addStretch(1)
         
+        # another layout 
         self.layout = QVBoxLayout(self)
-        self.layout.addLayout(top_layout, stretch=1)
+        self.layout.addWidget(title)
+        self.layout.addWidget(save_button)
+        # self.layout.addLayout(top_layout, stretch=1)
         self.layout.addWidget(self.combo_box, stretch=1)
         self.layout.addWidget(self.table_view, stretch=3)
         self.layout.addWidget(clear_button, stretch=1)

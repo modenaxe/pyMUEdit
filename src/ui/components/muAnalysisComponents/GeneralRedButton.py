@@ -20,7 +20,8 @@ class GeneralRedButton(QPushButton):
                 color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
                 border: none;
                 border-radius: 5px;
-                padding: 8px 15px;
+                padding: 0px 10px;
+                height: 40px;
             }}
             QPushButton:hover {{
                 background-color: {CleanTheme.RED_HOVER}; /* Darker red on hover */
