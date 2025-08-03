@@ -90,8 +90,6 @@ def setup_ui(main_window):
     # Set up keyboard shortcuts
     main_window.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
     
-<<<<<<< HEAD
-=======
     
 
 #   新增悬浮save块
@@ -106,7 +104,6 @@ def set_standard_label_style(label, size=10, bold=False):
     label.setFont(font)
     label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
 
->>>>>>> 10eeb20a94c4311011841ef17f9dade65b349e55
 
 def setup_control_panel(main_window):
     """Set up the control panel with all controls using modern UI components."""
