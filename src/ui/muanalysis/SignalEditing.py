@@ -75,7 +75,7 @@ class SignalEditing(QWidget):
         filter_emg_layout.setContentsMargins(0, 0, 0, 0)
 
         filter_emg_order = AnalysisInput("Filter Order", "2", parent=window)
-filter_emg_order.set("2")
+        filter_emg_order.set("2")
         filter_emg_layout.addWidget(filter_emg_order)
         self.filter_emg_order = filter_emg_order
 

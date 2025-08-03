@@ -27,7 +27,6 @@ from ui.muanalysis.PlotEMG import PlotEMGButton
 from ui.muanalysis.SignalEditing import SignalEditing
 from ui.components.muAnalysisComponents.AnalysisPlot import AnalysisPlot
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.MajorHeading import MajorHeading
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.muanalysis.FileSection import FileSection
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
@@ -188,7 +187,7 @@ class MUAnalysis(QWidget):
         sidebar_layout.setSpacing(0)
 
         # title
-        title_label = MajorHeading("Analysis")
+        title_label = AnalysisText.create_major_title("Analysis") 
         sidebar_layout.addWidget(title_label)
     
         # signal editing 
