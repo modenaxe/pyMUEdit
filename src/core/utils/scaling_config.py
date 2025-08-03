@@ -42,7 +42,7 @@ def get_adaptive_scale():
         # I don’t have a Mac, so skip that for now.
         scale = f"{1}"
     elif sys.platform.startswith("linux"):
-        scale = f"{get_xft_scale()*0.8:.2f}"
+        scale = f"{get_xft_scale():.2f}"
     else:
         return "1"
     
