@@ -312,7 +312,7 @@ def create_mu_selection_tab(main_window):
 
     # Initially add a label indicating no MUs
     no_mu_label = QLabel("No MUs loaded")
-    no_mu_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY}; font-size: 15px;")
+    set_standard_label_style(no_mu_label, size=13, bold=False)
     main_window.mu_checkbox_layout.addWidget(no_mu_label)
     main_window.mu_checkbox_layout.addStretch()
 
