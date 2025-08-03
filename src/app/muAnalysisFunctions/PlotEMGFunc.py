@@ -677,7 +677,7 @@ def sort_rawemg(
         "GR10MM0808",
         "Trigno Galileo Sensor",
         "None",
-        "Custom order",
+        "Custom",
     ]
     if code not in valid_codes:
         return ValueError("Unsupported code in sort_rawemg()")
@@ -686,12 +686,12 @@ def sort_rawemg(
     rawemg = copy.deepcopy(emgfile["RAW_SIGNAL"])
 
     # Get sorting order by matrix code
-    if code == "Custom order":
+    if code == "Custom":
         # Theck that custom_sorting_order has been specified
         if not isinstance(custom_sorting_order, list):
             raise ValueError(
                 "In sort_rawemg(), custom_sorting_order must be a list of " +
-                "lists when code=='Custom order'"
+                "lists when code=='Custom'"
             )
 
         # Get custom sorting order
