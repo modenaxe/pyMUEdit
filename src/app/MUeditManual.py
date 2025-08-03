@@ -2662,8 +2662,17 @@ class MUeditManual(QMainWindow):
         if self.filename is None:
             return
 
-        if "edited" in self.filename:
-            savename = os.path.join(self.pathname or "", self.filename)
+        if "edited" in self.filename:   #edited file
+            import re
+            base, ext = os.path.splitext(self.filename)
+            base = re.sub(r'_edited\d*$', '', base)  # 去掉已有的 _edited 后缀（带数字）
+            count = 1
+            while True:
+                new_name = f"{base}_edited{count}{ext}"
+                savename = os.path.join(self.pathname or "", new_name)
+                if not os.path.exists(savename):
+                    break
+                count += 1
         else:
             savename = os.path.join(self.pathname or "", os.path.splitext(self.filename)[0] + "_edited.mat")
 
