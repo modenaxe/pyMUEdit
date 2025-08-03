@@ -100,7 +100,7 @@ class ActionButtonedit(QPushButton):
         
         elif blue:
             font = QFont("Segoe UI")
-            font.setPointSize(12)
+            font.setPointSize(11)
             self.setFont(font)
             self.set_blue()
             
