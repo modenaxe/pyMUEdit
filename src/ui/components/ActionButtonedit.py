@@ -1,9 +1,12 @@
 from PyQt5.QtWidgets import QPushButton
 from PyQt5.QtGui import QFont, QIcon, QCursor
 from PyQt5.QtCore import Qt, QSize
-
 from .CleanTheme import CleanTheme
+from pathlib import Path
 
+ICON_DIR = Path(__file__).resolve().parent.parent.parent / "public"
+def _ico(name):    
+    return QIcon(str(ICON_DIR / f"{name}"))
 
 class ActionButtonedit(QPushButton):
     """A clean, minimalist button for actions"""
@@ -28,14 +31,14 @@ class ActionButtonedit(QPushButton):
             # Convert to QIcon if it's not already
             if not isinstance(icon, QIcon):
                 if isinstance(icon, str):
-                    icon = QIcon(icon)
+                    icon = _ico(icon)
                 elif isinstance(icon, int) or (hasattr(icon, "__int__") and not isinstance(icon, bool)):
                     from PyQt5.QtWidgets import QApplication
 
                     icon = QApplication.style().standardIcon(icon)  # type:ignore
-
             self.setIcon(icon)  # type:ignore
             self.setIconSize(QSize(16, 16))
+            self.setText("")
 
         # Style based on primary or secondary
         if primary:
@@ -100,7 +103,7 @@ class ActionButtonedit(QPushButton):
         
         elif blue:
             font = QFont("Segoe UI")
-            font.setPointSize(12)
+            font.setPointSize(11)
             self.setFont(font)
             self.set_blue()
             
