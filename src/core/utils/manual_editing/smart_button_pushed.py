@@ -20,6 +20,9 @@ def smart_button_pushed(func):
                 b.setProperty("active", False)
                 b.style().unpolish(b)
                 b.style().polish(b)
+            lock = self.Backup["lock"]
+            if lock == 1: 
+                self.action_buttons["lock_spikes_button_pushed"].set_active(True) 
             self.selection_tool.disable()
             return
         else:
