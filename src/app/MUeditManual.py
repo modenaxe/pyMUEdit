@@ -302,7 +302,20 @@ class MUeditManual(QMainWindow):
             self.select_file_title_btn.setText(self.filename)
 
             self.import_data()
+    
+    def select_file_button_pushed(self):
+        """Open file dialog to select file for editing and automatically import it."""
+        file_dialog = QFileDialog()
+        file_path, _ = file_dialog.getOpenFileName(self, "Select file", "", "MAT Files (*.mat);;All Files (*.*)")
 
+        if file_path:
+            self.pathname = os.path.dirname(file_path) + "/"
+            self.filename = os.path.basename(file_path)
+            self.file_path_field.setText(self.filename)
+            self.select_file_title_btn.setText(self.filename)
+
+            self.import_data()
+            
     def import_data(self):
         """Import data from selected file."""
         from PyQt5.QtWidgets import QApplication
@@ -335,7 +348,7 @@ class MUeditManual(QMainWindow):
             self.MUedition = {"edition": {}, "signal": {}, "parameters": {}}
             #edition contains all the data to be edit
 
-            if "edited" in self.filename:   #edited file, recover edition
+            if "edition" in files:   #edited file, recover edition
                 self.import_edited_file(files)
             else:   #new file
                 self.import_decomposed_file(files)
@@ -2728,8 +2741,41 @@ class MUeditManual(QMainWindow):
             self.DischagePlotDialog.deleteLater()
         self.DischagePlotDialog = dialog
 
+    def saveas_button_pushed(self):
+        """Save the edited motor units to a selected file."""
+        """Open file dialog to select file for editing and automatically save it."""
+        if not self.MUedition:
+            return 
+        file_dialog = QFileDialog()
+        file_path, _ = file_dialog.getSaveFileName(self, "Save as", "", "MAT Files (*.mat);;All Files (*.*)")
+
+        if file_path:
+            self.pathname = os.path.dirname(file_path) + "/"
+            self.filename = os.path.basename(file_path)
+            self.file_path_field.setText(self.filename)
+            self.select_file_title_btn.setText(self.filename)
+            self.save_file(file_path)
+        
+
     def save_button_pushed(self):
         """Save the edited motor units to a file."""
+                # Determine the save filename
+        if self.filename is None:
+            return
+
+        if "edited" in self.filename:
+            savename = os.path.join(self.pathname or "", self.filename)
+        else:
+            savename = os.path.join(self.pathname or "", os.path.splitext(self.filename)[0] + "_edited.mat")
+        
+        self.file_path_field.setText(self.filename)
+        self.select_file_title_btn.setText(self.filename)
+        
+        self.save_file(savename)
+            
+            
+    
+    def save_file(self, filepath):
         if not self.MUedition:
             return
 
@@ -2806,24 +2852,6 @@ class MUeditManual(QMainWindow):
 
         progress.setValue(100)
 
-        # Determine the save filename
-        if self.filename is None:
-            return
-
-        if "edited" in self.filename:   #edited file
-            import re
-            base, ext = os.path.splitext(self.filename)
-            base = re.sub(r'_edited\d*$', '', base)  # 去掉已有的 _edited 后缀（带数字）
-            count = 1
-            while True:
-                new_name = f"{base}_edited{count}{ext}"
-                savename = os.path.join(self.pathname or "", new_name)
-                if not os.path.exists(savename):
-                    break
-                count += 1
-        else:
-            savename = os.path.join(self.pathname or "", os.path.splitext(self.filename)[0] + "_edited.mat")
-
         # Prepare data for saving
         signal = copy.deepcopy(self.MUedition["signal"])
         parameters = copy.deepcopy(self.MUedition.get("parameters", {}))
@@ -2869,14 +2897,15 @@ class MUeditManual(QMainWindow):
                 edition[field] = json.dumps(safe_dict)
 
         # Save the data
-        sio.savemat(savename, {"signal": signal, "parameters": parameters, "edition": edition})
+        sio.savemat(filepath, {"signal": signal, "parameters": parameters, "edition": edition})
         self.dirty_depth = 0 #shr
         self.initial_data = copy.deepcopy(self.MUedition["edition"])    #保存新的原始数据
         self.update_save_button()
         # Show a confirmation message
         from PyQt5.QtWidgets import QMessageBox
         #QMessageBox.information(self, "Save Complete", f"Data saved to {savename}", QMessageBox.Ok)
-        SuccessDialog(title_label="Save Complete", text=f"Data saved to:\n{savename}")
+        SuccessDialog(title_label="Save Complete", text=f"Data saved to:\n{filepath}")
+        
     
     def clear_layout(self, layout):
         while layout.count():
