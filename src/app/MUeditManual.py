@@ -446,8 +446,12 @@ class MUeditManual(QMainWindow):
         self.remove_outliers_single_btn.setEnabled(enabled)
         self.update_mu_filter_btn.setEnabled(enabled)
         self.extend_mu_filter_btn.setEnabled(enabled)
+        self.lock_spikes_btn.setEnabled(enabled)
+        self.action_buttons["lock_spikes_button_pushed"].set_active(self.Backup["lock"] == 1 and enabled)
         self.sil_switch.setEnabled(enabled)
+        
         if hasattr(self, "selection_tool"): self.selection_tool.disable()
+        
     
     def help_button_pushed(self):
         HelpDialog()
