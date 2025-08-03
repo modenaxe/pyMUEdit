@@ -15,6 +15,7 @@ class HelpDialog(PlotDialog):
         # layout.setSpacing(15)
 
         window = ImageSlider()
+        window.setMinimumSize(1200, 800)
         window.show()
         # layout.addWidget(window)
 
