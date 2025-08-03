@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
     QDialog, QLabel, QPushButton, QVBoxLayout,
-    QHBoxLayout, QCheckBox, QToolButton, QStyle
+    QHBoxLayout, QCheckBox, QToolButton, QStyle, QSizePolicy
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
@@ -13,8 +13,10 @@ class WarningDialog(QDialog):
                          enableHelpButton=True, HelpButtonTip="Click for help"):
         super().__init__()
         self.setWindowTitle("Warning")
-        self.setFixedSize(350, 290)
+        #self.setFixedSize(350, 290)
+        self.setMinimumWidth(350)
         self.setWindowFlags(Qt.Dialog | Qt.MSWindowsFixedSizeDialogHint)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
         self.enableCheckBox = enableCheckBox
         self.checkbox_selected = False
 
