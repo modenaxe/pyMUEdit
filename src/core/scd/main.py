@@ -38,6 +38,8 @@ class SCDDecompositionWorker(QThread):
 
     def run(self) -> None:
         try:
+            self.emg_obj.electrode_formatter()  # adds spatial context, and additional filtering
+            
             # Get parameters from parameters object
             device = self.parameters["device"]
             acceptance_silhouette = self.parameters["acceptance_silhouette"]
@@ -107,6 +109,7 @@ class SCDDecompositionWorker(QThread):
             # print("---------------END PREDICTED TIMESTAMPS---------------")
 
             self.progress.emit("Formatting results...", 0.9)
+            print(self.decomp)
             #TODO: Figure out formatting results and saving
             result = self.format_results()
             self.finished.emit(result)
@@ -118,7 +121,6 @@ class SCDDecompositionWorker(QThread):
     
     def send_plot_update(self, fICA_source, spikes, time2, sil, cov):
         """Send plot update signals to the main UI thread"""
-        print("Plot update called from SCD")
         # Throttle updates to avoid overwhelming the UI
         self.plot_update.emit(fICA_source, spikes, time2, sil, cov)
         # Process events to keep the UI responsive during long computations
@@ -161,14 +163,15 @@ class SCDDecompositionWorker(QThread):
 
         #TODO: map pulse trains and discharge times from results of SCD algorithm
         # want to use self.decomp["source"] here for pulse trains, and self.decomp["timestamps"] for discharge times
-        if len(self.emg_obj.mu_dict["pulse_trains"]) > 0:
-            for electrode, pulse_trains in enumerate(self.emg_obj.mu_dict["pulse_trains"]):
+        pulse_trains_array = np.array([[source[t] for t in timestamps] for source, timestamps in zip(self.decomp["source"], self.decomp["timestamps"])])
+        if len(pulse_trains_array) > 0:
+            for electrode, pulse_trains in enumerate(pulse_trains_array):
                 if isinstance(pulse_trains, np.ndarray) and pulse_trains.shape[0] > 0:
                     result["Pulsetrain"][electrode] = pulse_trains
 
                     # Check if discharge_times is available for this electrode
-                    if electrode < len(self.emg_obj.mu_dict["discharge_times"]):
-                        for mu, discharge_times in enumerate(self.emg_obj.mu_dict["discharge_times"][electrode]):
+                    if electrode < len(self.decomp["timestamps"]):
+                        for mu, discharge_times in enumerate(self.decomp["timestamps"]):
                             if discharge_times is not None and len(discharge_times) > 0:
                                 result["Dischargetimes"][(electrode, mu)] = discharge_times
 
