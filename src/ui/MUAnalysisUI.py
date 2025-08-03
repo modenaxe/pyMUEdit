@@ -99,7 +99,7 @@ class MUAnalysis(QWidget):
 
     def set_export_window_opener(self, opener_func):
         """Stores the custom function used to open the export window."""
-        print(f"DEBUG: Setting export window opener function: {opener_func}")
+        # print(f"DEBUG: Setting export window opener function: {opener_func}")
         self._open_export_window_func = opener_func
 
     def request_return_to_dashboard(self):
@@ -475,7 +475,7 @@ class MUAnalysis(QWidget):
         return panel
 
     def _create_right_sidebar(self):
-        print("--- DEBUG: _create_right_sidebar called ---")
+        # print("--- DEBUG: _create_right_sidebar called ---")
         sidebar = QFrame()
         sidebar.setObjectName("rightSidebar")
         sidebar_layout = QVBoxLayout(sidebar)
@@ -564,9 +564,9 @@ class MUAnalysis(QWidget):
         )
         # Connect the export button to the trigger method
         if hasattr(self, "_trigger_export_window_open"):
-            print(f"--- DEBUG: Connecting export_button to {self._trigger_export_window_open} ---")
+            # print(f"--- DEBUG: Connecting export_button to {self._trigger_export_window_open} ---")
             export_button.clicked.connect(self._trigger_export_window_open)
-            print("--- DEBUG: Connection attempted ---")
+            # print("--- DEBUG: Connection attempted ---")
         else:
             print("--- ERROR: _trigger_export_window_open method not found! Cannot connect export button. ---")
             export_button.setEnabled(False)

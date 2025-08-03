@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import (
     QToolButton,
 )
 from PyQt5.QtGui  import QIcon          # 图标
-from PyQt5.QtCore import QSize   
+from PyQt5.QtCore import QSize, QTimer  
 from pathlib import Path
 
 # Import custom components
@@ -95,6 +95,15 @@ def setup_ui(main_window):
 #   新增悬浮save块
     # _add_floating_save_btn(main_window)
 
+from PyQt5.QtGui import QFont # alex
+# Apply Sil
+def set_standard_label_style(label, size=10, bold=False):
+    font = QFont("Segoe UI")
+    font.setPointSize(size)
+    font.setBold(bold)
+    label.setFont(font)
+    label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+
 
 def setup_control_panel(main_window):
     """Set up the control panel with all controls using modern UI components."""
@@ -137,7 +146,7 @@ def setup_control_panel(main_window):
     )
 
     # Select file button
-    main_window.select_file_btn = ActionButton("Select file", primary=True)
+    main_window.select_file_btn = ActionButtonedit("Select file", primary=True)
     main_window.select_file_btn.clicked.connect(main_window.select_file_button_pushed)
 
     file_select_layout.addWidget(main_window.file_path_field, 1)  # 1 is stretch factor
@@ -172,7 +181,7 @@ def setup_control_panel(main_window):
     # Save section using SettingsGroup
     save_group = SettingsGroup("Save the Edition")
 
-    main_window.save_btn = ActionButton("Save", primary=True)
+    main_window.save_btn = ActionButtonedit("Save", primary=True)
     main_window.save_btn.clicked.connect(main_window.save_button_pushed)
 
     save_group.add_field(main_window.save_btn)
@@ -303,7 +312,7 @@ def create_mu_selection_tab(main_window):
 
     # Initially add a label indicating no MUs
     no_mu_label = QLabel("No MUs loaded")
-    no_mu_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY}; font-size: 15px;")
+    set_standard_label_style(no_mu_label, size=13, bold=False)
     main_window.mu_checkbox_layout.addWidget(no_mu_label)
     main_window.mu_checkbox_layout.addStretch()
 
@@ -382,7 +391,7 @@ def create_visualization_tab(main_window):
     row1_layout.setSpacing(6)
 
     reference_label = QLabel("Reference")
-    reference_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+    set_standard_label_style(reference_label)
 
     # Create a dropdown for reference selection
     main_window.reference_dropdown = FixedPopupComboBox() # change to new class moy
@@ -409,7 +418,7 @@ def create_visualization_tab(main_window):
     row2_lay.setContentsMargins(0,0,0,0)
     row2_lay.setSpacing(6)
     apply_lbl = QLabel("Apply SIL")                 
-    apply_lbl.setStyleSheet(f"color:{CleanTheme.TEXT_PRIMARY};")
+    set_standard_label_style(apply_lbl)
 
     main_window.sil_switch = ToggleSwitch()        
     main_window.sil_switch.toggled.connect(    
@@ -444,7 +453,7 @@ def create_visualization_tab(main_window):
     row3_lay.setSpacing(6)
     
     aa_lbl = QLabel("Always Anti-Aliasing on Plot")                 
-    aa_lbl.setStyleSheet(f"color:{CleanTheme.TEXT_PRIMARY};")
+    set_standard_label_style(aa_lbl)
     row3_lay.setContentsMargins(0,0,0,0)
     row3_lay.setSpacing(6)
     row3_lay.addWidget(aa_lbl)
@@ -454,6 +463,23 @@ def create_visualization_tab(main_window):
     row3_lay.addWidget(main_window.aa_switch)
     
     button_panel.add_widget(row3)
+    
+    row4 = QWidget()
+    row4_lay = QHBoxLayout(row4)
+    row4_lay.setContentsMargins(0,0,0,0)
+    row4_lay.setSpacing(6)
+    
+    sps_lbl = QLabel("Spikes Plot Ascending")                 
+    set_standard_label_style(sps_lbl)
+    row4_lay.setContentsMargins(0,0,0,0)
+    row4_lay.setSpacing(6)
+    row4_lay.addWidget(sps_lbl)
+
+    main_window.sps_switch = ToggleSwitch(checked=True)        
+    main_window.sps_switch.toggled.connect(main_window.sps_checkbox_value_changed)
+    row4_lay.addWidget(main_window.sps_switch)
+    
+    button_panel.add_widget(row4)
 
     viz_layout.addWidget(button_panel)
     viz_layout.addStretch()
@@ -493,14 +519,14 @@ def setup_display_panel(main_window):
         main_window.help_button_pushed
     )
     
-    main_window.select_file_title_btn = ActionButton("Press here to select file", primary=False)
+    main_window.select_file_title_btn = ActionButtonedit("Press here to select file", primary=False)
     main_window.select_file_title_btn.setFixedHeight(40)
     select_btn = main_window.select_file_title_btn
     main_window.select_file_title_btn.clicked.connect(
         main_window.select_file_button_pushed
     )
 
-    save_btn = ActionButton("Save", primary=True)  #shr
+    save_btn = ActionButtonedit("Save", primary=True)  #shr
     save_btn.setFixedHeight(40)
     save_btn.clicked.connect(main_window.save_button_pushed)
     main_window.floating_save_btn = save_btn
@@ -643,7 +669,7 @@ def setup_display_panel(main_window):
     main_window.plots_layout.addWidget(main_window.dr_plot)
 
     display_layout.addWidget(plots_scroll_area, 1)  # 1 is stretch factor
-    # === NEW: horizontal pan‑slider just below all plots ==============moy
+    # horizontal pan‑slider just below all plots moy
     from PyQt5.QtWidgets import QSlider
     main_window.pan_slider = QSlider(Qt.Horizontal, parent=display_widget)
     main_window.pan_slider.setRange(0, 1000)      # 0 = far left, 1000 = far right
@@ -672,8 +698,10 @@ def setup_display_panel(main_window):
     """)
 
     main_window.pan_slider.valueChanged.connect(main_window.pan_slider_changed)
+    mid = (main_window.pan_slider.minimum() + main_window.pan_slider.maximum()) // 2
+    main_window.pan_slider.setValue(mid)
     display_layout.addWidget(main_window.pan_slider)
-    # ==============================================================
+
 
    # Action buttons - use a card with a proper title
     action_card = CleanCard()
@@ -725,6 +753,22 @@ def setup_display_panel(main_window):
     action_card.content_layout.addWidget(action_container)
     display_layout.addWidget(action_card)
 
+    main_window.tip_bar = QLabel("")
+    main_window.tip_bar.setFixedHeight(10)
+    main_window.tip_bar.setAlignment(Qt.AlignCenter)
+    set_standard_label_style(main_window.tip_bar, size=12)
+    '''main_window.tip_bar.setStyleSheet(f"""
+        background-color: {CleanTheme.BG_CARD};
+        color: black;
+        font-weight: bold;
+    """)'''
+    display_layout.addWidget(main_window.tip_bar)
+    
+    # Timer for tip bar
+    main_window.tip_timer = QTimer(main_window)
+    main_window.tip_timer.setSingleShot(True)
+    main_window.tip_timer.timeout.connect(main_window.clear_tip)
+
     # Navigation buttons - simple row of buttons in a frame
     nav_frame = QFrame()
     nav_frame.setFrameShape(QFrame.StyledPanel)
@@ -744,7 +788,6 @@ def setup_display_panel(main_window):
 
     # Add all visualization elements to the panel
     main_window.display_panel.set_plot_widget(display_widget)
-
 
 def create_plot_widget(main_window, y_label, x_label=""):
     """Create a standardized plot widget with consistent styling."""
@@ -803,6 +846,9 @@ def create_mu_checkbox(main_window, array_idx, mu_idx, text, sil_value, is_check
         QCheckBox {{
             color: {CleanTheme.TEXT_PRIMARY};
             font-size: 13px;
+            font-family: "Segoe UI";
+            font-weight: normal;       /* 可选值：bold、normal */
+            font-style: normal;        /* 可选值：italic、normal */
             padding: 2px 0;
         }}
         QCheckBox::indicator {{
