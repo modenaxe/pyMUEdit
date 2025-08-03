@@ -6,7 +6,8 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QLabel,
-    QFrame
+    QFrame,
+    QWidget
 )
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
@@ -27,37 +28,30 @@ class FileSection(QFrame):
         layout = QVBoxLayout(self)
 
         title_label = AnalysisText.create_major_title("File") 
-        title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY}; border: none")
-        title_label.setFont(QFont("Arial", 14, QFont.Bold))
         title_label.setObjectName("sidebarTitle")
+        layout.addWidget(title_label)
 
         # Create horizontal layout for the buttons
         button_row = QHBoxLayout()
-        button_row.setSpacing(10)
-
-        browse_btn = GeneralButton('Load File', lambda: mu.select_file_button_pushed(analysis_plot, False))
-        # browse_btn.setFixedWidth(120)
-        #REMOVE THIS FOR FINAL JUST FOR TESTING
-        browse_btn.setFixedWidth(90)
-        browse_btn.setFixedHeight(40)
-
-        json_btn = GeneralButton('Json File', lambda: mu.select_file_button_pushed(analysis_plot, True))
-        # json_btn.setFixedWidth(120)
-        #REMOVE THIS FOR FINAL JUST FOR TESTING
-        json_btn.setFixedWidth(90)
-        json_btn.setFixedHeight(40)
-
-        self.reset_btn = ResetButton('Reset')
-        # self.reset_btn.setFixedWidth(120)
-        #REMOVE THIS FOR FINAL JUST FOR TESTING
-        self.reset_btn.setFixedWidth(90)
-        self.reset_btn.setFixedHeight(40)
-
-        button_row.addWidget(browse_btn)
-        button_row.addWidget(json_btn)
-        button_row.addWidget(self.reset_btn)
-
-        layout.addWidget(title_label)
         layout.addLayout(button_row)
-        layout.addStretch(1)
 
+        # load file button
+        browse_btn = GeneralButton('Load File', lambda: mu.select_file_button_pushed(analysis_plot, False))
+        button_row.addWidget(browse_btn, stretch=1)
+
+        # json button 
+        json_btn = GeneralButton('Json File', lambda: mu.select_file_button_pushed(analysis_plot, True))
+        button_row.addWidget(json_btn, stretch=1)
+
+
+        # reset row 
+        reset_row = QHBoxLayout()
+        layout.addLayout(reset_row)
+
+        # adding a filler to align the reset button better
+        filler = QWidget()
+        reset_row.addWidget(filler, stretch=1)
+
+        # reset button 
+        self.reset_btn = ResetButton('Reset')
+        reset_row.addWidget(self.reset_btn, stretch=1)
