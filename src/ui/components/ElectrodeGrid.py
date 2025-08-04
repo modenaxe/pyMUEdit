@@ -61,8 +61,10 @@ class ElectrodeGrid(QWidget):
         super().__init__(parent)
 
         self.channel_indices = channel_indices
+        self.change_index = change_index
         if "gridname" in emg_obj.signal_dict:
             self.electrode_names = emg_obj.signal_dict["gridname"]
+            self.muscle_names = emg_obj.signal_dict["muscle"]
         else:
             return
         
@@ -74,30 +76,13 @@ class ElectrodeGrid(QWidget):
         layout = QVBoxLayout(left_container)
         layout.addStretch()
 
-        grid_layout = QGridLayout()
-        grid_layout.setSpacing(10)
-
+        self.grid_layout = QGridLayout()
+        self.grid_layout.setSpacing(10)
         self.init_grids()
+        self.draw_grid()
+        layout.addLayout(self.grid_layout)
 
-        colors = get_n_colours(len(channel_indices))
-        for row, i in enumerate(self.channel_maps[0]):
-            for col, j in enumerate(i):
-                qcolor = QColor("gray")
-                interactive = True
-                if row == 0 and col == 0:
-                    qcolor = QColor("white")
-                    interactive = False
-                elif j in channel_indices:
-                    r, g, b, a = colors[min(len(colors) - 1, j - min(channel_indices))]
-                    qcolor = QColor(int(r * 255), int(g * 255), int(b * 255), int(a * 255))
-                square = SquareWidget(qcolor, j, change_index, interactive)
-                if row != 0 or col != 0:
-                    self.square_map[j] = square
-                grid_layout.addWidget(square, row, col)
-
-        layout.addLayout(grid_layout)
-
-        self.label = QLabel(f"Electrode {self.electrode_index + 1}")
+        self.label = QLabel(f"{self.muscle_names[self.electrode_index]}")
         layout.addWidget(self.label)
 
         # left and right buttons
@@ -116,6 +101,35 @@ class ElectrodeGrid(QWidget):
         layout.addStretch()
 
         self.setLayout(layout)
+
+    def clear_grid_layout(self, layout):
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.setParent(None)
+            else:
+                sub_layout = item.layout()
+                if sub_layout is not None:
+                    self.clear_grid_layout(sub_layout)
+
+    def draw_grid(self):
+        self.clear_grid_layout(self.grid_layout)
+        colors = get_n_colours(len(self.channel_indices))
+        for row, i in enumerate(self.channel_maps[self.electrode_index]):
+            for col, j in enumerate(i):
+                qcolor = QColor("gray")
+                interactive = True
+                if row == 0 and col == 0:
+                    qcolor = QColor("white")
+                    interactive = False
+                elif j in self.channel_indices:
+                    r, g, b, a = colors[min(len(colors) - 1, j - min(self.channel_indices))]
+                    qcolor = QColor(int(r * 255), int(g * 255), int(b * 255), int(a * 255))
+                square = SquareWidget(qcolor, j, self.change_index, interactive)
+                if row != 0 or col != 0:
+                    self.square_map[j] = square
+                self.grid_layout.addWidget(square, row, col)
 
     def left_clicked(self):
         self.electrode_index -= 1
@@ -164,7 +178,9 @@ class ElectrodeGrid(QWidget):
                 square.setColor(QColor("gray"))
                 square.setIndex(index + modifier)
 
-        self.label.setText(f"Electrode {self.electrode_index + 1}")
+        self.label.setText(f"{self.muscle_names[self.electrode_index]}")
+
+        self.draw_grid()
 
     def init_grids(self):
         self.channel_maps = []
