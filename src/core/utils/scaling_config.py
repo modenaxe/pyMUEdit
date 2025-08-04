@@ -40,7 +40,7 @@ def get_adaptive_scale():
         scale = f"{get_windows_scale():.2f}"
     elif sys.platform.startswith("darwin"):
         # I don’t have a Mac, so skip that for now.
-        scale = f"{1}"
+        return None
     elif sys.platform.startswith("linux"):
         scale = f"{get_xft_scale():.2f}"
     else:
@@ -56,6 +56,9 @@ def apply_qt_scaling():
     """
 
     scale = get_adaptive_scale()
+    if scale is None:
+        print("[INFO] macOS detected, skipping adaptive QT scaling.")
+        return
     print(scale)
 
     # Apply fixed scaling
