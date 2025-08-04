@@ -66,7 +66,7 @@ def create_right_content(import_window):
     right_content = QWidget()
     right_layout = QVBoxLayout(right_content)
     right_layout.setContentsMargins(25, 25, 25, 25)
-    right_layout.setSpacing(20)
+    right_layout.setSpacing(10)
 
     # Add section header
     header = SectionHeader("Import HDEMG Data")
