@@ -202,6 +202,7 @@ class ImportDataWindow(QMainWindow):
                         self.cur_electrode_preview_idx = 0
                         # Plot channels for previews
                         self.update_preview_plot()
+                        self.update_buttons()
                     except Exception as e:
                         print(f"Error creating preview plot: {e}")
                 else:

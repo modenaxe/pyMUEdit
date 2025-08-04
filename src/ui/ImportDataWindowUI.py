@@ -230,9 +230,10 @@ def create_preview_section(import_window):
     # left and right buttons
     lrbuttons = QWidget()
     button_layout = QHBoxLayout()
-    import_window.left_button = QPushButton("←")
+    import_window.left_button = ActionButton("←", primary=False)
     import_window.left_button.setEnabled(False)
-    import_window.right_button = QPushButton("→")
+    import_window.right_button = ActionButton("→", primary=False)
+    import_window.right_button.setEnabled(False)
     import_window.left_button.clicked.connect(import_window.leftClicked)
     import_window.right_button.clicked.connect(import_window.rightClicked)
     button_layout.addWidget(import_window.left_button)

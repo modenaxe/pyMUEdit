@@ -5,6 +5,8 @@ from PyQt5.QtCore import Qt, QSize
 import matplotlib.cm as cm
 import numpy as np
 
+from ui.components.ActionButton import ActionButton
+
 
 class SquareWidget(QWidget):
     def __init__(self, color, index, change_index, interactive=True):
@@ -103,9 +105,9 @@ class ElectrodeGrid(QWidget):
         # left and right buttons
         lrbuttons = QWidget()
         button_layout = QHBoxLayout()
-        self.left_button = QPushButton("←")
+        self.left_button = ActionButton("←", primary=False)
         self.left_button.setEnabled(False)
-        self.right_button = QPushButton("→")
+        self.right_button = ActionButton("→", primary=False)
         self.left_button.clicked.connect(self.left_clicked)
         self.right_button.clicked.connect(self.right_clicked)
         button_layout.addWidget(self.left_button)
