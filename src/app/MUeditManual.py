@@ -535,6 +535,7 @@ class MUeditManual(QMainWindow):
 
             # Add MU checkboxes for this array
             has_checkboxes = False
+            
             for mu_idx in range(self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]):
                 has_checkboxes = True
                 mu_identifier = f"Array_{array_idx+1}_MU_{mu_idx+1}"
@@ -2306,6 +2307,7 @@ class MUeditManual(QMainWindow):
                         array_flag[mu_idx] == 1
                 ):
                     keep_mask[mu_idx] = False
+                array_flag[mu_idx] = 0
 
             # Keep only non-flagged MUs
             if np.any(keep_mask):
@@ -2327,6 +2329,7 @@ class MUeditManual(QMainWindow):
             else:
                 # Add empty array if all MUs are flagged
                 clean_pulsetrain.append(np.zeros((0, array_pulse_train.shape[1])))
+
         progress.setValue(100)
 
         if array_empty_flag:
