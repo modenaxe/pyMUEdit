@@ -211,6 +211,7 @@ class ImportDataWindow(QMainWindow):
                 # Load file data into the plot
                 if "data" in signal and "fsamp" in signal:
                     try:
+                        self.cur_electrode_preview_idx = 0
                         # Plot channels for previews
                         self.update_preview_plot()
                     except Exception as e:
@@ -257,28 +258,85 @@ class ImportDataWindow(QMainWindow):
 
     def update_preview_plot(self):
         signal = self.emg_obj.signal_dict
+        chans_per_electrode = self.get_n_chans_per_electrode()
 
         # Create a time vector
         fsamp = signal["fsamp"]
         nsamples = signal["data"].shape[1]
         time = np.arange(nsamples) / fsamp
 
-        # Plot first channel as preview
         self.preview_plot.clear()
 
-        # Plot all selected channels for preview
-        num_preview_channels = signal["data"].shape[0]
-        num_actual_channels = 0
-        colors = ["b", "g", "r", "c", "m", "y"]
+        # Get selected electrode index
+        selected_electrode_idx = self.cur_electrode_preview_idx
+        if selected_electrode_idx >= len(chans_per_electrode):
+            self.preview_plot.setTitle("Invalid electrode selected")
+            return
 
-        for i in range(num_preview_channels):
-            if i not in self.emg_obj.rejected_channel_indices:
-                num_actual_channels += 1
-                self.preview_plot.plot(
-                    time, signal["data"][i, :], pen=pg.mkPen(color=colors[i % len(colors)], width=1)
-                )
+        # Determine channel indices for selected electrode
+        start_index = sum(chans_per_electrode[:self.cur_electrode_preview_idx])
+        end_index = start_index + chans_per_electrode[self.cur_electrode_preview_idx]
+        all_indices = list(range(start_index, end_index))
 
-        self.preview_plot.setTitle(f"Signal Preview ({num_actual_channels} channels)")
+        # Filter out rejected channels
+        valid_indices = [i for i in all_indices if i not in self.emg_obj.rejected_channel_indices]
+        if not valid_indices:
+            self.preview_plot.setTitle(f"Electrode {selected_electrode_idx + 1}: No valid channels")
+            return
+
+        # Calculate the floating point average across valid channels
+        avg_signal = np.mean(signal["data"][valid_indices], axis=0)
+
+        # Plot the average in bold black
+        self.preview_plot.plot(time, avg_signal, pen=pg.mkPen(color='r', width=2))
+
+        self.preview_plot.setTitle(f"Electrode {selected_electrode_idx + 1}: {len(valid_indices)} valid channels")
+
+    def get_n_chans_per_electrode(self):
+        grid_names = self.emg_obj.signal_dict["gridname"]
+        chans_per_electrode = []
+        for i in range(self.emg_obj.signal_dict["ngrid"]):
+            if grid_names[i] == "GR04MM1305" or \
+               grid_names[i] == "ELSCH064NM2" or \
+               grid_names[i] == "GR08MM1305" or \
+               grid_names[i] == "GR10MM0808" or \
+               grid_names[i] == "other":
+                chans_per_electrode.append(64)
+            elif grid_names[i] == "Thin film":
+                chans_per_electrode.append(40)
+            elif grid_names[i] == "4-wire needle":
+                chans_per_electrode.append(16)
+            elif grid_names[i] == "Myomatrix Monopolar":
+                chans_per_electrode.append(32)
+            else:
+                chans_per_electrode.append(16)
+
+        return chans_per_electrode
+
+    def leftClicked(self):
+        new_index = self.cur_electrode_preview_idx - 1
+        if new_index >= 0:
+            self.cur_electrode_preview_idx = new_index
+        self.update_buttons()
+        print("LEFT CLICKED")
+
+    def rightClicked(self):
+        new_index = self.cur_electrode_preview_idx + 1
+        if new_index < self.emg_obj.signal_dict["ngrid"]:
+            self.cur_electrode_preview_idx = new_index
+        self.update_buttons()
+        print("RIGHT CLICKED")
+
+    def update_buttons(self):
+        if self.cur_electrode_preview_idx == 0:
+            self.left_button.setEnabled(False)
+        else:
+            self.left_button.setEnabled(True)
+
+        if self.cur_electrode_preview_idx == self.emg_obj.signal_dict["ngrid"] - 1:
+            self.right_button.setEnabled(False)
+        else:
+            self.right_button.setEnabled(True)
 
     def save_mat_in_background(self, filename, data, compression=True, processing=False):
         """Save data as .mat file in a background thread."""

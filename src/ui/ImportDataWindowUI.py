@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QApplication, QScrollArea, QStackedWidget
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QApplication, QScrollArea, QStackedWidget, QPushButton
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 from PyQt5.QtSvg import QSvgWidget
@@ -219,13 +219,26 @@ def create_preview_section(import_window):
     signal_panel = VisualizationPanel(plot_widget=import_window.preview_plot)
     import_window.preview_stacked_frame.addWidget(signal_panel)
     import_window.preview_stacked_frame.setCurrentIndex(0)
-    
+
     # Add message to preview frame
     preview_frame_layout = QVBoxLayout(preview_frame)
     preview_frame_layout.addWidget(import_window.preview_stacked_frame, stretch=3)
 
     # Add preview frame to layout
     preview_layout.addWidget(preview_frame)
+
+    # left and right buttons
+    lrbuttons = QWidget()
+    button_layout = QHBoxLayout()
+    import_window.left_button = QPushButton("←")
+    import_window.left_button.setEnabled(False)
+    import_window.right_button = QPushButton("→")
+    import_window.left_button.clicked.connect(import_window.leftClicked)
+    import_window.right_button.clicked.connect(import_window.rightClicked)
+    button_layout.addWidget(import_window.left_button)
+    button_layout.addWidget(import_window.right_button)
+    lrbuttons.setLayout(button_layout)
+    preview_layout.addWidget(lrbuttons)
 
     # Add layout to card
     preview_card.content_layout.addLayout(preview_layout)
