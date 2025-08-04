@@ -211,7 +211,7 @@ class SegmentSessionPage(QWidget):
             colour = pg.mkColor(rgb + (alpha,))
 
             # Create new ROI region
-            roi = pg.LinearRegionItem(values=[i * 1000, i * 1000 + 500])
+            roi = pg.LinearRegionItem(values=[i * 3000, i * 3000 + 1500])
             roi.setZValue(10)
             roi.setBrush(pg.mkBrush(colour))
             # Allow it to be scaled and moved
@@ -256,8 +256,9 @@ class SegmentSessionPage(QWidget):
 
         # Save updated file
         signal = self.file["signal"][0, 0]
-        sio.savemat(self.filename, {"signal": signal}, do_compression=True)
-        self.on_new_segment(self.filename)
+        save_filename = f"{self.filename.split('.')[0]}_concatenated.mat"
+        sio.savemat(save_filename, {"signal": signal}, do_compression=True)
+        self.on_new_segment(save_filename)
 
     def split_clicked(self):
         num_segments = len(self.coordinates) // 2
@@ -279,7 +280,7 @@ class SegmentSessionPage(QWidget):
             self.file["signal"][0, 0]["path"] = self.file["signal"][0, 0]["target"]
 
             # Save the segment into a .mat file
-            save_filename = f"{self.filename}_{i + 1}.mat"
+            save_filename = f"{self.filename.split('.')[0]}_split_segment_{i + 1}.mat"
             signal = self.file["signal"][0, 0]
             sio.savemat(save_filename, {"signal": signal}, do_compression=True)
             self.on_new_segment(save_filename)
