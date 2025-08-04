@@ -244,27 +244,29 @@ class DecompositionApp(QMainWindow):
                 "edition": edition_data,  # Properly formatted edition data
             }
 
+            def openEditor():
+                # Create the MUeditManual window
+                self.mu_edit_window = MUeditManual(filename=self.filename + "_fixed_for_editing.mat", pathname=self.pathname)
+
+                # Show the window without preloading
+                self.mu_edit_window.show()
+
+                # Suggest the file to open
+                self.edit_field.setText(f"Editor opened. Please select {fixed_filename}")
+
+
             # Use existing save_mat_in_background function to save the fixed data
-            self.save_mat_in_background(fixed_filename, fixed_data, True)
+            self.save_mat_in_background(fixed_filename, fixed_data, True, onFinished=openEditor)
 
             # Update UI
             self.edit_field.setText(f"Preparing data for editing and opening editor...")
-
-            # Create the MUeditManual window
-            self.mu_edit_window = MUeditManual()
-
-            # Show the window without preloading
-            self.mu_edit_window.show()
-
-            # Suggest the file to open
-            self.edit_field.setText(f"Editor opened. Please select {fixed_filename}")
 
         except Exception as e:
             self.edit_field.setText(f"Error opening editing mode: {str(e)}")
             traceback.print_exc()
 
     # Event handlers
-    def save_mat_in_background(self, filename, data, compression=True):
+    def save_mat_in_background(self, filename, data, compression=True, onFinished=None):
         self.edit_field.setText("Saving data in background...")
 
         # Create and configure the worker thread
@@ -273,6 +275,8 @@ class DecompositionApp(QMainWindow):
 
         worker.finished.connect(lambda: self.on_save_finished(worker))
         worker.error.connect(lambda msg: self.on_save_error(worker, msg))
+        if onFinished:
+            worker.finished.connect(onFinished)
 
         worker.start()
 
