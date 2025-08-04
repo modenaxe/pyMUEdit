@@ -60,7 +60,7 @@ class DatasetItem(QFrame):
         info_layout = QVBoxLayout()
         info_layout.setSpacing(2)
 
-        filename_label = QLabel(filename) if not in_sidebar else QLabel(self._truncate_text(filename, 15))
+        filename_label = QLabel(filename) if not in_sidebar else QLabel(self._truncate_text(filename, 18))
         filename_label.setFont(QFont("Segoe UI", 9))
         filename_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
 
@@ -145,5 +145,5 @@ class DatasetItem(QFrame):
             max_length (int): Maximum length before truncation
         """
         if len(text) > max_length:
-            return text[: max_length - 3] + "..."
+            return text[: max_length - 10] + "..." + text[-10 :]
         return text
