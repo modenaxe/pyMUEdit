@@ -337,20 +337,18 @@ class MUeditManual(QMainWindow):
             
     def import_data(self):
         """Import data from selected file."""
-        from PyQt5.QtWidgets import QApplication
-        from PyQt5.QtCore import Qt
-        # 设置鼠标为等待
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-
         if not self.filename or not self.pathname:
             return
 
         # Wrong Format
         if not self.filename.lower().endswith(".mat"):
             ErrorDialog(title_label="File Format Error", text="Selected file is not a valid .mat file.\nPlease choose a .mat file.")
-            QApplication.restoreOverrideCursor()  # 还原鼠标
             return
-
+        
+        from PyQt5.QtWidgets import QApplication
+        from PyQt5.QtCore import Qt
+        # 设置鼠标为等待
+        QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
             filepath = os.path.join(self.pathname, self.filename)
             files = sio.loadmat(filepath)
@@ -360,8 +358,8 @@ class MUeditManual(QMainWindow):
                     "Pulsetrain" not in files["signal"].dtype.names
                     and "Pulsetrain" not in files  # 有些是顶层字段
             ):
-                raise KeyError("Missing 'signal' or 'Pulsetrain'")
                 QApplication.restoreOverrideCursor()  # 还原鼠标
+                raise KeyError("Missing 'signal' or 'Pulsetrain'")
 
             # Initialize the MUedition data structure
             self.MUedition = {"edition": {}, "signal": {}, "parameters": {}}
@@ -418,14 +416,15 @@ class MUeditManual(QMainWindow):
 
             QApplication.restoreOverrideCursor()  # 还原鼠标
 
+            #获取初始读取的数据值，对比作为save按钮的开关
+            self.initial_data = copy.deepcopy(self.MUedition["edition"])
+
         except KeyError as ke:
+            QApplication.restoreOverrideCursor()
             ErrorDialog(title_label="Missing Field", text=f"The .mat file is missing required fields:\n{ke}")
-            QApplication.restoreOverrideCursor()
         except Exception as e:
-            ErrorDialog(title_label="Import Error", text=f"Failed to load the file:\n{str(e)}")
             QApplication.restoreOverrideCursor()
-        #获取初始读取的数据值，对比作为save按钮的开关
-        self.initial_data = copy.deepcopy(self.MUedition["edition"])
+            ErrorDialog(title_label="Import Error", text=f"Failed to load the file:\n{str(e)}")
 
 
     def update_action_button_states(self):
@@ -2268,9 +2267,6 @@ class MUeditManual(QMainWindow):
         clean_dischargetimes = {}
         clean_silval = {}
         clean_silvalcon = {}
-        
-        # Create a flag for checking if remaining MU is empty
-        array_empty_flag = True
 
         # Process each array
         for array_idx in range(total_arrays):
@@ -2291,6 +2287,9 @@ class MUeditManual(QMainWindow):
 
             # Create a mask for non-flagged MUs
             keep_mask = np.ones(array_pulse_train.shape[0], dtype=bool)
+
+            # Create a flag for checking if remaining MU is empty
+            array_empty_flag = True
 
             # Check each MU
             for mu_idx in range(array_pulse_train.shape[0]):
