@@ -16,7 +16,7 @@ from ui.components.FormSpinBox import FormSpinBox
 from .VisualizationPanel import VisualizationPanel
 
 class SegmentSessionPage(QWidget):
-    def __init__(self, filename, parent=None):
+    def __init__(self, filename, on_new_segment, on_done_clicked, parent=None):
         super().__init__(parent)
         self.rois = []
         self.coordinates = []
@@ -24,6 +24,8 @@ class SegmentSessionPage(QWidget):
         self.filename = filename
         self.file = sio.loadmat(filename)
         self.setMinimumSize(1024, 700)
+        self.on_new_segment = on_new_segment
+        self.on_done_clicked = on_done_clicked
 
         # left panel
         left_container = QWidget()
@@ -255,6 +257,7 @@ class SegmentSessionPage(QWidget):
         # Save updated file
         signal = self.file["signal"][0, 0]
         sio.savemat(self.filename, {"signal": signal}, do_compression=True)
+        self.on_new_segment(self.filename)
 
     def split_clicked(self):
         num_segments = len(self.coordinates) // 2
@@ -279,6 +282,7 @@ class SegmentSessionPage(QWidget):
             save_filename = f"{self.filename}_{i + 1}.mat"
             signal = self.file["signal"][0, 0]
             sio.savemat(save_filename, {"signal": signal}, do_compression=True)
+            self.on_new_segment(save_filename)
 
         self.vis_plot.clear()
         # Update plot to be the first segment
@@ -290,4 +294,5 @@ class SegmentSessionPage(QWidget):
 
 
     def done_clicked(self):
+        self.on_done_clicked()
         self.close()
