@@ -150,11 +150,10 @@ class DecompositionApp(QMainWindow):
                 nsamples = signal["data"].shape[1]
                 time = np.arange(nsamples) / fsamp
 
-                # Plot first channel as preview
                 self.ui_plot_reference.clear()
 
                 # Plot all selected channels for preview
-                num_preview_channels = signal["data"].shape[0]
+                num_preview_channels = min(signal["data"].shape[0], 3)
                 num_actual_channels = 0
                 colors = ["b", "g", "r", "c", "m", "y"]
 
