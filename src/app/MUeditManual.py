@@ -41,12 +41,12 @@ class MUeditManual(QMainWindow):
     # Add signal to return to dashboard if needed
     return_to_dashboard_requested = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, filename=None, pathname=None, parent=None):
         super().__init__(parent)
 
         # Initialize main data structures
-        self.filename = None
-        self.pathname = None
+        self.filename = filename
+        self.pathname = pathname
         self.MUedition = None
         self.Backup = {"lock": 0, "Pulsetrain": None, "Dischargetimes": None}
         self.graphstart = None
@@ -57,6 +57,11 @@ class MUeditManual(QMainWindow):
 
         # Set up the UI
         setup_ui(self)
+
+        # Imports data (only if filename and pathname exist)
+        if filename and pathname:
+            self.file_path_field.setText(self.filename)
+            self.import_data()
 
         # Add back button if needed when used in embedded mode
         if parent:
