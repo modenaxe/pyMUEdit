@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent
 import numpy as np
+import pandas as pd
 import pyqtgraph as pg
 
 # Import UI setup function
@@ -130,7 +131,7 @@ class ImportDataWindow(QMainWindow):
 
         # Load the file (passing the whole path)
         self.load_file(self.pathname, self.filename)
-        
+
         # Pass file size in original units (bytes)
         self.file_size_bytes = os.path.getsize(file)
 
@@ -177,7 +178,6 @@ class ImportDataWindow(QMainWindow):
                     os.makedirs(temp_dir)
                 self.emg_obj = EMG_offline_EMG(save_dir=temp_dir, to_filter=True)
 
-                fsamp = []
                 if ext == ".otb+":
                     # Call the open_otb_plus function with the correct parameters
                     self.emg_obj.open_otb_plus(full_path, self)
@@ -199,24 +199,10 @@ class ImportDataWindow(QMainWindow):
                 # Load file data into the plot
                 if "data" in signal and "fsamp" in signal:
                     try:
-                        # Create a time vector
-                        fsamp = signal["fsamp"]
-                        nsamples = signal["data"].shape[1]
-                        time = np.arange(nsamples) / fsamp
-
-                        # Plot first channel as preview
-                        self.preview_plot.clear()
-
-                        # Plot the first few channels for preview
-                        num_preview_channels = min(3, signal["data"].shape[0])
-                        colors = ["b", "g", "r", "c", "m", "y"]
-
-                        for i in range(num_preview_channels):
-                            self.preview_plot.plot(
-                                time, signal["data"][i, :], pen=pg.mkPen(color=colors[i % len(colors)], width=1)
-                            )
-
-                        self.preview_plot.setTitle(f"Signal Preview ({num_preview_channels} channels)")
+                        self.cur_electrode_preview_idx = 0
+                        # Plot channels for previews
+                        self.update_preview_plot()
+                        self.update_buttons()
                     except Exception as e:
                         print(f"Error creating preview plot: {e}")
                 else:
@@ -238,7 +224,7 @@ class ImportDataWindow(QMainWindow):
 
                 self.channel_view_button.setEnabled(True)
 
-                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj)
+                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj, import_window=self)
 
                 self.add_file_to_recent_files(full_path)
                 self.update_recent_files()
@@ -263,6 +249,93 @@ class ImportDataWindow(QMainWindow):
             self.file_info_label.setText(f"Failed uploading {self.filename}")
             self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
             self.failure_message.setVisible(True)
+
+    def update_preview_plot(self):
+        signal = self.emg_obj.signal_dict
+        data = signal["data"]
+        chans_per_electrode = self.get_n_chans_per_electrode()
+        fsamp = signal["fsamp"]
+
+        self.preview_plot.clear()
+
+        # Get selected electrode index
+        selected_electrode_idx = self.cur_electrode_preview_idx
+        if selected_electrode_idx >= len(chans_per_electrode):
+            self.preview_plot.setTitle("Invalid electrode selected")
+            return
+
+        # Determine channel indices for selected electrode
+        start_index = sum(chans_per_electrode[:self.cur_electrode_preview_idx])
+        end_index = start_index + chans_per_electrode[self.cur_electrode_preview_idx]
+        all_indices = list(range(start_index, end_index))
+
+        # Get valid channels
+        valid_indices = [i for i in range(data.shape[0]) if i not in self.emg_obj.rejected_channel_indices and i in all_indices]
+        if not valid_indices:
+            print("No valid channels to process.")
+            return
+
+        # Prepare temporary array for smoothed data
+        tmp = np.zeros((len(valid_indices), data.shape[1]))
+
+        # Smooth each valid channel
+        for i, idx in enumerate(valid_indices):
+            abs_signal = np.abs(data[idx, :])
+            abs_df = pd.DataFrame(abs_signal)
+            tmp[i, :] = abs_df.rolling(window=fsamp, center=True).mean().to_numpy().flatten()
+
+        mean_trace = np.nanmean(tmp, axis=0)
+
+        # Plot the average signal
+        self.preview_plot.plot(mean_trace, pen=pg.mkPen(color="r", width=2))
+
+        self.preview_plot.setTitle(f"Electrode {selected_electrode_idx + 1}: {len(valid_indices)} valid channels")
+
+    def get_n_chans_per_electrode(self):
+        grid_names = self.emg_obj.signal_dict["gridname"]
+        chans_per_electrode = []
+        for i in range(self.emg_obj.signal_dict["ngrid"]):
+            if grid_names[i] == "GR04MM1305" or \
+               grid_names[i] == "ELSCH064NM2" or \
+               grid_names[i] == "GR08MM1305" or \
+               grid_names[i] == "GR10MM0808" or \
+               grid_names[i] == "other":
+                chans_per_electrode.append(64)
+            elif grid_names[i] == "Thin film":
+                chans_per_electrode.append(40)
+            elif grid_names[i] == "4-wire needle":
+                chans_per_electrode.append(16)
+            elif grid_names[i] == "Myomatrix Monopolar":
+                chans_per_electrode.append(32)
+            else:
+                chans_per_electrode.append(16)
+
+        return chans_per_electrode
+
+    def leftClicked(self):
+        new_index = self.cur_electrode_preview_idx - 1
+        if new_index >= 0:
+            self.cur_electrode_preview_idx = new_index
+            self.update_preview_plot()
+        self.update_buttons()
+
+    def rightClicked(self):
+        new_index = self.cur_electrode_preview_idx + 1
+        if new_index < self.emg_obj.signal_dict["ngrid"]:
+            self.cur_electrode_preview_idx = new_index
+            self.update_preview_plot()
+        self.update_buttons()
+
+    def update_buttons(self):
+        if self.cur_electrode_preview_idx == 0:
+            self.left_button.setEnabled(False)
+        else:
+            self.left_button.setEnabled(True)
+
+        if self.cur_electrode_preview_idx == self.emg_obj.signal_dict["ngrid"] - 1:
+            self.right_button.setEnabled(False)
+        else:
+            self.right_button.setEnabled(True)
 
     def save_mat_in_background(self, filename, data, compression=True, processing=False):
         """Save data as .mat file in a background thread."""
@@ -360,7 +433,7 @@ class ImportDataWindow(QMainWindow):
             if self.visualisation_page is not None:
                 self.visualisation_page.show()
             else:
-                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj)
+                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj, import_window=self)
                 self.visualisation_page.show()
         except Exception as e:
             print(f"Failed to load channel viewer: {e}")

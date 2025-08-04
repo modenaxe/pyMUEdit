@@ -85,13 +85,6 @@ def setup_left_panel(main_window):
     left_layout.setContentsMargins(15, 15, 15, 15)
     left_layout.setSpacing(15)
 
-    # File Information panel
-    file_info_group = SettingsGroup("File Information")
-    main_window.file_info_display = QLabel("No file loaded")
-    main_window.file_info_display.setWordWrap(True)
-    file_info_group.add_field(main_window.file_info_display)
-    left_layout.addWidget(file_info_group)
-
     # Algorithm Selection panel
     algo_panel = CollapsiblePanel("Algorithm Selection")
     algo_field = FormDropdown("Algorithm", ["Fast ICA", "Other Algorithm 1", "Other Algorithm 2"])
@@ -206,7 +199,7 @@ def setup_center_panel(main_window, parent_layout):
     center_layout.setContentsMargins(0, 0, 0, 0)
     center_layout.setSpacing(20)
 
-    # File information display at the top
+    # Add error/edit field label (to display error messages and decomposition process)
     main_window.edit_field = QLabel("Import data to begin")
     main_window.edit_field.setStyleSheet(
         f"""
@@ -238,7 +231,7 @@ def setup_center_panel(main_window, parent_layout):
     controls_layout.addWidget(main_window.start_button)
 
     center_layout.addLayout(controls_layout)
-    
+
     # NOTE: Code for window to replicate for preview
     # Create and setup signal processing visualization with PyQtGraph
     main_window.ui_plot_reference = pg.PlotWidget()
@@ -263,7 +256,6 @@ def setup_center_panel(main_window, parent_layout):
     center_layout.addWidget(motor_panel, 2)  # Give it slightly less stretch than the signal plot
 
     parent_layout.addWidget(center_panel, 4)  # Add with stretch to make it wider
-
 
 def setup_right_panel(main_window, parent_layout):
     """Set up the right panel with status and results."""
@@ -300,6 +292,13 @@ def setup_right_panel(main_window, parent_layout):
     status_group.add_field(main_window.status_text)
 
     right_layout.addWidget(status_group)
+
+    # File Information panel
+    file_info_group = SettingsGroup("File Information")
+    main_window.file_info_display = QLabel("No file loaded")
+    main_window.file_info_display.setWordWrap(True)
+    file_info_group.add_field(main_window.file_info_display)
+    right_layout.addWidget(file_info_group)
 
     # Analysis Results group
     results_group = SettingsGroup("Analysis Results")

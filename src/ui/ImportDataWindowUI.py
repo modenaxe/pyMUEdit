@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QApplication, QScrollArea, QStackedWidget
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QApplication, QScrollArea, QStackedWidget, QPushButton
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 from PyQt5.QtSvg import QSvgWidget
@@ -66,7 +66,7 @@ def create_right_content(import_window):
     right_content = QWidget()
     right_layout = QVBoxLayout(right_content)
     right_layout.setContentsMargins(25, 25, 25, 25)
-    right_layout.setSpacing(20)
+    right_layout.setSpacing(10)
 
     # Add section header
     header = SectionHeader("Import HDEMG Data")
@@ -96,7 +96,7 @@ def create_right_content(import_window):
 def create_dropzone_card(import_window):
     """Create a clean card for the file dropzone."""
     dropzone_card = CleanCard()
-    dropzone_card.setMinimumHeight(200)
+    dropzone_card.setMinimumHeight(175)
 
     # Create layout for content
     dropzone_layout = QVBoxLayout()
@@ -166,7 +166,7 @@ def create_preview_section(import_window):
     # Create layout for content
     preview_layout = QVBoxLayout()
     preview_layout.setContentsMargins(0, 0, 0, 0)
-    preview_layout.setSpacing(15)
+    preview_layout.setSpacing(5)
 
     # Create preview frame
     preview_frame = QFrame()
@@ -219,13 +219,27 @@ def create_preview_section(import_window):
     signal_panel = VisualizationPanel(plot_widget=import_window.preview_plot)
     import_window.preview_stacked_frame.addWidget(signal_panel)
     import_window.preview_stacked_frame.setCurrentIndex(0)
-    
+
     # Add message to preview frame
     preview_frame_layout = QVBoxLayout(preview_frame)
     preview_frame_layout.addWidget(import_window.preview_stacked_frame, stretch=3)
 
     # Add preview frame to layout
     preview_layout.addWidget(preview_frame)
+
+    # left and right buttons
+    lrbuttons = QWidget()
+    button_layout = QHBoxLayout()
+    import_window.left_button = ActionButton("←", primary=False)
+    import_window.left_button.setEnabled(False)
+    import_window.right_button = ActionButton("→", primary=False)
+    import_window.right_button.setEnabled(False)
+    import_window.left_button.clicked.connect(import_window.leftClicked)
+    import_window.right_button.clicked.connect(import_window.rightClicked)
+    button_layout.addWidget(import_window.left_button)
+    button_layout.addWidget(import_window.right_button)
+    lrbuttons.setLayout(button_layout)
+    preview_layout.addWidget(lrbuttons)
 
     # Add layout to card
     preview_card.content_layout.addLayout(preview_layout)
