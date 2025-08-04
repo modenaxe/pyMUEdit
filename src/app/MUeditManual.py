@@ -2268,6 +2268,9 @@ class MUeditManual(QMainWindow):
         clean_dischargetimes = {}
         clean_silval = {}
         clean_silvalcon = {}
+        
+        # Create a flag for checking if remaining MU is empty
+        array_empty_flag = True
 
         # Process each array
         for array_idx in range(total_arrays):
@@ -2288,9 +2291,6 @@ class MUeditManual(QMainWindow):
 
             # Create a mask for non-flagged MUs
             keep_mask = np.ones(array_pulse_train.shape[0], dtype=bool)
-
-            # Create a flag for checking if remaining MU is empty
-            array_empty_flag = True
 
             # Check each MU
             for mu_idx in range(array_pulse_train.shape[0]):
