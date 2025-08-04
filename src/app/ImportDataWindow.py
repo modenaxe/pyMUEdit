@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent
 import numpy as np
-import matplotlib.cm as cm
+import pandas as pd
 import pyqtgraph as pg
 
 # Import UI setup function
@@ -258,12 +258,9 @@ class ImportDataWindow(QMainWindow):
 
     def update_preview_plot(self):
         signal = self.emg_obj.signal_dict
+        data = signal["data"]
         chans_per_electrode = self.get_n_chans_per_electrode()
-
-        # Create a time vector
         fsamp = signal["fsamp"]
-        nsamples = signal["data"].shape[1]
-        time = np.arange(nsamples) / fsamp
 
         self.preview_plot.clear()
 
@@ -278,17 +275,25 @@ class ImportDataWindow(QMainWindow):
         end_index = start_index + chans_per_electrode[self.cur_electrode_preview_idx]
         all_indices = list(range(start_index, end_index))
 
-        # Filter out rejected channels
-        valid_indices = [i for i in all_indices if i not in self.emg_obj.rejected_channel_indices]
+        # Get valid channels
+        valid_indices = [i for i in range(data.shape[0]) if i not in self.emg_obj.rejected_channel_indices and i in all_indices]
         if not valid_indices:
-            self.preview_plot.setTitle(f"Electrode {selected_electrode_idx + 1}: No valid channels")
+            print("No valid channels to process.")
             return
 
-        # Calculate the floating point average across valid channels
-        avg_signal = np.mean(signal["data"][valid_indices], axis=0)
+        # Prepare temporary array for smoothed data
+        tmp = np.zeros((len(valid_indices), data.shape[1]))
 
-        # Plot the average in bold black
-        self.preview_plot.plot(time, avg_signal, pen=pg.mkPen(color='r', width=2))
+        # Smooth each valid channel
+        for i, idx in enumerate(valid_indices):
+            abs_signal = np.abs(data[idx, :])
+            abs_df = pd.DataFrame(abs_signal)
+            tmp[i, :] = abs_df.rolling(window=fsamp, center=True).mean().to_numpy().flatten()
+
+        mean_trace = np.nanmean(tmp, axis=0)
+
+        # Plot the average signal
+        self.preview_plot.plot(mean_trace, pen=pg.mkPen(color="r", width=2))
 
         self.preview_plot.setTitle(f"Electrode {selected_electrode_idx + 1}: {len(valid_indices)} valid channels")
 
@@ -317,15 +322,15 @@ class ImportDataWindow(QMainWindow):
         new_index = self.cur_electrode_preview_idx - 1
         if new_index >= 0:
             self.cur_electrode_preview_idx = new_index
+            self.update_preview_plot()
         self.update_buttons()
-        print("LEFT CLICKED")
 
     def rightClicked(self):
         new_index = self.cur_electrode_preview_idx + 1
         if new_index < self.emg_obj.signal_dict["ngrid"]:
             self.cur_electrode_preview_idx = new_index
+            self.update_preview_plot()
         self.update_buttons()
-        print("RIGHT CLICKED")
 
     def update_buttons(self):
         if self.cur_electrode_preview_idx == 0:
