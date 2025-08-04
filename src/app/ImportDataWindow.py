@@ -447,7 +447,7 @@ class ImportDataWindow(QMainWindow):
             self.imported_signal = self.emg_obj.signal_dict
 
             # Update channel viewer
-            self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj)
+            self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj, import_window=self)
 
             # Create new processed data file
             self.save_mat_in_background(filename, {"signal": self.imported_signal}, True, True)
