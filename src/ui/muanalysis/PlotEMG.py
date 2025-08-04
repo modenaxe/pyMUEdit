@@ -248,20 +248,22 @@ class PlotEMGToolDialog(QDialog):
         muap_row.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(muap)
 
+        # mu number dropdown
+        # mu_number_items = []
+        # print()
+        # if FileUploadFunc.file["SOURCE"] in ["DEMUSE", "OTB", "CUSTOMCSV", "DELSYS"]:
+        #     for i in range(FileUploadFunc.file["NUMBER_OF_MUS"]):
+        #         mu_number_items.append(str(i))
+        # mu_number_dropdown = AnalysisDropdown("MU Number", mu_number_items, parent=self)
+        mu_number_input = AnalysisInput(placeholder="MU Number (e.g. '0')")
+        muap_row.addWidget(mu_number_input, stretch=1)
+        self.mu_number_input = mu_number_input
+
         # configuration dropdown
         configuration_items = ["Monopolar", "Single differential", "Double differential"]
         configuration_dropdown = AnalysisDropdown("Configuration", configuration_items, parent=self)
         muap_row.addWidget(configuration_dropdown, stretch=1)
         self.configuration_dropdown = configuration_dropdown
-
-        # mu number dropdown
-        mu_number_items = []
-        if FileUploadFunc.file["SOURCE"] in ["DEMUSE", "OTB", "CUSTOMCSV", "DELSYS"]:
-            for i in range(FileUploadFunc.file["NUMBER_OF_MUS"]):
-                mu_number_items.append(str(i))
-        mu_number_dropdown = AnalysisDropdown("MU Number", mu_number_items, parent=self)
-        muap_row.addWidget(mu_number_dropdown, stretch=1)
-        self.mu_number_dropdown = mu_number_dropdown
 
         # timewindow dropdown
         timewindow_items = ["25", "50", "100", "200"]
@@ -514,10 +516,26 @@ class PlotEMGToolDialog(QDialog):
     # plots muaps in the center plot 
     def plot_muaps(self):
         try:
+            # determining mu_number_input 
+            try: 
+                max_mu = FileUploadFunc.file["NUMBER_OF_MUS"] 
+                mu_num = int(self.mu_number_input.get())
+                
+                # if it's negative or too big
+                if (mu_num < 0 or mu_num >= max_mu):
+                    raise ValueError()
+            except ValueError as e:
+                ErrorDialog("Please enter a valid number from 0 to " + str(max_mu - 1)).exec_()
+                return
+            except KeyError as e:
+                # just in case ["NUMBER_OF_MUS"] isn't a thing 
+                ErrorDialog("Your file isn't formatted properly. Include the NUMBER_OF_MUS").exec_()
+                return
+
             # DELSYS requires different MUAPS plot
             if FileUploadFunc.file["SOURCE"] == "DELSYS":
                 muaps_dict = extract_delsys_muaps(FileUploadFunc.file)
-                muaps_from_sta(self.analysis_plot, muaps_dict[int(self.muap_munum.get())])
+                muaps_from_sta(self.analysis_plot, muaps_dict[mu_num])
 
             else:
                 if self.matrix_code_dropdown.currentText() == "Custom":
@@ -565,8 +583,7 @@ class PlotEMGToolDialog(QDialog):
                     timewindow=int(self.timewindow_dropdown.currentText()),
                 )
 
-                # Plot MUAPS
-                muaps_from_sta(self.analysis_plot, sta_dict[int(self.mu_number_dropdown.currentText())])
+                muaps_from_sta(self.analysis_plot, sta_dict[mu_num])
 
         except ValueError as e:
             if (self.matrix_code_dropdown.currentText() == ""):
@@ -575,8 +592,6 @@ class PlotEMGToolDialog(QDialog):
                 ErrorDialog("Please select a matrix orientation", "Invalid Input").exec_()
             elif (self.configuration_dropdown.currentText() == ""):
                 ErrorDialog("Please select a muap configuration", "Invalid Input").exec_()
-            elif (self.mu_number_dropdown.currentText() == ""):
-                ErrorDialog("Please select a MU number", "Invalid Input").exec_()
             elif (self.timewindow_dropdown.currentText() == ""):
                 ErrorDialog("Please select a timewindow", "Invalid Input").exec_()
             elif (self.matrix_code_dropdown.currentText() == "Custom"):
