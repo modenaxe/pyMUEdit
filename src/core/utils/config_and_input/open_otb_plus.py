@@ -246,7 +246,7 @@ def set_configuration(emg_obj, grid_adapter_set, gridname, muscle):
         i = grid_adapter_set.index(1)
         config_panel.splitter1.checkbox.setChecked(True)
         config_panel.splitter1.checkbox.setVisible(False)
-        config_panel.splitter1.setEnabled(True)
+        config_panel.splitter1.enable_panel()
         config_panel.splitter1.gridname_dropdown.dropdown.setCurrentText(gridname[i])
         config_panel.splitter1.muscle_input.input.setText(muscle[i])
 
@@ -255,7 +255,7 @@ def set_configuration(emg_obj, grid_adapter_set, gridname, muscle):
         i = grid_adapter_set.index(2)
         config_panel.splitter2.checkbox.setChecked(True)
         config_panel.splitter2.checkbox.setVisible(False)
-        config_panel.splitter2.setEnabled(True)
+        config_panel.splitter2.enable_panel()
         config_panel.splitter2.gridname_dropdown.dropdown.setCurrentText(gridname[i])
         config_panel.splitter2.muscle_input.input.setText(muscle[i])
 
@@ -264,7 +264,7 @@ def set_configuration(emg_obj, grid_adapter_set, gridname, muscle):
         i = grid_adapter_set.index(3)
         config_panel.mul_input_1.checkbox.setChecked(True)
         config_panel.mul_input_1.checkbox.setVisible(False)
-        config_panel.mul_input_1.setEnabled(True)
+        config_panel.mul_input_1.enable_panel()
         config_panel.mul_input_1.gridname_dropdown.dropdown.setCurrentText(gridname[i])
         config_panel.mul_input_1.muscle_input.input.setText(muscle[i])
 
@@ -273,7 +273,7 @@ def set_configuration(emg_obj, grid_adapter_set, gridname, muscle):
         i = grid_adapter_set.index(4)
         config_panel.mul_input_2.checkbox.setChecked(True)
         config_panel.mul_input_2.checkbox.setVisible(False)
-        config_panel.mul_input_2.setEnabled(True)
+        config_panel.mul_input_2.enable_panel()
         config_panel.mul_input_2.gridname_dropdown.dropdown.setCurrentText(gridname[i])
         config_panel.mul_input_2.muscle_input.input.setText(muscle[i])
 
@@ -282,7 +282,7 @@ def set_configuration(emg_obj, grid_adapter_set, gridname, muscle):
         i = grid_adapter_set.index(5)
         config_panel.mul_input_3.checkbox.setChecked(True)
         config_panel.mul_input_3.checkbox.setVisible(False)
-        config_panel.mul_input_3.setEnabled(True)
+        config_panel.mul_input_3.enable_panel()
         config_panel.mul_input_3.gridname_dropdown.dropdown.setCurrentText(gridname[i])
         config_panel.mul_input_3.muscle_input.input.setText(muscle[i])
 
@@ -291,7 +291,7 @@ def set_configuration(emg_obj, grid_adapter_set, gridname, muscle):
         i = grid_adapter_set.index(6)
         config_panel.mul_input_4.checkbox.setChecked(True)
         config_panel.mul_input_4.checkbox.setVisible(False)
-        config_panel.mul_input_4.setEnabled(True)
+        config_panel.mul_input_4.enable_panel()
         config_panel.mul_input_4.gridname_dropdown.dropdown.setCurrentText(gridname[i])
         config_panel.mul_input_4.muscle_input.input.setText(muscle[i])
 

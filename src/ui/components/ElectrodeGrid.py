@@ -63,6 +63,7 @@ class ElectrodeGrid(QWidget):
         self.channel_indices = channel_indices
         if "gridname" in emg_obj.signal_dict:
             self.electrode_names = emg_obj.signal_dict["gridname"]
+            self.muscle_names = emg_obj.signal_dict["muscle"]
         else:
             return
         
@@ -97,7 +98,7 @@ class ElectrodeGrid(QWidget):
 
         layout.addLayout(grid_layout)
 
-        self.label = QLabel(f"Electrode {self.electrode_index + 1}")
+        self.label = QLabel(f"{self.muscle_names[self.electrode_index]}")
         layout.addWidget(self.label)
 
         # left and right buttons
@@ -164,7 +165,7 @@ class ElectrodeGrid(QWidget):
                 square.setColor(QColor("gray"))
                 square.setIndex(index + modifier)
 
-        self.label.setText(f"Electrode {self.electrode_index + 1}")
+        self.label.setText(f"{self.muscle_names[self.electrode_index]}")
 
     def init_grids(self):
         self.channel_maps = []
