@@ -428,13 +428,6 @@ class MUeditManual(QMainWindow):
         self.initial_data = copy.deepcopy(self.MUedition["edition"])
 
 
-        #origial error print
-        # except Exception as e:
-        #     import traceback
-        #
-        #     print(f"Error importing data: {e}")
-        #     traceback.print_exc()
-
     def update_action_button_states(self):
         enabled = self.plot_display_mode == 0
         self.add_spikes_btn.setEnabled(enabled)
@@ -1127,6 +1120,12 @@ class MUeditManual(QMainWindow):
         for checkbox in self.mu_checkboxes:
             if checkbox.property("array_idx") == array_idx:
                 checkbox.setChecked(state == Qt.CheckState.Checked)
+                if state == Qt.CheckState.Checked:
+                    self.plot_display_mode = 1
+                    self.update_action_button_states()
+                else:
+                    self.plot_display_mode = 0
+                    self.update_action_button_states()
 
         # Unblock signals
         for checkbox in self.mu_checkboxes:
