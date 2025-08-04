@@ -8,6 +8,7 @@ import numpy as np
 import pyqtgraph as pg
 
 # Import UI setup function
+from core.utils.config_and_input.filesize_formatter import filesize_formatter
 from ui.ImportDataWindowUI import setup_ui
 from ui.components.SegmentSessionPage import SegmentSessionPage
 from ui.components.VisualisationPage import VisualisationPage
@@ -95,15 +96,8 @@ class ImportDataWindow(QMainWindow):
                 self.footer_file_info.setText(f"File: {self.filename}")
 
                 # Update file size and format
-                file_size = os.path.getsize(file_path)
+                size_str = filesize_formatter(file_path)
                 file_format = os.path.splitext(self.filename)[1].upper().replace(".", "")
-
-                if file_size < 1024:
-                    size_str = f"{file_size} bytes"
-                elif file_size < 1024 * 1024:
-                    size_str = f"{file_size/1024:.1f} KB"
-                else:
-                    size_str = f"{file_size/(1024*1024):.1f} MB"
 
                 self.size_info.setText(f"Size: {size_str}")
                 self.format_info.setText(f"Format: {file_format}")
@@ -128,17 +122,8 @@ class ImportDataWindow(QMainWindow):
         self.file_info_label.setVisible(True)
         self.footer_file_info.setText(f"File: {self.filename}")
 
-        # Get file size in bytes
-        file_size = os.path.getsize(file)
         file_format = os.path.splitext(self.filename)[1].upper().replace(".", "")
-
-        # Format file size for display
-        if file_size < 1024:
-            size_str = f"{file_size} bytes"
-        elif file_size < 1024 * 1024:
-            size_str = f"{file_size/1024:.1f} KB"
-        else:
-            size_str = f"{file_size/(1024*1024):.1f} MB"
+        size_str = filesize_formatter(file)
 
         self.size_info.setText(f"Size: {size_str}")
         self.format_info.setText(f"Format: {file_format}")
@@ -147,27 +132,30 @@ class ImportDataWindow(QMainWindow):
         self.load_file(self.pathname, self.filename)
         
         # Pass file size in original units (bytes)
-        self.file_size_bytes = file_size
+        self.file_size_bytes = os.path.getsize(file)
 
     def load_recent_file(self, filename):
         """Load a file from the recent files list."""
-        self.filename = filename
-        self.pathname = "./"  # This would be the actual path in a real implementation
+        self.filename = os.path.basename(filename)
+        self.pathname = os.path.dirname(filename) + "/"
 
         # Update UI to show selected file
         self.file_info_label.setText(f"Selected: {self.filename}")
         self.file_info_label.setVisible(True)
         self.footer_file_info.setText(f"File: {self.filename}")
 
-        # In a real implementation, we would get actual file size
-        self.size_info.setText("Size: 2.4 MB")
-        self.format_info.setText(f"Format: {os.path.splitext(filename)[1].upper().replace('.', '')}")
+        # Get file size in bytes
+        size_str = filesize_formatter(filename)
+        file_format = os.path.splitext(self.filename)[1].upper().replace(".", "")
 
-        # Show preview message
-        self.preview_message.setText(f"Preview of {filename}\n(Simulated data for demonstration)")
+        self.size_info.setText(f"Size: {size_str}")
+        self.format_info.setText(f"Format: {file_format}")
 
-        # Enable the next button
-        self.next_btn.setEnabled(True)
+        # Load the file (passing the whole path)
+        self.load_file(self.pathname, self.filename)
+        
+        # Pass file size in original units (bytes)
+        self.file_size_bytes = os.path.getsize(filename)
 
     def load_file(self, path, file):
         """Load and process a file."""
@@ -252,8 +240,11 @@ class ImportDataWindow(QMainWindow):
 
                 self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj)
 
+                self.add_file_to_recent_files(full_path)
+                self.update_recent_files()
+
                 if ext == ".mat":
-                    self.segment_session = SegmentSessionPage(full_path)
+                    self.segment_session = SegmentSessionPage(full_path, self.add_file_to_recent_files, self.update_recent_files)
                     self.segment_session_button.setEnabled(True)
                     self.set_configuration_button.setEnabled(False)
                 else:
@@ -296,7 +287,7 @@ class ImportDataWindow(QMainWindow):
     def enable_segment_session(self):
         if self.segment_session_button and self.pathname and self.filename:
             filename = os.path.join(self.pathname, self.filename) + "_processed.mat"
-            self.segment_session = SegmentSessionPage(filename)
+            self.segment_session = SegmentSessionPage(filename, self.add_file_to_recent_files, self.update_recent_files)
 
             self.segment_session_button.setEnabled(True)
 
@@ -413,6 +404,17 @@ class ImportDataWindow(QMainWindow):
                 self.segment_session.show()
         except Exception as e:
             self.edit_field.setText(f"Failed to load segment session: {e}")
+
+    def add_file_to_recent_files(self, filename):
+        if filename not in self.recent_files:
+            self.recent_files.append(filename)
+        else:
+            self.recent_files.remove(filename)
+            self.recent_files = [filename] + self.recent_files
+
+    def update_recent_files(self):
+        if hasattr(self, "update_sidebar_with_recent_files"):
+            self.update_sidebar_with_recent_files()
 
 
 # For testing the window independently
