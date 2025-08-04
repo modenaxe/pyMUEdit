@@ -255,6 +255,7 @@ class ImportDataWindow(QMainWindow):
                 if ext == ".mat":
                     self.segment_session = SegmentSessionPage(full_path)
                     self.segment_session_button.setEnabled(True)
+                    self.set_configuration_button.setEnabled(False)
                 else:
                     self.set_configuration_button.setEnabled(True)
 
@@ -373,12 +374,24 @@ class ImportDataWindow(QMainWindow):
         except Exception as e:
             print(f"Failed to load channel viewer: {e}")
 
+    def config_callback(self, signal):
+        if self.pathname and self.filename and self.emg_obj:
+            filename = os.path.join(self.pathname, self.filename) + "_processed.mat"
+
+            # Update emg object and signal
+            self.emg_obj.signal_dict = signal
+            self.imported_signal = self.emg_obj.signal_dict
+
+            # Update channel viewer
+            self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj)
+
+            # Create new processed data file
+            self.save_mat_in_background(filename, {"signal": self.imported_signal}, True, True)
+
     def set_configuration_button_pushed(self):
         if self.config_panel:
             try:
-                # if self.pathname is not None and self.filename is not None:
-                #     savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
-                #     self.config["pathname"].setText(savename)
+                self.config_panel.set_config_callback(self.config_callback)
 
                 # Show the dialog
                 self.config_panel.show()

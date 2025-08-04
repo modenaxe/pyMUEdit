@@ -16,8 +16,11 @@ from ui.components.FormSpinBox import FormSpinBox
 class InputPanel(CollapsiblePanel):
     def __init__(self, title, gridname, musclename, checkbox_callback, parent=None):
         self.checkbox = QCheckBox()
+        self.checkbox_callback = checkbox_callback
+        self.title = title
+
         # connect the state change of the checkbox to the lamp colour change functionality
-        self.checkbox.stateChanged.connect(lambda state: checkbox_callback(title, state))
+        self.checkbox.stateChanged.connect(self.checkbox_changed)
         super().__init__(title, checkbox=self.checkbox, parent=parent)
 
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
@@ -31,10 +34,21 @@ class InputPanel(CollapsiblePanel):
         self.muscle_input.input.setText(musclename)
         self.add_widget(self.muscle_input)
 
+    def checkbox_changed(self, state):
+        self.checkbox_callback(self.title, state)
+        if state == Qt.Checked:
+            self.enable_panel()
+        else:
+            self.disable_panel()
+
     # disable the Input Panel (but not the checkbox to make it still interactable)
     def disable_panel(self):
         for child in self.content_widget.findChildren(QWidget):
             child.setEnabled(False)
+
+    def enable_panel(self):
+        for child in self.content_widget.findChildren(QWidget):
+            child.setEnabled(True)
 
 class QuattrocentoVisualisation(QLabel):
     def __init__(self, image_path, parent=None):
@@ -77,6 +91,8 @@ class ConfigurationPanel(QWidget):
 
         self.emg_obj = emg_obj
         self.data = emg_obj["data"]
+
+        self.config_callback = None
 
         self.setMinimumSize(1200, 700)
 
@@ -209,6 +225,27 @@ class ConfigurationPanel(QWidget):
 
         self.quattrocento_label.update_lamp_colour(name, new_colour)
 
+    def set_config_callback(self, config_callback):
+        self.config_callback = config_callback
+
     def doneClicked(self):
-        # TODO: set configuration in emg_obj
+        inputs = [self.splitter1, self.splitter2, self.mul_input_1, self.mul_input_2, self.mul_input_3, self.mul_input_4]
+
+        ports = [input.checkbox.isChecked() for input in inputs]
+
+        self.emg_obj["ngrid"] = sum([1 for port in ports if port == True])
+        self.emg_obj["gridname"] = [""] * self.emg_obj["ngrid"]
+        self.emg_obj["muscle"] = [""] * self.emg_obj["ngrid"]
+
+        grids = [input.gridname_dropdown.dropdown.currentText() for input in inputs]
+        muscles = [input.muscle_input.input.text() for input in inputs]
+
+        active_port_indexes = [i for i in range(0, 6) if ports[i]]
+        for i in range(0, self.emg_obj["ngrid"]):
+            self.emg_obj["gridname"][i] = grids[active_port_indexes[i]]
+            self.emg_obj["muscle"][i] = muscles[active_port_indexes[i]]
+
+        if self.config_callback:
+            self.config_callback(self.emg_obj)
+
         self.close()
