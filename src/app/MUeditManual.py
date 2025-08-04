@@ -1130,8 +1130,10 @@ class MUeditManual(QMainWindow):
         for checkbox in self.mu_checkboxes:
             checkbox.blockSignals(False)
 
+        self.mu_checkbox_state_changed()
+
         # Update the display based on selection
-        self.display_selected_mus([cb.objectName() for cb in self.mu_checkboxes if cb.isChecked()])
+        # self.display_selected_mus([cb.objectName() for cb in self.mu_checkboxes if cb.isChecked()])
 
     def reference_dropdown_value_changed(self):
         """Handle change in reference signal."""
