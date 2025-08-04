@@ -85,13 +85,6 @@ def setup_left_panel(main_window):
     left_layout.setContentsMargins(15, 15, 15, 15)
     left_layout.setSpacing(15)
 
-    # # File Information panel
-    # file_info_group = SettingsGroup("File Information")
-    # main_window.file_info_display = QLabel("No file loaded")
-    # main_window.file_info_display.setWordWrap(True)
-    # file_info_group.add_field(main_window.file_info_display)
-    # left_layout.addWidget(file_info_group)
-
     # Algorithm Selection panel
     algo_panel = CollapsiblePanel("Algorithm Selection")
     algo_field = FormDropdown("Algorithm", ["Fast ICA", "Other Algorithm 1", "Other Algorithm 2"])
