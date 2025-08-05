@@ -40,10 +40,11 @@ def find_mle_teta(sig1, sig2, ied, fsamp):
 
 def mle_cv_est(sig, initial_teta, ied, fsamp):
     """Maximum likelihood estimation of conduction velocity."""
+
     def objective(teta):
         cv = 1.0 / teta if teta > 0 else 0.1
         return abs(cv - 3.0)  # Bias towards physiological range
-    
+
     try:
         result = minimize(objective, initial_teta, method="BFGS")
         teta_opt = result.x[0] if result.success else initial_teta
@@ -60,7 +61,7 @@ def estimate_cv_via_mle(emgfile, signal):
     sig = (signal.values if hasattr(signal, "values") else signal).T
     if sig.ndim == 1:
         return np.nan
-    
+
     sig1, sig2 = (sig[1, :], sig[2, :]) if sig.shape[0] > 3 else (sig[0, :], sig[1, :])
     teta = find_mle_teta(sig1, sig2, ied, fsamp)
     cv, _ = mle_cv_est(sig, teta, ied, fsamp)
@@ -91,11 +92,11 @@ class ConductionVelocityDialog(QDialog):
         self.setWindowTitle("MUs CV estimation")
         self.setMinimumSize(1000, 700)
         self.setStyleSheet(self._get_stylesheet())
-        
+
         # Cache for performance
         self._electrode_grid_cache = None
         self._electrode_positions_cache = None
-        
+
         self._init_ui()
         self._load_initial_data()
 
@@ -127,7 +128,9 @@ class ConductionVelocityDialog(QDialog):
         """Get electrode grid with caching."""
         if self._electrode_grid_cache is None:
             try:
-                self._electrode_grid_cache = get_electrode_grid(code="GR08MM1305", orientation=180)
+                self._electrode_grid_cache = get_electrode_grid(
+                    code="GR08MM1305", orientation=180
+                )
                 self._electrode_positions_cache = {}
                 for r in range(len(self._electrode_grid_cache)):
                     for c in range(len(self._electrode_grid_cache[0])):
@@ -144,7 +147,7 @@ class ConductionVelocityDialog(QDialog):
         group = QGroupBox(title)
         layout = QVBoxLayout()
         dropdown = QComboBox()
-        
+
         try:
             if items:
                 dropdown.addItems([str(item) for item in items])
@@ -155,7 +158,7 @@ class ConductionVelocityDialog(QDialog):
         except Exception as e:
             print(f"Error loading {title}: {e}")
             dropdown.addItem("Error loading data")
-            
+
         layout.addWidget(dropdown)
         group.setLayout(layout)
         return group, dropdown
@@ -163,24 +166,28 @@ class ConductionVelocityDialog(QDialog):
     def _init_ui(self):
         """Initialize the user interface."""
         main_layout = QVBoxLayout()
-        
+
         # Controls layout
         controls_layout = QHBoxLayout()
-        
+
         # Create dropdowns
-        mu_group, self.mu_dropdown = self._create_dropdown_group("MU number", get_available_mus())
-        col_group, self.col_dropdown = self._create_dropdown_group("Grid Column", get_available_grid_columns())
-        
+        mu_group, self.mu_dropdown = self._create_dropdown_group(
+            "MU number", get_available_mus()
+        )
+        col_group, self.col_dropdown = self._create_dropdown_group(
+            "Grid Column", get_available_grid_columns()
+        )
+
         # Row selection group
         row_group = QGroupBox("Grid Rows")
         row_layout = QHBoxLayout()
-        
+
         # Create row dropdowns directly to avoid deletion issues
         available_rows = get_available_grid_rows()
-        
+
         self.from_row_dropdown = QComboBox()
         self.to_row_dropdown = QComboBox()
-        
+
         try:
             if available_rows:
                 self.from_row_dropdown.addItems(available_rows)
@@ -194,45 +201,47 @@ class ConductionVelocityDialog(QDialog):
             print(f"Error loading grid rows: {e}")
             self.from_row_dropdown.addItem("Error loading data")
             self.to_row_dropdown.addItem("Error loading data")
-        
+
         row_layout.addWidget(QLabel("From:"))
         row_layout.addWidget(self.from_row_dropdown)
         row_layout.addWidget(QLabel("To:"))
         row_layout.addWidget(self.to_row_dropdown)
         row_group.setLayout(row_layout)
-        
+
         # Estimate button
         self.estimate_btn = QPushButton("Estimate")
         self.estimate_btn.clicked.connect(self._on_estimate)
-        
+
         # Add to controls
         for widget in [mu_group, col_group, row_group, self.estimate_btn]:
             controls_layout.addWidget(widget)
         main_layout.addLayout(controls_layout)
-        
+
         # Content layout
         content_layout = QHBoxLayout()
-        
+
         # Plot canvas
         self.plot_canvas = FigureCanvas(plt.Figure(figsize=(8, 6)))
         content_layout.addWidget(self.plot_canvas, stretch=3)
-        
+
         # Results area
         results_layout = QVBoxLayout()
         self.results_table = QTableWidget()
         self.results_table.setColumnCount(4)
-        self.results_table.setHorizontalHeaderLabels(["Column", "CV (m/s)", "RMS (µV)", "XCC"])
-        
+        self.results_table.setHorizontalHeaderLabels(
+            ["Column", "CV (m/s)", "RMS (µV)", "XCC"]
+        )
+
         copy_btn = QPushButton("Copy results")
         copy_btn.clicked.connect(self._copy_results)
-        
+
         results_layout.addWidget(self.results_table)
         results_layout.addWidget(copy_btn)
         content_layout.addLayout(results_layout, stretch=1)
-        
+
         main_layout.addLayout(content_layout)
         self.setLayout(main_layout)
-        
+
         # Connect signals
         self.mu_dropdown.currentTextChanged.connect(self._update_plot)
         self.col_dropdown.currentTextChanged.connect(self._update_plot)
@@ -244,7 +253,9 @@ class ConductionVelocityDialog(QDialog):
                 self._refresh_dropdowns()
                 self._update_plot()
             else:
-                self._show_message("No EMG file loaded\nLoad EMG data to see conduction velocity analysis")
+                self._show_message(
+                    "No EMG file loaded\nLoad EMG data to see conduction velocity analysis"
+                )
         except Exception as e:
             self._show_message(f"Error initializing: {str(e)}")
 
@@ -256,14 +267,14 @@ class ConductionVelocityDialog(QDialog):
                 (self.mu_dropdown, get_available_mus()),
                 (self.col_dropdown, get_available_grid_columns()),
             ]
-            
+
             for dropdown, data in dropdowns_data:
                 dropdown.clear()
                 if data:
                     dropdown.addItems([str(item) for item in data])
                 else:
                     dropdown.addItem("No data loaded")
-            
+
             # Refresh row dropdowns
             available_rows = get_available_grid_rows()
             if available_rows:
@@ -271,7 +282,7 @@ class ConductionVelocityDialog(QDialog):
                 self.from_row_dropdown.clear()
                 self.from_row_dropdown.addItems(available_rows)
                 self.from_row_dropdown.setCurrentIndex(0)
-                
+
                 # Clear and repopulate to_row_dropdown
                 self.to_row_dropdown.clear()
                 self.to_row_dropdown.addItems(available_rows)
@@ -281,7 +292,7 @@ class ConductionVelocityDialog(QDialog):
                 self.from_row_dropdown.addItem("No data loaded")
                 self.to_row_dropdown.clear()
                 self.to_row_dropdown.addItem("No data loaded")
-                    
+
         except Exception as e:
             print(f"Error refreshing dropdowns: {e}")
 
@@ -296,14 +307,19 @@ class ConductionVelocityDialog(QDialog):
 
     def _get_ui_values(self):
         """Get current UI values safely."""
+
         def safe_int(text, default):
-            return default if text in ["No data loaded", "Error loading data", ""] else int(text)
-        
+            return (
+                default
+                if text in ["No data loaded", "Error loading data", ""]
+                else int(text)
+            )
+
         return {
-            'mu': safe_int(self.mu_dropdown.currentText(), 0),
-            'col': safe_int(self.col_dropdown.currentText(), 0),
-            'from_row': safe_int(self.from_row_dropdown.currentText(), 0),
-            'to_row': safe_int(self.to_row_dropdown.currentText(), 10)
+            "mu": safe_int(self.mu_dropdown.currentText(), 0),
+            "col": safe_int(self.col_dropdown.currentText(), 0),
+            "from_row": safe_int(self.from_row_dropdown.currentText(), 0),
+            "to_row": safe_int(self.to_row_dropdown.currentText(), 10),
         }
 
     def _update_plot(self):
@@ -322,7 +338,9 @@ class ConductionVelocityDialog(QDialog):
         """Perform CV estimation."""
         try:
             values = self._get_ui_values()
-            table_data = self._compute_results(values['mu'], values['col'], values['from_row'], values['to_row'])
+            table_data = self._compute_results(
+                values["mu"], values["col"], values["from_row"], values["to_row"]
+            )
             self._fill_results_table(table_data)
         except Exception as e:
             self.results_table.setRowCount(1)
@@ -346,7 +364,9 @@ class ConductionVelocityDialog(QDialog):
         table_data = []
 
         # Process each column
-        for col_name in sorted(sta_data.keys(), key=lambda x: int(x.replace("col", ""))):
+        for col_name in sorted(
+            sta_data.keys(), key=lambda x: int(x.replace("col", ""))
+        ):
             col_data = sta_data[col_name]
             if col_data.shape[1] < 2:
                 continue
@@ -354,25 +374,29 @@ class ConductionVelocityDialog(QDialog):
             try:
                 # Estimate CV, RMS, and XCC
                 cv_value = estimate_cv_via_mle(emgfile, col_data)
-                
+
                 # Calculate RMS
                 rms_values = []
                 for ch in col_data.columns:
                     signal = col_data[ch].values - np.mean(col_data[ch].values)
                     rms_values.append(np.sqrt(np.mean(signal**2)))
                 avg_rms = np.mean(rms_values) * 1000  # Convert to µV
-                
+
                 # Get XCC
                 avg_xcc = np.nan
                 if col_name in xcc_data:
-                    xcc_values = [xcc_data[col_name][ch].iloc[0] for ch in xcc_data[col_name].columns 
-                                 if len(xcc_data[col_name][ch]) > 0 and not np.isnan(xcc_data[col_name][ch].iloc[0])]
+                    xcc_values = [
+                        xcc_data[col_name][ch].iloc[0]
+                        for ch in xcc_data[col_name].columns
+                        if len(xcc_data[col_name][ch]) > 0
+                        and not np.isnan(xcc_data[col_name][ch].iloc[0])
+                    ]
                     avg_xcc = np.mean(xcc_values) if xcc_values else np.nan
-                
+
                 # Only include reasonable CV values
                 if not np.isnan(cv_value) and 0.5 <= cv_value <= 15.0:
                     table_data.append((col_name, cv_value, avg_rms, avg_xcc))
-                    
+
             except Exception as e:
                 print(f"Error processing column {col_name}: {e}")
                 continue
@@ -383,25 +407,25 @@ class ConductionVelocityDialog(QDialog):
         """Compute spike-triggered average for all columns."""
         raw_signal = emgfile.get("RAW_SIGNAL")
         mu_pulses = emgfile.get("MUPULSES")
-        
+
         if raw_signal is None or mu_pulses is None:
             return {}
-            
+
         if isinstance(raw_signal, dict):
             raw_signal = pd.DataFrame(raw_signal)
-            
+
         # Get pulses
         if isinstance(mu_pulses, (list, tuple)) and mu < len(mu_pulses):
             pulses = np.array(mu_pulses[mu], dtype=int)
         else:
             return {}
-            
+
         if len(pulses) == 0:
             return {}
-            
+
         window = 50
         grid, _ = self._get_electrode_grid_cached()
-        
+
         # Organize channels by columns
         column_channels = {}
         if grid is not None:
@@ -417,13 +441,18 @@ class ConductionVelocityDialog(QDialog):
             # Fallback organization
             for c in range(5):
                 col_name = f"col{c}"
-                channels = [r * 5 + c for r in range(max(0, from_row), min(11, to_row + 1)) 
-                           if r * 5 + c < raw_signal.shape[1]]
+                channels = [
+                    r * 5 + c
+                    for r in range(max(0, from_row), min(11, to_row + 1))
+                    if r * 5 + c < raw_signal.shape[1]
+                ]
                 if channels:
                     column_channels[col_name] = channels
 
         # Filter valid pulses
-        valid_pulses = pulses[(pulses >= window) & (pulses + window < raw_signal.shape[0])]
+        valid_pulses = pulses[
+            (pulses >= window) & (pulses + window < raw_signal.shape[0])
+        ]
         if len(valid_pulses) < 3:
             return {}
 
@@ -434,7 +463,7 @@ class ConductionVelocityDialog(QDialog):
         for col_name, channels in column_channels.items():
             if len(channels) < 2:
                 continue
-                
+
             valid_channels = [ch for ch in channels if ch < raw_signal_array.shape[1]]
             if len(valid_channels) < 2:
                 continue
@@ -447,7 +476,7 @@ class ConductionVelocityDialog(QDialog):
                     start, end = pulse - window, pulse + window + 1
                     segment = raw_signal_array[start:end, ch]
                     segments.append(segment - np.mean(segment))
-                
+
                 if len(segments) >= 3:
                     sta_by_channel[ch] = np.mean(segments, axis=0)
 
@@ -480,6 +509,7 @@ class ConductionVelocityDialog(QDialog):
 
     def _plot_muap_grid(self):
         """Plot MUAP grid with XCC values."""
+
         def compute_muaps(file, mu_index, window):
             raw_signal = file.get("RAW_SIGNAL")
             mu_pulses = file.get("MUPULSES")
@@ -493,19 +523,29 @@ class ConductionVelocityDialog(QDialog):
             if isinstance(raw_signal, pd.DataFrame):
                 raw_signal = raw_signal.values
 
-            pulses = (mu_pulses[mu_index] if isinstance(mu_pulses, (list, tuple)) and mu_index < len(mu_pulses) else [])
-            pulses = np.array(pulses, dtype=int) if len(pulses) > 0 else np.array([], dtype=int)
+            pulses = (
+                mu_pulses[mu_index]
+                if isinstance(mu_pulses, (list, tuple)) and mu_index < len(mu_pulses)
+                else []
+            )
+            pulses = (
+                np.array(pulses, dtype=int)
+                if len(pulses) > 0
+                else np.array([], dtype=int)
+            )
 
-            valid_pulses = pulses[(pulses - window >= 0) & (pulses + window + 1 <= raw_signal.shape[0])]
-            
+            valid_pulses = pulses[
+                (pulses - window >= 0) & (pulses + window + 1 <= raw_signal.shape[0])
+            ]
+
             seg_len = 2 * window + 1
             muaps = np.full((64, seg_len), np.nan)
             sta_dict = {}
-            
+
             for ch in range(min(raw_signal.shape[1], 64)):
                 segments = []
                 for p in valid_pulses:
-                    seg = raw_signal[p - window:p + window + 1, ch]
+                    seg = raw_signal[p - window : p + window + 1, ch]
                     segments.append(seg - np.mean(seg))
                 if segments:
                     muaps[ch, :] = np.mean(segments, axis=0)
@@ -521,7 +561,7 @@ class ConductionVelocityDialog(QDialog):
 
         values = self._get_ui_values()
         window = 50
-        muaps, fsamp, sta_dict = compute_muaps(emgfile, values['mu'], window)
+        muaps, fsamp, sta_dict = compute_muaps(emgfile, values["mu"], window)
 
         fig = self.plot_canvas.figure
         fig.clear()
@@ -533,22 +573,24 @@ class ConductionVelocityDialog(QDialog):
         # Get grid and compute XCC values
         grid = get_electrode_grid(code="GR08MM1305", orientation=180)
         n_rows, n_cols = len(grid), len(grid[0])
-        
+
         xcc_values = {}
         if sta_dict:
-            for r in range(max(0, values['from_row']), min(11, values['to_row'] + 1)):
+            for r in range(max(0, values["from_row"]), min(11, values["to_row"] + 1)):
                 for c in range(n_cols):
                     ch = grid[r][c]
                     if np.isnan(ch) or r == 0:  # Skip row 0 for XCC
                         continue
                     ch = int(ch)
-                    
+
                     adj_ch = grid[r - 1][c]  # Channel above
                     if not np.isnan(adj_ch):
                         adj_ch = int(adj_ch)
                         if ch in sta_dict and adj_ch in sta_dict:
                             try:
-                                xcc = norm_xcorr(sta_dict[ch], sta_dict[adj_ch], out="max")
+                                xcc = norm_xcorr(
+                                    sta_dict[ch], sta_dict[adj_ch], out="max"
+                                )
                                 if not np.isnan(xcc):
                                     xcc_values[ch] = xcc
                             except:
@@ -557,7 +599,7 @@ class ConductionVelocityDialog(QDialog):
         # Plot setup
         time_ms = np.arange(-window, window + 1) * 1000.0 / fsamp
         valid_muaps = muaps[np.isfinite(muaps)]
-        
+
         if valid_muaps.size > 0:
             ymin, ymax = np.min(valid_muaps), np.max(valid_muaps)
             if np.isclose(ymin, ymax):
@@ -573,8 +615,16 @@ class ConductionVelocityDialog(QDialog):
 
         # Add column headers
         for c in range(n_cols):
-            axs[0, c].text(0.5, 1.15, f"col{c}", transform=axs[0, c].transAxes, 
-                          fontsize=10, fontweight='bold', ha='center', va='bottom')
+            axs[0, c].text(
+                0.5,
+                1.15,
+                f"col{c}",
+                transform=axs[0, c].transAxes,
+                fontsize=10,
+                fontweight="bold",
+                ha="center",
+                va="bottom",
+            )
 
         # Plot grid
         for display_r in range(11):
@@ -582,17 +632,25 @@ class ConductionVelocityDialog(QDialog):
                 ch = grid[display_r][c]
                 ax = axs[display_r][c]
                 ax.clear()
-                
+
                 if np.isnan(ch):
                     ax.axis("off")
                     continue
-                    
+
                 ch = int(ch)
 
                 # Add row labels
                 if c == 0:
-                    ax.text(-0.15, 0.5, str(display_r), transform=ax.transAxes, 
-                           fontsize=10, fontweight='bold', ha='right', va='center')
+                    ax.text(
+                        -0.15,
+                        0.5,
+                        str(display_r),
+                        transform=ax.transAxes,
+                        fontsize=10,
+                        fontweight="bold",
+                        ha="right",
+                        va="center",
+                    )
 
                 # Plot MUAP
                 if muaps[ch, :].shape[0] > 0 and np.any(np.isfinite(muaps[ch, :])):
@@ -602,9 +660,17 @@ class ConductionVelocityDialog(QDialog):
                 if ch in xcc_values:
                     xcc_val = xcc_values[ch]
                     color = "black" if xcc_val >= 0.8 else "red"
-                    ax.text(0.05, 0.95, f"{xcc_val:.2f}", transform=ax.transAxes, 
-                           fontsize=8, color=color, fontweight='bold',
-                           verticalalignment='top', horizontalalignment='left')
+                    ax.text(
+                        0.05,
+                        0.95,
+                        f"{xcc_val:.2f}",
+                        transform=ax.transAxes,
+                        fontsize=8,
+                        color=color,
+                        fontweight="bold",
+                        verticalalignment="top",
+                        horizontalalignment="left",
+                    )
 
                 # Styling
                 ax.set_xticks([])
@@ -615,7 +681,9 @@ class ConductionVelocityDialog(QDialog):
 
         # Layout
         fig.tight_layout(pad=0.5)
-        fig.subplots_adjust(top=0.92, bottom=0.02, left=0.08, right=0.98, wspace=0.15, hspace=0.05)
+        fig.subplots_adjust(
+            top=0.92, bottom=0.02, left=0.08, right=0.98, wspace=0.15, hspace=0.05
+        )
         self.plot_canvas.draw()
 
     def _fill_results_table(self, table_data):
@@ -624,8 +692,12 @@ class ConductionVelocityDialog(QDialog):
         self.results_table.setRowCount(len(table_data))
 
         for row, (column, cv, rms, xcc) in enumerate(table_data):
-            items = [str(column), f"{cv:.2f}", f"{rms:.1f}", 
-                    f"{xcc:.3f}" if not np.isnan(xcc) else "N/A"]
+            items = [
+                str(column),
+                f"{cv:.2f}",
+                f"{rms:.1f}",
+                f"{xcc:.3f}" if not np.isnan(xcc) else "N/A",
+            ]
             for col, text in enumerate(items):
                 self.results_table.setItem(row, col, QTableWidgetItem(text))
 
@@ -634,10 +706,15 @@ class ConductionVelocityDialog(QDialog):
     def _copy_results(self):
         """Copy table to clipboard."""
         rows, cols = self.results_table.rowCount(), self.results_table.columnCount()
-        
+
         # Header
-        text = "\t".join([self.results_table.horizontalHeaderItem(j).text() for j in range(cols)]) + "\n"
-        
+        text = (
+            "\t".join(
+                [self.results_table.horizontalHeaderItem(j).text() for j in range(cols)]
+            )
+            + "\n"
+        )
+
         # Data rows
         for i in range(rows):
             row_data = []
@@ -645,7 +722,7 @@ class ConductionVelocityDialog(QDialog):
                 item = self.results_table.item(i, j)
                 row_data.append(item.text() if item else "")
             text += "\t".join(row_data) + "\n"
-            
+
         QApplication.clipboard().setText(text)
 
     def refresh_with_new_data(self):
