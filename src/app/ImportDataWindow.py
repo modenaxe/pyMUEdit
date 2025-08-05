@@ -5,9 +5,11 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent
 import numpy as np
+import pandas as pd
 import pyqtgraph as pg
 
 # Import UI setup function
+from core.utils.config_and_input.filesize_formatter import filesize_formatter
 from ui.ImportDataWindowUI import setup_ui
 from ui.components.SegmentSessionPage import SegmentSessionPage
 from ui.components.VisualisationPage import VisualisationPage
@@ -19,7 +21,6 @@ sys.path.append(project_root)
 sys.path.append(current_dir)
 
 # Import needed functions from other modules
-from core.utils.config_and_input.open_otb_plus import open_otb_plus
 from core.EmgDecomposition import offline_EMG as EMG_offline_EMG
 from workers.SaveMatWorker import SaveMatWorker
 from enum import Enum
@@ -54,6 +55,7 @@ class ImportDataWindow(QMainWindow):
         # Config popup windows
         self.visualisation_page = None
         self.segment_session = None
+        self.config_panel = None
 
         # Create EMG object using the appropriate class
         temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp")
@@ -95,15 +97,8 @@ class ImportDataWindow(QMainWindow):
                 self.footer_file_info.setText(f"File: {self.filename}")
 
                 # Update file size and format
-                file_size = os.path.getsize(file_path)
+                size_str = filesize_formatter(file_path)
                 file_format = os.path.splitext(self.filename)[1].upper().replace(".", "")
-
-                if file_size < 1024:
-                    size_str = f"{file_size} bytes"
-                elif file_size < 1024 * 1024:
-                    size_str = f"{file_size/1024:.1f} KB"
-                else:
-                    size_str = f"{file_size/(1024*1024):.1f} MB"
 
                 self.size_info.setText(f"Size: {size_str}")
                 self.format_info.setText(f"Format: {file_format}")
@@ -128,17 +123,31 @@ class ImportDataWindow(QMainWindow):
         self.file_info_label.setVisible(True)
         self.footer_file_info.setText(f"File: {self.filename}")
 
-        # Get file size in bytes
-        file_size = os.path.getsize(file)
         file_format = os.path.splitext(self.filename)[1].upper().replace(".", "")
+        size_str = filesize_formatter(file)
 
-        # Format file size for display
-        if file_size < 1024:
-            size_str = f"{file_size} bytes"
-        elif file_size < 1024 * 1024:
-            size_str = f"{file_size/1024:.1f} KB"
-        else:
-            size_str = f"{file_size/(1024*1024):.1f} MB"
+        self.size_info.setText(f"Size: {size_str}")
+        self.format_info.setText(f"Format: {file_format}")
+
+        # Load the file (passing the whole path)
+        self.load_file(self.pathname, self.filename)
+
+        # Pass file size in original units (bytes)
+        self.file_size_bytes = os.path.getsize(file)
+
+    def load_recent_file(self, filename):
+        """Load a file from the recent files list."""
+        self.filename = os.path.basename(filename)
+        self.pathname = os.path.dirname(filename) + "/"
+
+        # Update UI to show selected file
+        self.file_info_label.setText(f"Selected: {self.filename}")
+        self.file_info_label.setVisible(True)
+        self.footer_file_info.setText(f"File: {self.filename}")
+
+        # Get file size in bytes
+        size_str = filesize_formatter(filename)
+        file_format = os.path.splitext(self.filename)[1].upper().replace(".", "")
 
         self.size_info.setText(f"Size: {size_str}")
         self.format_info.setText(f"Format: {file_format}")
@@ -147,27 +156,7 @@ class ImportDataWindow(QMainWindow):
         self.load_file(self.pathname, self.filename)
         
         # Pass file size in original units (bytes)
-        self.file_size_bytes = file_size
-
-    def load_recent_file(self, filename):
-        """Load a file from the recent files list."""
-        self.filename = filename
-        self.pathname = "./"  # This would be the actual path in a real implementation
-
-        # Update UI to show selected file
-        self.file_info_label.setText(f"Selected: {self.filename}")
-        self.file_info_label.setVisible(True)
-        self.footer_file_info.setText(f"File: {self.filename}")
-
-        # In a real implementation, we would get actual file size
-        self.size_info.setText("Size: 2.4 MB")
-        self.format_info.setText(f"Format: {os.path.splitext(filename)[1].upper().replace('.', '')}")
-
-        # Show preview message
-        self.preview_message.setText(f"Preview of {filename}\n(Simulated data for demonstration)")
-
-        # Enable the next button
-        self.next_btn.setEnabled(True)
+        self.file_size_bytes = os.path.getsize(filename)
 
     def load_file(self, path, file):
         """Load and process a file."""
@@ -189,10 +178,9 @@ class ImportDataWindow(QMainWindow):
                     os.makedirs(temp_dir)
                 self.emg_obj = EMG_offline_EMG(save_dir=temp_dir, to_filter=True)
 
-                fsamp = []
                 if ext == ".otb+":
                     # Call the open_otb_plus function with the correct parameters
-                    self.emg_obj.open_otb_plus(full_path)
+                    self.emg_obj.open_otb_plus(full_path, self)
 
                     # Create a default save name for .mat files
                     savename = os.path.join(path, file + "_processed.mat")
@@ -211,24 +199,10 @@ class ImportDataWindow(QMainWindow):
                 # Load file data into the plot
                 if "data" in signal and "fsamp" in signal:
                     try:
-                        # Create a time vector
-                        fsamp = signal["fsamp"]
-                        nsamples = signal["data"].shape[1]
-                        time = np.arange(nsamples) / fsamp
-
-                        # Plot first channel as preview
-                        self.preview_plot.clear()
-
-                        # Plot the first few channels for preview
-                        num_preview_channels = min(3, signal["data"].shape[0])
-                        colors = ["b", "g", "r", "c", "m", "y"]
-
-                        for i in range(num_preview_channels):
-                            self.preview_plot.plot(
-                                time, signal["data"][i, :], pen=pg.mkPen(color=colors[i % len(colors)], width=1)
-                            )
-
-                        self.preview_plot.setTitle(f"Signal Preview ({num_preview_channels} channels)")
+                        self.cur_electrode_preview_idx = 0
+                        # Plot channels for previews
+                        self.update_preview_plot()
+                        self.update_buttons()
                     except Exception as e:
                         print(f"Error creating preview plot: {e}")
                 else:
@@ -248,14 +222,19 @@ class ImportDataWindow(QMainWindow):
 
                 self.fileImported.emit(file_info)
 
-                self.set_configuration_button.setEnabled(True)
                 self.channel_view_button.setEnabled(True)
 
-                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj)
+                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj, import_window=self)
+
+                self.add_file_to_recent_files(full_path)
+                self.update_recent_files()
 
                 if ext == ".mat":
-                    self.segment_session = SegmentSessionPage(full_path)
+                    self.segment_session = SegmentSessionPage(full_path, self.add_file_to_recent_files, self.update_recent_files)
                     self.segment_session_button.setEnabled(True)
+                    self.set_configuration_button.setEnabled(False)
+                else:
+                    self.set_configuration_button.setEnabled(True)
 
             except Exception as e:
                 self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
@@ -270,6 +249,93 @@ class ImportDataWindow(QMainWindow):
             self.file_info_label.setText(f"Failed uploading {self.filename}")
             self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
             self.failure_message.setVisible(True)
+
+    def update_preview_plot(self):
+        signal = self.emg_obj.signal_dict
+        data = signal["data"]
+        chans_per_electrode = self.get_n_chans_per_electrode()
+        fsamp = signal["fsamp"]
+
+        self.preview_plot.clear()
+
+        # Get selected electrode index
+        selected_electrode_idx = self.cur_electrode_preview_idx
+        if selected_electrode_idx >= len(chans_per_electrode):
+            self.preview_plot.setTitle("Invalid electrode selected")
+            return
+
+        # Determine channel indices for selected electrode
+        start_index = sum(chans_per_electrode[:self.cur_electrode_preview_idx])
+        end_index = start_index + chans_per_electrode[self.cur_electrode_preview_idx]
+        all_indices = list(range(start_index, end_index))
+
+        # Get valid channels
+        valid_indices = [i for i in range(data.shape[0]) if i not in self.emg_obj.rejected_channel_indices and i in all_indices]
+        if not valid_indices:
+            print("No valid channels to process.")
+            return
+
+        # Prepare temporary array for smoothed data
+        tmp = np.zeros((len(valid_indices), data.shape[1]))
+
+        # Smooth each valid channel
+        for i, idx in enumerate(valid_indices):
+            abs_signal = np.abs(data[idx, :])
+            abs_df = pd.DataFrame(abs_signal)
+            tmp[i, :] = abs_df.rolling(window=fsamp, center=True).mean().to_numpy().flatten()
+
+        mean_trace = np.nanmean(tmp, axis=0)
+
+        # Plot the average signal
+        self.preview_plot.plot(mean_trace, pen=pg.mkPen(color="r", width=2))
+
+        self.preview_plot.setTitle(f"Electrode {selected_electrode_idx + 1}: {len(valid_indices)} valid channels")
+
+    def get_n_chans_per_electrode(self):
+        grid_names = self.emg_obj.signal_dict["gridname"]
+        chans_per_electrode = []
+        for i in range(self.emg_obj.signal_dict["ngrid"]):
+            if grid_names[i] == "GR04MM1305" or \
+               grid_names[i] == "ELSCH064NM2" or \
+               grid_names[i] == "GR08MM1305" or \
+               grid_names[i] == "GR10MM0808" or \
+               grid_names[i] == "other":
+                chans_per_electrode.append(64)
+            elif grid_names[i] == "Thin film":
+                chans_per_electrode.append(40)
+            elif grid_names[i] == "4-wire needle":
+                chans_per_electrode.append(16)
+            elif grid_names[i] == "Myomatrix Monopolar":
+                chans_per_electrode.append(32)
+            else:
+                chans_per_electrode.append(16)
+
+        return chans_per_electrode
+
+    def leftClicked(self):
+        new_index = self.cur_electrode_preview_idx - 1
+        if new_index >= 0:
+            self.cur_electrode_preview_idx = new_index
+            self.update_preview_plot()
+        self.update_buttons()
+
+    def rightClicked(self):
+        new_index = self.cur_electrode_preview_idx + 1
+        if new_index < self.emg_obj.signal_dict["ngrid"]:
+            self.cur_electrode_preview_idx = new_index
+            self.update_preview_plot()
+        self.update_buttons()
+
+    def update_buttons(self):
+        if self.cur_electrode_preview_idx == 0:
+            self.left_button.setEnabled(False)
+        else:
+            self.left_button.setEnabled(True)
+
+        if self.cur_electrode_preview_idx == self.emg_obj.signal_dict["ngrid"] - 1:
+            self.right_button.setEnabled(False)
+        else:
+            self.right_button.setEnabled(True)
 
     def save_mat_in_background(self, filename, data, compression=True, processing=False):
         """Save data as .mat file in a background thread."""
@@ -294,7 +360,7 @@ class ImportDataWindow(QMainWindow):
     def enable_segment_session(self):
         if self.segment_session_button and self.pathname and self.filename:
             filename = os.path.join(self.pathname, self.filename) + "_processed.mat"
-            self.segment_session = SegmentSessionPage(filename)
+            self.segment_session = SegmentSessionPage(filename, self.add_file_to_recent_files, self.update_recent_files)
 
             self.segment_session_button.setEnabled(True)
 
@@ -367,66 +433,37 @@ class ImportDataWindow(QMainWindow):
             if self.visualisation_page is not None:
                 self.visualisation_page.show()
             else:
-                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj)
+                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj, import_window=self)
                 self.visualisation_page.show()
         except Exception as e:
             print(f"Failed to load channel viewer: {e}")
 
+    def config_callback(self, signal):
+        if self.pathname and self.filename and self.emg_obj:
+            filename = os.path.join(self.pathname, self.filename) + "_processed.mat"
+
+            # Update emg object and signal
+            self.emg_obj.signal_dict = signal
+            self.imported_signal = self.emg_obj.signal_dict
+
+            # Update channel viewer
+            self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj, import_window=self)
+
+            # Create new processed data file
+            self.save_mat_in_background(filename, {"signal": self.imported_signal}, True, True)
+
     def set_configuration_button_pushed(self):
-        if self.config:
+        if self.config_panel:
             try:
-                if self.pathname is not None and self.filename is not None:
-                    savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
-                    self.config["pathname"].setText(savename)
+                self.config_panel.set_config_callback(self.config_callback)
 
                 # Show the dialog
-                self.MUdecomp["config"].show()
+                self.config_panel.show()
             except Exception as e:
                 print(f"Error showing configuration dialog: {e}")
                 traceback.print_exc()
         else:
             print("No configuration dialog available")
-
-    # def segment_session_button_pushed(self):
-    #     self.segment_session = SegmentSession()
-
-    #     if self.pathname is not None and self.filename is not None:
-    #         self.segment_session.pathname.setText(self.pathname + self.filename + "_decomp.mat")
-
-    #     # Setup the dropdown contents before setting the current item
-    #     self.segment_session.reference_dropdown.clear()
-
-    #     signal = self.emg_obj.signal_dict
-    #     if "auxiliaryname" in signal:
-    #         for name in signal["auxiliaryname"]:
-    #             self.segment_session.reference_dropdown.addItem(name)
-    #     elif "target" in signal:
-    #         path_data = signal["path"]
-    #         target_data = signal["target"]
-
-    #         if isinstance(path_data, np.ndarray) and isinstance(target_data, np.ndarray):
-    #             path_reshaped = path_data.reshape(1, -1) if path_data.ndim == 1 else path_data
-    #             target_reshaped = target_data.reshape(1, -1) if target_data.ndim == 1 else target_data
-    #             signal["auxiliary"] = np.vstack((path_reshaped, target_reshaped))
-    #         else:
-    #             signal["auxiliary"] = np.vstack((np.array([path_data]), np.array([target_data])))
-
-    #         signal["auxiliaryname"] = ["Path", "Target"]
-    #         self.segment_session.reference_dropdown.addItem("EMG amplitude")
-    #         for name in signal["auxiliaryname"]:
-    #             self.segment_session.reference_dropdown.addItem(name)
-    #     else:
-    #         self.segment_session.reference_dropdown.addItem("EMG amplitude")
-
-    #     try:
-    #         if self.segment_session.pathname.text():
-    #             self.segment_session.file = sio.loadmat(self.segment_session.pathname.text())
-    #     except Exception as e:
-    #         print(f"Warning: Could not load file: {e}")
-
-    #     # Set current text after file is loaded
-    #     self.segment_session.initialize_with_file()
-    #     self.segment_session.show()
 
     def segment_session_button_pushed(self):
         if not self.emg_obj or "data" not in self.emg_obj.signal_dict or not self.pathname or not self.filename:
@@ -440,6 +477,17 @@ class ImportDataWindow(QMainWindow):
                 self.segment_session.show()
         except Exception as e:
             self.edit_field.setText(f"Failed to load segment session: {e}")
+
+    def add_file_to_recent_files(self, filename):
+        if filename not in self.recent_files:
+            self.recent_files.append(filename)
+        else:
+            self.recent_files.remove(filename)
+            self.recent_files = [filename] + self.recent_files
+
+    def update_recent_files(self):
+        if hasattr(self, "update_sidebar_with_recent_files"):
+            self.update_sidebar_with_recent_files()
 
 
 # For testing the window independently
