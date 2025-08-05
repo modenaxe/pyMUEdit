@@ -258,13 +258,13 @@ class MUeditManual(QMainWindow):
 
         if hasattr(self, "add_spikes_btn") and self.add_spikes_btn.get_active():
             print("ESC: deactivating add_spikes button")
-            self._undo_all_edits()
+            # self._undo_all_edits()
             self.add_spikes_button_pushed()
             return 
 
         elif hasattr(self, "delete_spikes_btn") and self.delete_spikes_btn.get_active():
             print("ESC: deactivating delete_spikes button")
-            self._undo_all_edits()
+            # self._undo_all_edits()
             self.delete_spikes_button_pushed()
             return
 
