@@ -44,6 +44,7 @@ class AnalysisDropdown(QComboBox):
             }}
             QComboBox QAbstractItemView {{
                 border: 0px;
+                background-color: {CleanTheme.ANALYSIS_BG_DROPDOWN_SEC};
             }}
             QComboBox:disabled {{
                 background-color: {CleanTheme.ANALYSIS_BG_DROPDOWN_DISABLED};
