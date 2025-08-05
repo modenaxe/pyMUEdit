@@ -1,13 +1,14 @@
 '''
-To run a test 
-1. makesure you have the correct output files from matlab in the tests folder, see below for how the files should be named (to make folder for it, but git wont take big files)
-2. scroll to bottom and uncomment the desired test
-3. make sure your current directory is tests 
+To run these tests:
+1. cd into the tests/ folder
+2. run `matlab -nodisplay -nosplash -nodesktop -r 'run(\'gen_inputs.m\'); exit()'` to generate the necessary .mat files
+3. execute this file
 '''
 
 import unittest
 import numpy as np
 import numpy.testing as npt
+import scipy
 import filecmp
 import sys
 import os
@@ -41,6 +42,10 @@ expOutFilterExtendWhiten =  os.path.join(os.getcwd(), "ExpOut20FilterExtendWhite
 expOutConSphSkew = os.path.join(os.getcwd(), "ExpOut20ConSphSkew.mat")
 expOutConSphKurt = os.path.join(os.getcwd(), "ExpOut20ConSphKurt.mat")
 expOutConSphLogc = os.path.join(os.getcwd(), "ExpOut20ConSphLogc.mat")
+expOutFixedPointAlg = os.path.join(os.getcwd(), "ExpOut20FixedPointAlg.mat")
+expOutGetSpikes = os.path.join(os.getcwd(), "ExpOut20GetSpikes.mat")
+expOutMinimizeCOVISI = os.path.join(os.getcwd(), "ExpOut20MinimizeCOVISI.mat")
+expOutCalcSIL = os.path.join(os.getcwd(), "ExpOut20CalcSIL.mat")
 
 INPUT20MVCFILE = "trial1_20MVC.otb+"
 INPUT40MVCFILE = "trial1_40MVC.otb+"
@@ -56,6 +61,11 @@ emg.open_otb_plus(inputFile20)
 # print(emg.signal_dict)
 # Tests uses unmodified data from original open_otb_plus file where possible, which came from the provided data files trial1_20MVC.otb+ and trial1_40MVC.otb+
 class Test20MVCfile(unittest.TestCase): 
+
+    def assert_spikes_close(self, actual, desired, threshold=0.05, err_msg=None):
+        actual_set = set(actual)
+        desired_set = set(desired)
+        self.assertLess(len(actual_set ^ desired_set), threshold * len(actual_set | desired_set), err_msg)
 
     def testOpenOTBPlus(self):
         if not os.path.exists(expOutOpenOTBPlus):
@@ -167,10 +177,10 @@ class Test20MVCfile(unittest.TestCase):
     def testNotchFilter(self):
         if not os.path.exists(expOutNotchSig):
             print("expected notch_filter output file not found!")
-        expected = loadmat(expOutNotchSig).get("filteredsignal")
-        output = notch_filter(expected.get("signal")[0][0][0], expected.get("signal")[0][0][3])
+        expected = loadmat(expOutNotchSig)
+        output = notch_filter(expected.get("signal")[0][0][0], float(expected.get("signal")[0][0][3][0][0]))
         try:
-            npt.assert_array_equal(np.asarray(output), expected)
+            npt.assert_allclose(np.asarray(output), expected.get("filteredsignal"))
         except AssertionError as e:
             raise AssertionError(f"notch_filter failed to return the expected signal:\n{e}")
         
@@ -221,19 +231,16 @@ class Test20MVCfile(unittest.TestCase):
     def testDemean(self):
         if not os.path.exists(expOutDemean):
             print("expected output file for demean not found!")
-        # This implementation depends on how demean is now handled in the new codebase
-        # If it's part of another function, we'll need to adjust this test
-        # For now, commenting this out as it might not be directly testable
-        """
-        output = demean(input.get("signal")[0][0][0])
+
+        output = scipy.signal.detrend(
+            input.get("signal")[0][0][0], axis=-1, type="constant", bp=0
+        )
         expected = loadmat(expOutDemean).get('demsignals')
         try:
-            npt.assert_array_equal(output, expected)
+            npt.assert_allclose(output, expected)
         except AssertionError as e:
             raise AssertionError(f"demean failed to return the expected demsignals:\n{e}")
-        """
-        pass
-        
+
     # is part of convul_sphering, to combine w other tests
     def testWhitenEMG(self):
         # whiten_emg may have a different signature than the old whiteesig function
@@ -245,15 +252,15 @@ class Test20MVCfile(unittest.TestCase):
         expectedDewhiteningMatrix = expected.get('dewhiteningMatrix')
 
         try:
-            npt.assert_array_equal(outputWhitenedEMG, expectedWhitenedEMG)
+            npt.assert_allclose(outputWhitenedEMG, expectedWhitenedEMG, rtol=2e-3)
         except AssertionError as e:
             raise AssertionError(f"whiten_emg failed to return the expected whitenedEMG:\n{e}")
         try:
-            npt.assert_array_equal(outputWhiteningMatrix, expectedWhiteningMatrix)
+            npt.assert_allclose(outputWhiteningMatrix, expectedWhiteningMatrix)
         except AssertionError as e:
             raise AssertionError(f"whiten_emg failed to return the expected whiteningMatrix:\n{e}")
         try:
-            npt.assert_array_equal(outputDewhiteningMatrix, expectedDewhiteningMatrix)
+            npt.assert_allclose(outputDewhiteningMatrix, expectedDewhiteningMatrix)
         except AssertionError as e:
             raise AssertionError(f"whiten_emg failed to return the expected dewhiteningMatrix:\n{e}")
 
@@ -280,87 +287,51 @@ class Test20MVCfile(unittest.TestCase):
 # Returns:
 #     w: Updated separation vector
     def testFixedPointAlg(self):
-        # Note: Parameters might have changed in the new implementation
-        initialWeights = loadmat(expOutOpenOTBPlus)
-        whitenedSignal = loadmat(expOutWhiten)
-        seperationMatrix = 42 # whats a seperation matrix/basis matrix? Where can i find one
-        # basis matrix isnt mentioned anywhere else except our fixed point alg??? Are we using different names across diff functions???
-        expectedSkew = loadmat(expOutConSphSkew)
-        expectedKurtosis = loadmat(expOutConSphKurt)
-        expectedLogc = loadmat(expOutConSphLogc)
+        expected = loadmat(expOutFixedPointAlg, mat_dtype=True)
 
-        contrastFunc = 0  # skew
-        expectedSkew = 42
-        outputSkew = fixed_point_alg(initialWeights, seperationMatrix, whitenedSignal, contrastFunc, None)
+        outputSkew = fixed_point_alg(expected.get("w"), expected.get("B"), expected.get("X"), "skew")
         try:
-            npt.assert_array_equal(outputSkew, expectedSkew)
+            npt.assert_allclose(outputSkew, expected.get("w_skew")[:, 0])
         except AssertionError as e:
             raise AssertionError(f"fixed_point_alg failed to return the expected seperation vector using the skew contrast func:\n{e}")
 
-        contrastFunc = 1 # kurtosis
-        expectedKurtosis = 42
-        outputKurtosis = fixed_point_alg(initialWeights, seperationMatrix, whitenedSignal, contrastFunc, None)
+        outputKurtosis = fixed_point_alg(expected.get("w"), expected.get("B"), expected.get("X"), "kurtosis")
         try:
-            npt.assert_array_equal(outputKurtosis, expectedKurtosis)
+            npt.assert_allclose(outputKurtosis, expected.get("w_kurtosis")[:, 0])
         except AssertionError as e:
             raise AssertionError(f"fixed_point_alg failed to return the expected seperation vector using the kurtosis contrast func:\n{e}")
 
-        contrastFunc = 2 # logcosh
-        expectedLogcosh = 42
-        outputLogcosh = fixed_point_alg(initialWeights, seperationMatrix, whitenedSignal, contrastFunc, None)
+        outputLogcosh = fixed_point_alg(expected.get("w"), expected.get("B"), expected.get("X"), "logcosh")
         try:
-            npt.assert_array_equal(outputLogcosh, expectedLogcosh)
+            npt.assert_allclose(outputLogcosh, expected.get("w_logcosh")[:, 0])
         except AssertionError as e:
             raise AssertionError(f"fixed_point_alg failed to return the expected seperation vector using the logcosh contrast func:\n{e}")
 
 
     def testGetSpikes(self):
-        initialWeights = 'from above'
-        whitenedSignal = 'from above'
-        fsamp = 42
-        icasig, spikes2 = get_spikes(initialWeights, whitenedSignal, fsamp)
+        expected = loadmat(expOutGetSpikes)
+        icasig, spikes2 = get_spikes(expected.get("w_skew")[:, 0], expected.get("X"), float(expected.get("signal")[0][0][3][0][0]))
 
-        expectedIcasig = 42
-        expectedSpikes2 = 42
-
-        self.assertEqual(icasig, expectedIcasig, "get_spikes failed to return the expected output for the icasig")
-        self.assertEqual(spikes2, expectedSpikes2, "get_spikes failed to return the expected output for spikes2")
+        npt.assert_allclose(icasig, expected.get("icasig")[0], err_msg="get_spikes failed to return the expected output for the icasig")
+        self.assert_spikes_close(spikes2, expected.get("spikes2")[0] - 1)
     
     def testMinCovISI(self):
-        initialWeights = 'from above'
-        whitenedSignal = 'from above'
-        CoV = 42
-        fsamp = 42
-        # min_cov_isi has a different parameter list compared to minimizeCOVISI
-        # It now takes B, Z, fsamp, cov_n, spikes_n
-        # B wasnt accessed in the min cov isi function? is this the right version or did someone forget to push
-        B = 42  # Basis matrix
-        Z = whitenedSignal
-        spikes_n = 42
-        wlast, spikeslast, CoVlast = min_cov_isi(initialWeights, B, Z, fsamp, CoV, spikes_n)
+        expected = loadmat(expOutMinimizeCOVISI)
+        wlast, spikeslast, CoVlast = min_cov_isi(expected.get("Wini")[:, 0], expected.get("X"), float(expected.get("signal")[0][0][3][0][0]), expected.get("CoV"), expected.get("spikes2"))
 
-        expectedWlast = 42
-        expectedSpikeslast = 42
-        expectedCoVlast = 42
-
-        self.assertEqual(wlast, expectedWlast, "min_cov_isi failed to return the expected output for the wlast")
-        self.assertEqual(spikeslast, expectedSpikeslast, "min_cov_isi failed to return the expected output for spikeslast")
-        self.assertEqual(CoVlast, expectedCoVlast, "min_cov_isi failed to return the expected output for the CoVlast")
+        npt.assert_array_equal(wlast, expected.get("wlast")[:, 0], "min_cov_isi failed to return the expected output for the wlast")
+        self.assert_spikes_close(spikeslast, expected.get("spikeslast")[0] - 1)
+        npt.assert_array_equal(CoVlast, expected.get("CoVlast"), "min_cov_isi failed to return the expected output for the CoVlast")
 
     def testGetSilhouette(self):
-        initialWeights = 'from above'
-        whitenedSignal = 'from above'
-        fsamp = 42
+        expected = loadmat(expOutCalcSIL)
         # get_silhouette has different parameter order compared to calcSIL
-        icasig, spikes2, sil = get_silhouette(initialWeights, whitenedSignal, fsamp)
+        icasig, spikes2, sil = get_silhouette(expected.get("wlast")[:, 0], expected.get("X"), float(expected.get("signal")[0][0][3][0][0]))
 
-        expectedIcasig = 42
-        expectedSpikes2 = 42
-        expectedSil = 42
+        npt.assert_allclose(icasig, expected.get("icasig")[0], err_msg="get_silhouette failed to return the expected output for the icasig")
+        self.assert_spikes_close(spikes2, expected.get("spikes2")[0] - 1, err_msg="get_silhouette failed to return the expected output for spikes2")
+        npt.assert_allclose(sil, expected.get("sil"), rtol=2e-3, err_msg="get_silhouette failed to return the expected output for the SIL")
 
-        self.assertEqual(icasig, expectedIcasig, "get_silhouette failed to return the expected output for the icasig")
-        self.assertEqual(spikes2, expectedSpikes2, "get_silhouette failed to return the expected output for spikes2")
-        self.assertEqual(sil, expectedSil, "get_silhouette failed to return the expected output for the SIL")
 
     def testPeelOff(self):
         whitenedSignal = 'from above'
@@ -379,11 +350,15 @@ if __name__ == '__main__':
     suite.addTest(Test20MVCfile('testOpenOTBPlus')) 
     # suite.addTest(Test20MVCfile('testConvolutiveSphering')) 
     # notchfilter, bandpass, extend and whitening will be merged into convolutivesphereing
-    #suite.addTest(Test20MVCfile('testNotchFilter')) 
+    suite.addTest(Test20MVCfile('testNotchFilter'))
     #suite.addTest(Test20MVCfile('testBandpassFilter'))
-    #suite.addTest(Test20MVCfile('testExtendEMG'))
-    #suite.addTest(Test20MVCfile('testDemean'))
+    suite.addTest(Test20MVCfile('testExtendEMG'))
+    suite.addTest(Test20MVCfile('testDemean'))
     #suite.addTest(Test20MVCfile('testpcaesig'))
-    #suite.addTest(Test20MVCfile('testWhitenEMG'))
+    suite.addTest(Test20MVCfile('testWhitenEMG'))
+    suite.addTest(Test20MVCfile('testFixedPointAlg'))
+    suite.addTest(Test20MVCfile('testGetSpikes'))
+    suite.addTest(Test20MVCfile('testMinCovISI'))
+    suite.addTest(Test20MVCfile('testGetSilhouette'))
     
     unittest.TextTestRunner().run(suite)

@@ -347,7 +347,7 @@ class offline_EMG(EMG):
 
     ######################### FAST ICA AND CONVOLUTIVE KERNEL COMPENSATION  ############################################
 
-    def fast_ICA_and_CKC(self, g, interval, tracker, cf_type="square", plot_callback=None):
+    def fast_ICA_and_CKC(self, g, interval, tracker, cf_type="skew", plot_callback=None):
         print(f"Starting FastICA for electrode {g+1}, interval {interval+1}, contrast={cf_type}, iterations={self.its}")
 
         init_its = np.zeros([self.its], dtype=int)  # tracker of initialisaitons of separation vectors across iterations
@@ -355,16 +355,6 @@ class offline_EMG(EMG):
 
         Z = np.array(self.decomp_dict["whitened_obvs"][interval]).copy()
         time_axis = np.linspace(0, np.shape(Z)[1], np.shape(Z)[1]) / self.signal_dict["fsamp"]
-
-        # Choose contrast function
-        if cf_type == "square":
-            cf, dot_cf = square, dot_square
-        elif cf_type == "skew":
-            cf, dot_cf = skew, dot_skew
-        elif cf_type == "exp":
-            cf, dot_cf = exp, dot_exp
-        elif cf_type == "logcosh":
-            cf, dot_cf = logcosh, dot_logcosh
 
         for i in range(self.its):
 
@@ -392,7 +382,7 @@ class offline_EMG(EMG):
 
             # use the fixed point algorithm to identify consecutive separation vectors
             self.decomp_dict["w_sep_vect"] = fixed_point_alg(
-                self.decomp_dict["w_sep_vect"], self.decomp_dict["B_sep_mat"], Z, cf, dot_cf, fpa_its
+                self.decomp_dict["w_sep_vect"], self.decomp_dict["B_sep_mat"], Z, cf_type, fpa_its
             )
 
             # get the first iteration of spikes using k means ++
@@ -410,7 +400,7 @@ class offline_EMG(EMG):
 
                 # minimisation of covariance of interspike intervals
                 self.decomp_dict["MU_filters"][interval][:, i], spikes, self.decomp_dict["CoVs"][interval, i] = (
-                    min_cov_isi(w_n_p1, self.decomp_dict["B_sep_mat"], Z, self.signal_dict["fsamp"], CoV, spikes)
+                    min_cov_isi(w_n_p1, Z, self.signal_dict["fsamp"], CoV, spikes)
                 )
 
                 self.decomp_dict["B_sep_mat"][:, i] = self.decomp_dict["w_sep_vect"].real

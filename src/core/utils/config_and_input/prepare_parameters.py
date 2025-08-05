@@ -23,7 +23,7 @@ def prepare_parameters(ui_params, algo_choice):
 
             # Set algorithm-specific parameters
             parameters["CoVDR"] = 0.3  # Threshold for CoV of Discharge rate
-            parameters["edges"] = 0.5  # Edges to remove (in seconds)
+            parameters["edges"] = 0.2  # Edges to remove (in seconds)
             parameters["contrastfunc"] = ui_params.get("contrast_function", "skew")
             parameters["peeloffwin"] = 0.025  # Window duration for detecting action potentials
             parameters["differentialmode"] = 0  # Default to no differentiation

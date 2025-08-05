@@ -1,66 +1,126 @@
-import filecmp
-from scipy.io import loadmat
+# 0. Copy input data (e.g. trial1_20MVC.otb+ into tests folder)
+# 1. generate muedit output:
+#   a) cd into tests folder
+#   b) edit parameters in gen_muedit_output.m file to reflect what you want to test
+#   c) run in terminal ==> "C:\...\matlab.exe" -nodisplay -nosplash -nodesktop -r "run('gen_muedit_output.m'); exit();"
+# 2. generate pymuedit output (this software):
+#   a) run src/main.py, change input parameters (e.g. iterations, ref signal, initialisation, filters, etc. to match muedit inputs)
+#   b) save results in tests folder
+# -- You should now have two .mat output files in tests folder; actual output (pymuedit) and expected output (muedit)
+
+# 3. run testMUeditOutput.py to compare these two files
+
+# Tests folder file structure should look like the following after (excluding other test files which are not used in this process):
+# tests/
+#   ActualFinalOutxyz.mat
+#   ExpFinalOutxyz.mat
+#   gen_muedit_output.m
+#   testMUeditOutput.py
+#   xyz.otb+
+
 import numpy as np
-import os
-import h5py
+from scipy.io import loadmat
 
-"""
-requires h5py 
-requires an expected output file in data.io.input_decomposition named: 
-expectedoutput_trial1_20MVC.otb+_decomp.mat
-"""
+# === File Paths (CHANGE AS NEEDED) ===
+FILE_1 = 'ActualFinalOut20_10iters.mat' #pymuedit output
+FILE_2 = 'ExpFinalOut20-10_iters.mat'   #muedit output
 
-def load_mat_v73(filename):
-    data = {}
-    with h5py.File(filename, 'r') as f:
-        for key in f.keys():
-            if isinstance(f[key], h5py.Group):
-                data[key] = {k: np.array(f[key][k]) for k in f[key].keys() if isinstance(f[key][k], h5py.Dataset)}
-            elif isinstance(f[key], h5py.Dataset):
-                data[key] = np.array(f[key])
-    return data
+# === fields to compare inside the 'signal' struct (some i have left out as they are unlikely to change (i.e. fsamp, IED, etc))===
+FIELDS_TO_COMPARE = [
+    'data', 'auxiliary', 'path', 'target',
+    'coordinates', 'EMGmask', 'Pulsetrain', 'Dischargetimes'
+]
 
+def load_mat_signal(file_path):
+    """Load the 'signal' struct from a .mat file."""
+    mat = loadmat(file_path, struct_as_record=False, squeeze_me=True)
+    if 'signal' not in mat:
+        raise ValueError(f"No 'signal' struct found in {file_path}")
+    return mat['signal']
 
-def compare_mat_files(file1, file2):
+def is_cell_array(obj):
+    """Check if the object is a MATLAB-style cell array."""
+    return isinstance(obj, np.ndarray) and obj.dtype == object
 
-    expected = load_mat_v73(file1)
-    output = loadmat(file2)
-    #debug
-    #print(expected)
-    #print(output[key])
+def compare_arrays(arr1, arr2, field_path="", atol=1e-8, rtol=1e-5):
+    """Compare arrays or nested cells recursively."""
+    differences = []
 
-    # Remove MATLAB metadata entries
-    for key in ['__header__', '__version__', '__globals__', '#refs#']:
-        expected.pop(key, None)
-        output.pop(key, None)
+    if is_cell_array(arr1) and is_cell_array(arr2):
+        if arr1.shape != arr2.shape:
+            differences.append(f"{field_path}: Cell shape mismatch {arr1.shape} vs {arr2.shape}")
+            return differences
+        for idx in np.ndindex(arr1.shape):
+            a = arr1[idx]
+            b = arr2[idx]
+            subfield = f"{field_path}[{idx}]"
+            differences.extend(compare_arrays(a, b, subfield, atol, rtol))
 
-    if expected.keys() != output.keys():
-        print(expected.keys())
-        print("//////////////////////////////")
-        print(output.keys())
-        return False
+    elif isinstance(arr1, np.ndarray) and isinstance(arr2, np.ndarray):
+        if arr1.shape != arr2.shape:
+            differences.append(f"{field_path}: Array shape mismatch {arr1.shape} vs {arr2.shape}")
+        elif not np.allclose(arr1, arr2, atol=atol, rtol=rtol, equal_nan=True):
+            max_diff = np.max(np.abs(arr1 - arr2))
+            mean_diff = np.mean(np.abs(arr1 - arr2))
+            differences.append(
+                f"{field_path}: Values differ (max diff = {max_diff:.3e}, mean diff = {mean_diff:.3e})"
+            )
 
-    for key in expected:
-        print(key, "|", expected[key])
-        print('///////////////////')
-        print(output[key])
-        if not np.array_equal(expected[key], output[key]):
-            print(f"Difference found in variable: {key}")
-            return False
+    else:
+        # Convert both to arrays to allow broadcastable comparison
+        a1 = np.atleast_1d(arr1)
+        a2 = np.atleast_1d(arr2)
 
-    return True
-#################
-print("Current working directory:", os.getcwd())
-data1 = os.path.join('data', 'io', 'input_decomposition', 'expectedoutput_trial1_20MVC.otb+_decomp.mat')
-data2 = os.path.join('data', 'io', 'input_decomposition', 'trial1_20MVC.otb+_output_decomp.mat')
-if compare_mat_files(data1, data2):
-    print("Files are the same ✅")
-else:
-    print("Files are different ❌")
+        if a1.shape != a2.shape:
+            differences.append(f"{field_path}: Shape mismatch for scalar values {a1.shape} vs {a2.shape}")
+        elif not np.allclose(a1, a2, atol=atol, rtol=rtol, equal_nan=True):
+            max_diff = np.max(np.abs(a1 - a2))
+            mean_diff = np.mean(np.abs(a1 - a2))
+            differences.append(
+                f"{field_path}: Scalar values differ (max diff = {max_diff:.3e}, mean diff = {mean_diff:.3e})"
+            )
 
+    return differences
 
+def compare_signals(signal1, signal2):
+    """Compare key fields in two signal structs."""
+    all_differences = {}
+    for field in FIELDS_TO_COMPARE:
+        val1 = getattr(signal1, field, None)
+        val2 = getattr(signal2, field, None)
 
+        if val1 is None or val2 is None:
+            all_differences[field] = [f"{field}: Missing in one of the signals."]
+            continue
 
+        diffs = compare_arrays(val1, val2, field_path=field)
+        if diffs:
+            all_differences[field] = diffs
 
+    return all_differences
 
-# filecmp.cmp(expected, output, shallow=False)
+if __name__ == "__main__":
+    print(f"Comparing '{FILE_1}' vs '{FILE_2}'...\n")
+    try:
+        signal1 = load_mat_signal(FILE_1)
+        signal2 = load_mat_signal(FILE_2)
+    except Exception as e:
+        print(f"❌ Error loading files: {e}")
+        exit(1)
+
+    differences = compare_signals(signal1, signal2)
+
+    if not differences:
+        print("✅ All selected fields are equal within tolerance.")
+    else:
+        print("❌ Differences found:\n")
+
+        for field, diffs in differences.items():
+            print(f"Field: {field} ({len(diffs)} difference{'s' if len(diffs) > 1 else ''})")
+            for diff in diffs:
+                print("  -", diff)
+            print()
+
+        passed_fields = [f for f in FIELDS_TO_COMPARE if f not in differences]
+        if passed_fields:
+            print("✅ Fields with no differences:", ", ".join(passed_fields))
