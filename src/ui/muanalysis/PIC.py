@@ -12,6 +12,9 @@ from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisLabeledD
 from app.muAnalysisFunctions.PICFunc import compute_deltaf
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.AnalysisDropdownDialog import AnalysisDropdownDialog, AnalysisLabeledDropdownDialog
+from ui.components.muAnalysisComponents.AnalysisCheckboxDark import AnalysisCheckboxDark
 
 class PICDialog(QDialog):
     def __init__(self, parent = None):
@@ -25,19 +28,17 @@ class PICDialog(QDialog):
         self.setWindowFlags(
             Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint
         )
-        self.setStyleSheet(f"background-color: {CleanTheme.ANALYSIS_BG_SIDEBAR};")
+        self.setStyleSheet(f"background-color: {CleanTheme.ANALYSIS_DIALOG_BACKGROUND};")
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
         layout.setContentsMargins(30, 20, 30, 20)
         
         # Title
-        title_label = QLabel("Persistent Inward Currents")
-        title_label.setFont(QFont("Arial", 16, QFont.Bold))
-        title_label.setStyleSheet(f"color: {CleanTheme.ANALYSIS_BG_CARD};")
+        title_label = AnalysisText.create_title_dark("Persistent Inward Currents") 
         layout.addWidget(title_label)
         
         # average method drop down
-        self.avg_method_dropdown = AnalysisLabeledDropdown(
+        self.avg_method_dropdown = AnalysisLabeledDropdownDialog(
             "Average Method",
             items=["Test Unit Average", "All"],
             parent=self,
@@ -46,7 +47,7 @@ class PICDialog(QDialog):
         layout.addWidget(self.avg_method_dropdown)
         
         # normalisation drop down
-        self.normalisation_dropdown = AnalysisLabeledDropdown(
+        self.normalisation_dropdown = AnalysisLabeledDropdownDialog(
             "Normalisation",
             items=["False", "Ctrl Max Desc"],
             parent=self
@@ -56,13 +57,7 @@ class PICDialog(QDialog):
         
         
         # Clean selection
-        self.clean_checkbox = QCheckBox("Clean")
-        self.clean_checkbox.setFont(QFont("Arial", 11))
-        self.clean_checkbox.setStyleSheet(f"""
-            QCheckBox {{ color: {CleanTheme.ANALYSIS_TEXT_BUTTON}; spacing: 8px; }}
-            QCheckBox::indicator {{ width: 16px; height: 16px; border: 2px solid #ced4da; border-radius: 3px; background-color: #ffffff; }}
-            QCheckBox::indicator:checked {{ background-color: {CleanTheme.ANALYSIS_BG_BUTTON}; border-color: {CleanTheme.ANALYSIS_BG_BUTTON}; }}
-        """)
+        self.clean_checkbox = AnalysisCheckboxDark("Clean")
         self.clean_checkbox.setChecked(True)
         
         checkbox_layout = QVBoxLayout()
