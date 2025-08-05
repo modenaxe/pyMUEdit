@@ -2,6 +2,7 @@ import pandas as pd
 import time
 from PyQt5.QtCore import QObject, pyqtSignal
 import numpy as np
+import numbers 
 
 class AnalysisResultsHist(QObject):
 
@@ -55,11 +56,14 @@ class AnalysisResultsHist(QObject):
         for row in range(0, len(table)):
             keys = list(table[row].keys())
             for key in keys:
-                if np.isnan(table[row][key]):
-                    table[row][key] = ""
+                if isinstance(table[row][key], numbers.Number):
+                    if np.isnan(table[row][key]):
+                        table[row][key] = ""
                 
-                if isinstance(table[row][key], float):
-                    table[row][key] = round(table[row][key], 2)
+                    if isinstance(table[row][key], float):
+                        table[row][key] = round(table[row][key], 2)
+                else:
+                    table[row][key] = str(table[row][key])        
         return table
     
     
