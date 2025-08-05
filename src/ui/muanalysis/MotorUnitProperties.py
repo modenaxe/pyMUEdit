@@ -18,6 +18,7 @@ from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
+from ui.components.muAnalysisComponents.AnalysisDropdownDialog import AnalysisDropdownDialog, AnalysisLabeledDropdownDialog
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from core.muAnalysisCore.AnalysisResultsHist import store
 from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
@@ -45,21 +46,17 @@ class MotorUnitPropertiesDialog(QDialog):
         self.setWindowFlags(
             Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint
         )
-        self.setStyleSheet(f"background-color: {CleanTheme.ANALYSIS_BG_SIDEBAR};")
+        self.setStyleSheet(f"background-color: {CleanTheme.ANALYSIS_DIALOG_BACKGROUND};")
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
         layout.setContentsMargins(30, 20, 30, 20)
-        # Title
-        title_label = QLabel("Motor Unit Properties")
-        title_label.setFont(QFont("Arial", 16, QFont.Bold))
-        title_label.setStyleSheet(f"color: {CleanTheme.ANALYSIS_BG_CARD};")
-        layout.addWidget(title_label)
+        title = AnalysisText.create_title_dark("Motor Unit Properties") 
+        layout.addWidget(title)
 
         # MVC Input Section
         box = QHBoxLayout()
-        mvc_label = QLabel("Enter MVC [N]:")
-        mvc_label.setFont(QFont("Arial", 12, QFont.Bold))
-        mvc_label.setStyleSheet(f"color: {CleanTheme.ANALYSIS_BG_CARD};")
+        mvc_label = AnalysisText.create_heading_dark("Enter MVC [N]:")
+        layout.addWidget(mvc_label)
         self.mvc_input = PropertiesInnerDialogText(
             "Enter Maximum Voluntary Contraction value..."
         )
@@ -75,7 +72,7 @@ class MotorUnitPropertiesDialog(QDialog):
         )
         dr_section.addWidget(dr_button)
 
-        self.dr_event_dropdown = AnalysisDropdown(
+        self.dr_event_dropdown = AnalysisDropdownDialog(
             "Event",
             items=["rec", "derec", "rec_derec", "steady", "rec_derec_steady"],
             parent=self,
@@ -209,8 +206,8 @@ class PropertiesInnerDialogText(QLineEdit):
 class ComputeThresholdSection(QHBoxLayout):
     def __init__(self, func):
         super().__init__()
-        event_ = AnalysisDropdown("Event", items=['rt', 'dert', 'rt_dert'])
-        type_ =  AnalysisDropdown("Type", items=['abs', 'rel', 'abs_rel'])
+        event_ = AnalysisDropdownDialog("Event", items=['rt', 'dert', 'rt_dert'])
+        type_ =  AnalysisDropdownDialog("Type", items=['abs', 'rel', 'abs_rel'])
         button = GeneralButton("Compute Thresholds", lambda: func.compute_thresh(event_.get_value(), type_.get_value()))
 
         self.addWidget(button)
