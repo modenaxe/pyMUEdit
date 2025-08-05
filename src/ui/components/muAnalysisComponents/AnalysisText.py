@@ -36,6 +36,18 @@ class AnalysisText(QLabel):
             """
         )
         return title 
+    
+    def create_title_dark(text=""):
+        title = QLabel(text)
+        title.setStyleSheet(
+            f"""
+            color: {CleanTheme.ANALYSIS_DIALOG_TEXT};
+            font-family: Arial;
+            font-size: 14px;
+            font-weight: 500;
+            """
+        )
+        return title 
 
     # for headings you see on popups, such as the signal editing popup 
     def create_heading(text=""):
@@ -43,6 +55,19 @@ class AnalysisText(QLabel):
         heading.setStyleSheet(
             f"""
             color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
+            font-family: Arial;
+            font-size: 12px;
+            font-weight: 400;
+            """
+        )
+
+        return heading 
+
+    def create_heading_dark(text=""):
+        heading = QLabel(text)
+        heading.setStyleSheet(
+            f"""
+            color: {CleanTheme.ANALYSIS_DIALOG_TEXT};
             font-family: Arial;
             font-size: 12px;
             font-weight: 400;

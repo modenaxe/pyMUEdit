@@ -16,6 +16,7 @@ from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown, AnalysisLabeledDropdown
+from ui.components.muAnalysisComponents.AnalysisDropdownDialog import AnalysisDropdownDialog, AnalysisLabeledDropdownDialog
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from core.muAnalysisCore.SelectRange import SelectRange
 
@@ -47,7 +48,7 @@ class SignalEditing(QWidget):
         window.setWindowTitle("Signal Editing Window")
         window.setStyleSheet(
             f"""
-            background-color: {CleanTheme.ANALYSIS_BG_SIDEBAR};
+            background-color: {CleanTheme.ANALYSIS_DIALOG_BACKGROUND};
             """
         )
         window_layout = QVBoxLayout()
@@ -56,7 +57,7 @@ class SignalEditing(QWidget):
         self.window = window
 
         # title
-        title = AnalysisText.create_title("Signal Editing") 
+        title = AnalysisText.create_title_dark("Signal Editing") 
         window_layout.addWidget(title)
 
         # spacing 
@@ -64,7 +65,7 @@ class SignalEditing(QWidget):
 
         # FILTER EMG 
         # subtitle 
-        emg_sig_subtitle = AnalysisText.create_heading("EMG Signal")
+        emg_sig_subtitle = AnalysisText.create_heading_dark("EMG Signal")
         window_layout.addWidget(emg_sig_subtitle)
 
         # filter emg signal row
@@ -99,7 +100,7 @@ class SignalEditing(QWidget):
 
         # REFERENCE SIGNAL
         # another subtitle 
-        refsig_subtitle = AnalysisText.create_heading("Reference Signal")
+        refsig_subtitle = AnalysisText.create_heading_dark("Reference Signal")
         window_layout.addWidget(refsig_subtitle)
 
         # filter reference signal row  
@@ -162,7 +163,7 @@ class SignalEditing(QWidget):
         convert_layout = QHBoxLayout(convert)
         convert_layout.setContentsMargins(0, 0, 0, 0)
         # ficing dropdown
-        convert_operator = AnalysisLabeledDropdown(
+        convert_operator = AnalysisLabeledDropdownDialog(
             "Operator", 
             ["Multiply", "Divide"], 
             parent=self

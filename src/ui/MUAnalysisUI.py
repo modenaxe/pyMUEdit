@@ -1,7 +1,4 @@
 import sys
-import time
-import random
-import pandas as pd
 from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
@@ -12,7 +9,6 @@ from PyQt5.QtWidgets import (
     QFrame,
     QStyle,
     QMainWindow,
-    QComboBox,
 )
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
@@ -35,8 +31,8 @@ from ui.muanalysis.ForceAnalysisSection import ForceAnalysisSection
 from ui.muanalysis.ResultsPanel import ResultsPanel
 
 from core.muAnalysisCore.AnalysisResultsHist import store
-from core.muAnalysisCore.ResultsTable import ResultsTable
-from ui.components.muAnalysisComponents.ResultSelection import ResultSelection
+from ui.muanalysis.ResultsTable import ResultsTable
+from ui.muanalysis.ResultSelection import ResultSelection
 
 
 # legacy code
