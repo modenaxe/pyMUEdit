@@ -391,7 +391,7 @@ def plot_ipts(
     line2d_kwargs_ax1=None,
     line2d_kwargs_ax2=None,
     axes_kwargs=None,
-    showimmediately=True,
+    showimmediately=False,
 ):
     common = CommonOpenFunc()
     # Check if all the MUs have to be plotted
@@ -680,14 +680,14 @@ def sort_rawemg(
         "Custom",
     ]
     if code not in valid_codes:
-        return ValueError("Unsupported code in sort_rawemg()")
+        raise ValueError("Unsupported code in sort_rawemg()")
 
     # Work on a copy of the RAW_SIGNAL
     rawemg = copy.deepcopy(emgfile["RAW_SIGNAL"])
 
     # Get sorting order by matrix code
     if code == "Custom":
-        # Theck that custom_sorting_order has been specified
+        # Check that custom_sorting_order has been specified
         if not isinstance(custom_sorting_order, list):
             raise ValueError(
                 "In sort_rawemg(), custom_sorting_order must be a list of " +

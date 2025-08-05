@@ -208,7 +208,7 @@ class ComputeThresholdSection(QHBoxLayout):
         super().__init__()
         event_ = AnalysisDropdownDialog("Event", items=['rt', 'dert', 'rt_dert'])
         type_ =  AnalysisDropdownDialog("Type", items=['abs', 'rel', 'abs_rel'])
-        button = GeneralButton("Compute Thresholds", lambda: func.compute_thresh(event_.get_value(), type_.get_value()))
+        button = GeneralButton("Compute Thresholds", lambda: func.compute_thresh(event_.currentText(), type_.currentText()))
 
         self.addWidget(button)
         self.addWidget(event_)
