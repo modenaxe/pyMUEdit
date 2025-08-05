@@ -22,7 +22,9 @@ from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
-from ui.components.muAnalysisComponents.AnalysisCheckbox import AnalysisCheckbox 
+from ui.components.muAnalysisComponents.AnalysisCheckbox import AnalysisCheckbox
+from ui.components.muAnalysisComponents.AnalysisCheckboxDark import AnalysisCheckboxDark
+from ui.components.muAnalysisComponents.AnalysisDropdownDialog import AnalysisDropdownDialog, AnalysisLabeledDropdownDialog
 from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import PropertiesInnerDialogButton
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
@@ -46,14 +48,14 @@ class PlotEMGToolDialog(QDialog):
         self.setWindowFlags(
             Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint
         )
-        self.setStyleSheet(f"background-color: {CleanTheme.ANALYSIS_BG_SIDEBAR};")
+        self.setStyleSheet(f"background-color: {CleanTheme.ANALYSIS_DIALOG_BACKGROUND};")
 
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
         layout.setContentsMargins(30, 20, 30, 20)
 
         # Title
-        title_label = AnalysisText.create_title("Plot Emg Tool") 
+        title_label = AnalysisText.create_title_dark("Plot Emg Tool") 
         layout.addWidget(title_label)
         
         # --- Filter Section Layout ---
@@ -67,11 +69,11 @@ class PlotEMGToolDialog(QDialog):
         checkbox_col.setContentsMargins(0, 0, 0, 0)
 
         # reference signal checkbox 
-        self.ref_signal_checkbox = AnalysisCheckbox("Reference signal")
+        self.ref_signal_checkbox = AnalysisCheckboxDark("Reference signal")
         checkbox_col.addWidget(self.ref_signal_checkbox)
 
         # time in seconds checkbox
-        self.time_seconds_checkbox = AnalysisCheckbox("Time in seconds")
+        self.time_seconds_checkbox = AnalysisCheckboxDark("Time in seconds")
         checkbox_col.addWidget(self.time_seconds_checkbox)
         filter_row_layout.addWidget(checkboxes, stretch=1)
 
@@ -83,7 +85,7 @@ class PlotEMGToolDialog(QDialog):
         dropdown_col.setContentsMargins(0, 0, 0, 0)
         
         # matrix code dropdown
-        self.matrix_code_dropdown = AnalysisDropdown(
+        self.matrix_code_dropdown = AnalysisDropdownDialog(
             "Matrix Code",
             items=["GR08MM1305", "GR04MM1305", "GR10MM0808"],
             parent=self
@@ -91,7 +93,7 @@ class PlotEMGToolDialog(QDialog):
         dropdown_col.addWidget(self.matrix_code_dropdown)
 
         # orientation dropdown
-        self.orientation_dropdown = AnalysisDropdown(
+        self.orientation_dropdown = AnalysisDropdownDialog(
             "Orientation",
             items=["0", "180"],
             parent=self
@@ -223,7 +225,7 @@ class PlotEMGToolDialog(QDialog):
         derivation_row.addWidget(self.matrix_col_input)
 
         # Configuration dropdown using custom AnalysisDropdown
-        self.derivation_config_dropdown = AnalysisDropdown(
+        self.derivation_config_dropdown = AnalysisDropdownDialog(
             "Configuration",
             items=["Single Differential", "Double Differential"],
             parent=self
@@ -248,13 +250,13 @@ class PlotEMGToolDialog(QDialog):
 
         # configuration dropdown
         configuration_items = ["Monopolar", "Single differential", "Double differential"]
-        configuration_dropdown = AnalysisDropdown("Configuration", configuration_items, parent=self)
+        configuration_dropdown = AnalysisDropdownDialog("Configuration", configuration_items, parent=self)
         muap_row.addWidget(configuration_dropdown, stretch=1)
         self.configuration_dropdown = configuration_dropdown
 
         # timewindow dropdown
         timewindow_items = ["25", "50", "100", "200"]
-        timewindow_dropdown = AnalysisDropdown("Timewindow (ms)", timewindow_items, parent=self)
+        timewindow_dropdown = AnalysisDropdownDialog("Timewindow (ms)", timewindow_items, parent=self)
         muap_row.addWidget(timewindow_dropdown, stretch=1)
         self.timewindow_dropdown = timewindow_dropdown
 

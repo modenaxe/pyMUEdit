@@ -42,7 +42,6 @@ class ResultSelection(QWidget):
     def on_selection_change(self, text):
         self.label.setText(f"Selected: {text}")    
         self.model.select_result(-1*(self.combo.currentIndex()+1))
-        print(self.combo.currentIndex(), -1*(self.combo.currentIndex()+1))
         
     def update_combo_from_df(self, df):
         self._update_df(df)

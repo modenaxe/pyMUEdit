@@ -35,6 +35,9 @@ class CleanTheme:
     ANALYSIS_TEXT_BUTTON = "#e9ecee"
     ANALYSIS_TEXT_PROMPT = "#6c757d"
     ANALYSIS_TEXT_DARK = "#444444"
+    ANALYSIS_DIALOG_BACKGROUND = "#e4e2e2"
+    ANALYSIS_DIALOG_TEXT = "#394150"
+    ANALYSIS_DIALOG_DROPDOWN = "#60676E" # unused
 
     ################################################################
     ########################### DIALOG ###########################
