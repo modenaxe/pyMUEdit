@@ -37,6 +37,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pyqtgraph \
     python3-sklearn \
     python3-scipy \
+    python3-torch \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
