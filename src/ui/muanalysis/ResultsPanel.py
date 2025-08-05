@@ -13,9 +13,9 @@ from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
+from ui.components.muAnalysisComponents.GeneralRedButton import GeneralRedButton
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from core.muAnalysisCore.AnalysisResultsHist import store
-
 
 class ResultsPanel(QFrame):
 
@@ -40,7 +40,7 @@ class ResultsPanel(QFrame):
         save_button = GeneralButton("Save", lambda: self.save_results())
         
         # clear results button
-        clear_button = GeneralButton("Clear", lambda: self.clear_results())
+        clear_button = ClearButton(self)
 
         self.combo_box = combo
 
@@ -50,21 +50,13 @@ class ResultsPanel(QFrame):
         # title
         title = AnalysisText.create_major_title("Results") 
         
-        # layout
-        # top_layout = QVBoxLayout()
-        # top_layout.addWidget(title)
-        # # top_layout.addStretch(1)
-        # top_layout.addWidget(save_button)
-        # top_layout.addStretch(1)
-        
         # another layout 
         self.layout = QVBoxLayout(self)
         self.layout.addWidget(title)
         self.layout.addWidget(save_button)
-        # self.layout.addLayout(top_layout, stretch=1)
-        self.layout.addWidget(self.combo_box, stretch=1)
-        self.layout.addWidget(self.table_view, stretch=3)
-        self.layout.addWidget(clear_button, stretch=1)
+        self.layout.addWidget(self.combo_box)
+        self.layout.addWidget(self.table_view, stretch=5)
+        self.layout.addWidget(clear_button)
 
     def save_results(self):
         results = self.model.get_cur_results()
@@ -83,5 +75,13 @@ class ResultsPanel(QFrame):
             except Exception as e:
                 print(f"Error saving file: {e}")
                 
+    def clear_results(self):
+        store.clear_results()
+
+class ClearButton(GeneralRedButton):
+    def __init__(self, parent=None):
+        super().__init__("Clear Results", parent)
+        self.clicked.connect(lambda: self.clear_results()) 
+        
     def clear_results(self):
         store.clear_results()
