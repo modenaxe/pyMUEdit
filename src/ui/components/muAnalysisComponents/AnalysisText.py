@@ -10,7 +10,21 @@ class AnalysisText(QLabel):
     Each method returns an instance of different types of text (titles, headings, text etc.)
     """
     
-    # for titles 
+    # for the major titles in the sidebars
+    def create_major_title(text=""):
+        major_title = QLabel(text)
+        # original font was segoe ui
+        major_title.setStyleSheet(
+            f"""
+            color: {CleanTheme.ANALYSIS_TEXT_DARK};
+            font-family: Arial;
+            font-size: 14px;
+            font-weight: 500;
+            """
+        )
+        return major_title 
+    
+    # for titles in modals  
     def create_title(text=""):
         title = QLabel(text)
         title.setStyleSheet(

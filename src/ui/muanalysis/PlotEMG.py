@@ -28,7 +28,6 @@ from ui.components.muAnalysisComponents.AnalysisDropdownDialog import AnalysisDr
 from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import PropertiesInnerDialogButton
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
-import settings
 import matplotlib.pyplot as plt
 import traceback
 
@@ -88,16 +87,10 @@ class PlotEMGToolDialog(QDialog):
         # matrix code dropdown
         self.matrix_code_dropdown = AnalysisDropdownDialog(
             "Matrix Code",
-            items=["Custom", "GR08MM1305", "GR04MM1305", "GR10MM0808"],
+            items=["GR08MM1305", "GR04MM1305", "GR10MM0808"],
             parent=self
         )
         dropdown_col.addWidget(self.matrix_code_dropdown)
-
-        # when the matrix order is custom, something has to appear
-        self.custom_matrix = AnalysisInput(placeholder="Custom matrix code (e.g. `13,5`)")
-        self.custom_matrix.setVisible(False)
-        self.matrix_code_dropdown.currentTextChanged.connect(self.select_custom)
-        dropdown_col.addWidget(self.custom_matrix)
 
         # orientation dropdown
         self.orientation_dropdown = AnalysisDropdownDialog(
@@ -250,20 +243,16 @@ class PlotEMGToolDialog(QDialog):
         muap_row.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(muap)
 
+        # mu number dropdown
+        mu_number_input = AnalysisInput(placeholder="MU Number (e.g. '0')")
+        muap_row.addWidget(mu_number_input, stretch=1)
+        self.mu_number_input = mu_number_input
+
         # configuration dropdown
         configuration_items = ["Monopolar", "Single differential", "Double differential"]
         configuration_dropdown = AnalysisDropdownDialog("Configuration", configuration_items, parent=self)
         muap_row.addWidget(configuration_dropdown, stretch=1)
         self.configuration_dropdown = configuration_dropdown
-
-        # mu number dropdown
-        mu_number_items = []
-        if FileUploadFunc.file["SOURCE"] in ["DEMUSE", "OTB", "CUSTOMCSV", "DELSYS"]:
-            for i in range(FileUploadFunc.file["NUMBER_OF_MUS"]):
-                mu_number_items.append(str(i))
-        mu_number_dropdown = AnalysisDropdownDialog("MU Number", mu_number_items, parent=self)
-        muap_row.addWidget(mu_number_dropdown, stretch=1)
-        self.mu_number_dropdown = mu_number_dropdown
 
         # timewindow dropdown
         timewindow_items = ["25", "50", "100", "200"]
@@ -275,14 +264,6 @@ class PlotEMGToolDialog(QDialog):
         muap_btn = GeneralButton("Plot MUAPs", self.plot_muaps, parent=self)
         muap_btn.setFixedWidth(button_width)
         muap_row.addWidget(muap_btn)
-
-
-    # function for when you select custom matrix code
-    def select_custom(self):
-        if self.matrix_code_dropdown.currentText() == "Custom":
-            self.custom_matrix.setVisible(True) 
-        else:
-            self.custom_matrix.setVisible(False)
 
 
     def has_invalid_filter_inputs(self):
@@ -516,39 +497,44 @@ class PlotEMGToolDialog(QDialog):
     # plots muaps in the center plot 
     def plot_muaps(self):
         try:
+            # determining mu_number_input 
+            try: 
+                max_mu = FileUploadFunc.file["NUMBER_OF_MUS"] 
+                mu_num = int(self.mu_number_input.get())
+                
+                # if it's negative or too big
+                if (mu_num < 0 or mu_num >= max_mu):
+                    raise ValueError()
+            except ValueError as e:
+                ErrorDialog("Please enter a valid MU number from 0 to " + str(max_mu - 1)).exec_()
+                return
+            except KeyError as e:
+                # just in case ["NUMBER_OF_MUS"] isn't a thing 
+                ErrorDialog("Your file isn't formatted properly. Include the NUMBER_OF_MUS").exec_()
+                return
+
             # DELSYS requires different MUAPS plot
             if FileUploadFunc.file["SOURCE"] == "DELSYS":
                 muaps_dict = extract_delsys_muaps(FileUploadFunc.file)
-                muaps_from_sta(self.analysis_plot, muaps_dict[int(self.muap_munum.get())])
+                muaps_from_sta(self.analysis_plot, muaps_dict[mu_num])
 
             else:
-                if self.matrix_code_dropdown.currentText() == "Custom":
-                    # Get rows and columns and turn into list
-                    list_rcs = [int(i) for i in self.custom_matrix.get().split(",")]
-
-                    try:
-                        # Sort emg file
-                        sorted_file = sort_rawemg(
-                            emgfile=FileUploadFunc.file,
-                            code=self.matrix_code_dropdown.currentText(),
-                            orientation=int(self.orientation_dropdown.currentText()),
-                            n_rows=list_rcs[0],
-                            n_cols=list_rcs[1],
-                        )
-                    except ValueError as e:
-                        ErrorDialog(
-                            "Number of specified rows and columns must match the number of channels", 
-                            "Invalid Input"
-                        ).exec_()
-                        return
-                else:
+                try:
                     # Sort emg file
                     sorted_file = sort_rawemg(
                         emgfile=FileUploadFunc.file,
                         code=self.matrix_code_dropdown.currentText(),
                         orientation=int(self.orientation_dropdown.currentText()),
-                        custom_sorting_order=settings.custom_sorting_order,
                     )
+                except ValueError as e:
+                    # just making sure it's not selected
+                    if (self.matrix_code_dropdown.currentText() == ""):
+                        ErrorDialog("Please select a matrix code", "Invalid Input").exec_()
+                    elif (self.orientation_dropdown.currentText() == ""): 
+                        ErrorDialog("Please select an orientation", "Invalid Input").exec_()
+                    else:
+                        print(e)
+                    return
 
                 # calculate derivation
                 if self.configuration_dropdown.currentText() == "Single differential":
@@ -567,22 +553,13 @@ class PlotEMGToolDialog(QDialog):
                     timewindow=int(self.timewindow_dropdown.currentText()),
                 )
 
-                # Plot MUAPS
-                muaps_from_sta(self.analysis_plot, sta_dict[int(self.mu_number_dropdown.currentText())])
+                muaps_from_sta(self.analysis_plot, sta_dict[mu_num])
 
         except ValueError as e:
-            if (self.matrix_code_dropdown.currentText() == ""):
-                ErrorDialog("Please select a matrix code", "Invalid Input").exec_()
-            elif (self.orientation_dropdown.currentText() == ""):
-                ErrorDialog("Please select a matrix orientation", "Invalid Input").exec_()
-            elif (self.configuration_dropdown.currentText() == ""):
+            if (self.configuration_dropdown.currentText() == ""):
                 ErrorDialog("Please select a muap configuration", "Invalid Input").exec_()
-            elif (self.mu_number_dropdown.currentText() == ""):
-                ErrorDialog("Please select a MU number", "Invalid Input").exec_()
             elif (self.timewindow_dropdown.currentText() == ""):
                 ErrorDialog("Please select a timewindow", "Invalid Input").exec_()
-            elif (self.matrix_code_dropdown.currentText() == "Custom"):
-                ErrorDialog("Please enter a valid custom matrix code", "Invalid Input").exec_()
         except UnboundLocalError as e:
             ErrorDialog("Please enter a valid configuration", "Invalid Input").exec_()
         except KeyError as e:

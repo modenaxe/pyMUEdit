@@ -23,7 +23,6 @@ from ui.muanalysis.PlotEMG import PlotEMGButton
 from ui.muanalysis.SignalEditing import SignalEditing
 from ui.components.muAnalysisComponents.AnalysisPlot import AnalysisPlot
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.MajorHeading import MajorHeading
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.muanalysis.FileSection import FileSection
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
@@ -180,12 +179,16 @@ class MUAnalysis(QWidget):
         """
         )
         sidebar_layout = QVBoxLayout(sidebar)
-        sidebar_layout.setContentsMargins(10, 5, 10, 5)
-        sidebar_layout.setSpacing(0)
+        sidebar_layout.setContentsMargins(10, 10, 10, 10)
+        sidebar_layout.setSpacing(10)
 
         # title
-        title_label = MajorHeading("Analysis")
-        sidebar_layout.addWidget(title_label)
+        title_div = QWidget() # creating layout for the margin spacing 
+        title_div_layout = QVBoxLayout(title_div)
+        title_div_layout.setContentsMargins(-1, -1, -1, 0) # tells it to keep left, top, right margins
+        title_label = AnalysisText.create_major_title("Analysis") 
+        title_div_layout.addWidget(title_label)
+        sidebar_layout.addWidget(title_div)
     
         # signal editing 
         # remove mu section
@@ -271,7 +274,6 @@ class MUAnalysis(QWidget):
     # side bar with load file button
     # loaded from FileSection class
     def _create_right_sidebar(self):
-        print("--- DEBUG: _create_right_sidebar called ---")
         sidebar = QFrame()
         sidebar.setObjectName("rightSidebar")
         sidebar.setStyleSheet(
