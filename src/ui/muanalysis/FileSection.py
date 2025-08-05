@@ -40,8 +40,8 @@ class FileSection(QFrame):
         button_row.addWidget(browse_btn, stretch=1)
 
         # json button 
-        json_btn = GeneralButton('Json File', lambda: mu.select_file_button_pushed(analysis_plot, True))
-        button_row.addWidget(json_btn, stretch=1)
+        # json_btn = GeneralButton('Json File', lambda: mu.select_file_button_pushed(analysis_plot, True))
+        # button_row.addWidget(json_btn, stretch=1)
 
 
         # reset row 
