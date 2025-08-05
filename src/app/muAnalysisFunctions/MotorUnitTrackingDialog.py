@@ -19,6 +19,8 @@ from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from app.muAnalysisFunctions.electrode_layouts import get_electrode_grid
+from scipy.signal import correlate2d
+
 def load_otb_data(filepath):
     file_handler = FileUploadFunc()
     success = file_handler.emg_from_otb(filepath)
@@ -213,7 +215,6 @@ class MotorUnitTrackingDialog(QDialog):
                 self.file2 = FileUploadFunc.file
             except Exception as e:
                 ErrorDialog(f"Failed to load JSON File 2:\n{str(e)}", 'Error').exec_()
-
     def on_track(self):
         if self.file1 is None or self.file2 is None:
             ErrorDialog("Both files must be selected", 'Error').exec_()
@@ -231,27 +232,33 @@ class MotorUnitTrackingDialog(QDialog):
             ErrorDialog("Threshold and Time Window must be numeric.", 'Error').exec_()
             return
 
+        num_mus_1 = len(self.file1.get("MUPULSES", []))
+        num_mus_2 = len(self.file2.get("MUPULSES", []))
+
         results = []
-        file1 = self.file1.get("IPTS") if isinstance(self.file1, dict) else None
-        file2 = self.file2.get("IPTS") if isinstance(self.file2, dict) else None
-        if not (isinstance(file1, pd.DataFrame) and isinstance(file2, pd.DataFrame)):
-            ErrorDialog("Loaded files do not contain valid IPTS DataFrames.", 'Error').exec_()
-            return
-        for i in range(file1.shape[1]):
-            vec1 = file1.iloc[:, i].to_numpy()
+
+        for i in range(num_mus_1):
+            muaps1, _ = self.compute_muaps(self.file1, i, samples_window)
+            if muaps1 is None:
+                continue
+
             best_score = -1
             best_idx = -1
-            for j in range(file2.shape[1]):
-                vec2 = file2.iloc[:, j].to_numpy()
-                score = 1 - cosine(vec1, vec2)
+            for j in range(num_mus_2):
+                muaps2, _ = self.compute_muaps(self.file2, j, samples_window)
+                if muaps2 is None:
+                    continue
+
+                score = self.compute_xcc(muaps1, muaps2)
                 if score > best_score:
                     best_score = score
                     best_idx = j
+
             if best_score >= threshold:
                 results.append((i, best_idx, best_score))
 
-
         self.display_results(results)
+
 
     def display_results(self, results):
         self.results = results
@@ -522,3 +529,55 @@ class MotorUnitTrackingDialog(QDialog):
         self.mu_pair_selector.setCurrentIndex(found_idx)
         self.table.selectRow(found_idx)
         self.update_plots(found_idx)
+    
+    from scipy.signal import correlate2d
+
+    def compute_xcc(self, muap1, muap2):
+        muap1 = muap1 - np.nanmean(muap1)
+        muap2 = muap2 - np.nanmean(muap2)
+
+        # Replace NaNs with 0 for correlation
+        muap1 = np.nan_to_num(muap1)
+        muap2 = np.nan_to_num(muap2)
+
+        corr = correlate2d(muap1, muap2, mode='valid')
+        norm = np.linalg.norm(muap1) * np.linalg.norm(muap2)
+
+        return (corr[0, 0] / norm) if norm != 0 else 0
+        
+    def compute_muaps(self, file, mu_index, window):
+        # Extract signals
+        raw_signal = file.get("RAW_SIGNAL")
+        mu_pulses = file.get("MUPULSES")
+        fsamp = file.get("FSAMP", 2048)
+
+        if raw_signal is None or mu_pulses is None:
+            return None, fsamp
+
+        if isinstance(raw_signal, dict):
+            raw_signal = pd.DataFrame(raw_signal)
+        if isinstance(raw_signal, pd.DataFrame):
+            raw_signal = raw_signal.values
+        if not (isinstance(raw_signal, np.ndarray) and raw_signal.ndim == 2):
+            return None, fsamp
+
+        pulses = mu_pulses[mu_index] if isinstance(mu_pulses, (list, tuple)) and mu_index < len(mu_pulses) else []
+        pulses = np.array(pulses, dtype=int) if len(pulses) > 0 else np.array([], dtype=int)
+
+        # Remove pulses too close to signal edges
+        valid_pulses = pulses[(pulses - window >= 0) & (pulses + window + 1 <= raw_signal.shape[0])]
+
+        seg_len = 2 * window + 1
+        n_channels = raw_signal.shape[1]
+        max_channels = 64
+        muaps = np.full((max_channels, seg_len), np.nan)
+
+        for ch in range(min(n_channels, max_channels)):
+            segments = []
+            for p in valid_pulses:
+                start = p - window
+                end = p + window + 1
+                segments.append(raw_signal[start:end, ch])
+            if segments:
+                muaps[ch, :] = np.mean(segments, axis=0)
+        return muaps, fsamp
