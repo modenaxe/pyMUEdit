@@ -876,3 +876,53 @@ def sort_rawemg(
         sorted_rawemg = empty_dict
 
     return sorted_rawemg
+
+# OPENHDEMG
+def plot_refsig(
+    emgfile,
+    analysis_plot,
+    timeinseconds=True,
+    figsize=[20, 15],
+    tight_layout=True,
+    line2d_kwargs_ax1=None,
+    axes_kwargs=None,
+    showimmediately=False,
+):
+    """
+    Plots the refsig graph
+    """
+
+    # Check to have the REF_SIGNAL in a pandas dataframe
+    if isinstance(emgfile["REF_SIGNAL"], pd.DataFrame):
+        refsig = emgfile["REF_SIGNAL"]
+    else:
+        raise TypeError(
+            "REF_SIGNAL is probably absent or it is not contained in a "
+            + "dataframe"
+        )
+
+    # Here we produce an x axis in seconds or samples
+    if timeinseconds:
+        x_axis = refsig.index / emgfile["FSAMP"]
+    else:
+        x_axis = refsig.index
+
+    figname = "refsig"
+    fig, ax1 = plt.subplots(
+        figsize=(figsize[0] / 2.54, figsize[1] / 2.54),
+        num=figname,
+    )
+
+    ax1.plot(x_axis, refsig[0])
+
+    ax1.set_ylabel("MVC")
+    ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
+    
+    # Set tight layout if requested
+    if tight_layout:
+        plt.tight_layout()
+
+    if showimmediately:
+        plt.show()
+
+    return fig
