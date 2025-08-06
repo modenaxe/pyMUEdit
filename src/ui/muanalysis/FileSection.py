@@ -43,15 +43,6 @@ class FileSection(QFrame):
         # json_btn = GeneralButton('Json File', lambda: mu.select_file_button_pushed(analysis_plot, True))
         # button_row.addWidget(json_btn, stretch=1)
 
-
-        # reset row 
-        reset_row = QHBoxLayout()
-        layout.addLayout(reset_row)
-
-        # adding a filler to align the reset button better
-        filler = QWidget()
-        reset_row.addWidget(filler, stretch=1)
-
         # reset button 
         self.reset_btn = ResetButton('Reset')
-        reset_row.addWidget(self.reset_btn, stretch=1)
+        button_row.addWidget(self.reset_btn, stretch=1)

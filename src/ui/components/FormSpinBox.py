@@ -1,6 +1,12 @@
 from PyQt5.QtWidgets import QSpinBox
+from pathlib import Path
+
 from .CleanTheme import CleanTheme
 from .FormField import FormField
+
+# defining absolute path for icons 
+ABS_PATH = Path(__file__).parent.parent.parent
+ICONS_PATH = ABS_PATH / "public"
 
 
 class FormSpinBox(FormField):
@@ -23,6 +29,9 @@ class FormSpinBox(FormField):
             parent (QWidget, optional): Parent widget
         """
         super().__init__(label_text, parent)
+
+        up_arrow_path = ICONS_PATH / "up_arrow_icon.svg"
+        down_arrow_path = ICONS_PATH / "down_arrow_icon.svg"
 
         self.spinbox = QSpinBox()
         self.spinbox.setValue(value)
@@ -49,12 +58,12 @@ class FormSpinBox(FormField):
                 border-bottom-right-radius: 3px;
             }}
             QSpinBox::up-arrow {{
-                image: url(public/up_arrow_icon.svg);
+                image: url({up_arrow_path});
                 width: 10px;
                 height: 10px;
             }}
             QSpinBox::down-arrow {{
-                image: url(public/down_arrow_icon.svg);
+                image: url({down_arrow_path});
                 width: 10px;
                 height: 10px;
             }}

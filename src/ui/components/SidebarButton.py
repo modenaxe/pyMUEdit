@@ -37,7 +37,7 @@ class SidebarButton(QPushButton):
         if icon_path:
             # Make sure the file exists
             if os.path.exists(icon_path):
-                self.icon_widget = QSvgWidget(icon_path)
+                self.icon_widget = QSvgWidget(str(icon_path))
                 self.icon_widget.setFixedSize(18, 18)
                 self.layout.addWidget(self.icon_widget)
 
