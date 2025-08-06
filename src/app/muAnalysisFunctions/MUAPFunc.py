@@ -99,9 +99,12 @@ def muaps_from_sta(
         raise ValueError(
             "Unacceptable number of rows and columns to plot"
         )
-    plt.close()
-    canvas = SaveablePlot(fig)
-    analysis_plot.display_fig(canvas)
+        
+    # Set tight layout if requested
+    if tight_layout:
+        plt.tight_layout()
+
+    return fig
 
 
 # OPENDEMG

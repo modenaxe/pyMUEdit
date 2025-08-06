@@ -14,7 +14,7 @@ from PyQt5.QtGui import QFont, QCursor
 from PyQt5.QtCore import Qt, pyqtSignal
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from app.muAnalysisFunctions.PlotEMGFunc import parse_channel_input, plot_emgsig, plot_idr, plot_mupulses, plot_ipts
-from app.muAnalysisFunctions.PlotEMGFunc import plot_differentials, diff, double_diff, sort_rawemg
+from app.muAnalysisFunctions.PlotEMGFunc import plot_differentials, diff, double_diff, sort_rawemg, plot_refsig
 from app.muAnalysisFunctions.MUAPFunc import extract_delsys_muaps, muaps_from_sta, sta 
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -310,12 +310,15 @@ class PlotEMGToolDialog(QDialog):
         if emgfile is None:
             ErrorDialog('No file has been loaded', 'Error').exec_()
             return
-        try:
-            FileUploadFunc().plot_refsig(
+        try: 
+            fig = plot_refsig(
                 emgfile=emgfile,
                 analysis_plot=self.analysis_plot,
                 timeinseconds=self.time_seconds_checkbox.isChecked()
             )
+            canvas = SaveablePlot(fig)
+            self.analysis_plot.display_plot(canvas)
+            plt.close(fig)
         except Exception as e:
             ErrorDialog('Error plotting REFsig', 'Error').exec_()
 
@@ -520,11 +523,21 @@ class PlotEMGToolDialog(QDialog):
 
             else:
                 try:
+                    if self.matrix_code_dropdown.currentText() != "":
+                        code = self.matrix_code_dropdown.currentText()
+                    else:
+                        code = "GR08MM1305"
+                    
+                    if self.orientation_dropdown.currentText() != "":
+                        orientation = int(self.orientation_dropdown.currentText())
+                    else:
+                        orientation = 180
+                        
                     # Sort emg file
                     sorted_file = sort_rawemg(
                         emgfile=FileUploadFunc.file,
-                        code=self.matrix_code_dropdown.currentText(),
-                        orientation=int(self.orientation_dropdown.currentText()),
+                        code=code,
+                        orientation=orientation,
                     )
                 except ValueError as e:
                     # just making sure it's not selected
@@ -553,7 +566,11 @@ class PlotEMGToolDialog(QDialog):
                     timewindow=int(self.timewindow_dropdown.currentText()),
                 )
 
-                muaps_from_sta(self.analysis_plot, sta_dict[mu_num])
+                fig = muaps_from_sta(self.analysis_plot, sta_dict[mu_num])
+                
+                canvas = SaveablePlot(fig)
+                self.analysis_plot.display_plot(canvas)
+                plt.close(fig)
 
         except ValueError as e:
             if (self.configuration_dropdown.currentText() == ""):
