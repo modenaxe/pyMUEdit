@@ -89,10 +89,10 @@ class MotorUnitTrackingDialog(QDialog):
         window_layout.addWidget(self.window_input)
         main_layout.addLayout(window_layout)
 
-        self.filter_checkbox = QCheckBox("Apply Filter")
-        self.exclude_checkbox = QCheckBox("Exclude Below Threshold")
-        main_layout.addWidget(self.filter_checkbox)
-        main_layout.addWidget(self.exclude_checkbox)
+        # self.filter_checkbox = QCheckBox("Apply Filter")
+        # self.exclude_checkbox = QCheckBox("Exclude Below Threshold")
+        # main_layout.addWidget(self.filter_checkbox)
+        # main_layout.addWidget(self.exclude_checkbox)
 
         main_layout.addItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
