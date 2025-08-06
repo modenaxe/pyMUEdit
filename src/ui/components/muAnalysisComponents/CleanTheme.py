@@ -28,6 +28,7 @@ class CleanTheme:
     ANALYSIS_BG_TOPBAR = "#ffffff"
     ANALYSIS_BG_DROPDOWN = "#394150"
     ANALYSIS_BG_DROPDOWN_DISABLED = "#7d8aa3"
+    ANALYSIS_BG_DROPDOWN_SEC = "#0A0C0E"
     ANALYSIS_BG_BUTTON = "#495057"
     ANALYSIS_TEXT_PRIMARY = "#ffffff"
     ANALYSIS_TEXT_SECONDARY = "#cccccc"
@@ -53,8 +54,8 @@ class CleanTheme:
     ########################### REDS ###########################
     ################################################################
     
-    RED_BACKGROUND = "#f44336"
-    RED_HOVER = "#d32f2f"
+    RED_BACKGROUND = "#e04136"
+    RED_HOVER = "#c72b2b"
     
     
     
