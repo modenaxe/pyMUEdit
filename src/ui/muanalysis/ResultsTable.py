@@ -1,5 +1,7 @@
 from PyQt5.QtCore import QAbstractTableModel, Qt
+from PyQt5.QtGui import QFont, QColor, QBrush
 from core.muAnalysisCore.AnalysisResultsHist import store
+from ui.components.CleanTheme import CleanTheme
 
 class ResultsTable(QAbstractTableModel):
 
@@ -39,11 +41,20 @@ class ResultsTable(QAbstractTableModel):
             col = index.column()
             key = self.columns[col]
             return self._data[row][key]
+        
         return None
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
             return self.columns[section]
+
+        elif role == Qt.FontRole and orientation == Qt.Horizontal:
+            font = QFont()
+            font.setBold(True)
+            return font
+
+        elif role == Qt.BackgroundRole and orientation == Qt.Horizontal:
+            return QBrush(QColor(CleanTheme.HEADER))
         return super().headerData(section, orientation, role)
         
     def update_dataframe(self, new_df):
