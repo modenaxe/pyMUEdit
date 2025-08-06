@@ -2,11 +2,16 @@ from PyQt5.QtWidgets import QFrame, QVBoxLayout, QLabel
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 import os
+from pathlib import Path
 
 from .CleanTheme import CleanTheme
 from .SidebarButton import SidebarButton
 from .DatasetItem import DatasetItem
 from .SectionHeader import SectionHeader
+
+# defining absolute path for icons 
+ABS_PATH = Path(__file__).parent.parent.parent
+ICONS_PATH = ABS_PATH / "public"
 
 
 class Sidebar(QFrame):
@@ -86,9 +91,9 @@ class Sidebar(QFrame):
         icon_path = None
         if icon_name:
             # Construct path to SVG in public folder
-            icon_path = os.path.join("public", f"{icon_name}.svg")
+            icon_path = ICONS_PATH / f"{icon_name}.svg"
             # If file doesn't exist, show a warning
-            if not os.path.exists(icon_path):
+            if not icon_path.exists():
                 print(f"Warning: Icon {icon_path} not found")
                 icon_path = None
 
