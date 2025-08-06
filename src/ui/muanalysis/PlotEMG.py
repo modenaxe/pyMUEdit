@@ -569,7 +569,7 @@ class PlotEMGToolDialog(QDialog):
                 fig = muaps_from_sta(self.analysis_plot, sta_dict[mu_num])
                 
                 canvas = SaveablePlot(fig)
-                self.analysis_plot.display_plot(canvas)
+                self.analysis_plot.display_fig(canvas)
                 plt.close(fig)
 
         except ValueError as e:
