@@ -5,9 +5,15 @@ from PyQt5.QtWidgets import (
     QLabel,
     QWidget,
 )
+from pathlib import Path
 from PyQt5.QtCore import Qt
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
+
+# defining absolute path for icons 
+ABS_PATH = Path(__file__).parent.parent.parent.parent
+ICONS_PATH = ABS_PATH / "public"
+down_arrow_white_path = ICONS_PATH / "down_arrow_white_icon.svg"
 
 
 # For dropdown inputs for the analysis tab (factory method)
@@ -39,7 +45,7 @@ class AnalysisDropdown(QComboBox):
                 padding: 0px 20px;
             }}
             QComboBox::down-arrow {{
-                image: url(src/public/down_arrow_white_icon.svg);
+                image: url({down_arrow_white_path});
                 width: 10px;
             }}
             QComboBox QAbstractItemView {{
