@@ -33,6 +33,7 @@ from ui.MUeditManualUI import setup_ui, find_sidebar
 from core.utils.manual_editing.getsil import getsil
 from core.utils.manual_editing.refinesil import refinesil
 from core.utils.manual_editing.h5_import import h5py_convert
+from core.utils.manual_editing.save_worker import Save_worker
 from core.utils.manual_editing.extendfilter import extendfilter
 from core.utils.manual_editing.selection_tools import SelectionTool, process_selection
 from core.utils.decomposition.remove_outliers import remove_outliers
@@ -152,7 +153,18 @@ class MUeditManual(QMainWindow):
                     return True
         return False
 
-    def update_save_button(self):
+    def update_save_button(self, on_save=False):
+        if on_save:
+            self.floating_save_btn.setEnabled(False)
+            self.floating_save_btn.setText("")
+            self.floating_save_btn.setIcon("hourglass_half", (36, 36))
+            self.floating_save_btn.setStyleSheet("""
+                QPushButton{background:#fff;color:#fff;border:none;border-radius:4px;padding:8px 15px;}
+                QPushButton:hover{background:#2383ff;}
+            """)
+            self.floating_save_btn.setText("Saving")
+            return
+        
         save_flag = self.check_current_data_save_by_dirty()
         if save_flag == self._save_flag:
             return
@@ -498,8 +510,10 @@ class MUeditManual(QMainWindow):
             elif field == "Pulsetrain" and isinstance(val, np.ndarray): #处理pulsetrain
                 self.MUedition["edition"][field] = [x for x in val.flatten()]
             elif field == "Flag" and isinstance(val, np.ndarray):   #处理flag
-                self.MUedition["edition"][field] = [x.tolist()[0] if isinstance(x, np.ndarray) else list(x) for x in
-                                   val.flatten()]
+                self.MUedition["edition"][field] = [
+                                            [0] * arr.shape[0]
+                                            for arr in self.MUedition["edition"]["Pulsetrain"]
+                                            ]
             elif field == "time" and isinstance(val, np.ndarray):   #处理time
                 self.MUedition["edition"][field] = val.flatten()
             elif field == "arraynb" and isinstance(val, np.ndarray):    #处理arraynb
@@ -3011,7 +3025,7 @@ class MUeditManual(QMainWindow):
         self.select_file_title_btn.setText(self.filename)
         
         self.save_file(savename)
-        self.show_tip("Save Complete! Data saved to: {filepath}", duration_ms=8000)
+
         
             
             
@@ -3139,13 +3153,31 @@ class MUeditManual(QMainWindow):
                 edition[field] = json.dumps(safe_dict)
         
         
-        progress.setValue(80)
-        # Save the data
-        sio.savemat(filepath, {"signal": signal, "parameters": parameters, "edition": edition}, do_compression=True)
         progress.setValue(100)
+        # Save the data
+                
+        data = {
+            "signal":     signal,
+            "parameters": parameters,
+            "edition":    edition
+        }
+        self.update_save_button(on_save=True)
+        self._save_thread = Save_worker(
+            filepath, data,
+            on_finished=lambda: (
+                self.update_save_button(),
+                self.show_tip(f"Save Complete! Data saved to: {filepath}", duration_ms=8000)
+            ),
+            on_error=lambda errmsg: ErrorDialog(
+                title_label="Save File Error",
+                text=errmsg
+            )
+        )
+
+        self._save_thread.start()
+        
         self.dirty_depth = 0 #shr
         self.initial_data = copy.deepcopy(self.MUedition["edition"])    #保存新的原始数据
-        self.update_save_button()
         # Show a confirmation message
         from PyQt5.QtWidgets import QMessageBox
         #QMessageBox.information(self, "Save Complete", f"Data saved to {savename}", QMessageBox.Ok)
