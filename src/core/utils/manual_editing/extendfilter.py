@@ -15,7 +15,7 @@ def extendfilter(EMG, EMGmask, PulseT, distime, idx, fsamp, EMGtype):
     # Find spikes in the window (excluding edges)
     edge_samples = round(0.1 * fsamp)
     valid_window = np.arange(idx[0] + edge_samples, idx[-1] - edge_samples + 1)
-    spikes1 = np.intersect1d(valid_window, distime)
+    spikes1 = np.intersect1d(valid_window, distime).astype(int)
 
     if len(spikes1) > 0:
         # Adjust spike indices to be relative to the window
@@ -34,6 +34,7 @@ def extendfilter(EMG, EMGmask, PulseT, distime, idx, fsamp, EMGtype):
         wSIG, _, dewhiteningMatrix = whiten_emg(eSIG)
 
         # Calculate the filter as the sum of whitened signal at spike times
+        
         MUFilters = np.sum(wSIG[:, spikes2], axis=1).reshape(-1, 1)
 
         # Update the pulse train
