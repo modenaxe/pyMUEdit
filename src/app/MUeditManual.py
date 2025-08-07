@@ -21,7 +21,9 @@ from PyQt5.QtWidgets import (
     QLayout,
     QStackedWidget,
     QProgressDialog, # moy
+    QShortcut,
 )
+from PyQt5.QtGui import QKeySequence
 
 import h5py
 
@@ -101,6 +103,8 @@ class MUeditManual(QMainWindow):
         # Add back button if needed when used in embedded mode
         if parent:
             self.add_back_button()
+        
+        self._create_shortcuts()
 
     def show_tip(self, text, duration_ms=3000):
         self.tip_bar.setText(text)
@@ -290,39 +294,33 @@ class MUeditManual(QMainWindow):
             self.selection_tool = None
 
         print("Exited editing mode (via ESC)")
+        
+    def _create_shortcuts(self):
+        # Short cut
+        mapping = {
+            "Ctrl+S":       self.save_btn.click,
+            Qt.Key_Left:    self.scroll_left_button_pushed,
+            Qt.Key_Right:   self.scroll_right_button_pushed,
+            Qt.Key_Up:      self.zoom_slider.slider_increase,
+            Qt.Key_Down:    self.zoom_slider.slider_decrease,
+            "A":            self.add_spikes_btn.click,
+            "D":            self.delete_spikes_btn.click,
+            "R":            self.remove_outliers_single_btn.click,
+            "Space":        self.update_mu_filter_btn.click,
+            "L":            self.lock_spikes_btn.click,
+            "E":            self.extend_mu_filter_btn.click,
+            "Z":            self.undo_title_btn.click,
+            "X":            self.redo_title_btn.click,
+            "Esc":          self.exit_edit_mode,
+        }
 
-    def keyPressEvent(self, event):
-        """Handle keyboard shortcuts."""
-        if event.key() == Qt.Key.Key_S and event.modifiers() & Qt.ControlModifier:
-            self.save_btn.click()
-        elif event.key() == Qt.Key.Key_Left:
-            self.scroll_left_button_pushed()
-        elif event.key() == Qt.Key.Key_Right:
-            self.scroll_right_button_pushed()
-        elif event.key() == Qt.Key.Key_Up:
-            self.zoom_slider.slider_increase()
-        elif event.key() == Qt.Key.Key_Down:
-            self.zoom_slider.slider_decrease()
-        elif event.key() == Qt.Key.Key_A:
-            self.add_spikes_btn.click()
-        elif event.key() == Qt.Key.Key_D:
-            self.delete_spikes_btn.click()
-        elif event.key() == Qt.Key.Key_R:
-            self.remove_outliers_single_btn.click()
-        elif event.key() == Qt.Key.Key_Space:
-            self.update_mu_filter_btn.click()
-        elif event.key() == Qt.Key.Key_L:
-            self.lock_spikes_btn.click()
-        elif event.key() == Qt.Key.Key_E:
-            self.extend_mu_filter_btn.click()
-        elif event.key() == Qt.Key.Key_Z:
-            self.undo_title_btn.click()
-        elif event.key() == Qt.Key.Key_X:
-            self.redo_title_btn.click()
-        elif event.key() == Qt.Key_Escape:
-            self.exit_edit_mode()
-        else:
-            super().keyPressEvent(event)
+        for seq, slot in mapping.items():
+
+            ks = QKeySequence(seq) if isinstance(seq, str) else QKeySequence(seq)
+            sc = QShortcut(ks, self)  
+            sc.setContext(Qt.WindowShortcut)  
+            sc.activated.connect(slot)
+
 
     # Event handlers
     def select_file_button_pushed(self):
@@ -1095,7 +1093,6 @@ class MUeditManual(QMainWindow):
                 self.spiketrain_plot.addItem(scatter)
             self.spiketrainCurves.append(scatter)
 
-        self.spiketrain_plot.setFocus()
 
 
     def display_selected_mus(self, checked_mus, pluse_train_color="#D95535"):
@@ -1220,8 +1217,6 @@ class MUeditManual(QMainWindow):
             # self.dr_plot.getViewBox().sigXRangeChanged.connect(on_xrange_changed, type=Qt.UniqueConnection) 
             self.spiketrain_plot.getViewBox().sigXRangeChanged.connect(on_xrange_changed, type=Qt.UniqueConnection)
             
-            # Ensure shortcut key responsiveness after plot creation 
-            self.spiketrain_plot.setFocus()
             self.resetPlot = False
 
         else:
