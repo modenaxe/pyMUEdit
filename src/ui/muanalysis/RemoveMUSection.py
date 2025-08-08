@@ -1,15 +1,10 @@
-from PyQt5.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QLineEdit,
-    QLabel,
-    QFrame,
-)
-from ui.components import ActionButton
-from ui.components.muAnalysisComponents.CleanTheme import CleanTheme as AnalysisTheme
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLineEdit,
+                             QVBoxLayout, QWidget)
 
+from ui.components import ActionButton
+from ui.components.muAnalysisComponents.CleanTheme import \
+    CleanTheme as AnalysisTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 
@@ -152,13 +147,14 @@ class RemoveMUSection(QWidget):
 
         emgfile = self.mu_analysis_func.file
         empty_mu_indices = [
-            i for i, pulses in enumerate(emgfile["MUPULSES"]) if len(pulses) == 0
-        ]
+            i for i, pulses in enumerate(
+                emgfile["MUPULSES"]) if len(pulses) == 0]
         if not empty_mu_indices:
             ErrorDialog("No empty MUs to remove.", "Info").exec_()
             return
 
         input_text = ",".join(str(i + 1) for i in empty_mu_indices)
         self.mu_analysis_func.remove_mus_by_range(input_text)
-        self.mu_analysis_func.plot_idr(self.mu_analysis_func.file, self.analysis_plot)
+        self.mu_analysis_func.plot_idr(
+            self.mu_analysis_func.file, self.analysis_plot)
         self.mu_remove_input.clear()

@@ -1,13 +1,15 @@
-from PyQt5.QtWidgets import QPushButton
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QPushButton
+
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+
 
 class GeneralButton(QPushButton):
 
     """
     General button for sidebars
     parameters:
-        label (string): text for the button 
+        label (string): text for the button
         action (lambda: action): the action the button triggers.
     """
 
@@ -32,8 +34,8 @@ class GeneralButton(QPushButton):
         )
         self.clicked.connect(action)
 
-    # Sets the width 
-    # I defined the width for the 'revert' button to be 100, so just defining that for consistency,
+    # Sets the width
+    # I defined the width for the 'revert' button to be 100, so just defining
+    # that for consistency,
     def set_width(self, width):
         self.setFixedWidth(width)
-

@@ -1,5 +1,6 @@
-from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QLabel
+
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
 
@@ -9,7 +10,7 @@ class AnalysisText(QLabel):
     (Factory Method)
     Each method returns an instance of different types of text (titles, headings, text etc.)
     """
-    
+
     # for the major titles in the sidebars
     def create_major_title(text=""):
         major_title = QLabel(text)
@@ -22,9 +23,9 @@ class AnalysisText(QLabel):
             font-weight: 500;
             """
         )
-        return major_title 
-    
-    # for titles in modals  
+        return major_title
+
+    # for titles in modals
     def create_title(text=""):
         title = QLabel(text)
         title.setStyleSheet(
@@ -35,8 +36,8 @@ class AnalysisText(QLabel):
             font-weight: 500;
             """
         )
-        return title 
-    
+        return title
+
     def create_title_dark(text=""):
         title = QLabel(text)
         title.setStyleSheet(
@@ -47,9 +48,9 @@ class AnalysisText(QLabel):
             font-weight: 500;
             """
         )
-        return title 
+        return title
 
-    # for headings you see on popups, such as the signal editing popup 
+    # for headings you see on popups, such as the signal editing popup
     def create_heading(text=""):
         heading = QLabel(text)
         heading.setStyleSheet(
@@ -61,7 +62,7 @@ class AnalysisText(QLabel):
             """
         )
 
-        return heading 
+        return heading
 
     def create_heading_dark(text=""):
         heading = QLabel(text)
@@ -74,9 +75,9 @@ class AnalysisText(QLabel):
             """
         )
 
-        return heading 
+        return heading
 
-    # for the small titles you see on the sidebars 
+    # for the small titles you see on the sidebars
     def create_subtitle(text=""):
         subtitle = QLabel(text)
         subtitle.setStyleSheet(
@@ -103,7 +104,7 @@ class AnalysisText(QLabel):
             """
         )
 
-        return label 
+        return label
 
     # for the load file prompt on the center screen
     def create_prompt(text=""):
@@ -119,7 +120,7 @@ class AnalysisText(QLabel):
 
         return prompt
 
-    # used for the italic warning inside signal editing 
+    # used for the italic warning inside signal editing
     def create_italic_text(text=""):
         italic = QLabel(text)
         italic.setStyleSheet(
@@ -132,4 +133,3 @@ class AnalysisText(QLabel):
             """
         )
         return italic
-

@@ -1,66 +1,62 @@
-from PyQt5.QtWidgets import (
-    QApplication,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QLabel,
-    QFrame,
-    QStyle,
-    QMainWindow,
-    QComboBox,
-)
 from PyQt5 import QtCore
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (QApplication, QComboBox, QFrame, QHBoxLayout,
+                             QLabel, QMainWindow, QPushButton, QStyle,
+                             QVBoxLayout, QWidget)
+
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from PyQt5.QtCore import Qt
+
 """
 If there's no figure/file, a title appears prompting the user to load a file
 """
+
+
 class AnalysisPlot(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
 
-        # setting up toggle button  
+        # setting up toggle button
         self.plot = None
         self.resize = None
-        self.toggle_btn = GeneralButton("Revert", lambda: self.revert(), parent=self)
+        self.toggle_btn = GeneralButton(
+            "Revert", lambda: self.revert(), parent=self)
         self.toggle_btn.set_width(100)
         self.toggle_btn.hide()
         self.layout.addWidget(self.toggle_btn)
 
-        # setting up the prompt and future plots 
+        # setting up the prompt and future plots
         self.canvas = None
         self.load_file_prompt()
 
-
     # loads the prompt into canvas
-    def load_file_prompt(self): 
-        self.canvas = AnalysisText.create_prompt("Press Load File to View Data")
+    def load_file_prompt(self):
+        self.canvas = AnalysisText.create_prompt(
+            "Press Load File to View Data")
         self.layout.addWidget(self.canvas, alignment=Qt.AlignCenter)
 
-
     # used to help toggle resize button
+
     def set_resize(self, button):
         self.resize = button
 
     # sets the plot into focus
     def focus(self):
-        self.canvas.setFocusPolicy( QtCore.Qt.ClickFocus )
+        self.canvas.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.canvas.setFocus()
 
-    # removes the canvas, or the last thing in the widget 
+    # removes the canvas, or the last thing in the widget
     def remove_canvas(self):
         c = self.layout.itemAt(self.layout.count() - 1)
         cw = c.widget()
         self.layout.removeWidget(cw)
         cw.setParent(None)
 
-    # removes the current plot and returns it to the 'original' 
+    # removes the current plot and returns it to the 'original'
     # it's what happens when you press the toggle button
     def revert(self):
-        # removing current 
+        # removing current
         self.remove_canvas()
 
         # restoring old one
@@ -70,34 +66,34 @@ class AnalysisPlot(QWidget):
         self.resize.show()
 
     ############### DISPLAY FIG/PLOT ##############
-    # when calling display_fig or dislay_plot, make sure you first turn it into 
+    # when calling display_fig or dislay_plot, make sure you first turn it into
     # a SaveablePlot(fig), then pass it into the fig param
 
-
-    # used specifically to display figures, and nothing else 
+    # used specifically to display figures, and nothing else
     # e.g. plot_idr or plot_refsig
+
     def display_fig(self, fig=None):
         # removing current
         self.remove_canvas()
 
-        # generating the new one 
-        self.canvas = fig 
+        # generating the new one
+        self.canvas = fig
         self.layout.addWidget(self.canvas)
         self.resize.show()
 
         self.toggle_btn.hide()
 
     # used for displaying plots, not figures
-    # in this case, plots refer to anything that isn't the usual MU signal graph
+    # in this case, plots refer to anything that isn't the usual MU signal
+    # graph
     def display_plot(self, plot=None):
-        # removing current 
+        # removing current
         self.remove_canvas()
 
-        self.plot = plot 
+        self.plot = plot
         self.layout.addWidget(self.plot)
-        
+
         self.focus()
 
         self.resize.hide()
         self.toggle_btn.show()
-

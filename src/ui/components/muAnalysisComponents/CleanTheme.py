@@ -38,12 +38,12 @@ class CleanTheme:
     ANALYSIS_TEXT_DARK = "#444444"
     ANALYSIS_DIALOG_BACKGROUND = "#e4e2e2"
     ANALYSIS_DIALOG_TEXT = "#394150"
-    ANALYSIS_DIALOG_DROPDOWN = "#60676E" # unused
+    ANALYSIS_DIALOG_DROPDOWN = "#60676E"  # unused
 
     ################################################################
     ########################### DIALOG ###########################
     ################################################################
-    
+
     DIALOG_TEXT = "#212529"
     DIALOG_CANCEL = "#6c757d"
     DIALOG_CANCEL_HOVER = "#5a6268"
@@ -53,12 +53,10 @@ class CleanTheme:
     ################################################################
     ########################### REDS ###########################
     ################################################################
-    
+
     RED_BACKGROUND = "#e04136"
     RED_HOVER = "#c72b2b"
-    
-    
-    
+
     """
         self.colors = {
             "bg_main": "#f8f9fa",

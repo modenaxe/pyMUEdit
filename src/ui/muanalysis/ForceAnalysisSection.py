@@ -1,23 +1,20 @@
-from PyQt5.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QLineEdit,
-    QLabel,
-    QFrame,
-)
 import pandas as pd
-from ui.components import ActionButton
-from ui.components.muAnalysisComponents.CleanTheme import CleanTheme as AnalysisTheme
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLineEdit,
+                             QVBoxLayout, QWidget)
+
+from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
+from app.muAnalysisFunctions.ForceAnalysisFunc import ForceAnalysisFunc
 from core.muAnalysisCore.AnalysisResultsHist import store
+from core.muAnalysisCore.SelectRange import SelectRange
+from ui.components import ActionButton
+from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.CleanTheme import \
+    CleanTheme as AnalysisTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
-from core.muAnalysisCore.SelectRange import SelectRange
-from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
-from app.muAnalysisFunctions.ForceAnalysisFunc import ForceAnalysisFunc
+
 
 class ForceAnalysisSection(QWidget):
 

@@ -1,9 +1,13 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
-from PyQt5.QtGui import QFont, QColor
-from PyQt5.QtCore import Qt, QSize, pyqtSignal
+from PyQt5.QtCore import QSize, Qt, pyqtSignal
+from PyQt5.QtGui import QColor, QFont
+from PyQt5.QtWidgets import (QDialog, QHBoxLayout, QLabel, QPushButton,
+                             QVBoxLayout)
+
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from ui.components.muAnalysisComponents.GeneralRedButton import GeneralRedButton
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
+from ui.components.muAnalysisComponents.GeneralRedButton import \
+    GeneralRedButton
+
 
 class ConfirmationDialog(QDialog):
 

@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QFrame, QVBoxLayout, QWidget, QGraphicsDropShadowEffect, QSizePolicy
+from PyQt5.QtWidgets import (QFrame, QGraphicsDropShadowEffect, QSizePolicy,
+                             QVBoxLayout, QWidget)
 
 from .CleanTheme import CleanTheme
 

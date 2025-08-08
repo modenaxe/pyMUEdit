@@ -1,10 +1,11 @@
-from PyQt5.QtWidgets import QSpinBox
 from pathlib import Path
+
+from PyQt5.QtWidgets import QSpinBox
 
 from .CleanTheme import CleanTheme
 from .FormField import FormField
 
-# defining absolute path for icons 
+# defining absolute path for icons
 ABS_PATH = Path(__file__).parent.parent.parent
 ICONS_PATH = ABS_PATH / "public"
 
@@ -17,7 +18,13 @@ class FormSpinBox(FormField):
     for a consistent look throughout the application.
     """
 
-    def __init__(self, label_text, value=0, min_value=0, max_value=100, parent=None):
+    def __init__(
+            self,
+            label_text,
+            value=0,
+            min_value=0,
+            max_value=100,
+            parent=None):
         """
         Initialize a spin box form field
 

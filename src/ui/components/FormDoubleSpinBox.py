@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import QDoubleSpinBox
+
 from .CleanTheme import CleanTheme
 from .FormField import FormField
 
@@ -11,7 +12,14 @@ class FormDoubleSpinBox(FormField):
     for a consistent look throughout the application.
     """
 
-    def __init__(self, label_text, value=0.0, min_value=0.0, max_value=1.0, step=0.1, parent=None):
+    def __init__(
+            self,
+            label_text,
+            value=0.0,
+            min_value=0.0,
+            max_value=1.0,
+            step=0.1,
+            parent=None):
         """
         Initialize a double spin box form field
 

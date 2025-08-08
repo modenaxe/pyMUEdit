@@ -1,38 +1,30 @@
 import sys
-from PyQt5.QtWidgets import (
-    QApplication,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QLabel,
-    QFrame,
-    QStyle,
-    QMainWindow,
-)
-from PyQt5.QtGui import QFont, QColor
-from PyQt5.QtCore import Qt, QSize, pyqtSignal
-from core.muAnalysisCore.AnalysisResultsHist import store
+
+from PyQt5.QtCore import QSize, Qt, pyqtSignal
+from PyQt5.QtGui import QColor, QFont
+from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
+                             QMainWindow, QPushButton, QStyle, QVBoxLayout,
+                             QWidget)
+
+from app.ExportResults import ExportResultsWindow
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
 from app.muAnalysisFunctions.ResizeFunc import Resize
-from app.ExportResults import ExportResultsWindow
-from ui.muanalysis.AdvancedTools import AdvancedTools
-from ui.muanalysis.MotorUnitProperties import MotorUnitPropertiesButton
-from ui.muanalysis.PlotEMG import PlotEMGButton
-from ui.muanalysis.SignalEditing import SignalEditing
+from core.muAnalysisCore.AnalysisResultsHist import store
 from ui.components.muAnalysisComponents.AnalysisPlot import AnalysisPlot
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.muanalysis.FileSection import FileSection
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from ui.muanalysis.RemoveMUSection import RemoveMUSection
+from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
+from ui.muanalysis.AdvancedTools import AdvancedTools
+from ui.muanalysis.FileSection import FileSection
 from ui.muanalysis.ForceAnalysisSection import ForceAnalysisSection
-from ui.muanalysis.ResultsPanel import ResultsPanel
-
-from core.muAnalysisCore.AnalysisResultsHist import store
-from ui.muanalysis.ResultsTable import ResultsTable
+from ui.muanalysis.MotorUnitProperties import MotorUnitPropertiesButton
+from ui.muanalysis.PlotEMG import PlotEMGButton
+from ui.muanalysis.RemoveMUSection import RemoveMUSection
 from ui.muanalysis.ResultSelection import ResultSelection
+from ui.muanalysis.ResultsPanel import ResultsPanel
+from ui.muanalysis.ResultsTable import ResultsTable
+from ui.muanalysis.SignalEditing import SignalEditing
 
 
 # legacy code
@@ -52,7 +44,8 @@ class MUAnalysis(QWidget):
         self.data = store
         self.results_table = ResultsTable()
         self.result_combo = ResultSelection(self.results_table)
-        # setting instance of function class from src/app.muAnalysisFunctions.FileUploadFunc
+        # setting instance of function class from
+        # src/app.muAnalysisFunctions.FileUploadFunc
         self.mu = FileUploadFunc()
         self.analysis_plot = AnalysisPlot()
         self.prop = MUPropertiesFunc()
@@ -77,7 +70,8 @@ class MUAnalysis(QWidget):
         self.widget_layout = QVBoxLayout(self)
         self.widget_layout.setContentsMargins(0, 0, 0, 0)
         self.widget_layout.setSpacing(0)
-        self.widget_layout.addWidget(self._create_top_bar())  # Top bar added first
+        self.widget_layout.addWidget(
+            self._create_top_bar())  # Top bar added first
 
         self.content_layout = QHBoxLayout()
         self.content_layout.setContentsMargins(15, 15, 15, 15)
@@ -130,7 +124,8 @@ class MUAnalysis(QWidget):
         icon_label.setFixedSize(QSize(28, 28))
         title_label = QLabel("Motor Unit Analysis")
         title_label.setFont(QFont("Arial", 11, QFont.Bold))
-        title_label.setStyleSheet(f"color: {self.colors['text_title']}; border: none;")
+        title_label.setStyleSheet(
+            f"color: {self.colors['text_title']}; border: none;")
         top_bar_layout.addWidget(icon_label)
         top_bar_layout.addWidget(title_label)
         top_bar_layout.addStretch(1)
@@ -183,14 +178,15 @@ class MUAnalysis(QWidget):
         sidebar_layout.setSpacing(10)
 
         # title
-        title_div = QWidget() # creating layout for the margin spacing 
+        title_div = QWidget()  # creating layout for the margin spacing
         title_div_layout = QVBoxLayout(title_div)
-        title_div_layout.setContentsMargins(-1, -1, -1, 0) # tells it to keep left, top, right margins
-        title_label = AnalysisText.create_major_title("Analysis") 
+        # tells it to keep left, top, right margins
+        title_div_layout.setContentsMargins(-1, -1, -1, 0)
+        title_label = AnalysisText.create_major_title("Analysis")
         title_div_layout.addWidget(title_label)
         sidebar_layout.addWidget(title_div)
-    
-        # signal editing 
+
+        # signal editing
         # remove mu section
         remove_mu_section = RemoveMUSection(
             self.mu, self.analysis_plot, self.colors, parent=sidebar
@@ -198,10 +194,11 @@ class MUAnalysis(QWidget):
         sidebar_layout.addWidget(remove_mu_section)
 
         # signal editing
-        signal_editing = SignalEditing(self.mu, self.analysis_plot, parent=sidebar)
+        signal_editing = SignalEditing(
+            self.mu, self.analysis_plot, parent=sidebar)
         sidebar_layout.addWidget(signal_editing)
 
-        # force anaylsis 
+        # force anaylsis
         force_analysis = ForceAnalysisSection(
             sidebar, self.analysis_plot
         )
@@ -236,7 +233,8 @@ class MUAnalysis(QWidget):
         center_layout = QVBoxLayout(center)
 
         resize_file = Resize(self.mu, self.analysis_plot)
-        resize_btn = GeneralButton("Resize", lambda: resize_file.resize(resize_btn))
+        resize_btn = GeneralButton(
+            "Resize", lambda: resize_file.resize(resize_btn))
         center_layout.addWidget(resize_btn)
         self.analysis_plot.set_resize(resize_btn)
         center_layout.addWidget(self.analysis_plot)
@@ -259,19 +257,20 @@ class MUAnalysis(QWidget):
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setContentsMargins(10, 10, 10, 10)
         sidebar_layout.setSpacing(10)
-        
+
         file_section = FileSection(sidebar, self.mu, self.analysis_plot)
         # Connect the reset button's signal to the MUAnalysisFunc method
         file_section.reset_btn.reset_requested.connect(
             lambda: self.mu.handle_reset_workflow(self.analysis_plot)
         )
-        results_section = ResultsPanel(sidebar, self.result_combo, self.results_table)
+        results_section = ResultsPanel(
+            sidebar, self.result_combo, self.results_table)
 
         sidebar_layout.addWidget(file_section, stretch=1)
         sidebar_layout.addWidget(results_section, stretch=15)
         sidebar_layout.addStretch(1)
         sidebar.setMaximumWidth(300)
-        
+
         return sidebar
 
     def calc_result(self, title="title", data=[{}]):
@@ -287,6 +286,7 @@ if __name__ == "__main__":
     test_window.setCentralWidget(analysis_widget)
     test_window.setWindowTitle("Motor Unit Analysis Widget Test")
     test_window.setGeometry(100, 100, 1200, 800)
-    # Do not set a custom export window opener so that the default fallback runs.
+    # Do not set a custom export window opener so that the default fallback
+    # runs.
     test_window.show()
     sys.exit(app.exec_())
