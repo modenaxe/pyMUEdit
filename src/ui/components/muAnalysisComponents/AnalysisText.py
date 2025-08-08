@@ -10,12 +10,38 @@ class AnalysisText(QLabel):
     Each method returns an instance of different types of text (titles, headings, text etc.)
     """
     
-    # for titles 
+    # for the major titles in the sidebars
+    def create_major_title(text=""):
+        major_title = QLabel(text)
+        # original font was segoe ui
+        major_title.setStyleSheet(
+            f"""
+            color: {CleanTheme.ANALYSIS_TEXT_DARK};
+            font-family: Arial;
+            font-size: 14px;
+            font-weight: 500;
+            """
+        )
+        return major_title 
+    
+    # for titles in modals  
     def create_title(text=""):
         title = QLabel(text)
         title.setStyleSheet(
             f"""
             color: {CleanTheme.ANALYSIS_BG_CARD};
+            font-family: Arial;
+            font-size: 14px;
+            font-weight: 500;
+            """
+        )
+        return title 
+    
+    def create_title_dark(text=""):
+        title = QLabel(text)
+        title.setStyleSheet(
+            f"""
+            color: {CleanTheme.ANALYSIS_DIALOG_TEXT};
             font-family: Arial;
             font-size: 14px;
             font-weight: 500;
@@ -29,6 +55,19 @@ class AnalysisText(QLabel):
         heading.setStyleSheet(
             f"""
             color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
+            font-family: Arial;
+            font-size: 12px;
+            font-weight: 400;
+            """
+        )
+
+        return heading 
+
+    def create_heading_dark(text=""):
+        heading = QLabel(text)
+        heading.setStyleSheet(
+            f"""
+            color: {CleanTheme.ANALYSIS_DIALOG_TEXT};
             font-family: Arial;
             font-size: 12px;
             font-weight: 400;

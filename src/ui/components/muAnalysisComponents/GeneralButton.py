@@ -34,9 +34,6 @@ class GeneralButton(QPushButton):
 
     # Sets the width 
     # I defined the width for the 'revert' button to be 100, so just defining that for consistency,
-    # in case someone else wants to use this method 
-    # I would've defined a function that essentially removes the width css line, but it's looks 
-    # kinda complicated so I don't think it's worth it
     def set_width(self, width):
         self.setFixedWidth(width)
 

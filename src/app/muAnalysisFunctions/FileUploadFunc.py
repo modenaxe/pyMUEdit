@@ -15,12 +15,16 @@ import warnings
 import os
 import copy
 import itertools
+import json
+import gzip
+from io import StringIO
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from ui.components.muAnalysisComponents.ConfirmationDialog import ConfirmationDialog
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
+from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
 
 # This class holds all the functions used for file uploading
@@ -39,6 +43,8 @@ class FileUploadFunc:
         self.cid = None
         # MVC value for calculations
         self.mvc_value = None
+        self.json = False
+        self.unsortedFile = None # store unsorted file version here
 
     def data_loaded(self):
         return FileUploadFunc.file is not None
@@ -113,17 +119,26 @@ class FileUploadFunc:
     # Triggerd of file upload button: opens file explorer
     # Checks if file is valid or not
     # passes to import_data to set center screen
-    def select_file_button_pushed(self, analysis_plot):
+    def select_file_button_pushed(self, analysis_plot, json):
         """Open file dialog to select file for editing and automatically import it."""
         FileUploadFunc.file = None
         file_dialog = QFileDialog()
-        file_path, _ = file_dialog.getOpenFileName(
-            None, "Select file", "", "MAT Files (*.mat);;All Files (*.*)"
-        )
+        if json:
+            self.json = True
+            file_path, _ = file_dialog.getOpenFileName(
+            None, "Select file", "", "JSON Files (*.json);;All Files (*.*)"
+            )
+        else:
+            file_path, _ = file_dialog.getOpenFileName(
+                None, "Select file", "", "MAT Files (*.mat);;All Files (*.*)"
+            )
 
         if file_path:
             # this is where self. file gets set (inside emg_from_otb)
-            valid = self.emg_from_otb(file_path)
+            if json:
+                valid = self.emg_from_json(file_path)
+            else:
+                valid = self.emg_from_otb(file_path)
             # Store the original file path for reset functionality
             self.original_file_path = file_path
             self.import_data(file_path, analysis_plot, valid)
@@ -141,6 +156,128 @@ class FileUploadFunc:
             canvas.setInformativeText("Loaded file has errors")
             canvas.setWindowTitle("Error")
             canvas.exec_()
+
+    #OPENHDEMG (edit with AC)
+    def emg_from_json(self, filepath):
+        with gzip.open(filepath, "rt", encoding="utf-8") as f:
+            jsonemgfile = json.load(f)
+        # Access the dictionaries and extract the data.
+        source = json.loads(jsonemgfile["SOURCE"])
+        filename = json.loads(jsonemgfile["FILENAME"])
+
+        if source in ["DEMUSE", "OTB", "CUSTOMCSV", "DELSYS"]:
+            # RAW_SIGNAL
+            # df are stored in json as a dictionary, it can be directly extracted
+            # and converted into a pd.DataFrame.
+            # index and columns are imported as str, we need to convert it to int.
+            raw_signal = pd.read_json(
+                StringIO(jsonemgfile["RAW_SIGNAL"]),
+                orient='split',
+            )
+            # Check dtypes for safety, little computational cost
+            raw_signal.columns = raw_signal.columns.astype(int)
+            raw_signal.index = raw_signal.index.astype(int)
+            raw_signal.sort_index(inplace=True)
+            # REF_SIGNAL
+            ref_signal = pd.read_json(
+                StringIO(jsonemgfile["REF_SIGNAL"]),
+                orient='split',
+            )
+            ref_signal.columns = ref_signal.columns.astype(int)
+            ref_signal.index = ref_signal.index.astype(int)
+            ref_signal.sort_index(inplace=True)
+            # ACCURACY
+            accuracy = pd.read_json(
+                StringIO(jsonemgfile["ACCURACY"]),
+                orient='split',
+            )
+            try:
+                accuracy.columns = accuracy.columns.astype(int)
+            except Exception:
+                accuracy.columns = [*range(len(accuracy.columns))]
+                warnings.warn(
+                    "Error while loading accuracy, check or recalculate accuracy"
+                )
+                # TODO error occurring when accuracy was recalculated on empty MUs.
+                # Check if the error is present also for other params.
+            accuracy.index = accuracy.index.astype(int)
+            accuracy.sort_index(inplace=True)
+            # IPTS
+            ipts = pd.read_json(StringIO(jsonemgfile["IPTS"]), orient='split')
+            ipts.columns = ipts.columns.astype(int)
+            ipts.index = ipts.index.astype(int)
+            ipts.sort_index(inplace=True)
+            # MUPULSES
+            # It is s list of lists but has to be converted in a list of ndarrays.
+            mupulses = json.loads(jsonemgfile["MUPULSES"])
+            for num, element in enumerate(mupulses):
+                mupulses[num] = np.array(element)
+            # FSAMP
+            # Make sure to convert it to float
+            fsamp = float(json.loads(jsonemgfile["FSAMP"]))
+            # IED
+            ied = float(json.loads(jsonemgfile["IED"]))
+            # EMG_LENGTH
+            # Make sure to convert it to int
+            emg_length = int(json.loads(jsonemgfile["EMG_LENGTH"]))
+            # NUMBER_OF_MUS
+            number_of_mus = int(json.loads(jsonemgfile["NUMBER_OF_MUS"]))
+            # BINARY_MUS_FIRING
+            binary_mus_firing = pd.read_json(
+                StringIO(jsonemgfile["BINARY_MUS_FIRING"]),
+                orient='split',
+            )
+            binary_mus_firing.columns = binary_mus_firing.columns.astype(int)
+            binary_mus_firing.index = binary_mus_firing.index.astype(int)
+            binary_mus_firing.sort_index(inplace=True)
+            # EXTRAS
+            # Don't alter index and columns as these could contain anything.
+            extras = pd.read_json(StringIO(jsonemgfile["EXTRAS"]), orient='split')
+
+            emgfile = {
+                "SOURCE": source,
+                "FILENAME": filename,
+                "RAW_SIGNAL": raw_signal,
+                "REF_SIGNAL": ref_signal,
+                "ACCURACY": accuracy,
+                "IPTS": ipts,
+                "MUPULSES": mupulses,
+                "FSAMP": fsamp,
+                "IED": ied,
+                "EMG_LENGTH": emg_length,
+                "NUMBER_OF_MUS": number_of_mus,
+                "BINARY_MUS_FIRING": binary_mus_firing,
+                "EXTRAS": extras,
+            }
+
+        elif source in ["OTB_REFSIG", "CUSTOMCSV_REFSIG", "DELSYS_REFSIG"]:
+            # FSAMP
+            fsamp = float(json.loads(jsonemgfile["FSAMP"]))
+            # REF_SIGNAL
+            ref_signal = pd.read_json(
+                StringIO(jsonemgfile["REF_SIGNAL"]),
+                orient='split',
+            )
+            ref_signal.columns = ref_signal.columns.astype(int)
+            ref_signal.index = ref_signal.index.astype(int)
+            ref_signal.sort_index(inplace=True)
+            # EXTRAS
+            extras = pd.read_json(StringIO(jsonemgfile["EXTRAS"]), orient='split')
+
+            emgfile = {
+                "SOURCE": source,
+                "FILENAME": filename,
+                "FSAMP": fsamp,
+                "REF_SIGNAL": ref_signal,
+                "EXTRAS": extras,
+            }
+
+        else:
+            raise Exception("\nFile source not recognised\n")
+        #AC
+        self.unsortedFile = emgfile
+        FileUploadFunc.file = self.sort_MUs(emgfile)
+        return emgfile
 
     # OPENHDEMG
     def get_otb_refsignal(self, df, refsig):
@@ -206,17 +343,21 @@ class FileUploadFunc:
         IPTS.columns = np.arange(len(IPTS.columns))
         # Verify to have the IPTS
         if IPTS.empty:
+            ErrorDialog("(IPTS) not found", "Error").exec_()
             raise ValueError(
                 "\nSource for decomposition (IPTS) not found in the .mat file\n"
             )
+            return
         # Extract the BINARY_MUS_FIRING and rename columns progressively
         BINARY_MUS_FIRING = df.filter(regex="Decomposition of")
         BINARY_MUS_FIRING.columns = np.arange(len(BINARY_MUS_FIRING.columns))
         # Verify to have the BINARY_MUS_FIRING
         if BINARY_MUS_FIRING.empty:
+            ErrorDialog("(BINARY_MUS_FIRING) not found", "Error").exec_()
             raise ValueError(
                 "\nDecomposition of (BINARY_MUS_FIRING) not found in the .mat file\n"
             )
+            return
         return IPTS, BINARY_MUS_FIRING
 
     # OPENHDEMG
@@ -279,6 +420,7 @@ class FileUploadFunc:
                 expectedchannels = int(OTBelectrodes_Nelectrodes[matrix])
                 break
         if expectedchannels is np.nan:
+            ErrorDialog("Matrix not recognised", "Error").exec_()
             raise ValueError("Matrix not recognised")
         if len(emg_df.columns) == expectedchannels:
             emg_df.columns = np.arange(len(emg_df.columns))
@@ -287,6 +429,7 @@ class FileUploadFunc:
         else:
             # This check here is usefull to control that only the appropriate
             # elements have been included in the .mat file exported from OTBiolab+.
+            ErrorDialog("Failure in searching the raw signal", "Error").exec_()
             raise ValueError(
                 "\nFailure in searching the raw signal, please check that it is present in the .mat file and that only the accepted parameters have been included\n"
             )
@@ -345,6 +488,7 @@ class FileUploadFunc:
             "1.5.9.3",
         ]
         if version not in valid_versions:
+            ErrorDialog(f"Specified version is not valid. Use one of:\n{valid_versions}", "Error").exec_()
             raise ValueError(
                 f"\nSpecified version is not valid. Use one of:\n{valid_versions}\n"
             )
@@ -427,7 +571,8 @@ class FileUploadFunc:
         }
 
         # AC : we set file to the emgfile object and return 1 to indicate it is valid
-        FileUploadFunc.file = emgfile
+        self.unsortedFile = emgfile
+        FileUploadFunc.file = self.sort_MUs(emgfile) # sort imported MUs by recruitment order by default
         return 1
 
     # OPENHDEMG: edited
@@ -580,7 +725,10 @@ class FileUploadFunc:
         # Add any other transformation data clearing logic here
 
         # Reload the original file to reset any transformations
-        valid = self.emg_from_otb(self.original_file_path)
+        if self.json:
+            valid = self.emg_from_json(self.original_file_path)
+        else:
+            valid = self.emg_from_otb(self.original_file_path)
         if valid:
             # Re-import the data to refresh the display
             self.import_data(self.original_file_path, analysis_plot, valid)
@@ -641,9 +789,70 @@ class FileUploadFunc:
 
         # the actual plotting
         canvas = SaveablePlot(fig)
-        analysis_plot.display_plot(canvas)
+        analysis_plot.display_fig(canvas)
 
+    def sort_MUs(self, emgfile):
+        # code from openhdemg
+        if emgfile["NUMBER_OF_MUS"] <= 1:
+            return emgfile
 
+        # Create the object to store the sorted emgfile.
+        # Create a deepcopy to avoid changing the original emgfile
+        sorted_emgfile = copy.deepcopy(emgfile)
+        """
+        Need to be changed: ==>
+        emgfile =   {
+                    "SOURCE" : SOURCE,
+                    "RAW_SIGNAL" : RAW_SIGNAL,
+                    "REF_SIGNAL" : REF_SIGNAL,
+                    ==> "ACCURACY": ACCURACY,
+                    ==> "IPTS" : IPTS,
+                    ==> "MUPULSES" : MUPULSES,
+                    "FSAMP" : FSAMP,
+                    "IED" : IED,
+                    "EMG_LENGTH" : EMG_LENGTH,
+                    "NUMBER_OF_MUS" : NUMBER_OF_MUS,
+                    ==> "BINARY_MUS_FIRING" : BINARY_MUS_FIRING,
+                    }
+        """
+
+        # Identify the sorting_order by the first MUpulse of every MUs
+        df = []
+        for mu in range(emgfile["NUMBER_OF_MUS"]):
+            if len(emgfile["MUPULSES"][mu]) > 0:
+                df.append(emgfile["MUPULSES"][mu][0])
+            else:
+                df.append(np.inf)
+
+        df = pd.DataFrame(df, columns=["firstpulses"])
+        df.sort_values(by="firstpulses", inplace=True)
+        sorting_order = list(df.index)
+
+        # Sort ACCURACY (single column)
+        for origpos, newpos in enumerate(sorting_order):
+            sorted_emgfile["ACCURACY"].loc[origpos] = emgfile["ACCURACY"].loc[newpos]
+
+        # Sort IPTS (multiple columns, sort by columns, then reset columns' name)
+        sorted_emgfile["IPTS"] = sorted_emgfile["IPTS"].reindex(columns=sorting_order)
+        sorted_emgfile["IPTS"].columns = np.arange(emgfile["NUMBER_OF_MUS"])
+
+        # Sort BINARY_MUS_FIRING (multiple columns, sort by columns,
+        # then reset columns' name)
+        sorted_emgfile["BINARY_MUS_FIRING"] = sorted_emgfile["BINARY_MUS_FIRING"].reindex(
+            columns=sorting_order
+        )
+        sorted_emgfile["BINARY_MUS_FIRING"].columns = np.arange(emgfile["NUMBER_OF_MUS"])
+
+        # Sort MUPULSES.
+        # Preferable to use the sorting_order as a double-check in alternative to:
+        # sorted_emgfile["MUPULSES"] = sorted(
+        #   sorted_emgfile["MUPULSES"], key=min, reverse=False)
+        # )
+        for origpos, newpos in enumerate(sorting_order):
+            sorted_emgfile["MUPULSES"][origpos] = emgfile["MUPULSES"][newpos]
+
+        return sorted_emgfile
+    
     def updateEMGFile(self, emgfile):
             print(f"updating original file")
             FileUploadFunc.file = emgfile

@@ -12,9 +12,14 @@ from PyQt5.QtWidgets import (
     QStyle,
     QGraphicsDropShadowEffect,
 )
+from pathlib import Path
 from PyQt5.QtGui import QIcon, QFont, QColor, QPixmap
 from PyQt5.QtCore import Qt, QSize
 
+# defining absolute path for icons 
+ABS_PATH = Path(__file__).parent.parent
+ICONS_PATH = ABS_PATH / "public"
+cloud_download_path = ICONS_PATH / "cloud_download.svg"
 
 def get_icon(standard_icon_enum):
     """Gets a standard Qt icon."""
@@ -221,7 +226,7 @@ def create_download_row(widget, filename, filesize):
 
     # Download button
     download_button = QPushButton("Download")
-    download_button.setIcon(QIcon("public/cloud_download.svg"))
+    download_button.setIcon(QIcon(str(cloud_download_path)))
     download_button.setIconSize(QSize(24, 24))
     download_button.setFont(QFont("Arial", 9, QFont.Bold))
     download_button.setMinimumHeight(30)
@@ -343,7 +348,7 @@ def create_recent_export_item(widget, filename, metadata):
 
     # Download button
     download_button = QPushButton("")
-    download_button.setIcon(QIcon("public/cloud_download.svg"))
+    download_button.setIcon(QIcon("src/public/cloud_download.svg"))
     download_button.setIconSize(QSize(24, 24))
     download_button.setFont(QFont("Arial", 13))
     download_button.setFixedSize(30, 30)

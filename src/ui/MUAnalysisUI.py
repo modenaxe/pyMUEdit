@@ -1,7 +1,4 @@
 import sys
-import time
-import random
-import pandas as pd
 from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
@@ -12,7 +9,6 @@ from PyQt5.QtWidgets import (
     QFrame,
     QStyle,
     QMainWindow,
-    QComboBox,
 )
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt, QSize, pyqtSignal
@@ -27,18 +23,16 @@ from ui.muanalysis.PlotEMG import PlotEMGButton
 from ui.muanalysis.SignalEditing import SignalEditing
 from ui.components.muAnalysisComponents.AnalysisPlot import AnalysisPlot
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.MajorHeading import MajorHeading
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.muanalysis.FileSection import FileSection
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from ui.muanalysis.SortMUs import SortMUs
 from ui.muanalysis.RemoveMUSection import RemoveMUSection
-
+from ui.muanalysis.ForceAnalysisSection import ForceAnalysisSection
 from ui.muanalysis.ResultsPanel import ResultsPanel
 
 from core.muAnalysisCore.AnalysisResultsHist import store
-from core.muAnalysisCore.ResultsTable import ResultsTable
-from ui.components.muAnalysisComponents.ResultSelection import ResultSelection
+from ui.muanalysis.ResultsTable import ResultsTable
+from ui.muanalysis.ResultSelection import ResultSelection
 
 
 # legacy code
@@ -62,7 +56,6 @@ class MUAnalysis(QWidget):
         self.mu = FileUploadFunc()
         self.analysis_plot = AnalysisPlot()
         self.prop = MUPropertiesFunc()
-        print(self.analysis_plot)
 
         self.colors = {
             "bg_main": "#f8f9fa",
@@ -190,8 +183,12 @@ class MUAnalysis(QWidget):
         sidebar_layout.setSpacing(10)
 
         # title
-        title_label = MajorHeading("Analysis")
-        sidebar_layout.addWidget(title_label)
+        title_div = QWidget() # creating layout for the margin spacing 
+        title_div_layout = QVBoxLayout(title_div)
+        title_div_layout.setContentsMargins(-1, -1, -1, 0) # tells it to keep left, top, right margins
+        title_label = AnalysisText.create_major_title("Analysis") 
+        title_div_layout.addWidget(title_label)
+        sidebar_layout.addWidget(title_div)
     
         # signal editing 
         # remove mu section
@@ -199,13 +196,16 @@ class MUAnalysis(QWidget):
             self.mu, self.analysis_plot, self.colors, parent=sidebar
         )
         sidebar_layout.addWidget(remove_mu_section)
-        # sort MUs
-        sort_MUs = SortMUs(self.mu, self.analysis_plot, parent=sidebar)
-        sidebar_layout.addWidget(sort_MUs)
 
         # signal editing
         signal_editing = SignalEditing(self.mu, self.analysis_plot, parent=sidebar)
         sidebar_layout.addWidget(signal_editing)
+
+        # force anaylsis 
+        force_analysis = ForceAnalysisSection(
+            sidebar, self.analysis_plot
+        )
+        sidebar_layout.addWidget(force_analysis)
 
         # motor unit properties
         motor_unit_properties = MotorUnitPropertiesButton(
@@ -235,38 +235,10 @@ class MUAnalysis(QWidget):
         center.setObjectName("centerContent")
         center_layout = QVBoxLayout(center)
 
-        # # code to test the result table
-        # # can be refered to when implimenting real data
-        # dummy_button = QPushButton("Dummy")
-        # dummy_button.setStyleSheet(
-        #     f"""
-        #     QPushButton {{
-        #         background-color: {self.colors['button_grey_bg']};
-        #         border-radius: 15px;
-        #         padding: 0px;
-        #         height: 40%;
-
-        #     }}
-        #     QPushButton:hover {{
-        #         background-color: {self.colors['button_dark_hover']};
-        #     }}
-        # """
-        # )
-
-        # # result need to be an list of dictionaries with consistent keys
-        # # refer to the code below to append the results
-        # table = {
-        #     "col": 42,
-        #     "timestamp": time.time()
-        # }
-        # title = "table "
-        # dummy_button.clicked.connect(lambda: self.calc_result(title, [table]))
-        # center_layout.addWidget(dummy_button)
-
         resize_file = Resize(self.mu, self.analysis_plot)
         resize_btn = GeneralButton("Resize", lambda: resize_file.resize(resize_btn))
         center_layout.addWidget(resize_btn)
-        self.analysis_plot.set_reseize(resize_btn)
+        self.analysis_plot.set_resize(resize_btn)
         center_layout.addWidget(self.analysis_plot)
 
         return center
@@ -274,7 +246,6 @@ class MUAnalysis(QWidget):
     # side bar with load file button
     # loaded from FileSection class
     def _create_right_sidebar(self):
-        print("--- DEBUG: _create_right_sidebar called ---")
         sidebar = QFrame()
         sidebar.setObjectName("rightSidebar")
         sidebar.setStyleSheet(
@@ -285,6 +256,10 @@ class MUAnalysis(QWidget):
 
         """
         )
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setContentsMargins(10, 10, 10, 10)
+        sidebar_layout.setSpacing(10)
+        
         file_section = FileSection(sidebar, self.mu, self.analysis_plot)
         # Connect the reset button's signal to the MUAnalysisFunc method
         file_section.reset_btn.reset_requested.connect(
@@ -292,9 +267,11 @@ class MUAnalysis(QWidget):
         )
         results_section = ResultsPanel(sidebar, self.result_combo, self.results_table)
 
-        sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.addWidget(file_section, stretch=1)
-        sidebar_layout.addWidget(results_section, stretch=4)
+        sidebar_layout.addWidget(results_section, stretch=15)
+        sidebar_layout.addStretch(1)
+        sidebar.setMaximumWidth(300)
+        
         return sidebar
 
     def calc_result(self, title="title", data=[{}]):
