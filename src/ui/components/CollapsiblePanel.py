@@ -1,8 +1,10 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame
-from PyQt5.QtCore import Qt, QSize
+from pathlib import Path
+
+from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtSvg import QSvgWidget
-from pathlib import Path
+from PyQt5.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton,
+                             QVBoxLayout, QWidget)
 
 from .CleanTheme import CleanTheme
 
@@ -72,7 +74,8 @@ class CollapsiblePanel(QFrame):
         self.title_label = QLabel(title)
         self.title_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
         self.title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
-        self.title_label.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
+        self.title_label.setStyleSheet(
+            f"background-color: {CleanTheme.BG_CARD};")
 
         # Expand/collapse indicator
         self.toggle_button = QPushButton()
@@ -88,7 +91,7 @@ class CollapsiblePanel(QFrame):
         )
         self.toggle_button.setFixedSize(20, 20)
 
-        # Use SVG icon for toggle button 
+        # Use SVG icon for toggle button
         self.toggle_button.setIcon(QIcon(str(down_arrow_path)))
         self.toggle_button.setIconSize(QSize(10, 10))
         # Add header components

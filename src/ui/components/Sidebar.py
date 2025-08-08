@@ -1,15 +1,16 @@
-from PyQt5.QtWidgets import QFrame, QVBoxLayout, QLabel
-from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt
 import os
 from pathlib import Path
 
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QFrame, QLabel, QVBoxLayout
+
 from .CleanTheme import CleanTheme
-from .SidebarButton import SidebarButton
 from .DatasetItem import DatasetItem
 from .SectionHeader import SectionHeader
+from .SidebarButton import SidebarButton
 
-# defining absolute path for icons 
+# defining absolute path for icons
 ABS_PATH = Path(__file__).parent.parent.parent
 ICONS_PATH = ABS_PATH / "public"
 
@@ -49,7 +50,8 @@ class Sidebar(QFrame):
 
         # Add app title and icon
         title_layout = QVBoxLayout()
-        title_layout.setContentsMargins(15, 0, 15, 20)  # More space below title
+        title_layout.setContentsMargins(
+            15, 0, 15, 20)  # More space below title
 
         # App title
         app_title_label = QLabel(app_title)
@@ -156,13 +158,17 @@ class Sidebar(QFrame):
             # Make the dataset item clickable
             dataset_item.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
             if on_file_clicked:
-                # Use a lambda with default argument to capture the current filename
-                dataset_item.mousePressEvent = lambda event, f=filename: on_file_clicked(f)  # type:ignore
+                # Use a lambda with default argument to capture the current
+                # filename
+                dataset_item.mousePressEvent = lambda event, f=filename: on_file_clicked(
+                    f)  # type:ignore
 
             recent_files_layout.addWidget(dataset_item)
 
         # Add the recent files section to the sidebar layout before the stretch
-        self.layout.insertWidget(self.layout.count() - 1, self.recent_files_section)
+        self.layout.insertWidget(
+            self.layout.count() - 1,
+            self.recent_files_section)
 
     def clear_recent_files_section(self):
         """Remove any existing recent files section from the sidebar"""

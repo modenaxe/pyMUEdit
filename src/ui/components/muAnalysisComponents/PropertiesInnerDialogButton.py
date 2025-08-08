@@ -1,7 +1,9 @@
-from PyQt5.QtWidgets import QPushButton
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QCursor, QFont
+from PyQt5.QtWidgets import QPushButton
+
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from PyQt5.QtGui import QFont, QCursor
+
 
 class PropertiesInnerDialogButton(QPushButton):
 

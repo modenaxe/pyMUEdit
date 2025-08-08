@@ -1,26 +1,24 @@
-from PyQt5.QtWidgets import (
-    QWidget,
-    QVBoxLayout, 
-    QLabel, 
-    QLineEdit,
-)
-from PyQt5.QtGui import QPalette, QColor
-from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from PyQt5.QtGui import QColor, QPalette
+from PyQt5.QtWidgets import QLabel, QLineEdit, QVBoxLayout, QWidget
+
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
 """
 Returns an input with a label. If you don't want a label, don't give it one
 """
+
+
 class AnalysisInput(QWidget):
     def __init__(self, label="", placeholder="", parent=None):
         super().__init__(parent)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        
-        # label 
+
+        # label
         if (label != ""):
-            input_label = AnalysisText.create_label(label) 
+            input_label = AnalysisText.create_label(label)
             layout.addWidget(input_label)
 
         # input
@@ -38,10 +36,12 @@ class AnalysisInput(QWidget):
             }}
         """
         )
-        # placeholder stuff 
+        # placeholder stuff
         input.setPlaceholderText(placeholder)
         palette = input.palette()
-        palette.setColor(QPalette.PlaceholderText, QColor(CleanTheme.TEXT_SECONDARY))
+        palette.setColor(
+            QPalette.PlaceholderText, QColor(
+                CleanTheme.TEXT_SECONDARY))
 
         self.input = input
         layout.addWidget(input)

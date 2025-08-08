@@ -1,11 +1,14 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QComboBox
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import \
+    FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+from PyQt5.QtWidgets import QComboBox, QLabel, QVBoxLayout, QWidget
+
 
 class ChannelViewer(QWidget):
     def __init__(self, emg_data, parent=None):
         super().__init__(parent)
-        self.emg_data = emg_data  # Expecting a 2D NumPy array [channels x time]
+        # Expecting a 2D NumPy array [channels x time]
+        self.emg_data = emg_data
 
         self.layout = QVBoxLayout()
 
@@ -14,7 +17,8 @@ class ChannelViewer(QWidget):
         self.layout.addWidget(self.selector_label)
 
         self.channel_selector = QComboBox()
-        self.channel_selector.addItems([f"Channel {i+1}" for i in range(self.emg_data.shape[0])])
+        self.channel_selector.addItems(
+            [f"Channel {i+1}" for i in range(self.emg_data.shape[0])])
         self.channel_selector.currentIndexChanged.connect(self.update_plot)
         self.layout.addWidget(self.channel_selector)
 

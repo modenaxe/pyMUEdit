@@ -1,29 +1,22 @@
-from PyQt5.QtWidgets import (
-    QWidget,
-    QLabel,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QLineEdit,
-    QDialog,
-    QComboBox
-)
-from PyQt5.QtGui import QFont, QCursor
-from PyQt5.QtCore import Qt, pyqtSignal
 import numpy as np
 import pandas as pd
-from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
-from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
-from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
-from ui.components.muAnalysisComponents.AnalysisDropdownDialog import AnalysisDropdownDialog, AnalysisLabeledDropdownDialog
-from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
-from core.muAnalysisCore.AnalysisResultsHist import store
-from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
-from core.muAnalysisCore.SelectRange import SelectRange
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QCursor, QFont
+from PyQt5.QtWidgets import (QComboBox, QDialog, QHBoxLayout, QLabel,
+                             QLineEdit, QPushButton, QVBoxLayout, QWidget)
 
+from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
+from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
+from core.muAnalysisCore.AnalysisResultsHist import store
+from core.muAnalysisCore.SelectRange import SelectRange
+from ui.components.muAnalysisComponents.AnalysisDropdown import \
+    AnalysisDropdown
+from ui.components.muAnalysisComponents.AnalysisDropdownDialog import (
+    AnalysisDropdownDialog, AnalysisLabeledDropdownDialog)
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
+from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 
 
 class MotorUnitPropertiesDialog(QDialog):
@@ -31,7 +24,12 @@ class MotorUnitPropertiesDialog(QDialog):
 
     mvc_updated = pyqtSignal(float)  # Signal emitted when MVC is updated
 
-    def __init__(self, parent=None, analysis_plot=None, current_mvc=None, emgfile=None):
+    def __init__(
+            self,
+            parent=None,
+            analysis_plot=None,
+            current_mvc=None,
+            emgfile=None):
         super().__init__(parent)
         self.current_mvc = current_mvc
         # passing instance of MUPropertiesFunc to be used in parts of dialog
@@ -46,11 +44,12 @@ class MotorUnitPropertiesDialog(QDialog):
         self.setWindowFlags(
             Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint
         )
-        self.setStyleSheet(f"background-color: {CleanTheme.ANALYSIS_DIALOG_BACKGROUND};")
+        self.setStyleSheet(
+            f"background-color: {CleanTheme.ANALYSIS_DIALOG_BACKGROUND};")
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
         layout.setContentsMargins(30, 20, 30, 20)
-        title = AnalysisText.create_title_dark("Motor Unit Properties") 
+        title = AnalysisText.create_title_dark("Motor Unit Properties")
         layout.addWidget(title)
 
         # MVC Input Section
@@ -95,7 +94,7 @@ class MotorUnitPropertiesDialog(QDialog):
         layout.addLayout(compute_threshold)
         layout.addLayout(dr_section)
         func.set_mvc(self.mvc_input)
-        
+
         basic_prop = MotorUnitPropertiesBasic(self.analysis_plot, func, self)
         layout.addLayout(basic_prop)
 
@@ -122,9 +121,9 @@ class MotorUnitPropertiesDialog(QDialog):
             self.accept()
             # Show the range selection dialog
             SelectRange(self.analysis_plot,
-                lambda start, end: self.compute_and_display_dr(
-                    n_firings_RecDerec, n_firings_steady, event, (start, end)
-                ), False)
+                        lambda start, end: self.compute_and_display_dr(
+                            n_firings_RecDerec, n_firings_steady, event, (start, end)
+                        ), False)
 
         else:
             # For non-steady events, just compute normally
@@ -146,7 +145,9 @@ class MotorUnitPropertiesDialog(QDialog):
                 time_range=time_range,
             )
         except Exception as e:
-            ErrorDialog(f"Error computing discharge rate: {str(e)}", "Error").exec_()
+            ErrorDialog(
+                f"Error computing discharge rate: {str(e)}",
+                "Error").exec_()
             return
         # Append result to results panel (top of history)
         store.append_analysis_hist(
@@ -167,7 +168,11 @@ class MotorUnitPropertiesBasic(QHBoxLayout):
         super().__init__()
         button = GeneralButton(
             "Basic Properties",
-            lambda: func.basic_prop(analysis_plot, rec_input, steady_input, over),
+            lambda: func.basic_prop(
+                analysis_plot,
+                rec_input,
+                steady_input,
+                over),
         )
         rec_input = PropertiesInnerDialogText("Firings at Rec")
         steady_input = PropertiesInnerDialogText("Firings at Start/End Steady")
@@ -201,19 +206,23 @@ class PropertiesInnerDialogText(QLineEdit):
         """
         )
 
-        
+
 # class that holds the inputs to compute threshold
 class ComputeThresholdSection(QHBoxLayout):
     def __init__(self, func):
         super().__init__()
-        event_ = AnalysisDropdownDialog("Event", items=['rt', 'dert', 'rt_dert'])
-        type_ =  AnalysisDropdownDialog("Type", items=['abs', 'rel', 'abs_rel'])
-        button = GeneralButton("Compute Thresholds", lambda: func.compute_thresh(event_.currentText(), type_.currentText()))
+        event_ = AnalysisDropdownDialog(
+            "Event", items=['rt', 'dert', 'rt_dert'])
+        type_ = AnalysisDropdownDialog("Type", items=['abs', 'rel', 'abs_rel'])
+        button = GeneralButton(
+            "Compute Thresholds",
+            lambda: func.compute_thresh(
+                event_.currentText(),
+                type_.currentText()))
 
         self.addWidget(button)
         self.addWidget(event_)
         self.addWidget(type_)
-        
 
 
 class MotorUnitPropertiesButton(QWidget):
@@ -229,7 +238,7 @@ class MotorUnitPropertiesButton(QWidget):
 
     def init_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(10,0,10,0)
+        layout.setContentsMargins(10, 0, 10, 0)
 
         # Subtitle
         subtitle_label = AnalysisText.create_subtitle("MOTOR UNIT ANALYSIS")

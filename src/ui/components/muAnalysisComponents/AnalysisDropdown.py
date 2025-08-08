@@ -1,16 +1,12 @@
-from PyQt5.QtWidgets import (
-    QComboBox, 
-    QFrame, 
-    QVBoxLayout,
-    QLabel,
-    QWidget,
-)
 from pathlib import Path
-from PyQt5.QtCore import Qt
-from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 
-# defining absolute path for icons 
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QComboBox, QFrame, QLabel, QVBoxLayout, QWidget
+
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+
+# defining absolute path for icons
 ABS_PATH = Path(__file__).parent.parent.parent.parent
 ICONS_PATH = ABS_PATH / "public"
 down_arrow_white_path = ICONS_PATH / "down_arrow_white_icon.svg"
@@ -18,7 +14,7 @@ down_arrow_white_path = ICONS_PATH / "down_arrow_white_icon.svg"
 
 # For dropdown inputs for the analysis tab (factory method)
 class AnalysisDropdown(QComboBox):
-    
+
     """
     Initialise a dropdown without a label (label is a placeholder)
     """
@@ -59,12 +55,13 @@ class AnalysisDropdown(QComboBox):
             """
         )
         self.setPlaceholderText(label)
-        if items: self.addItems(items)
+        if items:
+            self.addItems(items)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
 
 # too hard to convert the old class 'AnalysisDropdown' into a QWidget child class, that supports
-# labeled and non-labeled dropdowns, so I thought a new class would be better 
+# labeled and non-labeled dropdowns, so I thought a new class would be better
 class AnalysisLabeledDropdown(QWidget):
     def __init__(self, label="", items=None, parent=None):
         super().__init__(parent)
@@ -85,4 +82,3 @@ class AnalysisLabeledDropdown(QWidget):
 
     def get(self):
         return self.dropdown.currentText()
-
