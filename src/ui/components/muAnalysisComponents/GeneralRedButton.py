@@ -1,12 +1,14 @@
-from PyQt5.QtWidgets import QPushButton
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QPushButton
+
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+
 
 class GeneralRedButton(QPushButton):
 
     """ui component for general warning red buttons
         parameters:
-        text (string): text for the button 
+        text (string): text for the button
     """
 
     def __init__(self, label="", parent=None):

@@ -1,14 +1,17 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QApplication, QScrollArea
-from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtSvg import QSvgWidget
 from pathlib import Path
 
-# Import custom components
-from ui.components import CleanTheme, CleanCard, ActionButton, SectionHeader, Sidebar
+from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QFont
+from PyQt5.QtSvg import QSvgWidget
+from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
+                             QScrollArea, QVBoxLayout, QWidget)
 
-# defining absolute path for icons 
-# bit messy. you'll have to adjust the number of .parents you call based on where this 
+# Import custom components
+from ui.components import (ActionButton, CleanCard, CleanTheme, SectionHeader,
+                           Sidebar)
+
+# defining absolute path for icons
+# bit messy. you'll have to adjust the number of .parents you call based on where this
 # file is located
 ABS_PATH = Path(__file__).parent.parent
 ICONS_PATH = ABS_PATH / "public"
@@ -43,7 +46,8 @@ def setup_ui(import_window):
     main_layout.addWidget(footer)
 
     # Store references to functions for sidebar management
-    import_window.update_sidebar_with_recent_files = lambda: update_sidebar_with_recent_files(import_window)
+    import_window.update_sidebar_with_recent_files = lambda: update_sidebar_with_recent_files(
+        import_window)
     import_window.restore_sidebar = lambda: restore_sidebar(import_window)
 
 
@@ -53,7 +57,8 @@ def create_right_content(import_window):
     scroll_area = QScrollArea()
     scroll_area.setWidgetResizable(True)
     scroll_area.setFrameShape(QFrame.NoFrame)
-    scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    scroll_area.setHorizontalScrollBarPolicy(
+        Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
     scroll_area.setStyleSheet("background: transparent; border: none;")
 
     # Create container widget
@@ -116,7 +121,8 @@ def create_dropzone_card(import_window):
     import_window.file_info_label = QLabel("")
     import_window.file_info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
     import_window.file_info_label.setFont(QFont("Segoe UI", 11))
-    import_window.file_info_label.setStyleSheet(f"color: #4CAF50; font-weight: bold;")
+    import_window.file_info_label.setStyleSheet(
+        f"color: #4CAF50; font-weight: bold;")
     import_window.file_info_label.setVisible(False)
 
     # Add "or" label
@@ -177,9 +183,11 @@ def create_preview_section(import_window):
     preview_frame.setMinimumHeight(220)
 
     # Create preview message
-    import_window.preview_message = QLabel("No file selected. Import a file to see a preview.")
+    import_window.preview_message = QLabel(
+        "No file selected. Import a file to see a preview.")
     import_window.preview_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    import_window.preview_message.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
+    import_window.preview_message.setStyleSheet(
+        f"color: {CleanTheme.TEXT_SECONDARY};")
 
     # Add message to preview frame
     preview_frame_layout = QVBoxLayout(preview_frame)
@@ -215,13 +223,16 @@ def create_footer(import_window):
 
     # Create file info labels
     import_window.footer_file_info = QLabel("No file selected")
-    import_window.footer_file_info.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+    import_window.footer_file_info.setStyleSheet(
+        f"color: {CleanTheme.TEXT_PRIMARY};")
 
     import_window.size_info = QLabel("Size: --")
-    import_window.size_info.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
+    import_window.size_info.setStyleSheet(
+        f"color: {CleanTheme.TEXT_SECONDARY};")
 
     import_window.format_info = QLabel("Format: --")
-    import_window.format_info.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
+    import_window.format_info.setStyleSheet(
+        f"color: {CleanTheme.TEXT_SECONDARY};")
 
     # Add file info to layout
     footer_layout.addWidget(import_window.footer_file_info)
@@ -236,7 +247,8 @@ def create_footer(import_window):
     prev_btn.clicked.connect(import_window.go_back)
 
     import_window.next_btn = ActionButton("Next →", primary=True)
-    import_window.next_btn.clicked.connect(import_window.go_to_algorithm_screen)
+    import_window.next_btn.clicked.connect(
+        import_window.go_to_algorithm_screen)
     import_window.next_btn.setEnabled(False)
 
     # Add navigation buttons to layout
@@ -268,7 +280,9 @@ def update_sidebar_with_recent_files(import_window):
     """Update the sidebar to show recent files."""
     sidebar = find_sidebar(import_window)
     if sidebar and hasattr(sidebar, "add_recent_files_section"):
-        sidebar.add_recent_files_section(import_window.recent_files, import_window.load_recent_file)
+        sidebar.add_recent_files_section(
+            import_window.recent_files,
+            import_window.load_recent_file)
 
 
 def restore_sidebar(import_window):

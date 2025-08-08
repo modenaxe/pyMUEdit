@@ -1,7 +1,11 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QStyle
-from PyQt5.QtGui import QFont, QColor
-from PyQt5.QtCore import Qt, QSize, pyqtSignal
-from ui.components.muAnalysisComponents.GeneralRedButton import GeneralRedButton
+from PyQt5.QtCore import QSize, Qt, pyqtSignal
+from PyQt5.QtGui import QColor, QFont
+from PyQt5.QtWidgets import (QDialog, QHBoxLayout, QLabel, QPushButton, QStyle,
+                             QVBoxLayout)
+
+from ui.components.muAnalysisComponents.GeneralRedButton import \
+    GeneralRedButton
+
 
 class ErrorDialog(QDialog):
 
