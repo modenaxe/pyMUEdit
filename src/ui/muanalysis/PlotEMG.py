@@ -533,15 +533,19 @@ class PlotEMGToolDialog(QDialog):
                 f'Error plotting Derivation:\n{str(e)}',
                 'Error').exec_()
 
-    # plots muaps in the center plot
     def plot_muaps(self):
+        """Function that plots MUAPs as long as the correct inputs are defined 
+        in the modal. 
+        Params: None
+        Returns: None
+        """
         try:
-            # determining mu_number_input
+            # Determining mu_number_input
             try:
                 max_mu = FileUploadFunc.file["NUMBER_OF_MUS"]
                 mu_num = int(self.mu_number_input.get())
 
-                # if it's negative or too big
+                # If it's negative or too big
                 if (mu_num < 0 or mu_num >= max_mu):
                     raise ValueError()
             except ValueError as e:
@@ -549,7 +553,7 @@ class PlotEMGToolDialog(QDialog):
                     "Please enter a valid MU number from 0 to " + str(max_mu - 1)).exec_()
                 return
             except KeyError as e:
-                # just in case ["NUMBER_OF_MUS"] isn't a thing
+                # Just in case ["NUMBER_OF_MUS"] isn't a thing
                 ErrorDialog(
                     "Your file isn't formatted properly. Include the NUMBER_OF_MUS").exec_()
                 return
@@ -609,12 +613,8 @@ class PlotEMGToolDialog(QDialog):
                     timewindow=int(self.timewindow_dropdown.currentText()),
                 )
 
-                fig = muaps_from_sta(self.analysis_plot, sta_dict[mu_num])
-
-                canvas = SaveablePlot(fig)
-                self.analysis_plot.display_fig(canvas)
-                plt.close(fig)
-
+                # Plotting
+                muaps_from_sta(self.analysis_plot, sta_dict[mu_num])
         except ValueError as e:
             if (self.configuration_dropdown.currentText() == ""):
                 ErrorDialog(

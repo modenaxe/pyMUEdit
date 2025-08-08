@@ -15,9 +15,7 @@ down_arrow_white_path = ICONS_PATH / "down_arrow_white_icon.svg"
 # For dropdown inputs for the analysis tab (factory method)
 class AnalysisDropdownDialog(QComboBox):
 
-    """
-    Initialise a dropdown without a label (label is a placeholder)
-    """
+    """UI component for defining a dark dropdown with a placeholder label"""
 
     def __init__(self, label, items=None, parent=None):
         super().__init__(parent)
@@ -59,26 +57,3 @@ class AnalysisDropdownDialog(QComboBox):
             self.addItems(items)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
-
-# too hard to convert the old class 'AnalysisDropdown' into a QWidget child class, that supports
-# labeled and non-labeled dropdowns, so I thought a new class would be better
-class AnalysisLabeledDropdownDialog(QWidget):
-    def __init__(self, label="", items=None, parent=None):
-        super().__init__(parent)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-
-        # the label
-        label = AnalysisText.create_label(label)
-        layout.addWidget(label)
-
-        # the dropdown, taken from init
-        dropdown = AnalysisDropdownDialog("", items=items)
-        dropdown.adjustSize()
-        dropdown.setPlaceholderText("")
-        layout.addWidget(dropdown)
-        self.dropdown = dropdown
-
-    def get(self):
-        return self.dropdown.currentText()
