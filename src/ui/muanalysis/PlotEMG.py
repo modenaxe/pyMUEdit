@@ -17,21 +17,17 @@ from app.muAnalysisFunctions.PlotEMGFunc import (diff, double_diff,
                                                  plot_emgsig, plot_idr,
                                                  plot_ipts, plot_mupulses,
                                                  plot_refsig, sort_rawemg)
-from ui.components.muAnalysisComponents.AnalysisCheckbox import \
-    AnalysisCheckbox
-from ui.components.muAnalysisComponents.AnalysisCheckboxDark import \
-    AnalysisCheckboxDark
-from ui.components.muAnalysisComponents.AnalysisDropdown import \
-    AnalysisDropdown
-from ui.components.muAnalysisComponents.AnalysisDropdownDialog import (
-    AnalysisDropdownDialog, AnalysisLabeledDropdownDialog)
+from ui.components.muAnalysisComponents.AnalysisCheckbox import AnalysisCheckbox
+from ui.components.muAnalysisComponents.AnalysisCheckboxDark import AnalysisCheckboxDark
+from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
+from ui.components.muAnalysisComponents.AnalysisDropdownDialog import AnalysisDropdownDialog
+from ui.components.muAnalysisComponents.AnalysisLabeledDropdownDialog import AnalysisLabeledDropdownDialog
 from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import \
-    PropertiesInnerDialogButton
+from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import PropertiesInnerDialogButton
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
 
 
