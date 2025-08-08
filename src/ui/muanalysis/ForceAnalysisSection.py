@@ -37,7 +37,6 @@ class ForceAnalysisSection(QWidget):
         )
         rfd_layout.addWidget(rfd_value)
         rfd_layout.addWidget(button)
-
         layout.addLayout(rfd_layout)
         layout.addWidget(mvc_button)
         layout.addStretch(1)

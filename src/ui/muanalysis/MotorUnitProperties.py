@@ -17,9 +17,12 @@ from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
+from ui.components.muAnalysisComponents.PropertiesInnerDialogText import \
+    PropertiesInnerDialogText
 
 
 class MotorUnitPropertiesDialog(QDialog):
+
     """Dialog for entering Motor Unit Properties including MVC value"""
 
     mvc_updated = pyqtSignal(float)  # Signal emitted when MVC is updated
@@ -32,7 +35,6 @@ class MotorUnitPropertiesDialog(QDialog):
             emgfile=None):
         super().__init__(parent)
         self.current_mvc = current_mvc
-        # passing instance of MUPropertiesFunc to be used in parts of dialog
         self.analysis_plot = analysis_plot
         self.emgfile = emgfile
         self.init_ui(MUPropertiesFunc())
@@ -158,10 +160,8 @@ class MotorUnitPropertiesDialog(QDialog):
         pass
 
 
-# basic properties section
-# has firing at rec, firing at start/end input and basic properties button
-# button leads to functions found in app.MUPropertiesFun
 class MotorUnitPropertiesBasic(QHBoxLayout):
+
     """Basic Properties analysis layout"""
 
     def __init__(self, analysis_plot, func, over):
@@ -180,34 +180,9 @@ class MotorUnitPropertiesBasic(QHBoxLayout):
         self.addWidget(rec_input)
         self.addWidget(steady_input)
 
-
-# general class for any inner inputs inside dialog
-class PropertiesInnerDialogText(QLineEdit):
-    """Inputs within Motor Unit Properties dialogs"""
-
-    def __init__(self, text):
-        super().__init__()
-        self.setMinimumHeight(32)
-        self.setPlaceholderText(text)
-        self.setFont(QFont("Arial", 11))
-        self.setStyleSheet(
-            f"""
-            QLineEdit {{
-                padding: 10px;
-                border: 2px solid {CleanTheme.BORDER};
-                border-radius: 6px;
-                background-color: {CleanTheme.ANALYSIS_BG_CARD};
-                color: {CleanTheme.TEXT_PRIMARY};
-                font-size: 11pt;
-            }}
-            QLineEdit:focus {{
-                border-color: {CleanTheme.ANALYSIS_BG_BUTTON};
-            }}
-        """
-        )
-
-
 # class that holds the inputs to compute threshold
+
+
 class ComputeThresholdSection(QHBoxLayout):
     def __init__(self, func):
         super().__init__()
@@ -226,6 +201,7 @@ class ComputeThresholdSection(QHBoxLayout):
 
 
 class MotorUnitPropertiesButton(QWidget):
+
     """Button widget for opening Motor Unit Properties dialog"""
 
     mvc_updated = pyqtSignal(float)  # Signal emitted when MVC is updated
