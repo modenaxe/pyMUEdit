@@ -8,12 +8,17 @@ from PyQt5.QtWidgets import (
     QDialog,
     QMessageBox,
 )
+import matplotlib.pyplot as plt
+from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
+from ui.components.SaveablePlot import SaveablePlot
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown, AnalysisLabeledDropdown
+from ui.components.muAnalysisComponents.AnalysisDropdownDialog import AnalysisDropdownDialog, AnalysisLabeledDropdownDialog
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
+from core.muAnalysisCore.SelectRange import SelectRange
 
 class SignalEditing(QWidget):
 
@@ -34,19 +39,25 @@ class SignalEditing(QWidget):
 
     # the popup
     def show_window(self):
+        # only opening if there's a file 
+        if FileUploadFunc.file == None:
+            ErrorDialog("No file has been loaded", "Error").exec_()
+            return
+
         window = QDialog()
         window.setWindowTitle("Signal Editing Window")
         window.setStyleSheet(
             f"""
-            background-color: {CleanTheme.ANALYSIS_BG_SIDEBAR};
+            background-color: {CleanTheme.ANALYSIS_DIALOG_BACKGROUND};
             """
         )
         window_layout = QVBoxLayout()
         window.setLayout(window_layout)
         window_layout.setSpacing(10)
+        self.window = window
 
         # title
-        title = AnalysisText.create_title("Signal Editing") 
+        title = AnalysisText.create_title_dark("Signal Editing") 
         window_layout.addWidget(title)
 
         # spacing 
@@ -54,7 +65,7 @@ class SignalEditing(QWidget):
 
         # FILTER EMG 
         # subtitle 
-        emg_sig_subtitle = AnalysisText.create_heading("EMG Signal")
+        emg_sig_subtitle = AnalysisText.create_heading_dark("EMG Signal")
         window_layout.addWidget(emg_sig_subtitle)
 
         # filter emg signal row
@@ -89,7 +100,7 @@ class SignalEditing(QWidget):
 
         # REFERENCE SIGNAL
         # another subtitle 
-        refsig_subtitle = AnalysisText.create_heading("Reference Signal")
+        refsig_subtitle = AnalysisText.create_heading_dark("Reference Signal")
         window_layout.addWidget(refsig_subtitle)
 
         # filter reference signal row  
@@ -152,7 +163,7 @@ class SignalEditing(QWidget):
         convert_layout = QHBoxLayout(convert)
         convert_layout.setContentsMargins(0, 0, 0, 0)
         # ficing dropdown
-        convert_operator = AnalysisLabeledDropdown(
+        convert_operator = AnalysisLabeledDropdownDialog(
             "Operator", 
             ["Multiply", "Divide"], 
             parent=self
@@ -162,7 +173,7 @@ class SignalEditing(QWidget):
 
         convert_factor = AnalysisInput("Factor", "2.5", parent=window)
         convert_factor.set("2.5")
-        convert_layout.addWidget(convert_factor)
+        convert_layout.addWidget(convert_factor, stretch=1)
         self.convert_factor = convert_factor
 
         # aligning button to bottom
@@ -232,17 +243,14 @@ class SignalEditing(QWidget):
         if not self.valid_file(): 
             return
 
-        print("filtering emg signals")
-
         # determining if values are valid 
         order = self.is_int(self.filter_emg_order.get())
         lo, hi = map(self.is_int, self.filter_emg_freq.get().split("-", maxsplit=1))
         if not order or order - 1 < 0:
-            ErrorDialog("EMG signal filter order must be a non-negative integer", "Error").exec_()
-            self.display_warning("Invalid Input", "EMG signal ")
+            ErrorDialog("EMG signal filter order must be a non-negative integer", "Invalid Input").exec_()
             return 
         elif not lo or not hi or lo - 1 <= 0 or hi - 1<= 0 or lo >= hi:
-            ErrorDialog("EMG signal bandpass frequencies must be non-zero positive integers written in the form `x-y` where the left limit must be smaller than the right limit.", "Error").exec_()
+            ErrorDialog("EMG signal bandpass frequencies must be non-zero positive integers written in the form `x-y` where the left limit must be smaller than the right limit.", "Invalid Input").exec_()
             return
 
         # main code (copied over from openhdemg)
@@ -277,16 +285,14 @@ class SignalEditing(QWidget):
         if not self.valid_file(): 
             return
         
-        print("filtering refsig")
-
         # determining if values are valid 
         order = self.is_int(self.filter_refsig_order.get())
         cutoff = self.is_int(self.filter_refsig_freq.get())
         if not order or order - 1 < 0:
-            self.display_warning("Invalid Input", "Reference signal filter order must be a non-negative integer.")
+            ErrorDialog("Reference signal filter order must be a non-negative integer", "Invalid Input").exec_()
             return
         elif not cutoff or cutoff - 1 <= 0:
-            self.display_warning("Invalid Input", "Reference signal filter cutoff frequency must be a non-zero positive integer.")
+            ErrorDialog("Reference signal filter cutoff frequency must be a non-zero positive integer", "Invalid Input").exec_()
             return
 
         # main code (copied from openhdemg)
@@ -310,17 +316,57 @@ class SignalEditing(QWidget):
 
         self.mu.plot_refsig(filtered_file, self.analysis_plot)
 
+    # TL : notes on what this function does (or is supposed to do) 
+    # if you provide a non-zero offset value:
+    #   shifts the values on the y-axis down by the offset 
+    #
     def remove_offset(self):
         if not self.valid_file(): 
             return
         
-        print("removing offset")
+        try:
+            # getting values (openhdemg doesn't accept floats)
+            offset = int(self.remove_offset_value.get())
+            auto = int(self.remove_auto_offset.get())
+
+            plt.close()
+
+            # setting up the plot 
+            self.fig, self.ax = plt.subplots()
+            self.ax.set_xlabel("Time(sec)")
+            self.ax.set_ylabel('MVC')
+
+            self.fig.set_figheight(5)
+            self.fig.set_figwidth(5)
+
+            # logic from openhdemg : computing offset and applying offset
+            if (auto <= 0):
+                if (offset != 0):
+                    self.mu.file["REF_SIGNAL"][0] = self.mu.file["REF_SIGNAL"][0] - offset
+                    self.mu.plot_refsig(self.mu.file, self.analysis_plot) 
+                else:
+                    self.window.accept()
+                    SelectRange(self.analysis_plot, self.two_point, False)
+            else :
+                # subtracting 
+                offset = self.mu.file["REF_SIGNAL"].iloc[0:auto].mean()
+                self.mu.file["REF_SIGNAL"][0] = (self.mu.file["REF_SIGNAL"][0] - float(offset))
+                self.mu.plot_refsig(self.mu.file, self.analysis_plot)
+        except ValueError as e:
+            ErrorDialog("Offset and Automatic Offset value must be a valid integer", "Invalid Input").exec_()
+
+    # defining two_point for SelectRange 
+    # executes after points are selected (don't need to revert center plot)
+    def two_point(self, x, y):
+        offsetval = self.mu.file["REF_SIGNAL"].loc[x:y].mean()
+        self.mu.file["REF_SIGNAL"][0] = (self.mu.file["REF_SIGNAL"][0] - float(offsetval))
+
+        self.mu.plot_refsig(self.mu.file, self.analysis_plot)
+
 
     def convert(self):
         if not self.valid_file(): 
             return
-        
-        print("converting")
 
         try:
             # converting factor 
@@ -333,14 +379,13 @@ class SignalEditing(QWidget):
             # updating the plot (replotting)
             self.mu.plot_refsig(self.mu.file, self.analysis_plot)
         except ValueError as e:
-            ErrorDialog("Conversion factor must be a valid number.", "Error").exec_()
+            ErrorDialog("Conversion factor must be a valid number", "Invalid Input").exec_()
 
 
     def to_percent(self):
         if not self.valid_file(): 
             return
         
-        print("to percenting")
         try:
             percent = float(self.percent_mvc_value.get())
             self.mu.file["REF_SIGNAL"] = (self.mu.file["REF_SIGNAL"] * 100 / percent)
@@ -348,5 +393,5 @@ class SignalEditing(QWidget):
             # plotting 
             self.mu.plot_refsig(self.mu.file, self.analysis_plot)
         except ValueError as e:
-            ErrorDialog("MVC value must be a valid float.", "Error").exec_()
+            ErrorDialog("MVC value must be a valid float", "Invalid Input").exec_()
 

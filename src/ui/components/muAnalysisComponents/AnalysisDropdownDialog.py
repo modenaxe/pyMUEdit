@@ -17,7 +17,7 @@ down_arrow_white_path = ICONS_PATH / "down_arrow_white_icon.svg"
 
 
 # For dropdown inputs for the analysis tab (factory method)
-class AnalysisDropdown(QComboBox):
+class AnalysisDropdownDialog(QComboBox):
     
     """
     Initialise a dropdown without a label (label is a placeholder)
@@ -29,7 +29,7 @@ class AnalysisDropdown(QComboBox):
         self.setStyleSheet(
             f"""
             QComboBox {{
-                background-color: {CleanTheme.ANALYSIS_BG_DROPDOWN};
+                background-color: {CleanTheme.ANALYSIS_DIALOG_DROPDOWN};
                 color: {CleanTheme.ANALYSIS_TEXT_SECONDARY};
                 border-radius: 4px;
                 margin: 0px;
@@ -49,8 +49,8 @@ class AnalysisDropdown(QComboBox):
                 width: 10px;
             }}
             QComboBox QAbstractItemView {{
+                background-color: {CleanTheme.ANALYSIS_DIALOG_TEXT};
                 border: 0px;
-                background-color: {CleanTheme.ANALYSIS_BG_DROPDOWN_SEC};
             }}
             QComboBox:disabled {{
                 background-color: {CleanTheme.ANALYSIS_BG_DROPDOWN_DISABLED};
@@ -65,7 +65,7 @@ class AnalysisDropdown(QComboBox):
 
 # too hard to convert the old class 'AnalysisDropdown' into a QWidget child class, that supports
 # labeled and non-labeled dropdowns, so I thought a new class would be better 
-class AnalysisLabeledDropdown(QWidget):
+class AnalysisLabeledDropdownDialog(QWidget):
     def __init__(self, label="", items=None, parent=None):
         super().__init__(parent)
 
@@ -77,7 +77,7 @@ class AnalysisLabeledDropdown(QWidget):
         layout.addWidget(label)
 
         # the dropdown, taken from init
-        dropdown = AnalysisDropdown("", items=items)
+        dropdown = AnalysisDropdownDialog("", items=items)
         dropdown.adjustSize()
         dropdown.setPlaceholderText("")
         layout.addWidget(dropdown)

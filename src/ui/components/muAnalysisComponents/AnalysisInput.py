@@ -23,16 +23,18 @@ class AnalysisInput(QWidget):
             input_label = AnalysisText.create_label(label) 
             layout.addWidget(input_label)
 
-        # input 
+        # input
+        # height has to be 38 because border isn't included
         input = QLineEdit()
         input.setStyleSheet(
             f"""
             QLineEdit {{
                 background-color: {CleanTheme.ANALYSIS_BG_CARD};
                 color: {CleanTheme.TEXT_PRIMARY};
+                border: 1px solid {CleanTheme.BORDER};
                 border-radius: 4px;
                 padding-left: 10px;
-                height: 40px;
+                height: 38px;
             }}
         """
         )
@@ -49,3 +51,7 @@ class AnalysisInput(QWidget):
 
     def get(self, value=None):
         return self.input.text()
+
+    # sets a specific width
+    def set_width(self, width):
+        self.setFixedWidth(width)

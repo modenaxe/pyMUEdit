@@ -62,10 +62,17 @@ class MUPropertiesFunc:
         ):
             ErrorDialog("You are missing Inputs", "Error").exec_()
             return
+        self.basic = [self.convert(rec), self.convert(start)]
+        try:
+            self.basic[0] = int(self.basic[0])
+            self.basic[1] = int(self.basic[1])
+        except:
+            ErrorDialog("incorrect input form", "Error").exec_()
+            return
         over.hide()
         self.over = over
-        self.basic = [self.convert(rec), self.convert(start)]
-        SelectRange(analysis_plot, self.two_point)
+        self.analysis_plot = analysis_plot
+        SelectRange(analysis_plot, self.two_point, False)
         
     def compute_thresh(self, event_, type_):
         file = FileUploadFunc.file
@@ -257,7 +264,7 @@ class MUPropertiesFunc:
         )
         covsteady = pd.DataFrame([{"COV_steady": covsteady}])
         exportable_df = pd.concat([exportable_df, covsteady], axis=1)
-        print(exportable_df)
+
         self.results.append_analysis_hist(
             "Basic Properties", exportable_df.to_dict("records")
         )
@@ -365,9 +372,14 @@ class MUPropertiesFunc:
         end_steady=-1,
         event_="rec_derec_steady",
         idr_range=None,
+        time_range=None,
     ):
         # Check that all the inputs are correct
         errormessage = f"event_ must be one of the following strings: rec, derec, rec_derec, steady, rec_derec_steady. {event_} was passed instead."
+
+        # Handle time_range if provided (for steady and rec_derec_steady)
+        if time_range is not None and event_ in ["steady", "rec_derec_steady"]:
+            start_steady, end_steady = time_range
         if event_ not in [
             "rec",
             "derec",

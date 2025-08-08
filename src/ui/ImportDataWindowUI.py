@@ -2,9 +2,17 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, Q
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtSvg import QSvgWidget
+from pathlib import Path
 
 # Import custom components
 from ui.components import CleanTheme, CleanCard, ActionButton, SectionHeader, Sidebar
+
+# defining absolute path for icons 
+# bit messy. you'll have to adjust the number of .parents you call based on where this 
+# file is located
+ABS_PATH = Path(__file__).parent.parent
+ICONS_PATH = ABS_PATH / "public"
+cloud_icon_path = ICONS_PATH / "upload_icon.svg"
 
 
 def setup_ui(import_window):
@@ -92,7 +100,7 @@ def create_dropzone_card(import_window):
     icon_layout.setContentsMargins(0, 0, 0, 0)
     icon_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    cloud_icon = QSvgWidget("public/upload_icon.svg")
+    cloud_icon = QSvgWidget(str(cloud_icon_path))
     cloud_icon.setFixedSize(48, 33)
     cloud_icon.setStyleSheet("margin-bottom: 10px;")
 
