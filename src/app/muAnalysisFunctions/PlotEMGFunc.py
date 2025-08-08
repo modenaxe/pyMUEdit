@@ -161,7 +161,7 @@ def plot_emgsig(
     
     # TL : function now plots it and doesn't return a figure, similar to plot_idr and plog_refsig in MUAnalysisFunc
     canvas = SaveablePlot(fig)
-    analysis_plot.display_plot(canvas)
+    analysis_plot.display_fig(canvas)
 
 #OPENHDEMG
 def plot_idr(
