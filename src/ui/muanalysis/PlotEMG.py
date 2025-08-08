@@ -317,7 +317,7 @@ class PlotEMGToolDialog(QDialog):
                 timeinseconds=self.time_seconds_checkbox.isChecked()
             )
             canvas = SaveablePlot(fig)
-            self.analysis_plot.display_plot(canvas)
+            self.analysis_plot.display_fig(canvas)
             plt.close(fig)
         except Exception as e:
             ErrorDialog('Error plotting REFsig', 'Error').exec_()
@@ -342,7 +342,7 @@ class PlotEMGToolDialog(QDialog):
                 showimmediately=False
             )
             canvas = SaveablePlot(fig)
-            self.analysis_plot.display_plot(canvas)
+            self.analysis_plot.display_fig(canvas)
             plt.close(fig)
         except Exception as e:
             ErrorDialog('Error plotting IDR', 'Error').exec_()
@@ -370,7 +370,7 @@ class PlotEMGToolDialog(QDialog):
                 showimmediately=False
             )
             canvas = SaveablePlot(fig)
-            self.analysis_plot.display_plot(canvas)
+            self.analysis_plot.display_fig(canvas)
             plt.close(fig)
         except Exception as e:
             ErrorDialog('Error plotting MUPulses', 'Error').exec_()
@@ -418,7 +418,7 @@ class PlotEMGToolDialog(QDialog):
                 tight_layout=True,
             )
             canvas = SaveablePlot(fig)
-            self.analysis_plot.display_plot(canvas)
+            self.analysis_plot.display_fig(canvas)
             plt.close(fig)
         except Exception as e:
             ErrorDialog('Error plotting Source', 'Error').exec_()
@@ -489,7 +489,7 @@ class PlotEMGToolDialog(QDialog):
             )
 
             canvas = SaveablePlot(fig)
-            self.analysis_plot.display_plot(canvas)
+            self.analysis_plot.display_fig(canvas)
             plt.close(fig)
 
         except Exception as e:
@@ -569,7 +569,7 @@ class PlotEMGToolDialog(QDialog):
                 fig = muaps_from_sta(self.analysis_plot, sta_dict[mu_num])
                 
                 canvas = SaveablePlot(fig)
-                self.analysis_plot.display_plot(canvas)
+                self.analysis_plot.display_fig(canvas)
                 plt.close(fig)
 
         except ValueError as e:
