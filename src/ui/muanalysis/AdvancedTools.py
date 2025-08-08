@@ -1,21 +1,19 @@
-from PyQt5.QtWidgets import (
-    QWidget,
-    QLabel,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QMessageBox,
-)
-from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QMessageBox, QPushButton,
+                             QVBoxLayout, QWidget)
+
+from app.muAnalysisFunctions.ConductionVelocityDialog import \
+    ConductionVelocityDialog
+from app.muAnalysisFunctions.MotorUnitTrackingDialog import \
+    MotorUnitTrackingDialog
 from ui.components.CleanTheme import CleanTheme
-from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
-from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
+from ui.components.muAnalysisComponents.AnalysisDropdown import \
+    AnalysisDropdown
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
+from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.muanalysis.PIC import PICDialog
-from app.muAnalysisFunctions.MotorUnitTrackingDialog import MotorUnitTrackingDialog
-from app.muAnalysisFunctions.ConductionVelocityDialog import ConductionVelocityDialog
 
 
 class AdvancedTools(QWidget):
@@ -60,8 +58,7 @@ class AdvancedTools(QWidget):
 
         # matrix orientation dropdown
         matrix_orientation_dropdown = AnalysisDropdown(
-            self.matrix_orientation, items=self.matrix_orientation_options, parent=self
-        )
+            self.matrix_orientation, items=self.matrix_orientation_options, parent=self)
         adv_layout.addWidget(matrix_orientation_dropdown)
         self.matrix_orientation_dropdown = matrix_orientation_dropdown
 
@@ -78,12 +75,12 @@ class AdvancedTools(QWidget):
         )
         adv_layout.addWidget(advanced_analysis_btn, stretch=1)
 
-        self.analysis_tools_dropdown.currentTextChanged.connect(self.on_PIC_selection)
+        self.analysis_tools_dropdown.currentTextChanged.connect(
+            self.on_PIC_selection)
 
     def on_PIC_selection(self):
-        disable = (
-            self.analysis_tools_dropdown.currentText() == "Persistent Inward Currents"
-        )
+        disable = (self.analysis_tools_dropdown.currentText()
+                   == "Persistent Inward Currents")
         self.matrix_orientation_dropdown.setDisabled(disable)
         self.matrix_code_dropdown.setDisabled(disable)
 

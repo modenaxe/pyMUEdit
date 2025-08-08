@@ -1,31 +1,28 @@
-import sys
 import csv
-from PyQt5.QtWidgets import (
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QLabel,
-    QFrame,
-    QTableView, 
-    QFileDialog
-)
-from PyQt5.QtGui import QFont, QColor
+import sys
+
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor, QFont
+from PyQt5.QtWidgets import (QFileDialog, QFrame, QHBoxLayout, QLabel,
+                             QPushButton, QTableView, QVBoxLayout)
+
+from core.muAnalysisCore.AnalysisResultsHist import store
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.GeneralRedButton import GeneralRedButton
-from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from core.muAnalysisCore.AnalysisResultsHist import store
+from ui.components.muAnalysisComponents.GeneralRedButton import \
+    GeneralRedButton
+
 
 class ResultsPanel(QFrame):
 
     """Results panel where data is displayed on right sidebar"""
 
-    def __init__(self, parent, combo, model = {}):
+    def __init__(self, parent, combo, model={}):
         super().__init__(parent)
-        
+
         self.model = model
-        
+
         self.setObjectName("ResultsPanel")
         self.setStyleSheet(
             f"""
@@ -34,11 +31,11 @@ class ResultsPanel(QFrame):
                 border-bottom: 1px solid {CleanTheme.ANALYSIS_TEXT_BUTTON};
             }}
         """
-        )    
-        
+        )
+
         # save results button
         save_button = GeneralButton("Save", lambda: self.save_results())
-        
+
         # clear results button
         clear_button = ClearButton(self)
 
@@ -46,11 +43,11 @@ class ResultsPanel(QFrame):
 
         self.table_view = QTableView()
         self.table_view.setModel(self.model)
-        
+
         # title
-        title = AnalysisText.create_major_title("Results") 
-        
-        # another layout 
+        title = AnalysisText.create_major_title("Results")
+
+        # another layout
         self.layout = QVBoxLayout(self)
         self.layout.addWidget(title)
         self.layout.addWidget(save_button)
@@ -61,8 +58,9 @@ class ResultsPanel(QFrame):
     def save_results(self):
         results = self.model.get_cur_results()
         res_dialog = QFileDialog()
-        file_path, _ = res_dialog.getSaveFileName(self, "Save CSV", "", "CSV Files (*.csv)")
-        
+        file_path, _ = res_dialog.getSaveFileName(
+            self, "Save CSV", "", "CSV Files (*.csv)")
+
         if file_path:
             try:
                 headers = self.model.columns
@@ -74,14 +72,15 @@ class ResultsPanel(QFrame):
                 print(f"Data saved to {file_path}")
             except Exception as e:
                 print(f"Error saving file: {e}")
-                
+
     def clear_results(self):
         store.clear_results()
+
 
 class ClearButton(GeneralRedButton):
     def __init__(self, parent=None):
         super().__init__("Clear Results", parent)
-        self.clicked.connect(lambda: self.clear_results()) 
-        
+        self.clicked.connect(lambda: self.clear_results())
+
     def clear_results(self):
         store.clear_results()
