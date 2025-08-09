@@ -1093,7 +1093,30 @@ class MUeditManual(QMainWindow):
                 self.spiketrain_plot.addItem(scatter)
             self.spiketrainCurves.append(scatter)
 
+    def update_dr_plot(self, discharge_times):
+        self.dr_plot.clear()
 
+        if len(discharge_times) > 1:
+            # Calculate discharge times for plotting
+            distime = np.zeros(len(discharge_times) - 1)
+            for i in range(len(discharge_times) - 1):
+                midpoint = (discharge_times[i + 1] - discharge_times[i]) // 2 + discharge_times[i]
+                distime[i] = midpoint / float(self.MUedition["signal"]["fsamp"][0, 0])
+
+            # Calculate discharge rates
+            dr = 1.0 / (np.diff(discharge_times) / float(self.MUedition["signal"]["fsamp"][0, 0]))
+
+            # Plot as scatter plot
+            scatter_dr = pg.ScatterPlotItem()
+            scatter_dr.addPoints(x=distime, y=dr, pen=None, brush=pg.mkBrush("#D95535"), size=10)
+            self.dr_plot.addItem(scatter_dr)
+
+            # Set y-axis range with margin
+            if len(dr) > 0:
+                dr_max = np.max(dr)
+                if self.resetPlot:
+                    self.safe_set_range(self.dr_plot, yrange=[0, dr_max * 1.5])
+                # self.dr_plot.setYRange(0, dr_max * 1.5)
 
     def display_selected_mus(self, checked_mus, pluse_train_color="#D95535"):
         """Display the currently selected motor units."""
@@ -1183,29 +1206,7 @@ class MUeditManual(QMainWindow):
 
             # Show and update discharge rate plot
             self.plots_layout.addWidget(self.dr_plot, stretch=2)
-            self.dr_plot.clear()
-
-            if len(discharge_times) > 1:
-                # Calculate discharge times for plotting
-                distime = np.zeros(len(discharge_times) - 1)
-                for i in range(len(discharge_times) - 1):
-                    midpoint = (discharge_times[i + 1] - discharge_times[i]) // 2 + discharge_times[i]
-                    distime[i] = midpoint / float(self.MUedition["signal"]["fsamp"][0, 0])
-
-                # Calculate discharge rates
-                dr = 1.0 / (np.diff(discharge_times) / float(self.MUedition["signal"]["fsamp"][0, 0]))
-
-                # Plot as scatter plot
-                scatter_dr = pg.ScatterPlotItem()
-                scatter_dr.addPoints(x=distime, y=dr, pen=None, brush=pg.mkBrush("#D95535"), size=10)
-                self.dr_plot.addItem(scatter_dr)
-
-                # Set y-axis range with margin
-                if len(dr) > 0:
-                    dr_max = np.max(dr)
-                    if self.resetPlot:
-                        self.safe_set_range(self.dr_plot, yrange=[0, dr_max * 1.5])
-                    # self.dr_plot.setYRange(0, dr_max * 1.5)
+            self.update_dr_plot(discharge_times)
 
             def on_xrange_changed(_, ranges):
                 if self.update_plot_setRange:
@@ -1738,8 +1739,13 @@ class MUeditManual(QMainWindow):
         #             # If the MU is currently checked, update the display
         #             self.mu_checkbox_state_changed()
         #         break
+                    # Get the correct pulse train for this MU
+        pulse_train_array = self.MUedition["edition"]["Pulsetrain"][array_idx]
+        pulse_train = pulse_train_array[mu_idx, :]  # Use 2D indexing to get the full row
+        discharge_times = self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
         self.update_save_button()
-        self.update_display_mus()
+        self.update_dr_plot(discharge_times)
+        self.update_spike_train_plot(array_idx, mu_idx, pulse_train)
 
     def lock_spikes_button_pushed(self):
         """Lock the current spikes to keep them during filter updates."""
@@ -3021,9 +3027,6 @@ class MUeditManual(QMainWindow):
         
         self.save_file(savename)
 
-        
-            
-            
     
     def save_file(self, filepath):
         if not self.MUedition:
@@ -3131,8 +3134,8 @@ class MUeditManual(QMainWindow):
         #     flag_matlab_cell[0, i] = pt
         # edition["Flag"] = flag_matlab_cell  # overwrite with proper format
 
-        #字符串存储，解决.mat文件无法存储字典格式
-        for field in ("Dischargetimes", "silval", "silvalcon"): #将这三个字典转为字符串存储
+        # Store as string，Fix .mat can not store dict
+        for field in ("Dischargetimes", "silval", "silvalcon"):
             if field in edition and isinstance(edition[field], dict):
                 # tuple key转str
                 safe_dict = {}
