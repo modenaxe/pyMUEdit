@@ -89,11 +89,6 @@ def setup_ui(main_window):
     
     # Set up keyboard shortcuts
     main_window.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-    
-    
-
-#   新增悬浮save块
-    # _add_floating_save_btn(main_window)
 
 from PyQt5.QtGui import QFont # alex
 # Apply Sil
@@ -159,9 +154,9 @@ def setup_control_panel(main_window):
 
     control_layout.addWidget(file_group)
 
-    file_group.setVisible(False) #隐藏原select组件
+    file_group.setVisible(False)
 
-    # Create tab widget for sections
+    # ===================== Tabs: MU Selection / Batch / Visualization =====================
     main_window.tabs = create_tab_widget()
 
     # Add the different tabs
@@ -523,12 +518,12 @@ def setup_display_panel(main_window):
         main_window.select_file_button_pushed
     )
 
-    save_btn = ActionButtonedit("Save", primary=True)  #shr
+    save_btn = ActionButtonedit("Save", primary=True) 
     save_btn.setFixedHeight(40)
     save_btn.clicked.connect(main_window.save_button_pushed)
     main_window.floating_save_btn = save_btn
     
-    saveas_btn = ActionButtonedit("Save As", primary=True)  #shr
+    saveas_btn = ActionButtonedit("Save As", primary=True) 
     saveas_btn.setFixedHeight(40)
     saveas_btn.clicked.connect(main_window.saveas_button_pushed)
     main_window.floating_saveas_btn = saveas_btn

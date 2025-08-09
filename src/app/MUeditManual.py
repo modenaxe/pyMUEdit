@@ -91,7 +91,7 @@ class MUeditManual(QMainWindow):
 
         self.dirty = False
         self.update_save_button()
-        self.dirty_depth = 0  #shr
+        self.dirty_depth = 0 
 
         # Add back button if needed when used in embedded mode
         if parent:
@@ -258,13 +258,11 @@ class MUeditManual(QMainWindow):
 
         if hasattr(self, "add_spikes_btn") and self.add_spikes_btn.get_active():
             print("ESC: deactivating add_spikes button")
-            # self._undo_all_edits()
             self.add_spikes_button_pushed()
             return 
 
         elif hasattr(self, "delete_spikes_btn") and self.delete_spikes_btn.get_active():
             print("ESC: deactivating delete_spikes button")
-            # self._undo_all_edits()
             self.delete_spikes_button_pushed()
             return
 
@@ -309,19 +307,6 @@ class MUeditManual(QMainWindow):
             super().keyPressEvent(event)
 
     # Event handlers
-    def select_file_button_pushed(self):
-        """Open file dialog to select file for editing and automatically import it."""
-        file_dialog = QFileDialog()
-        file_path, _ = file_dialog.getOpenFileName(self, "Select file", "", "MAT Files (*.mat);;All Files (*.*)")
-
-        if file_path:
-            self.pathname = os.path.dirname(file_path) + "/"
-            self.filename = os.path.basename(file_path)
-            self.file_path_field.setText(self.filename)
-            self.select_file_title_btn.setText(self.filename)
-
-            self.import_data()
-    
     def select_file_button_pushed(self):
         """Open file dialog to select file for editing and automatically import it."""
         file_dialog = QFileDialog()
@@ -1874,11 +1859,6 @@ class MUeditManual(QMainWindow):
             ErrorDialog(text="Fail to extend filter.")
         self.update_save_button()   #刷新save按钮状态
 
-    def _undo_all_edits(self):
-        """Undo all spike editing changes by popping the entire undo stack."""
-        while self.undo_stack:
-            self.undo_button_pushed()
-
     def undo_button_pushed(self): # moy
         if not self.undo_stack:
             WarningDialog(
@@ -2930,8 +2910,8 @@ class MUeditManual(QMainWindow):
 
         # Save the data
         sio.savemat(filepath, {"signal": signal, "parameters": parameters, "edition": edition})
-        self.dirty_depth = 0 #shr
-        self.initial_data = copy.deepcopy(self.MUedition["edition"])    #保存新的原始数据
+        self.dirty_depth = 0 
+        self.initial_data = copy.deepcopy(self.MUedition["edition"]) 
         self.update_save_button()
         # Show a confirmation message
         from PyQt5.QtWidgets import QMessageBox
