@@ -117,7 +117,6 @@ class FileUploadFunc:
         Params: analysis_plot: centre plot instance, json: make true for testing with json files
         Returns: None
         """
-        FileUploadFunc.file = None
         file_dialog = QFileDialog()
         self.error = 1
         if json:
@@ -152,6 +151,7 @@ class FileUploadFunc:
             self.plot_idr(self.file, analysis_plot)
         elif self.error:
             ErrorDialog("Loaded File has errors", "Error").exec_()
+
 
     def emg_from_json(self, filepath):
         """from openHDEMG but edited to sort and store file (this is for json files for testing)
