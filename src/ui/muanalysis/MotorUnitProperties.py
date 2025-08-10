@@ -9,15 +9,13 @@ from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
 from core.muAnalysisCore.AnalysisResultsHist import store
 from core.muAnalysisCore.SelectRange import SelectRange
-from ui.components.muAnalysisComponents.AnalysisDropdown import \
-    AnalysisDropdown
 from ui.components.muAnalysisComponents.AnalysisDropdownDialog import (
     AnalysisDropdownDialog, AnalysisLabeledDropdownDialog)
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-
+from ui.muanalysis.ComputeThresholdSection import ComputeThresholdSection
 
 class MotorUnitPropertiesDialog(QDialog):
     """Dialog for entering Motor Unit Properties including MVC value"""
@@ -63,6 +61,7 @@ class MotorUnitPropertiesDialog(QDialog):
             self.mvc_input.setText(str(self.current_mvc))
         box.addWidget(mvc_label)
         box.addWidget(self.mvc_input)
+        layout.addLayout(box)
 
         dr_section = QHBoxLayout()
 
@@ -89,7 +88,7 @@ class MotorUnitPropertiesDialog(QDialog):
         )
         dr_section.addWidget(self.dr_firings_steady)
 
-        layout.addLayout(box)
+        # append Compute Threshold section to UI
         compute_threshold = ComputeThresholdSection(func)
         layout.addLayout(compute_threshold)
         layout.addLayout(dr_section)
@@ -205,25 +204,6 @@ class PropertiesInnerDialogText(QLineEdit):
             }}
         """
         )
-
-
-# class that holds the inputs to compute threshold
-class ComputeThresholdSection(QHBoxLayout):
-    def __init__(self, func):
-        super().__init__()
-        event_ = AnalysisDropdownDialog(
-            "Event", items=['rt', 'dert', 'rt_dert'])
-        type_ = AnalysisDropdownDialog("Type", items=['abs', 'rel', 'abs_rel'])
-        button = GeneralButton(
-            "Compute Thresholds",
-            lambda: func.compute_thresh(
-                event_.currentText(),
-                type_.currentText()))
-
-        self.addWidget(button)
-        self.addWidget(event_)
-        self.addWidget(type_)
-
 
 class MotorUnitPropertiesButton(QWidget):
     """Button widget for opening Motor Unit Properties dialog"""
