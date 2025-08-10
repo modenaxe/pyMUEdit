@@ -234,7 +234,7 @@ class MUAnalysis(QWidget):
 
         resize_file = Resize(self.mu, self.analysis_plot)
         resize_btn = GeneralButton(
-            "Resize", lambda: resize_file.resize(resize_btn))
+            "Resize", lambda: resize_file.resize())
         center_layout.addWidget(resize_btn)
         self.analysis_plot.set_resize(resize_btn)
         center_layout.addWidget(self.analysis_plot)
@@ -270,7 +270,6 @@ class MUAnalysis(QWidget):
         sidebar_layout.addWidget(results_section, stretch=15)
         sidebar_layout.addStretch(1)
         sidebar.setMaximumWidth(300)
-
         return sidebar
 
     def calc_result(self, title="title", data=[{}]):

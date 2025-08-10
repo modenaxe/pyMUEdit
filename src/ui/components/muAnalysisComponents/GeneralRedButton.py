@@ -6,14 +6,10 @@ from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
 class GeneralRedButton(QPushButton):
 
-    """ui component for general warning red buttons
-        parameters:
-        text (string): text for the button
-    """
+    """ui component for general warning red buttons"""
 
     def __init__(self, label="", parent=None):
         super().__init__(label, parent)
-
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setStyleSheet(
             f"""
