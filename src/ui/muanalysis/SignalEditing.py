@@ -255,9 +255,13 @@ class SignalEditing(QWidget):
         Returns: None
         """
         order = self.is_int(self.filter_emg_order.get())
-        lo, hi = map(
-            self.is_int, self.filter_emg_freq.get().split(
-                "-", maxsplit=1))
+        try:
+            lo, hi = map(
+                self.is_int, self.filter_emg_freq.get().split(
+                    "-", maxsplit=1))
+        except ValueError as e:
+            ErrorDialog("EMG signal bandpass frequencies must be separated by a -").exec_()
+            return
         if not order or order - 1 < 0:
             ErrorDialog(
                 "EMG signal filter order must be a non-negative integer",
@@ -265,7 +269,7 @@ class SignalEditing(QWidget):
             return
         elif not lo or not hi or lo - 1 <= 0 or hi - 1 <= 0 or lo >= hi:
             ErrorDialog(
-                "EMG signal bandpass frequencies must be non-zero positive integers written in the form `x-y` where the left limit must be smaller than the right limit.",
+                "EMG signal bandpass frequencies must be non-zero positive integers.",
                 "Invalid Input").exec_()
             return
 

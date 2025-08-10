@@ -565,22 +565,11 @@ class PlotEMGToolDialog(QDialog):
 
             else:
                 try:
-                    if self.matrix_code_dropdown.currentText() != "":
-                        code = self.matrix_code_dropdown.currentText()
-                    else:
-                        code = "GR08MM1305"
-
-                    if self.orientation_dropdown.currentText() != "":
-                        orientation = int(
-                            self.orientation_dropdown.currentText())
-                    else:
-                        orientation = 180
-
                     # Sort emg file
                     sorted_file = sort_rawemg(
                         emgfile=FileUploadFunc.file,
-                        code=code,
-                        orientation=orientation,
+                        code=self.matrix_code_dropdown.currentText(),
+                        orientation=int(self.orientation_dropdown.currentText()),
                     )
                 except ValueError as e:
                     # just making sure it's not selected
