@@ -7,12 +7,16 @@ from ui.components.SaveablePlot import SaveablePlot
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from PyQt5.QtCore import Qt
+
 class SelectRange:
 
     """Class to handle selecting range of points with clamping mechanism"""
 
     def __init__(self, analysis_plot, func, single):
-
+        """Initialises class instance
+        Params: analysis_plot: centre plot instance, func: function for points to be passed into, single: number of points required
+        Returns: None
+        """
         if FileUploadFunc.file is None:
             ErrorDialog("No file has been loaded", "Error").exec_()
             return
@@ -40,8 +44,11 @@ class SelectRange:
         analysis_plot.display_plot(self.canvas)
         self.canvas.setFocus()
 
-    # after pressing enter the graph returns to original view
     def on_press(self, event):
+        """After pressing enter the graph returns to original view and function is carried out with line x coords
+        Params: event: type of key pressed
+        Returns: None
+        """
         if event.key == 'enter':
             try:
                 self.func(round(self.line[0].get_xdata()[0]),round(self.line[1].get_xdata()[0]))
@@ -52,8 +59,11 @@ class SelectRange:
             else:
                 self.analysis_plot.revert()
 
-    # creates intervative canvas for the centre panel
     def set_up_plot(self):
+        """Creates intervative canvas for the centre panel
+        Params: None
+        Returns: None
+        """
         emgfile = FileUploadFunc.file
         plt.close()
         data_to_plot = emgfile["REF_SIGNAL"][0]
@@ -66,8 +76,11 @@ class SelectRange:
         self.canvas = FigureCanvas(fig)
         self.ax = ax
 
-    # after a line is clicked it can be moved until clicked again
     def click_on_line(self, event):
+        """After a line is clicked it can't be moved until clicked again
+        Params: event: type of object that has been 'picked' on centre graph
+        Returns: None
+        """
         if event.artist in self.line:
             x = self.line.index(event.artist)
             if self.drag:
@@ -77,8 +90,11 @@ class SelectRange:
             else:
                 self.drag = True
 
-    # following moving line
     def follow_mouse(self, event, index):
+        """Following moving line with mouse
+        Params: event: data of follow mouse object, index: whether start or end line is being followed
+        Returns: None
+        """
         if event.xdata:
             if (index == 0):
                 self.line_one(event)
@@ -86,24 +102,32 @@ class SelectRange:
                 self.line_two(event)
             self.canvas.draw()
 
-    # prevents starting line from going past axes or past ending line and shades non selected region 
     def line_one(self, event):
+        """Prevents starting line from going past axes or past ending line and shades non selected region
+        Params: event: data of follow mouse object
+        Returns: None
+        """
         if event.xdata >= 0 and event.xdata <= self.line[1].get_xdata()[0]:
             self.line[0].set_xdata([event.xdata, event.xdata])
             if self.shade_one:
                 self.shade_one.remove()
             self.shade_one = self.ax.axvspan(0, event.xdata, alpha=0.1, color='red')
 
-    # prevents ending line from going past axes or past starting line and shades non selected region
     def line_two(self, event):
+        """Prevents ending line from going past axes or past ending line and shades non selected region
+        Params: event: data of follow mouse object
+        Returns: None
+        """
         if event.xdata <= self.max and event.xdata >= self.line[0].get_xdata()[0]:
             self.line[1].set_xdata([event.xdata, event.xdata])
             if self.shade_two:
                 self.shade_two.remove()
             self.shade_two = self.ax.axvspan(event.xdata, self.max, alpha=0.1, color='red')
 
-    # line is dropped on click
     def release_on_click(self, follow, release):
+        """Line is dropped on click 
+        Params: follow: drag event to be disconnected, release: drop event to be disconnected
+        Returns: None
+        """
         self.canvas.mpl_disconnect(follow)
         self.canvas.mpl_disconnect(release)
-

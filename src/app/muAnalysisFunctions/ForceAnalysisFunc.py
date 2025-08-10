@@ -7,13 +7,21 @@ from core.muAnalysisCore.SelectRange import SelectRange
 
 class ForceAnalysisFunc():
 
-    """functions for the force analysis of rfd and MVC"""
+    """Functions for the force analysis of RFD and MVC"""
 
     def __init__(self, analysis_plot, ms):
+        """Initialises class instance
+        Params: analysis_plot: centre plot instance, ms: user input for RFD values
+        Returns: class isntance
+        """
         self.analysis_plot = analysis_plot
         self.rfd_value = ms
 
     def get_mvc(self):
+        """Set up for MVC select range functionality
+        Param: None
+        Return: None
+        """
         file = FileUploadFunc.file
         if file == None:
             ErrorDialog("No file has been loaded", "Error").exec_()
@@ -21,6 +29,10 @@ class ForceAnalysisFunc():
         SelectRange(self.analysis_plot, self.two_point, False)
     
     def two_point(self, x, y):
+        """Function for select range once start and end are selected to find MVC and display on results table
+        Param: x,y: coords from select range
+        Return: MVC
+        """
         emgfile = FileUploadFunc.file
         mvc = emgfile["REF_SIGNAL"].loc[x:y].max()
         mvc = float(mvc[0])
@@ -33,6 +45,10 @@ class ForceAnalysisFunc():
         return mvc
 
     def get_rfd(self):
+        """Set up for RFD select range functionality
+        Param: None
+        Return: None
+        """
         file = FileUploadFunc.file
         if file == None:
             ErrorDialog("No file has been loaded", "Error").exec_()
@@ -47,21 +63,19 @@ class ForceAnalysisFunc():
             SelectRange(self.analysis_plot, lambda start,end:self.one_point(start,end,ms), True)
 
     def one_point(self, start_, y, ms):
+        """Function for select range once start is slected to find RFD and display on results table
+        Param: start_,y: coords from select range (only start_ is used), ms: user input for miliseconds range
+        Return: None
+        """
         emgfile = FileUploadFunc.file
-        # Create a dict to add the RFD
         rfd_dict = dict.fromkeys(ms, None)
-        # Loop through the ms list and calculate the respective rfd.
         for thisms in ms:
             ms_insamples = round((int(thisms) * emgfile["FSAMP"]) / 1000)
-
             n_0 = emgfile["REF_SIGNAL"].loc[start_]
             n_next = emgfile["REF_SIGNAL"].loc[start_ + ms_insamples]
 
             rfdval = (n_next - n_0) / (thisms / 1000)
-            # (ms/1000 to convert mSec in Sec)
-
             rfd_dict[thisms] = rfdval
-
         rfd = pd.DataFrame(rfd_dict)
         store.append_analysis_hist(
         "RFD", rfd.to_dict("records")
