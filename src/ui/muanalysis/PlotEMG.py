@@ -294,18 +294,7 @@ class PlotEMGToolDialog(QDialog):
         muap_btn.setFixedWidth(button_width)
         muap_row.addWidget(muap_btn)
 
-    def has_invalid_filter_inputs(self):
-        # Returns True if either dropdown is not at its placeholder
-        matrix_code_selected = self.matrix_code_dropdown.currentIndex(
-        ) != -1 and self.matrix_code_dropdown.currentIndex() != 0
-        orientation_selected = self.orientation_dropdown.currentIndex(
-        ) != -1 and self.orientation_dropdown.currentIndex() != 0
-        return matrix_code_selected or orientation_selected
-
     def handle_emgsig_clicked(self):
-        if self.has_invalid_filter_inputs():
-            ErrorDialog('Invalid filter inputs', 'Error').exec_()
-            return
         raw_text = self.channel_input.get()
         emgfile = FileUploadFunc.file
 

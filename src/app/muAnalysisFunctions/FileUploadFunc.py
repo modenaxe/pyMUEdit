@@ -37,6 +37,7 @@ class FileUploadFunc:
         self.original_file_path = None
         self.coords = []
         self.cid = None
+        self.error = 1
         self.mvc_value = None
         self.json = False
         self.unsortedFile = None # store unsorted file version here
@@ -118,6 +119,7 @@ class FileUploadFunc:
         """
         FileUploadFunc.file = None
         file_dialog = QFileDialog()
+        self.error = 1
         if json:
             self.json = True
             file_path, _ = file_dialog.getOpenFileName(
@@ -130,10 +132,16 @@ class FileUploadFunc:
         if file_path:
             if json:
                 valid = self.emg_from_json(file_path)
+                self.original_file_path = file_path
+                self.import_data(file_path, analysis_plot, valid)
             else:
-                valid = self.emg_from_otb(file_path)
-            self.original_file_path = file_path
-            self.import_data(file_path, analysis_plot, valid)
+                try:
+                    valid = self.emg_from_otb(file_path)
+                except:
+                    self.import_data(None, None, valid)
+                else:
+                    self.original_file_path = file_path
+                    self.import_data(file_path, analysis_plot, valid)
 
     def import_data(self, filepath, analysis_plot, valid):
         """Plots files in centre if the file is valid
@@ -142,13 +150,8 @@ class FileUploadFunc:
         """
         if valid:
             self.plot_idr(self.file, analysis_plot)
-        else:
-            canvas = QMessageBox()
-            canvas.setIcon(QMessageBox.Critical)
-            canvas.setText("Error")
-            canvas.setInformativeText("Loaded file has errors")
-            canvas.setWindowTitle("Error")
-            canvas.exec_()
+        elif self.error:
+            ErrorDialog("Loaded File has errors", "Error").exec_()
 
     def emg_from_json(self, filepath):
         """from openHDEMG but edited to sort and store file (this is for json files for testing)
@@ -306,6 +309,7 @@ class FileUploadFunc:
         IPTS = df.filter(regex="Source for decomposition")
         IPTS.columns = np.arange(len(IPTS.columns))
         if IPTS.empty:
+            self.error = 0
             ErrorDialog("(IPTS) not found", "Error").exec_()
             raise ValueError(
                 "\nSource for decomposition (IPTS) not found in the .mat file\n"
@@ -314,6 +318,7 @@ class FileUploadFunc:
         BINARY_MUS_FIRING = df.filter(regex="Decomposition of")
         BINARY_MUS_FIRING.columns = np.arange(len(BINARY_MUS_FIRING.columns))
         if BINARY_MUS_FIRING.empty:
+            self.error = 0
             ErrorDialog("(BINARY_MUS_FIRING) not found", "Error").exec_()
             raise ValueError(
                 "\nDecomposition of (BINARY_MUS_FIRING) not found in the .mat file\n"
@@ -375,6 +380,7 @@ class FileUploadFunc:
                 expectedchannels = int(OTBelectrodes_Nelectrodes[matrix])
                 break
         if expectedchannels is np.nan:
+            self.error = 0
             ErrorDialog("Matrix not recognised", "Error").exec_()
             raise ValueError("Matrix not recognised")
         if len(emg_df.columns) == expectedchannels:
@@ -382,6 +388,7 @@ class FileUploadFunc:
             RAW_SIGNAL = emg_df
             return RAW_SIGNAL
         else:
+            self.error = 0
             ErrorDialog("Failure in searching the raw signal", "Error").exec_()
             raise ValueError(
                 "\nFailure in searching the raw signal, please check that it is present in the .mat file and that only the accepted parameters have been included\n"
@@ -428,77 +435,77 @@ class FileUploadFunc:
         """
         try:
             mat_file = loadmat(filepath, simplify_cells=True)
+            valid_versions = [
+            "1.5.3.0",
+            "1.5.4.0",
+            "1.5.5.0",
+            "1.5.6.0",
+            "1.5.7.2",
+            "1.5.7.3",
+            "1.5.8.0",
+            "1.5.9.3",
+            ]
+            if version not in valid_versions:
+                raise ValueError(
+                    f"\nSpecified version is not valid. Use one of:\n{valid_versions}\n"
+                )
+            if version in [
+                "1.5.3.0",
+                "1.5.4.0",
+                "1.5.5.0",
+                "1.5.6.0",
+                "1.5.7.2",
+                "1.5.7.3",
+                "1.5.8.0",
+                "1.5.9.3",
+            ]:
+                df = pd.DataFrame(mat_file["Data"], columns=mat_file["Description"])
+                SOURCE = "OTB"
+                FILENAME = os.path.basename(filepath)
+                FSAMP = float(mat_file["SamplingFrequency"])
+                IED = self.get_otb_ied(df=df)
+                RAW_SIGNAL = self.get_otb_rawsignal(df=df, extras_regex=extras)
+                IPTS, BINARY_MUS_FIRING = self.get_otb_decomposition(df=df)
+                BINARY_MUS_FIRING = BINARY_MUS_FIRING.shift(-int(ext_factor))
+                BINARY_MUS_FIRING.fillna(value=0, inplace=True)
+                MUPULSES = self.mupulses_from_binary(binarymusfiring=BINARY_MUS_FIRING)
+                EMG_LENGTH, NUMBER_OF_MUS = IPTS.shape
+                REF_SIGNAL = self.get_otb_refsignal(df=df, refsig=refsig)
+                if NUMBER_OF_MUS > 0:
+                    to_append = []
+                    for mu in range(NUMBER_OF_MUS):
+                        func = CommonOpenFunc()
+                        sil = func.compute_sil(
+                            ipts=IPTS[mu],
+                            mupulses=MUPULSES[mu],
+                            ignore_negative_ipts=ignore_negative_ipts,
+                        )
+                        to_append.append(sil)
+                    ACCURACY = pd.DataFrame(to_append)
+                else:
+                    ACCURACY = pd.DataFrame(columns=[0])
+                EXTRAS = self.get_otb_extras(df=df, extras=extras)
+            emgfile = {
+                "SOURCE": SOURCE,
+                "FILENAME": FILENAME,
+                "RAW_SIGNAL": RAW_SIGNAL,
+                "REF_SIGNAL": REF_SIGNAL,
+                "ACCURACY": ACCURACY,
+                "IPTS": IPTS,
+                "MUPULSES": MUPULSES,
+                "FSAMP": FSAMP,
+                "IED": IED,
+                "EMG_LENGTH": EMG_LENGTH,
+                "NUMBER_OF_MUS": NUMBER_OF_MUS,
+                "BINARY_MUS_FIRING": BINARY_MUS_FIRING,
+                "EXTRAS": EXTRAS,
+            }
+            self.unsortedFile = emgfile
+            FileUploadFunc.file = self.sort_MUs(emgfile) # sort imported MUs by recruitment order by default
+            return 1
         except:
             return None
-        valid_versions = [
-            "1.5.3.0",
-            "1.5.4.0",
-            "1.5.5.0",
-            "1.5.6.0",
-            "1.5.7.2",
-            "1.5.7.3",
-            "1.5.8.0",
-            "1.5.9.3",
-        ]
-        if version not in valid_versions:
-            ErrorDialog(f"Specified version is not valid. Use one of:\n{valid_versions}", "Error").exec_()
-            raise ValueError(
-                f"\nSpecified version is not valid. Use one of:\n{valid_versions}\n"
-            )
-        if version in [
-            "1.5.3.0",
-            "1.5.4.0",
-            "1.5.5.0",
-            "1.5.6.0",
-            "1.5.7.2",
-            "1.5.7.3",
-            "1.5.8.0",
-            "1.5.9.3",
-        ]:
-            df = pd.DataFrame(mat_file["Data"], columns=mat_file["Description"])
-            SOURCE = "OTB"
-            FILENAME = os.path.basename(filepath)
-            FSAMP = float(mat_file["SamplingFrequency"])
-            IED = self.get_otb_ied(df=df)
-            RAW_SIGNAL = self.get_otb_rawsignal(df=df, extras_regex=extras)
-            IPTS, BINARY_MUS_FIRING = self.get_otb_decomposition(df=df)
-            BINARY_MUS_FIRING = BINARY_MUS_FIRING.shift(-int(ext_factor))
-            BINARY_MUS_FIRING.fillna(value=0, inplace=True)
-            MUPULSES = self.mupulses_from_binary(binarymusfiring=BINARY_MUS_FIRING)
-            EMG_LENGTH, NUMBER_OF_MUS = IPTS.shape
-            REF_SIGNAL = self.get_otb_refsignal(df=df, refsig=refsig)
-            if NUMBER_OF_MUS > 0:
-                to_append = []
-                for mu in range(NUMBER_OF_MUS):
-                    func = CommonOpenFunc()
-                    sil = func.compute_sil(
-                        ipts=IPTS[mu],
-                        mupulses=MUPULSES[mu],
-                        ignore_negative_ipts=ignore_negative_ipts,
-                    )
-                    to_append.append(sil)
-                ACCURACY = pd.DataFrame(to_append)
-            else:
-                ACCURACY = pd.DataFrame(columns=[0])
-            EXTRAS = self.get_otb_extras(df=df, extras=extras)
-        emgfile = {
-            "SOURCE": SOURCE,
-            "FILENAME": FILENAME,
-            "RAW_SIGNAL": RAW_SIGNAL,
-            "REF_SIGNAL": REF_SIGNAL,
-            "ACCURACY": ACCURACY,
-            "IPTS": IPTS,
-            "MUPULSES": MUPULSES,
-            "FSAMP": FSAMP,
-            "IED": IED,
-            "EMG_LENGTH": EMG_LENGTH,
-            "NUMBER_OF_MUS": NUMBER_OF_MUS,
-            "BINARY_MUS_FIRING": BINARY_MUS_FIRING,
-            "EXTRAS": EXTRAS,
-        }
-        self.unsortedFile = emgfile
-        FileUploadFunc.file = self.sort_MUs(emgfile) # sort imported MUs by recruitment order by default
-        return 1
+        
 
     def plot_idr(
         self,
