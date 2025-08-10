@@ -79,6 +79,10 @@ class AdvancedTools(QWidget):
             self.on_PIC_selection)
 
     def on_PIC_selection(self):
+        """
+        Enable or disable matrix configuration dropdowns based on the current
+        selection in the analysis tools dropdown.
+        """
         disable = (self.analysis_tools_dropdown.currentText()
                    == "Persistent Inward Currents")
         self.matrix_orientation_dropdown.setDisabled(disable)

@@ -75,6 +75,21 @@ class MUPropertiesFunc:
         SelectRange(analysis_plot, self.two_point, False)
         
     def compute_thresh(self, event_, type_):
+        """
+        Validate required inputs and compute thresholds.
+        
+        Parameters
+        ----------
+        event_ : any
+            The event data or selection to be used in threshold computation.
+        type_ : any
+            The type/category selection to be used in threshold computation.
+        
+        This function:
+        1. Checks if a file has been loaded.
+        2. Validates that all required user inputs are provided.
+        3. Calls `compute_thresholds` with the validated inputs.
+        """
         file = FileUploadFunc.file
         if file == None:
             ErrorDialog("No file has been loaded", "Error").exec_()
@@ -280,6 +295,36 @@ class MUPropertiesFunc:
         n_firings=1,
         mvc=0,
     ):
+        """
+        Compute motor unit (MU) thresholds from an EMG file.
+
+        Parameters
+        ----------
+        emgfile : dict-like
+            Dictionary or object containing EMG data. Must have keys:
+            - "NUMBER_OF_MUS" : int, number of motor units
+            - "MUPULSES" : list of lists/arrays, firing indices for each MU
+            - "REF_SIGNAL" : DataFrame, reference signal values
+        event_ : str, default "rt_dert"
+            Type of event(s) to compute. Options:
+            - "rt_dert" : compute recruitment threshold (RT) and derecruitment threshold (DERT)
+            - "rt" : compute recruitment threshold only
+            - "dert" : compute derecruitment threshold only
+        type_ : str, default "abs_rel"
+            Threshold format. Options:
+            - "abs_rel" : compute both absolute and relative values
+            - "abs" : absolute values only
+            - "rel" : relative values only
+        n_firings : int, default 1
+            Number of initial and final firings to average for threshold computation.
+        mvc : float or int, default 0
+            Maximum voluntary contraction value (used for absolute thresholds).
+
+        Returns
+        -------
+        mus_thresholds : pandas.DataFrame
+            DataFrame containing threshold values for each MU.
+        """
         # Extract the variables of interest from the EMG file
         NUMBER_OF_MUS = emgfile["NUMBER_OF_MUS"]
         MUPULSES = emgfile["MUPULSES"]
@@ -300,12 +345,6 @@ class MUPropertiesFunc:
             raise TypeError(
                 f"mvc must be one of the following types: float, int. {type(mvc)} was passed instead."
             )
-
-        # if type_ != "rel" and mvc == 0:
-        #     # Ask the user to input MVC
-        #     mvc = float(
-        #         input("--------------------------------\nEnter MVC value in newton: ")
-        #     )
 
         # Create an object to append the results
         toappend = []
@@ -355,8 +394,11 @@ class MUPropertiesFunc:
                 toappend.append({"rel_RT": rel_RT})
             elif event_ == "dert" and type_ == "rel":
                 toappend.append({"rel_DERT": rel_DERT})
-
+                
+        # Convert results list to a DataFrame
         mus_thresholds = pd.DataFrame(toappend)
+        
+        # Save results in the analysis history
         self.results.append_analysis_hist(
             "MUs Thresholds", mus_thresholds.to_dict("records")
         )
