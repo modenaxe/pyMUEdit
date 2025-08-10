@@ -245,6 +245,7 @@ class MUPropertiesFunc:
             emgfile=emgfile,
             n_firings=n_firings_rt_dert,
             mvc=mvc,
+            append=False
         )
         exportable_df = pd.concat([exportable_df, mus_thresholds], axis=1)
 
@@ -294,6 +295,7 @@ class MUPropertiesFunc:
         type_="abs_rel",
         n_firings=1,
         mvc=0,
+        append=True
     ):
         """
         Compute motor unit (MU) thresholds from an EMG file.
@@ -399,9 +401,10 @@ class MUPropertiesFunc:
         mus_thresholds = pd.DataFrame(toappend)
         
         # Save results in the analysis history
-        self.results.append_analysis_hist(
-            "MUs Thresholds", mus_thresholds.to_dict("records")
-        )
+        if append:
+            self.results.append_analysis_hist(
+                "MUs Thresholds", mus_thresholds.to_dict("records")
+            )
         
         return mus_thresholds
 
