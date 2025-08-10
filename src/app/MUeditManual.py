@@ -481,6 +481,19 @@ class MUeditManual(QMainWindow):
         if not self.MUedition:
             return
 
+        signal_data = files["signal"][0, 0]
+        for field in signal_data.dtype.names:   
+            self.MUedition["signal"][field] = signal_data[field]
+            
+        self.MUedition["edition"]["Pulsetrain"] = []
+        # Copy Pulsetrain data
+        pulsetrain_data = self.MUedition["signal"]["Pulsetrain"][0]
+        print(len(pulsetrain_data))
+        # Handle as a 1D array
+        for i in range(len(pulsetrain_data)):
+            self.MUedition["edition"]["Pulsetrain"].append(pulsetrain_data[i])
+
+           
         # Copy structured data from MATLAB file
         edition_data = files["edition"][0, 0]
         #恢复"Dischargetimes", "silval", "silvalcon"这三个字典
@@ -505,8 +518,10 @@ class MUeditManual(QMainWindow):
                 except Exception as e:
                     print(f"Error loading field {field}: {e}")
                     self.MUedition["edition"][field] = {}
-            elif field == "Pulsetrain" and isinstance(val, np.ndarray): #处理pulsetrain
-                self.MUedition["edition"][field] = [x for x in val.flatten()]
+            
+            elif field == "Pulsetrain":
+                continue
+                
             elif field == "Flag" and isinstance(val, np.ndarray):   #处理flag
                 self.MUedition["edition"][field] = [
                                             [0] * arr.shape[0]
@@ -518,10 +533,6 @@ class MUeditManual(QMainWindow):
                 self.MUedition["edition"][field] = val.flatten()
             else:
                 self.MUedition["edition"][field] = val
-
-        signal_data = files["signal"][0, 0]
-        for field in signal_data.dtype.names:
-            self.MUedition["signal"][field] = signal_data[field]
 
         if "parameters" in files:
             parameters_data = files["parameters"][0, 0]
@@ -755,7 +766,7 @@ class MUeditManual(QMainWindow):
         self.MUedition["signal"]["auxiliaryname"] = np.array([auxname_list])
         
         self.MUedition["signal"]["auxiliary"] = self.MUedition["signal"]["auxiliary"].T     
-           
+        
     
     
                 
@@ -3150,6 +3161,7 @@ class MUeditManual(QMainWindow):
                     safe_dict[k_str] = v_
                 edition[field] = json.dumps(safe_dict)
         
+        del edition["Pulsetrain"]
         
         progress.setValue(100)
         # Save the data
