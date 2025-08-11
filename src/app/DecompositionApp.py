@@ -4,31 +4,30 @@ import traceback
 import numpy as np
 import scipy.io as sio
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
-from PyQt5.QtCore import Qt
 
 import pyqtgraph as pg
-from core.utils.decomposition_state import DecompositionState
 
 # Add project root to path
 from pathlib import Path
+
+from ui.components.SegmentSessionPage import SegmentSessionPage
 
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import UI setup
 from ui.DecompositionAppUI import setup_ui
-from ui.components.VisualisationPage import VisualisationPage
 
 # Import workers and other required modules
 from workers.SaveMatWorker import SaveMatWorker
 from workers.DecompositionWorker import DecompositionWorker
+from core.scd.main import SCDDecompositionWorker
 from core.utils.config_and_input.prepare_parameters import prepare_parameters
-from core.utils.config_and_input.segmentsession import SegmentSession
 from MUeditManual import MUeditManual
 
 
 class DecompositionApp(QMainWindow):
-    def __init__(self, emg_obj=None, filename=None, pathname=None, imported_signal=None, parent=None):
+    def __init__(self, emg_obj=None, filename=None, pathname=None, imported_signal=None, config=None, parent=None):
         super().__init__(parent)
 
         # Initialize variables
@@ -37,7 +36,7 @@ class DecompositionApp(QMainWindow):
         self.emg_obj = emg_obj
         self.imported_signal = imported_signal
 
-        self.MUdecomp = {"config": None}
+        self.MUdecomp = {"config": config}
         self.Configuration = None
         self.MUedition = None
         self.Backup = {"lock": 0}
@@ -61,34 +60,17 @@ class DecompositionApp(QMainWindow):
 
     def connect_signals(self):
         """Connect all UI signals to their handlers."""
-        # Left panel connections
-        self.set_configuration_button.clicked.connect(self.set_configuration_button_pushed)
-        self.segment_session_button.clicked.connect(self.segment_session_button_pushed)
-
         # Center panel connections
         self.start_button.clicked.connect(self.start_button_pushed)
 
         # Right panel connections
         self.save_output_button.clicked.connect(self.save_output_to_location)
-        self.channel_view_button.clicked.connect(self.open_channel_viewer)
+        self.next_button.clicked.connect(self.open_editing_mode)
 
     def back_to_import(self):
         """Return to the Import window."""
         # This will now be connected externally to show the import view in the dashboard
         pass
-
-    def open_channel_viewer(self):
-        """Open the Channel Viewer window with the current EMG data"""
-        if not self.emg_obj or "data" not in self.emg_obj.signal_dict:
-            self.edit_field.setText("No EMG data loaded for channel viewer.")
-            return
-
-        try:
-            emg_data = self.emg_obj.signal_dict["data"]
-            self.visualisation_page = VisualisationPage(emg_data=emg_data)
-            self.visualisation_page.show()
-        except Exception as e:
-            self.edit_field.setText(f"Failed to load channel viewer: {e}")
 
     def set_data(self, emg_obj, filename, pathname, imported_signal=None):
         """Set data from ImportDataWindow and update UI."""
@@ -118,8 +100,8 @@ class DecompositionApp(QMainWindow):
             if "fsamp" in signal:
                 file_info += f"Sample rate: {signal['fsamp']} Hz\n"
 
-            if "nelectrodes" in signal:
-                file_info += f"Electrodes: {signal['nelectrodes']}\n"
+            if "ngrid" in signal:
+                file_info += f"Grids: {signal['ngrid']}\n"
 
         self.file_info_display.setText(file_info)
 
@@ -156,7 +138,6 @@ class DecompositionApp(QMainWindow):
 
         # Enable the start button and configuration
         self.start_button.setEnabled(True)
-        self.set_configuration_button.setEnabled(True)
 
         # Update status text
         self.edit_field.setText(f"Loaded {self.filename}")
@@ -170,19 +151,21 @@ class DecompositionApp(QMainWindow):
                 nsamples = signal["data"].shape[1]
                 time = np.arange(nsamples) / fsamp
 
-                # Plot first channel as preview
                 self.ui_plot_reference.clear()
 
-                # Plot the first few channels for preview
-                num_preview_channels = min(3, signal["data"].shape[0])
+                # Plot all selected channels for preview
+                num_preview_channels = min(signal["data"].shape[0], 3)
+                num_actual_channels = 0
                 colors = ["b", "g", "r", "c", "m", "y"]
 
                 for i in range(num_preview_channels):
-                    self.ui_plot_reference.plot(
-                        time, signal["data"][i, :], pen=pg.mkPen(color=colors[i % len(colors)], width=1)
-                    )
+                     if i not in self.emg_obj.rejected_channel_indices:
+                        num_actual_channels += 1
+                        self.ui_plot_reference.plot(
+                            time, signal["data"][i, :], pen=pg.mkPen(color=colors[i % len(colors)], width=1)
+                        )
 
-                self.ui_plot_reference.setTitle(f"Signal Preview ({num_preview_channels} channels)")
+                self.ui_plot_reference.setTitle(f"Signal Preview ({num_actual_channels} channels)")
             except Exception as e:
                 print(f"Error creating preview plot: {e}")
 
@@ -262,27 +245,29 @@ class DecompositionApp(QMainWindow):
                 "edition": edition_data,  # Properly formatted edition data
             }
 
+            def openEditor():
+                # Create the MUeditManual window
+                self.mu_edit_window = MUeditManual(filename=self.filename + "_fixed_for_editing.mat", pathname=self.pathname)
+
+                # Show the window without preloading
+                self.mu_edit_window.show()
+
+                # Suggest the file to open
+                self.edit_field.setText(f"Editor opened. Please select {fixed_filename}")
+
+
             # Use existing save_mat_in_background function to save the fixed data
-            self.save_mat_in_background(fixed_filename, fixed_data, True)
+            self.save_mat_in_background(fixed_filename, fixed_data, True, onFinished=openEditor)
 
             # Update UI
             self.edit_field.setText(f"Preparing data for editing and opening editor...")
-
-            # Create the MUeditManual window
-            self.mu_edit_window = MUeditManual()
-
-            # Show the window without preloading
-            self.mu_edit_window.show()
-
-            # Suggest the file to open
-            self.edit_field.setText(f"Editor opened. Please select {fixed_filename}")
 
         except Exception as e:
             self.edit_field.setText(f"Error opening editing mode: {str(e)}")
             traceback.print_exc()
 
     # Event handlers
-    def save_mat_in_background(self, filename, data, compression=True):
+    def save_mat_in_background(self, filename, data, compression=True, onFinished=None):
         self.edit_field.setText("Saving data in background...")
 
         # Create and configure the worker thread
@@ -291,6 +276,8 @@ class DecompositionApp(QMainWindow):
 
         worker.finished.connect(lambda: self.on_save_finished(worker))
         worker.error.connect(lambda msg: self.on_save_error(worker, msg))
+        if onFinished:
+            worker.finished.connect(onFinished)
 
         worker.start()
 
@@ -306,92 +293,75 @@ class DecompositionApp(QMainWindow):
         if worker in self.threads:
             self.threads.remove(worker)
 
-    def set_configuration_button_pushed(self):
-        if "config" in self.MUdecomp and self.MUdecomp["config"]:
-            try:
-                if self.pathname is not None and self.filename is not None:
-                    savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
-                    self.MUdecomp["config"].pathname.setText(savename)
-
-                # Show the dialog
-                self.MUdecomp["config"].show()
-                self.set_configuration_button.setStyleSheet(
-                    "color: #cf80ff; background-color: #7f7f7f; font-family: 'Poppins'; font-size: 18pt;"
-                )
-            except Exception as e:
-                print(f"Error showing configuration dialog: {e}")
-                traceback.print_exc()
-        else:
-            print("No configuration dialog available")
-
-    def segment_session_button_pushed(self):
-        self.segment_session = SegmentSession()
-
-        if self.pathname is not None and self.filename is not None:
-            self.segment_session.pathname.setText(self.pathname + self.filename + "_decomp.mat")
-
-        # Setup the dropdown contents before setting the current item
-        self.segment_session.reference_dropdown.clear()
-        for i in range(self.reference_dropdown.count()):
-            self.segment_session.reference_dropdown.addItem(self.reference_dropdown.itemText(i))
-
-        try:
-            if self.segment_session.pathname.text():
-                self.segment_session.file = sio.loadmat(self.segment_session.pathname.text())
-        except Exception as e:
-            print(f"Warning: Could not load file: {e}")
-
-        # Set current text after file is loaded
-        self.segment_session.reference_dropdown.setCurrentText(self.reference_dropdown.currentText())
-        self.segment_session.initialize_with_file()
-        self.segment_session.show()
-        self.segment_session_button.setStyleSheet(
-            "color: #cf80ff; background-color: #7f7f7f; font-family: 'Poppins'; font-size: 18pt;"
-        )
-
     def start_button_pushed(self):
+        algo_choice = self.algo_combo.currentText()
+        print(f"Algorithm chosen: {algo_choice}")
         # Reset iteration counter at the start of a new decomposition
         self.iteration_counter = 0
+        ui_params = {}
+        
+        if algo_choice == "Fast ICA":
+            # Get UI parameters
+            ui_params = {
+                "check_emg": self.check_emg_dropdown.currentText(),
+                "peeloff": self.peeloff_dropdown.currentText(),
+                "cov_filter": self.cov_filter_dropdown.currentText(),
+                "initialization": self.initialisation_dropdown.currentText(),
+                "refine_mu": self.refine_mus_dropdown.currentText(),
+                "duplicates_bgrids": "Yes",  # Set default value
+                "contrast_function": self.contrast_function_dropdown.currentText(),
+                "iterations": self.number_iterations_field.value(),
+                "windows": self.number_windows_field.value(),
+                "threshold_target": self.threshold_target_field.value(),
+                "extended_channels": self.nb_extended_channels_field.value(),
+                "duplicates_threshold": self.duplicate_threshold_field.value(),
+                "sil_threshold": self.sil_threshold_field.value(),
+                "cov_threshold": self.cov_threshold_field.value(),
+            }
+        elif algo_choice == "SCD":
+            ui_params = {
+                "device": self.device_dropdown.currentText(),
+                "filt_harms": self.filt_harms_dropdown.currentText(),
+                "use_coeff_var_fitness": self.use_coeff_var_fitness_dropdown.currentText(),
+                "remove_bad_fr": self.remove_bad_fr_dropdown.currentText(),
+                "iterations": self.number_iterations_scd_field.value(),
+                "acceptance_silhouette": self.acceptance_silhouette_field.value(),
+                "extension_factor": self.extension_factor_field.value(),
+                "low_pass_cutoff": self.low_pass_cutoff_field.value(),
+                "high_pass_cutoff": self.high_pass_cutoff_field.value(),
+                "powerline_frequency": self.powerline_frequency_field.value(),
+                "peel_off_window_size": self.peel_off_window_size_field.value(),
+                "bandwidth": self.bandwidth_field.value()
+            }
 
-        # Get UI parameters
-        ui_params = {
-            "check_emg": self.check_emg_dropdown.currentText(),
-            "peeloff": self.peeloff_dropdown.currentText(),
-            "cov_filter": self.cov_filter_dropdown.currentText(),
-            "initialization": self.initialisation_dropdown.currentText(),
-            "refine_mu": self.refine_mus_dropdown.currentText(),
-            "duplicates_bgrids": "Yes",  # Set default value
-            "contrast_function": self.contrast_function_dropdown.currentText(),
-            "iterations": self.number_iterations_field.value(),
-            "windows": self.number_windows_field.value(),
-            "threshold_target": self.threshold_target_field.value(),
-            "extended_channels": self.nb_extended_channels_field.value(),
-            "duplicates_threshold": self.duplicate_threshold_field.value(),
-            "sil_threshold": self.sil_threshold_field.value(),
-            "cov_threshold": self.cov_threshold_field.value(),
-        }
-
-        # Store UI params for later use when saving results
+        # Store UI params and algorithm choice for later use when saving results
         self.ui_params = ui_params
+        self.algo_choice = algo_choice
 
         # Convert UI parameters to algorithm parameters
-        parameters = prepare_parameters(ui_params)
-
+        parameters = prepare_parameters(ui_params, algo_choice)
         print(parameters)
 
         # Check if we have a file and EMG object
         if not self.emg_obj or not self.pathname or not self.filename:
             self.edit_field.setText("Please select and load a file first")
             return
-
+        
         # Disable the start button during processing
         self.start_button.setEnabled(False)
         self.edit_field.setText("Starting decomposition...")
         self.status_text.setText("Processing...")
         self.status_progress.setValue(10)
 
+        decomp_obj = None
+        match algo_choice:
+            case "Fast ICA":
+                decomp_obj = DecompositionWorker
+            case "SCD":
+                decomp_obj = SCDDecompositionWorker
+
         # Pass the EMG object to the DecompositionWorker
-        self.decomp_worker = DecompositionWorker(self.emg_obj, parameters)
+        self.decomp_worker = decomp_obj(self.emg_obj, parameters)
         self.threads.append(self.decomp_worker)  # Keep a reference to prevent garbage collection
 
         # Connect signals
@@ -402,6 +372,7 @@ class DecompositionApp(QMainWindow):
 
         # Start the worker thread
         self.decomp_worker.start()
+            
 
     def on_decomposition_complete(self, result):
         """Handle successful completion of decomposition"""
@@ -521,7 +492,7 @@ class DecompositionApp(QMainWindow):
                 formatted_result["EMGmask"] = mask_obj
 
             # Save with parameters
-            parameters = prepare_parameters(self.ui_params) if hasattr(self, 'ui_params') else {}
+            parameters = prepare_parameters(self.ui_params, self.algo_choice) if hasattr(self, 'ui_params') else {}
             self.save_mat_in_background(savename, {"signal": formatted_result, "parameters": parameters}, True)
 
             # Store the decomposition result
@@ -532,6 +503,7 @@ class DecompositionApp(QMainWindow):
         self.status_progress.setValue(100)
         self.start_button.setEnabled(True)
         self.save_output_button.setEnabled(True)
+        self.next_button.setEnabled(True)
 
         # Count total motor units
         total_mus = 0
@@ -547,14 +519,46 @@ class DecompositionApp(QMainWindow):
 
         self.motor_units_label.setText(f"Motor Units: {total_mus}")
 
+        # Plot the reference signal
+        try:
+            if "auxiliary" in self.decomposition_result and "fsamp" in self.decomposition_result:
+                index = 0
+                # Plot selected auxiliary signal
+                for i, aux_name in enumerate(self.decomposition_result["auxiliaryname"][0]):
+                    if aux_name == self.reference_dropdown.currentText():
+                        index = i
+                        break
+
+                # First auxiliary signal
+                reference_signal = self.decomposition_result["auxiliary"][index, :]
+                fsamp = self.decomposition_result["fsamp"]
+                time_vector = np.arange(reference_signal.shape[0]) / fsamp
+
+                # Clear signal preview plot
+                self.ui_plot_reference.clear()
+                # Plot new reference signal
+                self.ui_plot_reference.plot(time_vector, reference_signal, pen=pg.mkPen(color="#E40000", width=2))
+
+                # Adjust the plot title
+                if "auxiliaryname" in self.decomposition_result:
+                    name_array = self.decomposition_result["auxiliaryname"]
+                    name = name_array[0, 0] if isinstance(name_array[0, 0], str) else str(name_array[0, 0][0])
+                    self.ui_plot_reference.setTitle(f"Reference Signal: {name}")
+                else:
+                    self.ui_plot_reference.setTitle("Reference Signal")
+            else:
+                print("No reference signal found to plot.")
+        except Exception as e:
+            print(f"Error plotting reference signal after decomposition: {e}")
+
         # Save the decomposition state
         try:
             # Import the DecompositionState class
             from core.utils.decomposition_state import DecompositionState
-            
+
             # Save the state and get metadata
             state_meta = DecompositionState.save_state(self)
-            
+
             # Add to dashboard's recent visualizations if parent exists
             if hasattr(self, 'parent') and callable(self.parent):
                 parent = self.parent()
@@ -591,7 +595,7 @@ class DecompositionApp(QMainWindow):
         if progress is not None and isinstance(progress, (int, float)):
             self.status_progress.setValue(int(progress * 100))
 
-    def update_plots(self, time, target, plateau_coords, icasig=None, spikes=None, time2=None, sil=None, cov=None):
+    def update_plots(self, icasig=None, spikes=None, time2=None, sil=None, cov=None):
         """Update plot displays during decomposition using PyQtGraph"""
         try:
             self.iteration_counter += 1
@@ -604,39 +608,6 @@ class DecompositionApp(QMainWindow):
             # Only update plots every 5 iterations to reduce UI overhead
             if self.iteration_counter % 5 != 0 and self.iteration_counter > 1:
                 return
-
-            if target is None:
-                return
-
-            # Ensure arrays are 1D
-            if isinstance(target, np.ndarray) and target.ndim > 1:
-                target = target.flatten()
-
-            # Check if time array is compatible with target array
-            if time is None or (isinstance(time, np.ndarray) and (time.size == 1 or time.shape != target.shape)):
-                # Create a synthetic time array that matches target's length
-                print(f"Creating synthetic time array to match target shape {target.shape}")
-                time = np.arange(len(target))
-            elif isinstance(time, np.ndarray) and time.ndim > 1:
-                time = time.flatten()
-
-            # Clear previous plots
-            self.ui_plot_reference.clear()
-
-            # Plot reference signal with plateau markers
-            self.ui_plot_reference.plot(
-                time, target, pen=pg.mkPen(color="#000000", width=2, style=Qt.PenStyle.DashLine)
-            )
-
-            # Plot plateau markers if available
-            if plateau_coords is not None and len(plateau_coords) >= 2:
-                try:
-                    if len(time) > max(plateau_coords):
-                        for coord in plateau_coords[:2]:  # Just plot the first two markers
-                            line = pg.InfiniteLine(pos=time[coord], angle=90, pen=pg.mkPen(color="#FF0000", width=2))
-                            self.ui_plot_reference.addItem(line)
-                except (IndexError, TypeError) as e:
-                    print(f"Warning: Error plotting plateau markers: {e}")
 
             # Plot decomposition results if available
             if icasig is not None:
@@ -667,7 +638,7 @@ class DecompositionApp(QMainWindow):
                             )
                             self.ui_plot_pulsetrain.addItem(scatter)
 
-                    self.ui_plot_pulsetrain.setYRange(-0.2, 1.5)
+                    self.ui_plot_pulsetrain.setYRange(min(-0.2, min(icasig) * 1.05), max(1.5, max(icasig) * 1.05))
 
                     # Update title with SIL and CoV values if available
                     if sil is not None and cov is not None:
@@ -707,7 +678,7 @@ class DecompositionApp(QMainWindow):
         formatted_result = self.decomposition_result
 
         # Get the parameters that were used
-        parameters = prepare_parameters(self.ui_params) if hasattr(self, "ui_params") else {}
+        parameters = prepare_parameters(self.ui_params, self.algo_choice) if hasattr(self, "ui_params") else {}
 
         # Save in background
         self.save_mat_in_background(save_path, {"signal": formatted_result, "parameters": parameters}, True)

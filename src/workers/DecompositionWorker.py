@@ -12,7 +12,7 @@ class DecompositionWorker(QThread):
     """
 
     progress = pyqtSignal(str, object)
-    plot_update = pyqtSignal(object, object, object, object, object, object, object, object)
+    plot_update = pyqtSignal(object, object, object, object, object)
     finished = pyqtSignal(object)
     error = pyqtSignal(str)
 
@@ -69,10 +69,10 @@ class DecompositionWorker(QThread):
             nwins = int(len(self.emg_obj.plateau_coords) / 2)
 
             # For each electrode
-            for g in range(int(self.emg_obj.signal_dict["nelectrodes"])):
-                electrode_progress = 0.25 + (0.6 * g / self.emg_obj.signal_dict["nelectrodes"])
+            for g in range(int(self.emg_obj.signal_dict["ngrid"])):
+                electrode_progress = 0.25 + (0.6 * g / self.emg_obj.signal_dict["ngrid"])
                 self.progress.emit(
-                    f"Processing electrode {g+1}/{self.emg_obj.signal_dict['nelectrodes']}", electrode_progress
+                    f"Processing electrode {g+1}/{self.emg_obj.signal_dict['ngrid']}", electrode_progress
                 )
 
                 # Calculate extension factor
@@ -119,7 +119,7 @@ class DecompositionWorker(QThread):
 
                 # For each window interval
                 for interval in range(nwins):
-                    interval_progress = electrode_progress + (0.6 / self.emg_obj.signal_dict["nelectrodes"]) * (
+                    interval_progress = electrode_progress + (0.6 / self.emg_obj.signal_dict["ngrid"]) * (
                         interval / nwins
                     )
                     self.progress.emit(f"Electrode {g+1}, interval {interval+1}/{nwins}", interval_progress)
@@ -183,10 +183,10 @@ class DecompositionWorker(QThread):
             traceback.print_exc()
             self.error.emit(str(e))
 
-    def send_plot_update(self, time_axis, target, plateau_coords, fICA_source, spikes, time2, sil, cov):
+    def send_plot_update(self, fICA_source, spikes, time2, sil, cov):
         """Send plot update signals to the main UI thread"""
         # Throttle updates to avoid overwhelming the UI
-        self.plot_update.emit(time_axis, target, plateau_coords, fICA_source, spikes, time2, sil, cov)
+        self.plot_update.emit(fICA_source, spikes, time2, sil, cov)
         # Process events to keep the UI responsive during long computations
         time.sleep(0.01)  # Small delay to prevent UI freezing
 
@@ -232,12 +232,6 @@ class DecompositionWorker(QThread):
                 "diff_data",
             ]:
                 result[field] = self.emg_obj.signal_dict[field]
-
-        # Map field names to expected MUedit format
-        result["data"] = self.emg_obj.signal_dict.get("data", np.array([]))
-        result["ngrid"] = self.emg_obj.signal_dict.get("nelectrodes", 1)
-        result["gridname"] = self.emg_obj.signal_dict.get("electrodes", [])
-        result["muscle"] = self.emg_obj.signal_dict.get("muscles", [])
 
         # Add spatial information
         if hasattr(self.emg_obj, "coordinates"):

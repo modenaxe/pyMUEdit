@@ -12,7 +12,7 @@ class CollapsiblePanel(QFrame):
     that can be expanded or collapsed by clicking the header.
     """
 
-    def __init__(self, title, parent=None):
+    def __init__(self, title, checkbox=None, parent=None):
         """
         Initialize a collapsible panel
 
@@ -61,6 +61,7 @@ class CollapsiblePanel(QFrame):
         # Header layout
         self.header_layout = QHBoxLayout(self.header_widget)
         self.header_layout.setContentsMargins(15, 8, 15, 8)
+        self.header_layout.setSpacing(15)
 
         # Title label
         self.title_label = QLabel(title)
@@ -88,6 +89,8 @@ class CollapsiblePanel(QFrame):
         self.toggle_button.setIcon(QIcon("public/down_arrow_icon.svg"))
         self.toggle_button.setIconSize(QSize(10, 10))
         # Add header components
+        if checkbox:
+            self.header_layout.addWidget(checkbox)
         self.header_layout.addWidget(self.title_label)
         self.header_layout.addStretch()
         self.header_layout.addWidget(self.toggle_button)

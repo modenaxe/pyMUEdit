@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import scipy
 
@@ -17,7 +19,7 @@ def whiten_emg(signal):
     # in MATLAB: eig(A) returns diagonal matrix D of eigenvalues and matrix V whose columns are the corresponding right eigenvectors, so that A*V = V*D
 
     sorted_evalues = np.sort(evalues)[::-1]
-    penalty = np.mean(sorted_evalues[len(sorted_evalues) // 2 :])  # int won't wokr for odd numbers
+    penalty = np.mean(sorted_evalues[int(math.ceil(len(sorted_evalues) / 2)) - 1 :])
     penalty = max(0, penalty)  # type:ignore
 
     rank_limit = np.sum(evalues > penalty) - 1
