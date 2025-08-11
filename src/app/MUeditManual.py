@@ -38,7 +38,6 @@ from core.utils.manual_editing.h5_import import h5py_convert
 from core.utils.manual_editing.save_worker import Save_worker
 from core.utils.manual_editing.extendfilter import extendfilter
 from core.utils.manual_editing.selection_tools import SelectionTool, process_selection
-from core.utils.decomposition.remove_outliers import remove_editing_outliers
 from core.utils.decomposition.remove_duplicates import remove_duplicates
 from core.utils.decomposition.remove_duplicates_between_arrays import remove_duplicates_between_arrays
 from core.utils.decomposition.extend_emg import extend_emg
@@ -1797,7 +1796,7 @@ class MUeditManual(QMainWindow):
             distime_list = [self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]]
 
             # Call the function
-            filtered_distime, removal_dict = remove_editing_outliers(
+            filtered_distime, removal_dict = self.remove_outliers(
                 pulse_trains, distime_list, self.MUedition["signal"]["fsamp"], [mu_text]
             )
 
@@ -2312,7 +2311,7 @@ class MUeditManual(QMainWindow):
                 # Apply remoutliers if there are discharge times
                 if len(distime_list[0]) > 1:
                     mu_name = f"Array_{array_idx+1}_MU_{mu_idx+1}"
-                    filtered_distime, removal_dict = remove_editing_outliers(
+                    filtered_distime, removal_dict = self.remove_outliers(
                         pulse_trains,
                         distime_list,
                         self.MUedition["signal"]["fsamp"],
@@ -2344,6 +2343,52 @@ class MUeditManual(QMainWindow):
         self.update_save_button()
         # Update the current MU display
         self.mu_checkbox_state_changed()
+
+    def remove_outliers(pulse_trains, discharge_times, fsamp, mu_names=None):
+        """
+        Remove outlier discharges: for each spike pair with high discharge rate,
+        remove the spike with lower amplitude. Logic follows MATLAB implementation.
+        Only a single pass is applied, no iteration.
+        """
+        removal_summary = {}
+        for mu in range(len(discharge_times)):
+            # Discharge rate between consecutive spikes
+            drates = 1 / (np.diff(discharge_times[mu]) / fsamp)
+            drates = np.array(drates).flatten()
+            mean_dr = np.mean(drates)
+            std_dr = np.std(drates, ddof=1)
+            threshold = mean_dr + 3 * std_dr
+
+            # Indices where DR exceeds threshold
+            artifact_inds = np.where(drates > threshold)[0]
+
+            del_indices = []
+
+            for i in artifact_inds:
+                t1 = discharge_times[mu][i]
+                t2 = discharge_times[mu][i + 1]
+
+                amp1 = pulse_trains[mu][t1]
+                amp2 = pulse_trains[mu][t2]
+
+                if amp1 < amp2:
+                    del_indices.append(i)
+                else:
+                    del_indices.append(i + 1)
+
+            # Remove duplicates & sort
+            del_indices = sorted(set(del_indices))
+
+            # Ensure not out of bounds
+            del_indices = [idx for idx in del_indices if idx < len(discharge_times[mu])]
+
+            # Perform deletion
+            discharge_times[mu] = np.delete(discharge_times[mu], del_indices)
+            # Identify MU name (fallback to MU_{index} if no name provided)
+            mu_name = mu_names[mu] if mu_names and mu < len(mu_names) else f"MU_{mu}"
+            removal_summary[mu_name] = len(del_indices)
+
+        return discharge_times, removal_summary
 
     def update_all_mu_filters_button_pushed(self):
         """Update filters for all motor units."""
