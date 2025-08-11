@@ -1,8 +1,7 @@
 import scipy
 import numpy as np
-from typing import Dict, List, Tuple, Any, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Tuple, Any, Optional, Union
 
-from app import ImportDataWindow
 from core.utils.config_and_input.open_mat import open_mat
 
 from .utils.config_and_input.open_otb_plus import open_otb_plus
@@ -34,6 +33,9 @@ from .utils.decomposition.mathematical_functions import (
     dot_exp,
     dot_logcosh,
 )
+
+if TYPE_CHECKING:
+    from app.ImportDataWindow import ImportDataWindow
 
 np.random.seed(1337)  # Fixes random generation to get same results each time the script is run
 
@@ -102,7 +104,7 @@ class offline_EMG(EMG):
             "cov": 0,  # Coefficient of variation
         }
 
-    def open_otb_plus(self, inputfile: str, import_window: ImportDataWindow) -> None:
+    def open_otb_plus(self, inputfile: str, import_window: "ImportDataWindow | None" = None) -> None:
         """
         Opens OTB file and extracts data.
         This is now a wrapper around the standalone open_otb_plus function.
