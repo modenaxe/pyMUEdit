@@ -187,4 +187,5 @@ def muaps_from_sta(
 
     canvas = SaveablePlot(fig)
     analysis_plot.display_fig(canvas)
+    plt.close()
 
