@@ -284,6 +284,7 @@ class DecompositionApp(QMainWindow):
     def on_save_finished(self, worker):
         self.edit_field.setText("Data saved successfully")
         self.cleanup_thread(worker)
+        self.next_button.setEnabled(True)
 
     def on_save_error(self, worker, error_msg):
         self.edit_field.setText(f"Error saving data: {error_msg}")
@@ -503,7 +504,6 @@ class DecompositionApp(QMainWindow):
         self.status_progress.setValue(100)
         self.start_button.setEnabled(True)
         self.save_output_button.setEnabled(True)
-        self.next_button.setEnabled(True)
 
         # Count total motor units
         total_mus = 0
