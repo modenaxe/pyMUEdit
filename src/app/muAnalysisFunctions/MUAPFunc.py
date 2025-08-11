@@ -35,29 +35,22 @@ def sta(
     Returns:
         - dictionary of STAs
     """
-    # Compute half of the timewindow in samples
     timewindow_samples = round((timewindow / 1000) * emgfile["FSAMP"])
     halftime = round(timewindow_samples / 2)
     tottime = halftime * 2
 
-    # Container of the STA for every MUs
-    # {0: {}, 1: {}, 2: {}, 3: {}}
     sta_dict = {mu: {} for mu in range(emgfile["NUMBER_OF_MUS"])}
 
-    # Calculate STA on sorted_rawemg for every mu and put it into sta_dict[mu]
     for mu in sta_dict.keys():
-        # Check if there are firings in this MU
         tot_firings = len(emgfile["MUPULSES"][mu])
         if tot_firings == 0:
             warnings.warn(f"Empty MU {mu} in sta(). It will be set to 0.")
 
-        # Set firings if firings="all"
         if firings == "all":
             firings_ = [0, tot_firings]
         else:
             firings_ = firings
 
-        # Get current mupulses
         thismups = emgfile["MUPULSES"][mu][firings_[0]: firings_[1]]
 
         # Calculate STA for each column in sorted_rawemg
@@ -68,15 +61,12 @@ def sta(
                 emg_array = sorted_rawemg[col][row].to_numpy()
                 # Calculate STA using NumPy vectorized operations
                 sta_values = []
-                if len(thismups) > 0:  # Manage exception of no firings
+                if len(thismups) > 0: 
                     for pulse in thismups:
                         ls = emg_array[pulse - halftime: pulse + halftime]
-                        # Avoid incomplete muaps
                         if len(ls) == tottime:
                             sta_values.append(ls)
                 else:
-                    # If no firings, set STA to zeros (while preserving the
-                    # empty channel.
                     if np.all(np.isnan(emg_array)):
                         sta_values.append(np.full((tottime, ), np.nan))
                     else:
@@ -114,7 +104,6 @@ def muaps_from_sta(
     # Find the largest and smallest value to define common y axis limits.
     ymax = 0
     ymin = 0
-    # Loop each sta_dict and MU, c means matrix columns
     for thisdict in sta_dict:
         for c in thisdict:
             max_ = thisdict[c].max().max()
@@ -123,12 +112,10 @@ def muaps_from_sta(
                 ymax = max_
             if min_ < ymin:
                 ymin = min_
-    # Manage exception of singular transformation/sta
     if ymax == 0 and ymin == 0:
         ymax = 1
         ymin = -1
 
-    # Obtain number of columns and rows
     cols = len(sta_dict[0])
     rows = len(sta_dict[0][next(iter(sta_dict[0]))].columns)
 
@@ -143,31 +130,23 @@ def muaps_from_sta(
     # Manage exception of arrays instead of matrices and check that they
     # are correctly oriented.
     if cols > 1 and rows > 1:
-        # Matrices
         for thisdict in sta_dict:
-            # Plot all the MUAPs, c means matrix columns, r rows
+            # Plot all the MUAPs
             for r in range(rows):
                 for pos, c in enumerate(thisdict.keys()):
                     axs[r, pos].plot(thisdict[c].iloc[:, r])
 
                     axs[r, pos].set_ylim(ymin, ymax)
-                    # axs[r, pos].xaxis.set_visible(False)
-                    # axs[r, pos].set(yticklabels=[])
-                    # axs[r, pos].tick_params(left=False)
                     axs[r, pos].axis('off')
 
     elif cols == 1 and rows > 1:
-        # Arrays
         for thisdict in sta_dict:
-            # Plot all the MUAPs, c means matrix columns, r rows
+            # Plot all the MUAPs
             for r in range(rows):
                 for pos, c in enumerate(thisdict.keys()):
                     axs[r].plot(thisdict[c].iloc[:, r])
 
                     axs[r].set_ylim(ymin, ymax)
-                    # axs[r].xaxis.set_visible(False)
-                    # axs[r].set(yticklabels=[])
-                    # axs[r].tick_params(left=False)
                     axs[r, pos].axis('off')
 
     elif cols > 1 and rows == 1:

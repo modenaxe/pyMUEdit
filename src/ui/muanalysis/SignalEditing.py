@@ -208,7 +208,7 @@ class SignalEditing(QWidget):
         percent_layout.addWidget(percent_mvc_value)
         self.percent_mvc_value = percent_mvc_value
 
-        # aligning everything to the bottom
+        # Aligning everything to the bottom
         percent_v = QFrame()
         percent_v_layout = QVBoxLayout(percent_v)
         percent_v_layout.setContentsMargins(0, 0, 0, 0)
