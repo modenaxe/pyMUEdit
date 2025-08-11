@@ -38,7 +38,7 @@ from core.utils.manual_editing.h5_import import h5py_convert
 from core.utils.manual_editing.save_worker import Save_worker
 from core.utils.manual_editing.extendfilter import extendfilter
 from core.utils.manual_editing.selection_tools import SelectionTool, process_selection
-from core.utils.decomposition.remove_outliers import remove_outliers
+from core.utils.decomposition.remove_outliers import remove_editing_outliers
 from core.utils.decomposition.remove_duplicates import remove_duplicates
 from core.utils.decomposition.remove_duplicates_between_arrays import remove_duplicates_between_arrays
 from core.utils.decomposition.extend_emg import extend_emg
@@ -67,12 +67,12 @@ class MUeditManual(QMainWindow):
     # Add signal to return to dashboard if needed
     return_to_dashboard_requested = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, filename=None, pathname=None, parent=None):
         super().__init__(parent)
 
         # Initialize main data structures
-        self.filename = None
-        self.pathname = None
+        self.filename = filename
+        self.pathname = pathname
         self.MUedition = None
         self.Backup = {"lock": 0, "Pulsetrain": None, "Dischargetimes": None, "lock_changable": 1}
         self.undo_stack = [] # add undo stack moy
@@ -92,18 +92,22 @@ class MUeditManual(QMainWindow):
         self.spike_train_plot_sort_mode = True
         self._save_flag = True
         self._ish5 = False
-        
+
         # Set up the UI
         setup_ui(self)
 
         self.dirty = False
         self.update_save_button()
         self.dirty_depth = 0  #shr
+        # Imports data (only if filename and pathname exist)
+        if filename and pathname:
+            self.file_path_field.setText(self.filename)
+            self.import_data()
 
         # Add back button if needed when used in embedded mode
         if parent:
             self.add_back_button()
-        
+
         self._create_shortcuts()
 
     def show_tip(self, text, duration_ms=3000):
@@ -1793,7 +1797,7 @@ class MUeditManual(QMainWindow):
             distime_list = [self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]]
 
             # Call the function
-            filtered_distime, removal_dict = remove_outliers(
+            filtered_distime, removal_dict = remove_editing_outliers(
                 pulse_trains, distime_list, self.MUedition["signal"]["fsamp"], [mu_text]
             )
 
@@ -2308,7 +2312,7 @@ class MUeditManual(QMainWindow):
                 # Apply remoutliers if there are discharge times
                 if len(distime_list[0]) > 1:
                     mu_name = f"Array_{array_idx+1}_MU_{mu_idx+1}"
-                    filtered_distime, removal_dict = remove_outliers(
+                    filtered_distime, removal_dict = remove_editing_outliers(
                         pulse_trains,
                         distime_list,
                         self.MUedition["signal"]["fsamp"],

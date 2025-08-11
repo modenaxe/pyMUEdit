@@ -50,7 +50,8 @@ def remove_duplicates(pulse_trains, discharge_times, discharge_times2, mu_filter
 
         for j in range(1, np.shape(pulse_trains)[0]):  # skip the first since it is used for the baseline comparison
             com = np.intersect1d(discharge_jits[0], discharge_temp[j])
-            com = com[np.insert(np.diff(com) != 1, 0, False)]
+            if len(com) > 0:
+                com = com[np.insert(np.diff(com) != 1, 0, False)]
             comdis[j] = len(com) / max(len(discharge_times[0]), len(discharge_times[j]))
             com = None
 

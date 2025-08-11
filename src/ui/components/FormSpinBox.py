@@ -25,8 +25,8 @@ class FormSpinBox(FormField):
         super().__init__(label_text, parent)
 
         self.spinbox = QSpinBox()
-        self.spinbox.setValue(value)
         self.spinbox.setRange(min_value, max_value)
+        self.spinbox.setValue(value)
         self.spinbox.setStyleSheet(
             f"""
             QSpinBox {{

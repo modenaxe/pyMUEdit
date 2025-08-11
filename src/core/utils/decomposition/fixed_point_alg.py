@@ -52,8 +52,8 @@ def _fixed_point_core(w, X, B, cf_func_id, maxiter=500):
     n_features, n_samples = X.shape
     tolerance = 1e-4
 
-    # Pre-compute B^T*B once outside the loop
-    B_T_B = B @ B.T
+    # Pre-compute B*B^T once outside the loop
+    BBT = B @ B.T
 
     # Pre-allocate arrays for intermediate values
     w_old = np.zeros_like(w)
@@ -61,7 +61,7 @@ def _fixed_point_core(w, X, B, cf_func_id, maxiter=500):
 
     # Pre-compute buffer for X @ g_wx calculations
     buffer = np.zeros(n_features)
-    counter = 0
+    counter = 1
 
     # Main iteration loop
     while counter < maxiter:
@@ -69,18 +69,18 @@ def _fixed_point_core(w, X, B, cf_func_id, maxiter=500):
         w_old[:] = w
 
         # Calculate w^T * X
-        wx = w @ X
+        wTX = w.T @ X
 
         # Apply contrast function based on ID
         if cf_func_id == 0:  # skew
-            g_wx = wx**3 / 3
-            mean_gp = np.mean(2 * wx**2 / 3)
+            g_wx = wTX**2
+            mean_gp = np.mean(2 * wTX)
         elif cf_func_id == 1:  # kurtosis
-            g_wx = wx**2
-            mean_gp = np.mean(2 * wx)
+            g_wx = wTX**3
+            mean_gp = np.mean(3 * wTX**2)
         else:  # logcosh
-            g_wx = np.tanh(wx)
-            mean_gp = np.mean(1 - np.tanh(wx) ** 2)
+            g_wx = np.log(np.cosh(wTX))
+            mean_gp = np.mean(np.tanh(wTX))
 
         # Calculate X @ g_wx for the new w (faster than naive matrix multiplication)
         buffer.fill(0)
@@ -95,7 +95,7 @@ def _fixed_point_core(w, X, B, cf_func_id, maxiter=500):
         w_new[:] = buffer - mean_gp * w_old
 
         # Orthogonalize against existing sources
-        w_new = w_new - B_T_B @ w_new
+        w_new = w_new - BBT @ w_new
 
         # Normalize
         norm = np.sqrt(np.sum(w_new**2))
@@ -104,7 +104,7 @@ def _fixed_point_core(w, X, B, cf_func_id, maxiter=500):
 
         # Check for convergence
         angle = np.abs(np.dot(w_new, w_old))
-        if np.abs(angle - 1.0) < tolerance:
+        if np.abs(angle - 1.0) <= tolerance:
             break
 
         # Update w for next iteration
@@ -114,7 +114,7 @@ def _fixed_point_core(w, X, B, cf_func_id, maxiter=500):
     return w_new
 
 
-def fixed_point_alg(w, B, X, cf_type, dot_cf, its=500):
+def fixed_point_alg(w, B, X, cf_type, its=500):
     """
     Drop-in replacement for the original fixed_point_alg function with optimized implementation.
 
@@ -122,8 +122,7 @@ def fixed_point_alg(w, B, X, cf_type, dot_cf, its=500):
         w: Initial separation vector
         B: Basis matrix of previously found separation vectors
         X: Whitened signal matrix
-        cf_type: Contrast function (unused, for compatibility)
-        dot_cf: Derivative of contrast function (unused, for compatibility)
+        cf_type: Contrast function
         its: Maximum iterations
 
     Returns:
@@ -140,12 +139,14 @@ def fixed_point_alg(w, B, X, cf_type, dot_cf, its=500):
 
     # Map contrast function based on the input function objects
     # This checks identity of function objects to determine which one was passed
-    if cf_type is skew:
+    if cf_type == "skew":
         cf_id = 0
-    elif cf_type is square:
+    elif cf_type == "kurtosis":
         cf_id = 1
-    else:  # Default to logcosh
+    elif cf_type == "logcosh":
         cf_id = 2
+    else:
+        raise ValueError(f"Unknown contrast function '{cf_type}'")
 
     # Run optimized core algorithm
     result = _fixed_point_core(w_flat.copy(), X, B, cf_id, its)
