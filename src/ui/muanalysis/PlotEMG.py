@@ -540,12 +540,10 @@ class PlotEMGToolDialog(QDialog):
         Returns: None
         """
         try:
-            # Determining mu_number_input
             try:
                 max_mu = FileUploadFunc.file["NUMBER_OF_MUS"]
                 mu_num = int(self.mu_number_input.get())
 
-                # If it's negative or too big
                 if (mu_num < 0 or mu_num >= max_mu):
                     raise ValueError()
             except ValueError as e:
@@ -553,7 +551,6 @@ class PlotEMGToolDialog(QDialog):
                     "Please enter a valid MU number from 0 to " + str(max_mu - 1)).exec_()
                 return
             except KeyError as e:
-                # Just in case ["NUMBER_OF_MUS"] isn't a thing
                 ErrorDialog(
                     "Your file isn't formatted properly. Include the NUMBER_OF_MUS").exec_()
                 return
@@ -565,14 +562,12 @@ class PlotEMGToolDialog(QDialog):
 
             else:
                 try:
-                    # Sort emg file
                     sorted_file = sort_rawemg(
                         emgfile=FileUploadFunc.file,
                         code=self.matrix_code_dropdown.currentText(),
                         orientation=int(self.orientation_dropdown.currentText()),
                     )
                 except ValueError as e:
-                    # just making sure it's not selected
                     if (self.matrix_code_dropdown.currentText() == ""):
                         ErrorDialog(
                             "Please select a matrix code",
@@ -585,7 +580,6 @@ class PlotEMGToolDialog(QDialog):
                         print(e)
                     return
 
-                # calculate derivation
                 if self.configuration_dropdown.currentText() == "Single differential":
                     diff_file = diff(sorted_rawemg=sorted_file)
                 elif self.configuration_dropdown.currentText() == "Double differential":
@@ -593,8 +587,6 @@ class PlotEMGToolDialog(QDialog):
                 elif self.configuration_dropdown.currentText() == "Monopolar":
                     diff_file = sorted_file
 
-                # Calculate STA dictionary
-                # Plot deviation
                 sta_dict = sta(
                     emgfile=FileUploadFunc.file,
                     sorted_rawemg=diff_file,
