@@ -3,12 +3,14 @@ import os
 import tarfile as tf
 import xml.etree.ElementTree as ET
 from tempfile import TemporaryDirectory
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from app import ImportDataWindow
 from ui.components.ConfigurationPanel import ConfigurationPanel
+
+if TYPE_CHECKING:
+    from app.ImportDataWindow import ImportDataWindow
 
 POWER_SUPPLY = 3.3  # volts, I assume?
 
@@ -25,7 +27,7 @@ GRID_CHANNEL_64 = 4
 AUXILIARY_CHANNEL = 5
 
 
-def open_otb_plus(inputfile: str, import_window: ImportDataWindow) -> dict[str, Any]:
+def open_otb_plus(inputfile: str, import_window: "ImportDataWindow | None" = None) -> dict[str, Any]:
     """
     Opens OTB file and extracts data.
     Moved from offline_EMG class to a standalone function.
@@ -233,8 +235,9 @@ def open_otb_plus(inputfile: str, import_window: ImportDataWindow) -> dict[str, 
         "target": target,
     }  # discard the other muscle and grid entries, not relevant
 
-    # set the configuration (in the configuration panel)
-    import_window.config_panel = set_configuration(emg_obj, grid_adapter_set, grid_names, grid_muscles)
+    if import_window:
+        # set the configuration (in the configuration panel)
+        import_window.config_panel = set_configuration(emg_obj, grid_adapter_set, grid_names, grid_muscles)
 
     return emg_obj
 
