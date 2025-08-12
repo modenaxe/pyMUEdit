@@ -56,4 +56,3 @@ class AnalysisDropdown(QComboBox):
         if items:
             self.addItems(items)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-

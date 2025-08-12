@@ -17,17 +17,23 @@ from app.muAnalysisFunctions.PlotEMGFunc import (diff, double_diff,
                                                  plot_emgsig, plot_idr,
                                                  plot_ipts, plot_mupulses,
                                                  plot_refsig, sort_rawemg)
-from ui.components.muAnalysisComponents.AnalysisCheckbox import AnalysisCheckbox
-from ui.components.muAnalysisComponents.AnalysisCheckboxDark import AnalysisCheckboxDark
-from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
-from ui.components.muAnalysisComponents.AnalysisDropdownDialog import AnalysisDropdownDialog
-from ui.components.muAnalysisComponents.AnalysisLabeledDropdownDialog import AnalysisLabeledDropdownDialog
+from ui.components.muAnalysisComponents.AnalysisCheckbox import \
+    AnalysisCheckbox
+from ui.components.muAnalysisComponents.AnalysisCheckboxDark import \
+    AnalysisCheckboxDark
+from ui.components.muAnalysisComponents.AnalysisDropdown import \
+    AnalysisDropdown
+from ui.components.muAnalysisComponents.AnalysisDropdownDialog import \
+    AnalysisDropdownDialog
 from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
+from ui.components.muAnalysisComponents.AnalysisLabeledDropdownDialog import \
+    AnalysisLabeledDropdownDialog
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import PropertiesInnerDialogButton
+from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import \
+    PropertiesInnerDialogButton
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
 
 
@@ -523,8 +529,8 @@ class PlotEMGToolDialog(QDialog):
                 'Error').exec_()
 
     def plot_muaps(self):
-        """Function that plots MUAPs as long as the correct inputs are defined 
-        in the modal. 
+        """Function that plots MUAPs as long as the correct inputs are defined
+        in the modal.
         Params: None
         Returns: None
         """
@@ -554,7 +560,8 @@ class PlotEMGToolDialog(QDialog):
                     sorted_file = sort_rawemg(
                         emgfile=FileUploadFunc.file,
                         code=self.matrix_code_dropdown.currentText(),
-                        orientation=int(self.orientation_dropdown.currentText()),
+                        orientation=int(
+                            self.orientation_dropdown.currentText()),
                     )
                 except ValueError as e:
                     if (self.matrix_code_dropdown.currentText() == ""):

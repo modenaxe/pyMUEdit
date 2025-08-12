@@ -10,8 +10,8 @@ from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 
 class AnalysisPlot(QWidget):
 
-    """Widget that manages the revert and resize button, and what's displayed 
-    in the centre. 
+    """Widget that manages the revert and resize button, and what's displayed
+    in the centre.
     """
 
     def __init__(self, parent=None):
@@ -26,7 +26,7 @@ class AnalysisPlot(QWidget):
         self.toggle_btn.hide()
         self.layout.addWidget(self.toggle_btn)
 
-        # Setting up the prompt and the canvas 
+        # Setting up the prompt and the canvas
         self.plot = None
         self.canvas = None
         self.load_file_prompt()
@@ -41,24 +41,24 @@ class AnalysisPlot(QWidget):
         self.layout.addWidget(self.canvas, alignment=Qt.AlignCenter)
 
     def set_resize(self, button):
-        """Stores the instance of the resize button 
-        Params: 
-            - button: instance of a button 
+        """Stores the instance of the resize button
+        Params:
+            - button: instance of a button
         Returns: None
         """
         self.resize = button
 
     def focus(self):
-        """Focuses the canvas so that it can be interacted with 
-        Params: None 
+        """Focuses the canvas so that it can be interacted with
+        Params: None
         Returns: None
         """
         self.canvas.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.canvas.setFocus()
 
     def remove_canvas(self):
-        """Removes the current figure/plot in the canvas 
-        Params: None 
+        """Removes the current figure/plot in the canvas
+        Params: None
         Returns: None
         """
         if (self.layout.count() <= 1):
@@ -72,19 +72,19 @@ class AnalysisPlot(QWidget):
 
     def revert(self):
         """Reverts the current plot to the last figure displayed
-        Params: None 
+        Params: None
         Returns: None
         """
         self.remove_canvas()
 
-        # Restoring old canvas 
+        # Restoring old canvas
         self.layout.addWidget(self.canvas)
 
         self.toggle_btn.hide()
         self.resize.show()
 
     def display_fig(self, fig=None):
-        """Displays a figure in the canvas. A figure is defined as primary results. 
+        """Displays a figure in the canvas. A figure is defined as primary results.
         Revert will not appear above a recently displayed fig. Revert, when displayed,
         will restore the canvas to the most recently generated figure.
         Params:
@@ -93,7 +93,7 @@ class AnalysisPlot(QWidget):
         """
         self.remove_canvas()
 
-        # Adding the figure to the canvas 
+        # Adding the figure to the canvas
         self.canvas = fig
         self.layout.addWidget(self.canvas)
         self.resize.show()
@@ -102,7 +102,7 @@ class AnalysisPlot(QWidget):
 
     def display_plot(self, plot=None):
         """Displays a plot in the canvas. A plot is defined as secondary results.
-        For example, SelectRange or remove_offset. When a figure is displayed, the 
+        For example, SelectRange or remove_offset. When a figure is displayed, the
         revert button appears above the canvas.
         Params:
             - plot: in the form of a SaveablePlot()

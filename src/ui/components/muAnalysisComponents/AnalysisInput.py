@@ -49,15 +49,15 @@ class AnalysisInput(QWidget):
 
     def set(self, value=""):
         """Defines the text within the input
-        Params: 
-            - value="": the text to-be placed within the input 
+        Params:
+            - value="": the text to-be placed within the input
         Returns: None
         """
         self.input.setText(value)
 
     def get(self):
         """Returns the text within the input
-        Params: None 
+        Params: None
         Returns: None
         """
         return self.input.text()
