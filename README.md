@@ -90,9 +90,11 @@ Segment session provides the capability to inspect the imported EMG recording an
 1. To begin, select the *auxiliary channel* you would like to display for segmentation.
 2. Select a *segmentation method*:\
    a. **Automatic:** set a threshold to segment the session (two same-coloured lines mark the borders for each window)
+
    <img src="./src/public/automatic-segment-selection.jpg" alt="Automatic Segment Selection" width="500" height="400">
 
    b. **Manual:** set the number of windows to select regions of interest (drag-and-drop and resize windows to determine ROIs)
+
    <img src="./src/public/manual-segment-selection.jpg" alt="Manual Segment Selection" width="500" height="400">
 
 3. Choose output option:\
@@ -103,7 +105,21 @@ Note: All segmented files will be populated in the **'Recent Files'** panel for 
 
 
 #### Channel Viewer
-...
+Channel Viewer provides an interactive interface for exploring and managing signal channels in the HD-EMG dataset.\
+It provides you with the following features:
+- **Channel Viewing:**
+   - When opened, the panel displays all available channel signals in the uploaded EMG recording.
+- **Channel Selection:**
+   - Toggle the checkboxes next to each channel to either include or exclude channels from the decomposition process.
+   - This can be used to remove channels with poor signal-to-noise ratio or to refine the decomposition target by selecting only relevant channels.
+- **Adjustable Pagination:**
+   - Control how many channel signals are displayed per page
+- **Electrode Grid:**
+   - Visualise all channels in their respective electrode grid configuration, providing the capability to navigate to particular channels via their grid config.
+
+
+<img src="./src/public/channel-viewer.jpg" alt="Manual Segment Selection" width="500" height="400">
+
 
 ## Dockerized Application
 
