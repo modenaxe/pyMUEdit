@@ -91,6 +91,7 @@ class MUeditManual(QMainWindow):
         self.DischagePlotDialog = None
         self.spike_train_plot_sort_mode = True
         self._save_flag = True
+        self._on_save = 0
         self._ish5 = False
         
         # Set up the UI
@@ -157,8 +158,9 @@ class MUeditManual(QMainWindow):
                     return True
         return False
 
-    def update_save_button(self, on_save=False):
-        if on_save:
+    def update_save_button(self, on_save=0):
+        if on_save == 1:
+            self._on_save = on_save
             self.floating_save_btn.setEnabled(False)
             self.floating_save_btn.setText("")
             self.floating_save_btn.setIcon("hourglass_half", (36, 36))
@@ -166,11 +168,15 @@ class MUeditManual(QMainWindow):
                 QPushButton{background:#fff;color:#fff;border:none;border-radius:4px;padding:8px 15px;}
                 QPushButton:hover{background:#2383ff;}
             """)
-            self.floating_save_btn.setText("Saving")
             return
+        elif on_save == 2:
+            self._on_save = 0
         
+        if self._on_save == 1:
+            return
+            
         save_flag = self.check_current_data_save_by_dirty()
-        if save_flag == self._save_flag:
+        if save_flag == self._save_flag and save_flag == False:
             return
         else:
             self._save_flag = save_flag
@@ -181,6 +187,9 @@ class MUeditManual(QMainWindow):
                 QPushButton{background:#0072ee;color:#fff;border:none;border-radius:4px;padding:8px 15px;}
                 QPushButton:hover{background:#2383ff;}
             """)
+            self.floating_save_btn.setText("Save")
+            self.floating_save_btn.clearIcon()
+            
         else:
             self.floating_save_btn.setText("")
             self.floating_save_btn.setIcon("success_icon.png", (36, 36))
@@ -336,19 +345,6 @@ class MUeditManual(QMainWindow):
 
             self.import_data()
     
-    def select_file_button_pushed(self):
-        """Open file dialog to select file for editing and automatically import it."""
-        file_dialog = QFileDialog()
-        file_path, _ = file_dialog.getOpenFileName(self, "Select file", "", "MAT Files (*.mat);;All Files (*.*)")
-
-        if file_path:
-            self.pathname = os.path.dirname(file_path) + "/"
-            self.filename = os.path.basename(file_path)
-            self.file_path_field.setText(self.filename)
-            self.select_file_title_btn.setText(self.filename)
-
-            self.import_data()
-            
             
     def import_data(self):
         """Import data from selected file."""
@@ -481,6 +477,18 @@ class MUeditManual(QMainWindow):
         if not self.MUedition:
             return
 
+        signal_data = files["signal"][0, 0]
+        for field in signal_data.dtype.names:   
+            self.MUedition["signal"][field] = signal_data[field]
+            
+        self.MUedition["edition"]["Pulsetrain"] = []
+        # Copy Pulsetrain data
+        pulsetrain_data = self.MUedition["signal"]["Pulsetrain"][0]
+        # Handle as a 1D array
+        for i in range(len(pulsetrain_data)):
+            self.MUedition["edition"]["Pulsetrain"].append(pulsetrain_data[i])
+
+           
         # Copy structured data from MATLAB file
         edition_data = files["edition"][0, 0]
         #恢复"Dischargetimes", "silval", "silvalcon"这三个字典
@@ -2923,7 +2931,7 @@ class MUeditManual(QMainWindow):
             savename = os.path.join(self.pathname or "", self.filename)
         else:
             savename = os.path.join(self.pathname or "", os.path.splitext(self.filename)[0] + "_pyedited.mat")
-            self.filename = self.filename + "_pyedited.mat"
+            self.filename = os.path.splitext(self.filename)[0] + "_pyedited.mat"
 
         self.file_path_field.setText(self.filename)
         self.select_file_title_btn.setText(self.filename)
@@ -3063,12 +3071,14 @@ class MUeditManual(QMainWindow):
             "parameters": parameters,
             "edition":    edition
         }
-        self.update_save_button(on_save=True)
+        self.update_save_button(on_save=1)
+        self.select_file_title_btn.setEnabled(False)
         self._save_thread = Save_worker(
             filepath, data,
             on_finished=lambda: (
-                self.update_save_button(),
-                self.show_tip(f"Save Complete! Data saved to: {filepath}", duration_ms=8000)
+                self.update_save_button(on_save=2),
+                self.show_tip(f"Save Complete! Data saved to: {filepath}", duration_ms=8000),
+                self.select_file_title_btn.setEnabled(True)
             ),
             on_error=lambda errmsg: ErrorDialog(
                 title_label="Save File Error",
@@ -3080,6 +3090,7 @@ class MUeditManual(QMainWindow):
         
         self.dirty_depth = 0 #shr
         self.initial_data = copy.deepcopy(self.MUedition["edition"])    #保存新的原始数据
+
         # Show a confirmation message
         from PyQt5.QtWidgets import QMessageBox
         #QMessageBox.information(self, "Save Complete", f"Data saved to {savename}", QMessageBox.Ok)
