@@ -7,11 +7,15 @@ from scipy import signal
 
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from core.muAnalysisCore.SelectRange import SelectRange
-from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
-from ui.components.muAnalysisComponents.AnalysisLabeledDropdown import AnalysisLabeledDropdown
-from ui.components.muAnalysisComponents.AnalysisDropdownDialog import AnalysisDropdownDialog
-from ui.components.muAnalysisComponents.AnalysisLabeledDropdownDialog import AnalysisLabeledDropdownDialog
+from ui.components.muAnalysisComponents.AnalysisDropdown import \
+    AnalysisDropdown
+from ui.components.muAnalysisComponents.AnalysisDropdownDialog import \
+    AnalysisDropdownDialog
 from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
+from ui.components.muAnalysisComponents.AnalysisLabeledDropdown import \
+    AnalysisLabeledDropdown
+from ui.components.muAnalysisComponents.AnalysisLabeledDropdownDialog import \
+    AnalysisLabeledDropdownDialog
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
@@ -21,15 +25,15 @@ from ui.components.SaveablePlot import SaveablePlot
 
 class SignalEditing(QWidget):
 
-    """Responsible for the Signal Editing button on the sidebar, and the modal 
-    that appears alongside it 
+    """Responsible for the Signal Editing button on the sidebar, and the modal
+    that appears alongside it
     """
 
     def __init__(self, mu, analysis_plot, parent=None):
         """Initialises the signal editing button
         Params:
             - mu: instance that allows access to the file (legacy)
-            - analysis_plot: instance that helps with centre plotting 
+            - analysis_plot: instance that helps with centre plotting
         Returns:
             - instance of SignalEditing (button)
         """
@@ -47,7 +51,7 @@ class SignalEditing(QWidget):
 
     def show_window(self):
         """Creates the UI for the modal/popup that appears after pressing the button
-        Params: None 
+        Params: None
         Returns: None
         """
         if FileUploadFunc.file is None:
@@ -93,7 +97,7 @@ class SignalEditing(QWidget):
         filter_emg_layout.addWidget(filter_emg_freq)
         self.filter_emg_freq = filter_emg_freq
 
-        # Aligning everything to the bottom 
+        # Aligning everything to the bottom
         filter_v_emg = QFrame()
         filter_v_emg_layout = QVBoxLayout(filter_v_emg)
         filter_v_emg_layout.setContentsMargins(0, 0, 0, 0)
@@ -127,7 +131,7 @@ class SignalEditing(QWidget):
         filter_refsig_layout.addWidget(filter_refsig_freq)
         self.filter_refsig_freq = filter_refsig_freq
 
-        # Aligning everything to the bottom 
+        # Aligning everything to the bottom
         filter_v_refsig = QFrame()
         filter_v_refsig_layout = QVBoxLayout(filter_v_refsig)
         filter_v_refsig_layout.setContentsMargins(0, 0, 0, 0)
@@ -138,7 +142,7 @@ class SignalEditing(QWidget):
         filter_v_refsig_layout.addWidget(filter_refsig_btn)
         filter_refsig_layout.addWidget(filter_v_refsig, stretch=1)
 
-        # Remove offset 
+        # Remove offset
         remove_offset = QFrame()
         window_layout.addWidget(remove_offset)
         remove_offset_layout = QHBoxLayout(remove_offset)
@@ -155,7 +159,7 @@ class SignalEditing(QWidget):
         remove_offset_layout.addWidget(remove_auto_offset)
         self.remove_auto_offset = remove_auto_offset
 
-        # Aligning everything to the bottom 
+        # Aligning everything to the bottom
         remove_v_offset = QFrame()
         remove_v_offset_layout = QVBoxLayout(remove_v_offset)
         remove_v_offset_layout.setContentsMargins(0, 0, 0, 0)
@@ -186,7 +190,7 @@ class SignalEditing(QWidget):
         convert_layout.addWidget(convert_factor, stretch=1)
         self.convert_factor = convert_factor
 
-        # Aligning everything to the bottom 
+        # Aligning everything to the bottom
         convert_v = QFrame()
         convert_v_layout = QVBoxLayout(convert_v)
         convert_v_layout.setContentsMargins(0, 0, 0, 0)
@@ -236,12 +240,12 @@ class SignalEditing(QWidget):
         window.exec()
 
     def is_int(self, n):
-        """Checks if a given string is a valid int for filter_emg or 
+        """Checks if a given string is a valid int for filter_emg or
         filter_refsig. If it is, returns n + 1.
-        Params: 
-            - n: an int 
+        Params:
+            - n: an int
         Returns:
-            - Boolean: True if it's a valid 
+            - Boolean: True if it's a valid
         """
         try:
             v = int(n)
@@ -251,7 +255,7 @@ class SignalEditing(QWidget):
 
     def filter_emg_signal(self):
         """Filters and plots the EMG signal based on specifications
-        Params: None 
+        Params: None
         Returns: None
         """
         order = self.is_int(self.filter_emg_order.get())
@@ -260,7 +264,8 @@ class SignalEditing(QWidget):
                 self.is_int, self.filter_emg_freq.get().split(
                     "-", maxsplit=1))
         except ValueError as e:
-            ErrorDialog("EMG signal bandpass frequencies must be separated by a -").exec_()
+            ErrorDialog(
+                "EMG signal bandpass frequencies must be separated by a -").exec_()
             return
         if not order or order - 1 < 0:
             ErrorDialog(
@@ -297,7 +302,7 @@ class SignalEditing(QWidget):
 
     def filter_refsig(self):
         """Filters and plots the reference signal based on specifications
-        Params: None 
+        Params: None
         Returns: None
         """
         order = self.is_int(self.filter_refsig_order.get())
@@ -334,8 +339,8 @@ class SignalEditing(QWidget):
         self.mu.plot_refsig(filtered_file, self.analysis_plot)
 
     def remove_offset(self):
-        """Removes and plots user-specified/selected refsig offset (from the y-axis) 
-        Params: None 
+        """Removes and plots user-specified/selected refsig offset (from the y-axis)
+        Params: None
         Returns: None
         """
         try:
@@ -370,9 +375,9 @@ class SignalEditing(QWidget):
                 "Invalid Input").exec_()
 
     def two_point(self, x, y):
-        """two_point function required for SelectRange. Ran after two points in 
+        """two_point function required for SelectRange. Ran after two points in
         ranged are gathered
-        Params: None 
+        Params: None
         Returns: None
         """
         offsetval = self.mu.file["REF_SIGNAL"].loc[x:y].mean()
@@ -384,7 +389,7 @@ class SignalEditing(QWidget):
     def convert(self):
         """Multiplies/Divides and plots values in the y-axis by the user-
         specified value
-        Params: None 
+        Params: None
         Returns: None
         """
         try:
@@ -404,7 +409,7 @@ class SignalEditing(QWidget):
 
     def to_percent(self):
         """Divides and plots values on the y-axis by percentage
-        Params: None 
+        Params: None
         Returns: None
         """
         try:

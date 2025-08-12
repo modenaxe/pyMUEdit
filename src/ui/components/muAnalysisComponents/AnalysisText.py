@@ -6,16 +6,16 @@ from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
 class AnalysisText(QLabel):
 
-    """UI component that defines a variety of methods, each responsible for 
+    """UI component that defines a variety of methods, each responsible for
     a different text (e.g. headings, captions etc.) via the factory method
     """
 
     def create_major_title(text=""):
         """Creates the equivalent of a heading 1, the biggest hierarchical heading
-        Params: 
-            - text="": the text inside the heading 
-        Returns: 
-            - instance of major_title 
+        Params:
+            - text="": the text inside the heading
+        Returns:
+            - instance of major_title
         """
         major_title = QLabel(text)
         major_title.setStyleSheet(
@@ -29,11 +29,11 @@ class AnalysisText(QLabel):
         return major_title
 
     def create_title(text=""):
-        """Create a headings that's used as the biggest hierarchical heading inside modals 
-        Params: 
-            - text="": the text inside the title 
-        Returns: 
-            - instance of title 
+        """Create a headings that's used as the biggest hierarchical heading inside modals
+        Params:
+            - text="": the text inside the title
+        Returns:
+            - instance of title
         """
         title = QLabel(text)
         title.setStyleSheet(
@@ -47,11 +47,11 @@ class AnalysisText(QLabel):
         return title
 
     def create_title_dark(text=""):
-        """Creates a dark heading that's used as the biggest hierarchical heading inside modals 
-        Params: 
-            - text="": the text inside the title 
-        Returns: 
-            - instance of title 
+        """Creates a dark heading that's used as the biggest hierarchical heading inside modals
+        Params:
+            - text="": the text inside the title
+        Returns:
+            - instance of title
         """
         title = QLabel(text)
         title.setStyleSheet(
@@ -66,10 +66,10 @@ class AnalysisText(QLabel):
 
     def create_heading(text=""):
         """Creates a heading that's used as a secondary heading inside modals
-        Params: 
-            - text="": the text inside the heading 
-        Returns: 
-            - instance of heading 
+        Params:
+            - text="": the text inside the heading
+        Returns:
+            - instance of heading
         """
         heading = QLabel(text)
         heading.setStyleSheet(
@@ -84,10 +84,10 @@ class AnalysisText(QLabel):
 
     def create_heading_dark(text=""):
         """Creates a dark heading that's used as a secondary heading inside modals
-        Params: 
-            - text="": the text inside the heading 
-        Returns: 
-            - instance of heading 
+        Params:
+            - text="": the text inside the heading
+        Returns:
+            - instance of heading
         """
         heading = QLabel(text)
         heading.setStyleSheet(
@@ -101,11 +101,11 @@ class AnalysisText(QLabel):
         return heading
 
     def create_subtitle(text=""):
-        """Creates a heading that's used as a secondary heading in sidebars 
-        Params: 
-            - text="": the text inside the subtitle 
-        Returns: 
-            - instance of subtitle 
+        """Creates a heading that's used as a secondary heading in sidebars
+        Params:
+            - text="": the text inside the subtitle
+        Returns:
+            - instance of subtitle
         """
         subtitle = QLabel(text)
         subtitle.setStyleSheet(
@@ -120,11 +120,11 @@ class AnalysisText(QLabel):
         return subtitle
 
     def create_label(text=""):
-        """Creates the labels used on top of UI components, such as dropdowns 
-        Params: 
-            - text="": the text inside the label 
-        Returns: 
-            - instance of label 
+        """Creates the labels used on top of UI components, such as dropdowns
+        Params:
+            - text="": the text inside the label
+        Returns:
+            - instance of label
         """
         label = QLabel(text)
         label.setStyleSheet(
@@ -138,11 +138,11 @@ class AnalysisText(QLabel):
         return label
 
     def create_prompt(text=""):
-        """Creates the prompt used in the centre canvas 
-        Params: 
-            - text="": the text inside the prompt 
-        Returns: 
-            - instance of prompt 
+        """Creates the prompt used in the centre canvas
+        Params:
+            - text="": the text inside the prompt
+        Returns:
+            - instance of prompt
         """
         prompt = QLabel(text)
         prompt.setStyleSheet(
@@ -156,10 +156,10 @@ class AnalysisText(QLabel):
         return prompt
 
     def create_italic_text(text=""):
-        """Creates caption text used for in-modal warnings. See SignalEditing. 
-        Params: 
-            - text="": the text inside the caption 
-        Returns: 
+        """Creates caption text used for in-modal warnings. See SignalEditing.
+        Params:
+            - text="": the text inside the caption
+        Returns:
             - instance of caption
         """
         italic = QLabel(text)
