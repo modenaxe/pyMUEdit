@@ -22,8 +22,8 @@ from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
 from core.muAnalysisCore.SelectRange import SelectRange
 from core.muAnalysisCore.AnalysisResultsHist import store
 
-class MUPropertiesFunc:
 
+class MUPropertiesFunc:
     """Motor Unit Properties functionality"""
 
     def __init__(self):
@@ -35,16 +35,31 @@ class MUPropertiesFunc:
 
     # MVC value management
     def set_mvc(self, mvc_value):
-        """Set the Maximum Voluntary Contraction value"""
+        """Set the Maximum Voluntary Contraction value for threshold calculations.
+
+        Args:
+            mvc_value: QLineEdit widget containing the MVC value input
+        """
         self.mvc_value = mvc_value
 
     # turns mcv input text into a string to be used
     def get_mvc(self):
-        """Get the current MVC value"""
+        """Get the current MVC value as a string from the input widget.
+
+        Returns:
+            String representation of the MVC value from the text input
+        """
         return str(self.mvc_value.text())
 
-    # general function to turn input text into usable string
     def convert(self, value):
+        """Convert input widget text to usable string format.
+
+        Args:
+            value: QLineEdit widget containing text input
+
+        Returns:
+            String representation of the widget's text content
+        """
         return str(value.text())
 
     def basic_prop(self, analysis_plot, rec, start, over):
@@ -74,19 +89,30 @@ class MUPropertiesFunc:
         self.over = over
         self.analysis_plot = analysis_plot
         SelectRange(analysis_plot, self.two_point, False)
-        
+
     def compute_thresh(self, event_, type_):
+        """Compute motor unit recruitment/derecruitment thresholds.
+
+        Args:
+            event_: Event type string for threshold calculation (e.g., 'rt_dert', 'rt', 'dert')
+            type_: Type of threshold calculation ('abs_rel', 'abs', 'rel')
+
+        Validates inputs and calls compute_thresholds with the loaded EMG file.
+        """
         file = FileUploadFunc.file
         if file == None:
             ErrorDialog("No file has been loaded", "Error").exec_()
             return
-        if (len(self.convert(self.mvc_value)) == 0 
+        if (
+            len(self.convert(self.mvc_value)) == 0
             or len(event_) == 0
             or len(type_) == 0
         ):
             ErrorDialog("You are missing Inputs", "Error").exec_()
             return
-        self.compute_thresholds(FileUploadFunc.file, event_, type_, mvc=float(self.get_mvc()))
+        self.compute_thresholds(
+            FileUploadFunc.file, event_, type_, mvc=float(self.get_mvc())
+        )
 
     def two_point(self, x, y):
         """Function to be passed for select range and reverts plot with basic properties
@@ -306,7 +332,7 @@ class MUPropertiesFunc:
         time_range=None,
     ):
         """from openHDEMG to get discharge rate
-        Params (relevant for us): emgfile, mvc, n_firings_RecDerec(user input), n_firings_steady(user input), 
+        Params (relevant for us): emgfile, mvc, n_firings_RecDerec(user input), n_firings_steady(user input),
         start_steady(from select range), end_steady(from select range), event(user dropdwown)
         Returns: dr dataframe
         """
