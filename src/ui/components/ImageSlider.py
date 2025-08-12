@@ -8,7 +8,6 @@ from ui.components.CircleButton import CircleButton
 class ImageSlider(QWidget):
     def __init__(self):
         super().__init__()
-        #self.setFixedSize(480, 480)
         self.setMinimumSize(480, 480)
         # image path
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -48,7 +47,6 @@ class ImageSlider(QWidget):
             if pixmap.isNull():
                 self.image_label.setText("fail to load image")
             else:
-                #self.image_label.setPixmap(pixmap.scaled(455, 455, Qt.KeepAspectRatio, Qt.SmoothTransformation))
                 label_size = self.image_label.size()
                 scaled_pixmap = pixmap.scaled(label_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 self.image_label.setPixmap(scaled_pixmap)
