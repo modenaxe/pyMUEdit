@@ -9,40 +9,77 @@ https://github.com/simonavrillon/MUedit
 Drive containing data files used for testing:
 https://drive.google.com/drive/folders/1nIpH1ksYWE-vQplEtilz843h2BuCuDmy
 
-## Dockerized Application
-
-This application has been dockerized to allow for easy deployment and use on any system with Docker installed, eliminating the need to install dependencies locally. The application runs entirely inside the container and is accessed through your web browser or a VNC client.
 
 ### Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/)
-- [Docker Compose](https://docs.docker.com/compose/install/) (optional but recommended)
-- A web browser or VNC client
+- Python 3.13+
+- Pip 25.1+
 
 ### Quick Start Guide
 
-#### The Easy Way (Using the Scripts)
+#### The Easy Way [NO docker] (to be scripted)
 
 1. Clone this repository:
 
    ```bash
    git clone git@github.com:unsw-cse-comp99-3900/capstone-project-2025-t1-25t1-3900-w16a-celery.git
-   cd capstone-project-2025-11-25t1-3900-w16a-celery
+   cd capstone-project-2025-11-25t1-3900-w16a-celery [TO BE REPLACED]
    ```
 
-2. Run the application:
+2. Ensure Python 3.13 or higher is installed
 
-   - **Linux/macOS**: Make the script executable and run it
-     ```bash
-     chmod +x run-hdemg.sh
-     ./run-hdemg.sh
-     ```
-   - **Windows**: Double-click on `run-hdemg.bat`
+   ```bash
+   python --version
+   ```
 
-3. Access the application:
-   - Open your web browser and navigate to: http://localhost:6080/vnc.html
-   - Click the "Connect" button
-   - You'll see the HDEMG Analysis Tool running in your browser
+3. Ensure Pip 25.1 or higher is installed
+
+   ```bash
+   pip --version
+   ```
+
+4. Create virtual environment
+
+   ```bash
+   python -m venv .venv
+   ```
+
+5. Activate the virtual environment
+
+   ```bash
+   Windows:
+   .venv\Scripts\activate
+   ```
+
+   ```bash
+   Linux/MacOS:
+   source myenv/bin/activate
+   ```
+
+6. Install base requirements
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+7. Install gpu requirements (ONLY if you have windows and nvidia gpu) - For cuda-enabled SCD
+
+   ```bash
+   pip install -r requirements-gpu.txt
+   ```
+
+8. Run the application:
+
+   ```bash
+   python src/main.py
+   ```
+
+
+
+## Dockerized Application
+
+This application has been dockerized to allow for easy deployment and use on any system with Docker installed, eliminating the need to install dependencies locally. The application runs entirely inside the container and is accessed through your web browser or a VNC client.
+
 
 #### Manual Setup
 
