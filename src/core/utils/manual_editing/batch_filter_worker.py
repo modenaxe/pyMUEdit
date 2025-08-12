@@ -3,7 +3,7 @@ from core.utils.decomposition.extend_emg import extend_emg
 from core.utils.decomposition.whiten_emg import whiten_emg
 import numpy as np
 
-class BatchFilterWorker(QThread):
+class batch_filter_worker(QThread):
     progress_changed = pyqtSignal(int, str) 
     finished = pyqtSignal()
     error = pyqtSignal(str)
