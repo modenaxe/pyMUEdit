@@ -1,8 +1,3 @@
-"""
-Refactored Dialog for estimating Motor Unit Conduction Velocity (CV).
-Reduced from 1598 lines to ~600 lines while maintaining full functionality.
-"""
-
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt
 import numpy as np
@@ -20,7 +15,16 @@ from app.muAnalysisFunctions.electrode_layouts import get_electrode_grid
 
 # --- Utility Functions ---
 def norm_xcorr(sig1, sig2, out="max"):
-    """Calculate normalized cross-correlation between two signals."""
+    """Calculate normalized cross-correlation between two signals.
+
+    Args:
+        sig1: First signal array
+        sig2: Second signal array
+        out: Output type, either "max" to return maximum correlation or "full" for full correlation array
+
+    Returns:
+        Maximum absolute correlation value if out="max", otherwise full correlation array
+    """
     sig1, sig2 = sig1 - np.mean(sig1), sig2 - np.mean(sig2)
     corr = correlate(sig1, sig2, mode="full")
     norm_factor = np.sqrt(np.sum(sig1**2) * np.sum(sig2**2))
@@ -30,7 +34,17 @@ def norm_xcorr(sig1, sig2, out="max"):
 
 
 def find_mle_teta(sig1, sig2, ied, fsamp):
-    """Find initial theta estimate for MLE CV estimation."""
+    """Find initial theta estimate for MLE CV estimation.
+
+    Args:
+        sig1: First signal array
+        sig2: Second signal array
+        ied: Inter-electrode distance in mm
+        fsamp: Sampling frequency in Hz
+
+    Returns:
+        Initial theta estimate (1/cv_estimate) for optimization
+    """
     corr = correlate(sig1, sig2, mode="full")
     lags = np.arange(-len(sig1) + 1, len(sig1))
     delay_samples = max(1, abs(lags[np.argmax(np.abs(corr))]))
@@ -39,7 +53,17 @@ def find_mle_teta(sig1, sig2, ied, fsamp):
 
 
 def mle_cv_est(sig, initial_teta, ied, fsamp):
-    """Maximum likelihood estimation of conduction velocity."""
+    """Maximum likelihood estimation of conduction velocity.
+
+    Args:
+        sig: Signal array for CV estimation
+        initial_teta: Initial theta value for optimization
+        ied: Inter-electrode distance in mm
+        fsamp: Sampling frequency in Hz
+
+    Returns:
+        Tuple of (estimated_cv, optimized_teta) where cv is in m/s
+    """
 
     def objective(teta):
         cv = 1.0 / teta if teta > 0 else 0.1
@@ -56,7 +80,15 @@ def mle_cv_est(sig, initial_teta, ied, fsamp):
 
 
 def estimate_cv_via_mle(emgfile, signal):
-    """Estimate conduction velocity via maximum likelihood estimation."""
+    """Estimate conduction velocity via maximum likelihood estimation.
+
+    Args:
+        emgfile: EMG file dictionary containing IED and FSAMP parameters
+        signal: Signal data for CV estimation (DataFrame or array)
+
+    Returns:
+        Estimated conduction velocity in m/s, or NaN if estimation fails
+    """
     ied, fsamp = emgfile.get("IED", 8.0), emgfile.get("FSAMP", 2048)
     sig = (signal.values if hasattr(signal, "values") else signal).T
     if sig.ndim == 1:
@@ -69,20 +101,43 @@ def estimate_cv_via_mle(emgfile, signal):
 
 
 def get_emg_data(key, default=None):
-    """Helper to safely get EMG data."""
+    """Helper to safely get EMG data from the loaded file.
+
+    Args:
+        key: Dictionary key to retrieve from EMG file
+        default: Default value to return if key not found or file not loaded
+
+    Returns:
+        Value from EMG file or default value
+    """
     emgfile = FileUploadFunc.file
     return emgfile.get(key, default) if emgfile else default
 
 
 def get_available_mus():
+    """Get list of available motor unit indices from loaded EMG file.
+
+    Returns:
+        List of motor unit indices (0 to NUMBER_OF_MUS-1)
+    """
     return list(range(get_emg_data("NUMBER_OF_MUS", 0)))
 
 
 def get_available_grid_rows():
+    """Get list of available electrode grid row indices.
+
+    Returns:
+        List of string representations of row indices (0-10)
+    """
     return [str(i) for i in range(11)]  # Reference shows rows 0-10
 
 
 def get_available_grid_columns():
+    """Get list of available electrode grid column indices.
+
+    Returns:
+        List of string representations of column indices (0-4) for GR08MM1305 grid
+    """
     return [str(i) for i in range(5)]  # 5 columns for GR08MM1305
 
 
@@ -101,7 +156,11 @@ class ConductionVelocityDialog(QDialog):
         self._load_initial_data()
 
     def _get_stylesheet(self):
-        """Return consolidated stylesheet."""
+        """Return consolidated stylesheet for the dialog.
+
+        Returns:
+            String containing CSS stylesheet for dialog styling
+        """
         return f"""
             QDialog {{ background: {CleanTheme.BG_CARD}; }}
             QLabel {{ color: {CleanTheme.TEXT_PRIMARY}; font-size: 14px; }}
@@ -125,7 +184,11 @@ class ConductionVelocityDialog(QDialog):
         """
 
     def _get_electrode_grid_cached(self):
-        """Get electrode grid with caching."""
+        """Get electrode grid with caching for performance optimization.
+
+        Returns:
+            Tuple of (electrode_grid, electrode_positions_dict) with cached electrode layout data
+        """
         if self._electrode_grid_cache is None:
             try:
                 self._electrode_grid_cache = get_electrode_grid(
@@ -143,7 +206,16 @@ class ConductionVelocityDialog(QDialog):
         return self._electrode_grid_cache, self._electrode_positions_cache
 
     def _create_dropdown_group(self, title, items, default_index=0):
-        """Helper to create dropdown groups."""
+        """Helper to create dropdown groups with error handling.
+
+        Args:
+            title: Title for the dropdown group
+            items: List of items to populate the dropdown
+            default_index: Index of default selection
+
+        Returns:
+            Tuple of (group_widget, dropdown_widget)
+        """
         group = QGroupBox(title)
         layout = QVBoxLayout()
         dropdown = QComboBox()
@@ -164,7 +236,10 @@ class ConductionVelocityDialog(QDialog):
         return group, dropdown
 
     def _init_ui(self):
-        """Initialize the user interface."""
+        """Initialize the user interface components and layout.
+
+        Sets up dropdowns, buttons, plot canvas, and results table with proper styling and connections.
+        """
         main_layout = QVBoxLayout()
 
         # Controls layout
@@ -247,7 +322,11 @@ class ConductionVelocityDialog(QDialog):
         self.col_dropdown.currentTextChanged.connect(self._update_plot)
 
     def _load_initial_data(self):
-        """Load initial data and update UI."""
+        """Load initial data and update UI components.
+
+        Checks if EMG file is loaded, refreshes dropdowns, and updates the plot display.
+        Shows appropriate error messages if no data is available.
+        """
         try:
             if FileUploadFunc.file is not None:
                 self._refresh_dropdowns()
@@ -260,7 +339,11 @@ class ConductionVelocityDialog(QDialog):
             self._show_message(f"Error initializing: {str(e)}")
 
     def _refresh_dropdowns(self):
-        """Refresh all dropdowns with current data."""
+        """Refresh all dropdowns with current data from loaded EMG file.
+
+        Updates motor unit, column, and row selection dropdowns with available options
+        based on the currently loaded data.
+        """
         try:
             # Refresh dropdowns
             dropdowns_data = [
@@ -297,7 +380,11 @@ class ConductionVelocityDialog(QDialog):
             print(f"Error refreshing dropdowns: {e}")
 
     def _show_message(self, message):
-        """Show message in plot area."""
+        """Show message in plot area when no data is available or error occurs.
+
+        Args:
+            message: Text message to display in the center of the plot area
+        """
         fig = self.plot_canvas.figure
         fig.clear()
         ax = fig.add_subplot(111)
@@ -306,7 +393,11 @@ class ConductionVelocityDialog(QDialog):
         self.results_table.setRowCount(0)
 
     def _get_ui_values(self):
-        """Get current UI values safely."""
+        """Get current UI values safely with error handling.
+
+        Returns:
+            Dictionary containing current MU number, column, from_row, and to_row selections
+        """
 
         def safe_int(text, default):
             return (
@@ -323,7 +414,11 @@ class ConductionVelocityDialog(QDialog):
         }
 
     def _update_plot(self):
-        """Update plot based on current selections."""
+        """Update plot based on current dropdown selections.
+
+        Redraws the MUAP grid visualization when user changes MU or column selection.
+        Shows error message if no EMG file is loaded.
+        """
         try:
             if FileUploadFunc.file is not None:
                 self._plot_muap_grid()
@@ -335,7 +430,11 @@ class ConductionVelocityDialog(QDialog):
             self._show_message(f"Error: {str(e)}")
 
     def _on_estimate(self):
-        """Perform CV estimation."""
+        """Perform CV estimation when estimate button is clicked.
+
+        Retrieves current UI values, computes conduction velocity results for all columns,
+        and updates the results table with CV, RMS, and XCC values.
+        """
         try:
             values = self._get_ui_values()
             table_data = self._compute_results(
@@ -350,7 +449,17 @@ class ConductionVelocityDialog(QDialog):
             traceback.print_exc()
 
     def _compute_results(self, mu, selected_col, from_row, to_row):
-        """Compute CV estimation results using reference method."""
+        """Compute CV estimation results using reference method.
+
+        Args:
+            mu: Motor unit index for analysis
+            selected_col: Selected column index
+            from_row: Starting row for analysis range
+            to_row: Ending row for analysis range
+
+        Returns:
+            List of tuples containing (column_name, cv_value, rms_value, xcc_value) for each column
+        """
         emgfile = FileUploadFunc.file
         if emgfile is None:
             return []
@@ -404,7 +513,17 @@ class ConductionVelocityDialog(QDialog):
         return table_data
 
     def _compute_sta(self, emgfile, mu, from_row, to_row):
-        """Compute spike-triggered average for all columns."""
+        """Compute spike-triggered average for all columns within specified row range.
+
+        Args:
+            emgfile: EMG file dictionary containing RAW_SIGNAL and MUPULSES
+            mu: Motor unit index for pulse extraction
+            from_row: Starting row index for channel selection
+            to_row: Ending row index for channel selection
+
+        Returns:
+            Dictionary with column names as keys and DataFrames of spike-triggered averages as values
+        """
         raw_signal = emgfile.get("RAW_SIGNAL")
         mu_pulses = emgfile.get("MUPULSES")
 
@@ -486,7 +605,14 @@ class ConductionVelocityDialog(QDialog):
         return sta_data
 
     def _compute_xcc(self, sta_data):
-        """Compute cross-correlation between adjacent channels."""
+        """Compute cross-correlation between adjacent channels in each column.
+
+        Args:
+            sta_data: Dictionary containing spike-triggered average data by column
+
+        Returns:
+            Dictionary with same structure as sta_data but containing cross-correlation values
+        """
         xcc_sta = copy.deepcopy(sta_data)
 
         for col_name in sta_data:
@@ -508,7 +634,11 @@ class ConductionVelocityDialog(QDialog):
         return xcc_sta
 
     def _plot_muap_grid(self):
-        """Plot MUAP grid with XCC values."""
+        """Plot MUAP grid with XCC values displayed on each electrode.
+
+        Creates a grid visualization of motor unit action potentials (MUAPs) for the selected MU,
+        showing the signal at each electrode position with cross-correlation values overlaid.
+        """
 
         def compute_muaps(file, mu_index, window):
             raw_signal = file.get("RAW_SIGNAL")
@@ -687,7 +817,11 @@ class ConductionVelocityDialog(QDialog):
         self.plot_canvas.draw()
 
     def _fill_results_table(self, table_data):
-        """Fill results table with computed data."""
+        """Fill results table with computed CV estimation data.
+
+        Args:
+            table_data: List of tuples containing (column, cv, rms, xcc) values for each column
+        """
         self.results_table.clearContents()
         self.results_table.setRowCount(len(table_data))
 
@@ -704,7 +838,10 @@ class ConductionVelocityDialog(QDialog):
         self.results_table.resizeColumnsToContents()
 
     def _copy_results(self):
-        """Copy table to clipboard."""
+        """Copy results table data to clipboard in tab-separated format.
+
+        Copies both headers and data rows to allow pasting into spreadsheet applications.
+        """
         rows, cols = self.results_table.rowCount(), self.results_table.columnCount()
 
         # Header
@@ -726,7 +863,11 @@ class ConductionVelocityDialog(QDialog):
         QApplication.clipboard().setText(text)
 
     def refresh_with_new_data(self):
-        """Public method to refresh dialog when new EMG data is loaded."""
+        """Public method to refresh dialog when new EMG data is loaded.
+
+        Clears cached data, refreshes dropdown options, and updates the plot display
+        to reflect the newly loaded EMG file.
+        """
         self._electrode_grid_cache = None
         self._electrode_positions_cache = None
         self._refresh_dropdowns()

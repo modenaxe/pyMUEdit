@@ -10,22 +10,30 @@ from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from PyQt5.QtCore import Qt
 
-class Resize:
 
-    """Class to handle resizing file functionality"""
+class Resize:
+    """Class to handle resizing EMG file functionality.
+
+    Provides functionality to resize (trim) EMG data to a specified time range
+    by allowing user to select start and end points on the analysis plot.
+    """
 
     def __init__(self, mu, analysis_plot):
-        """Initialises class instance
-        Params: mu: instance of file editing, analysis_plot: centre plot instance
-        Returns: class isntance
+        """Initialize the Resize class instance.
+
+        Args:
+            mu: Instance of MU analysis functionality handler
+            analysis_plot: Centre plot instance for range selection visualization
         """
         self.mu = mu
         self.analysis_plot = analysis_plot
 
     def resize(self):
-        """Sets up screen for selecting start/end range of resize
-        Params: None
-        Returns: None
+        """Set up screen for selecting start/end range of resize operation.
+
+        Initiates the range selection interface that allows user to click
+        two points on the plot to define the resize boundaries.
+        Shows error if no file is loaded.
         """
         if FileUploadFunc.file == None:
             ErrorDialog("No file has been loaded", "Error").exec_()
@@ -33,9 +41,14 @@ class Resize:
         SelectRange(self.analysis_plot, self.two_point, False)
 
     def two_point(self, x, y):
-        """Function to be passed for select range and reverts plot
-        Params: x,y: coords from select range
-        Returns: None
+        """Callback function for range selection completion.
+
+        Args:
+            x: Start point (sample index) selected by user
+            y: End point (sample index) selected by user
+
+        Performs the actual resize operation, updates the plot display,
+        and reverts the plot to normal interaction mode.
         """
         self.resize_emgfile(FileUploadFunc.file, x, y)
         self.mu.plot_idr(FileUploadFunc.file, self.analysis_plot)
@@ -51,9 +64,20 @@ class Resize:
         accuracy="recalculate",
         ignore_negative_ipts=False,
     ):
-        """From openHDEMG, resizes the input file and technical details
-        Params (relevant for us): file, start, end
-        Returns: None
+        """Resize EMG file data to specified sample range (from openHDEMG).
+
+        Args:
+            emgfile: EMG file dictionary containing all signal data
+            start_: Starting sample index for resized data
+            end_: Ending sample index for resized data
+            area: Area parameter (not used in current implementation)
+            how: Method for resizing ("ref_signal" - default)
+            accuracy: How to handle accuracy recalculation ("recalculate" or "maintain")
+            ignore_negative_ipts: Whether to ignore negative IPTS values in accuracy calculation
+
+        Trims all data arrays (RAW_SIGNAL, REF_SIGNAL, IPTS, etc.) to the specified range,
+        adjusts MUPULSES indices accordingly, and optionally recalculates accuracy metrics.
+        Updates the global FileUploadFunc.file with the resized data.
         """
         rs_emgfile = copy.deepcopy(emgfile)
         if emgfile["SOURCE"] in ["DEMUSE", "OTB", "CUSTOMCSV", "DELSYS"]:

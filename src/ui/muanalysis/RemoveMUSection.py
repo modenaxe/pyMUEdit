@@ -1,16 +1,28 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLineEdit,
-                             QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import QFrame, QHBoxLayout, QLabel, QLineEdit, QVBoxLayout, QWidget
 
 from ui.components import ActionButton
-from ui.components.muAnalysisComponents.CleanTheme import \
-    CleanTheme as AnalysisTheme
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme as AnalysisTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 
 
 class RemoveMUSection(QWidget):
+    """Widget section for removing motor units from EMG data.
+
+    Provides functionality to remove specific motor units by number/range
+    and to remove empty motor units that contain no pulse data.
+    """
+
     def __init__(self, mu_analysis_func, analysis_plot, colors, parent=None):
+        """Initialize the Remove MU Section widget.
+
+        Args:
+            mu_analysis_func: Instance of MU analysis functionality handler
+            analysis_plot: Plot widget for displaying updated analysis results
+            colors: Color scheme dictionary for UI styling
+            parent: Parent widget (optional)
+        """
         super().__init__(parent)
         self.mu_analysis_func = mu_analysis_func
         self.analysis_plot = analysis_plot
@@ -18,6 +30,12 @@ class RemoveMUSection(QWidget):
         self.init_ui()
 
     def init_ui(self):
+        """Initialize the user interface components.
+
+        Creates the layout with input field for MU numbers, confirm button,
+        and button for removing empty MUs. Applies appropriate styling and
+        connects button signals to their respective handlers.
+        """
         container = QFrame()
         container_layout = QVBoxLayout(container)
         container_layout.setContentsMargins(10, 10, 10, 10)
@@ -92,6 +110,17 @@ class RemoveMUSection(QWidget):
         layout.addWidget(container)
 
     def remove_specified_mus(self):
+        """Remove motor units specified by user input.
+
+        Parses the input text for MU numbers and ranges (e.g., "1,3-5,7"),
+        validates that the specified MUs exist in the loaded data,
+        and removes them if valid. Updates the plot after successful removal.
+
+        Input format supports:
+        - Single numbers: "1,3,7"
+        - Ranges: "3-5" (removes MUs 3,4,5)
+        - Mixed: "1,3-5,8"
+        """
         input_text = self.mu_remove_input.text()
         if not self.mu_analysis_func.data_loaded():
             ErrorDialog("No file has been loaded", "Error").exec_()
@@ -141,20 +170,25 @@ class RemoveMUSection(QWidget):
             ).exec_()
 
     def remove_empty_mus(self):
+        """Remove all motor units that contain no pulse data.
+
+        Identifies motor units with empty MUPULSES arrays and removes them
+        from the EMG data. Shows info dialog if no empty MUs are found.
+        Updates the plot after successful removal.
+        """
         if not self.mu_analysis_func.data_loaded():
             ErrorDialog("No file has been loaded", "Error").exec_()
             return
 
         emgfile = self.mu_analysis_func.file
         empty_mu_indices = [
-            i for i, pulses in enumerate(
-                emgfile["MUPULSES"]) if len(pulses) == 0]
+            i for i, pulses in enumerate(emgfile["MUPULSES"]) if len(pulses) == 0
+        ]
         if not empty_mu_indices:
             ErrorDialog("No empty MUs to remove.", "Info").exec_()
             return
 
         input_text = ",".join(str(i + 1) for i in empty_mu_indices)
         self.mu_analysis_func.remove_mus_by_range(input_text)
-        self.mu_analysis_func.plot_idr(
-            self.mu_analysis_func.file, self.analysis_plot)
+        self.mu_analysis_func.plot_idr(self.mu_analysis_func.file, self.analysis_plot)
         self.mu_remove_input.clear()
