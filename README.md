@@ -5,7 +5,7 @@
 A Python-based application for High-Density Electromyography (HDEMG) signal analysis with motor unit decomposition, visualization, and editing capabilities.
 
 Original matlab code the application is based off:
-https://github.com/simonavrillon/MUedit 
+https://github.com/simonavrillon/MUedit
 Drive containing data files used for testing:
 https://drive.google.com/drive/folders/1nIpH1ksYWE-vQplEtilz843h2BuCuDmy
 
@@ -71,10 +71,39 @@ https://drive.google.com/drive/folders/1nIpH1ksYWE-vQplEtilz843h2BuCuDmy
 8. Run the application:
 
    ```bash
-   python src/main.py
+   cd src
+   python main.py
    ```
 
+## Application Features
 
+### Importing Data
+To begin, drag and drop or use the file selection UI to choose a `.otb+` or `.mat` file.\
+The page will then display an aggregate graph of each electrode reading, each electrode being visible by using the left and right arrows.\
+Importing a file also enables the **Set Configuration** (only on `.otb+` files), **Segment Session** (shortly after processing the file) and **Channel Viewer** buttons, which provide data modification, segmenting and viewing functionality respectively.
+
+#### Set Configuration
+...
+
+#### Segment Session
+Segment session provides the capability to inspect the imported EMG recording and either concatenate selected segments or split them into separate `.mat` files.
+1. To begin, select the *auxiliary channel* you would like to display for segmentation.
+2. Select a *segmentation method*:\
+   a. **Automatic:** set a threshold to segment the session (two same-coloured lines mark the borders for each window)
+   <img src="./src/public/automatic-segment-selection.jpg" alt="Automatic Segment Selection" width="500" height="400">
+
+   b. **Manual:** set the number of windows to select regions of interest (drag-and-drop and resize windows to determine ROIs)
+   <img src="./src/public/manual-segment-selection.jpg" alt="Manual Segment Selection" width="500" height="400">
+
+3. Choose output option:\
+   a. **Concatenate:** merge selected windows, deleting the data between selected regions.
+   b. **Split:** save each selected window as a separate `.mat` file
+
+Note: All segmented files will be populated in the **'Recent Files'** panel for easy access.
+
+
+#### Channel Viewer
+...
 
 ## Dockerized Application
 
