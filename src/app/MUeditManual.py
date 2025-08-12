@@ -481,19 +481,6 @@ class MUeditManual(QMainWindow):
         if not self.MUedition:
             return
 
-        signal_data = files["signal"][0, 0]
-        for field in signal_data.dtype.names:   
-            self.MUedition["signal"][field] = signal_data[field]
-            
-        self.MUedition["edition"]["Pulsetrain"] = []
-        # Copy Pulsetrain data
-        pulsetrain_data = self.MUedition["signal"]["Pulsetrain"][0]
-        print(len(pulsetrain_data))
-        # Handle as a 1D array
-        for i in range(len(pulsetrain_data)):
-            self.MUedition["edition"]["Pulsetrain"].append(pulsetrain_data[i])
-
-           
         # Copy structured data from MATLAB file
         edition_data = files["edition"][0, 0]
         #恢复"Dischargetimes", "silval", "silvalcon"这三个字典
@@ -518,10 +505,8 @@ class MUeditManual(QMainWindow):
                 except Exception as e:
                     print(f"Error loading field {field}: {e}")
                     self.MUedition["edition"][field] = {}
-            
-            elif field == "Pulsetrain":
-                continue
-                
+            elif field == "Pulsetrain" and isinstance(val, np.ndarray): #处理pulsetrain
+                self.MUedition["edition"][field] = [x for x in val.flatten()]
             elif field == "Flag" and isinstance(val, np.ndarray):   #处理flag
                 self.MUedition["edition"][field] = [
                                             [0] * arr.shape[0]
@@ -533,6 +518,10 @@ class MUeditManual(QMainWindow):
                 self.MUedition["edition"][field] = val.flatten()
             else:
                 self.MUedition["edition"][field] = val
+
+        signal_data = files["signal"][0, 0]
+        for field in signal_data.dtype.names:
+            self.MUedition["signal"][field] = signal_data[field]
 
         if "parameters" in files:
             parameters_data = files["parameters"][0, 0]
@@ -766,7 +755,7 @@ class MUeditManual(QMainWindow):
         self.MUedition["signal"]["auxiliaryname"] = np.array([auxname_list])
         
         self.MUedition["signal"]["auxiliary"] = self.MUedition["signal"]["auxiliary"].T     
-        
+           
     
     
                 
@@ -2357,12 +2346,6 @@ class MUeditManual(QMainWindow):
         if not self.MUedition:
             return
 
-        original_pulsetrain = copy.deepcopy(self.MUedition["edition"]["Pulsetrain"])
-        original_dischargetimes = copy.deepcopy(self.MUedition["edition"]["Dischargetimes"])
-        original_silval = copy.deepcopy(self.MUedition["edition"]["silval"])
-        original_silvalcon = copy.deepcopy(self.MUedition["edition"]["silvalcon"])
-        print("deep copy complete!")
-
         # Create a progress dialog
         from PyQt5.QtWidgets import QProgressDialog
 
@@ -2371,118 +2354,27 @@ class MUeditManual(QMainWindow):
         progress.setMinimumDuration(0)
         progress.setValue(0)
 
-        # Count total MUs
-        total_mus = 0
-        for i in range(len(self.MUedition["edition"]["Pulsetrain"])):
-            total_mus += self.MUedition["edition"]["Pulsetrain"][i].shape[0]
+        self._filterWorker = BatchFilterWorker(
+            self.MUedition,
+            (
+                copy.deepcopy(self.MUedition["edition"]["Pulsetrain"]),
+                copy.deepcopy(self.MUedition["edition"]["Dischargetimes"]),
+                copy.deepcopy(self.MUedition["edition"]["silval"]),
+                copy.deepcopy(self.MUedition["edition"]["silvalcon"]),
+            ),
+            self
+        )
 
-        # Process each MU
-        processed_mus = 0
-        for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
-            # Get EMG data for this array            
-            emg_data = self.MUedition["signal"]["data"][self.MUedition["edition"]["arraynb"] == array_idx, :]
-            emg_mask = self.MUedition["signal"]["EMGmask"][0, array_idx].squeeze()
-            emg_data = emg_data[emg_mask == 0, :]  # Use only non-rejected channels
-
-            num_mus = self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]
-
-            for mu_idx in range(num_mus):
-                progress.setValue(int(processed_mus / total_mus * 100))
-                progress.setLabelText(f"Updating filter for Array #{array_idx+1} MU #{mu_idx+1}")
-                QApplication.processEvents()
-
-                if progress.wasCanceled():
-                    self.MUedition["edition"]["Pulsetrain"] = original_pulsetrain
-                    self.MUedition["edition"]["Dischargetimes"] = original_dischargetimes
-                    self.MUedition["edition"]["silval"] = original_silval
-                    self.MUedition["edition"]["silvalcon"] = original_silvalcon
-                    progress.close()
-                    print("Batch processing interruption!")
-                    return
-
-                # Get discharge times
-                discharge_times = self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
-
-                if len(discharge_times) > 1:
-                    # Create extension factor
-                    extension_factor = min(1000 // emg_data.shape[0], 25)
-
-                    # Extend the EMG signal
-                    extended_emg = np.zeros(
-                        [emg_data.shape[0] * extension_factor, emg_data.shape[1] + extension_factor - 1]
-                    )
-                    extended_emg = extend_emg(extended_emg, emg_data, extension_factor)
-
-                    # Calculate covariance and pseudo-inverse
-                    covariance = extended_emg @ extended_emg.T / extended_emg.shape[1]
-                    inverse_cov = np.linalg.pinv(covariance)
-
-                    # Get whitened signal
-                    _, _, dewhitening_matrix = whiten_emg(extended_emg)
-
-                    # Calculate motor unit filter
-                    mu_filter = np.sum(extended_emg[:, discharge_times], axis=1, keepdims=True)
-
-                    # Calculate pulse train
-                    pulse_train = ((dewhitening_matrix @ mu_filter).T @ inverse_cov) @ extended_emg
-                    pulse_train = pulse_train[0, : emg_data.shape[1]]
-
-                    # Square and rectify
-                    pulse_train = pulse_train * np.abs(pulse_train)
-
-                    # Find peaks
-                    from scipy.signal import find_peaks
-
-                    peaks, _ = find_peaks(pulse_train, distance=round(0.005 * self.MUedition["signal"]["fsamp"][0, 0]))
-
-                    # Normalize using top peaks
-                    if len(peaks) >= 10:
-                        top_values = np.sort(pulse_train[peaks])[-10:]
-                        pulse_train = pulse_train / np.mean(top_values)
-                    elif len(peaks) > 0:
-                        pulse_train = pulse_train / np.mean(pulse_train[peaks])
-
-                    # Cluster peaks to find spikes
-                    if len(peaks) >= 2:
-                        from sklearn.cluster import KMeans
-
-                        kmeans = KMeans(n_clusters=2, random_state=0).fit(pulse_train[peaks].reshape(-1, 1))
-                        labels = kmeans.labels_
-                        centroids = kmeans.cluster_centers_
-
-                        # Find class with highest centroid
-                        high_centroid_idx = np.argmax(centroids)
-                        spikes = peaks[labels == high_centroid_idx]
-
-                        # Remove outliers
-                        threshold = np.mean(pulse_train[spikes]) + 3 * np.std(pulse_train[spikes])
-                        spikes = spikes[pulse_train[spikes] <= threshold]
-                    else:
-                        spikes = peaks
-
-                    # Update the pulse train and discharge times
-                    self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = pulse_train
-                    self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = spikes 
-                    # Recalculate SIL
-                    self.calculate_silval(array_idx, mu_idx)
-
-                processed_mus += 1
-
-            if progress.wasCanceled():
-                self.MUedition["edition"]["Pulsetrain"] = original_pulsetrain
-                self.MUedition["edition"]["Dischargetimes"] = original_dischargetimes
-                self.MUedition["edition"]["silval"] = original_silval
-                self.MUedition["edition"]["silvalcon"] = original_silvalcon
-                progress.close()
-                print("Batch processing interruption!")
-                return
-
-        progress.setValue(100)
-
+        self._filterWorker.progress_changed.connect(lambda val, text: (
+            progress.setValue(val), progress.setLabelText(text)
+        ))
         # Update the current MU display
-        self.update_save_button()
-        self.mu_checkbox_state_changed()
+        self._filterWorker.finished.connect(lambda: (progress.close(), self.update_save_button(), self.mu_checkbox_state_changed()))
+        self._filterWorker.error.connect(lambda msg: (progress.close(), print("Error:", msg)))
 
+        progress.canceled.connect(self._filterWorker.cancel)
+        self._filterWorker.start()
+        
     def remove_flagged_mu_button_pushed(self):
         """Remove motor units that have been flagged for deletion."""
         if not self.MUedition:
