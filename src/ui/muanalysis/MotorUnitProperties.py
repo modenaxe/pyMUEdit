@@ -9,10 +9,9 @@ from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
 from core.muAnalysisCore.AnalysisResultsHist import store
 from core.muAnalysisCore.SelectRange import SelectRange
-from ui.components.muAnalysisComponents.AnalysisDropdown import \
-    AnalysisDropdown
-from ui.components.muAnalysisComponents.AnalysisDropdownDialog import (
-    AnalysisDropdownDialog, AnalysisLabeledDropdownDialog)
+from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
+from ui.components.muAnalysisComponents.AnalysisDropdownDialog import AnalysisDropdownDialog
+from ui.components.muAnalysisComponents.AnalysisLabeledDropdownDialog import AnalysisLabeledDropdownDialog
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog

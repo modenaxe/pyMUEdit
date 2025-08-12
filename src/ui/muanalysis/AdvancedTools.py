@@ -43,7 +43,6 @@ class AdvancedTools(QWidget):
         self.matrix_code = "Matrix Code"
         self.matrix_code_options = [
             "None",
-            "Custom Order",
             "GR08MM1305",
             "GR04MM1305",
             "GR10MM0808",

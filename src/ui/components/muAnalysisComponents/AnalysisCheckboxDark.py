@@ -4,12 +4,11 @@ from PyQt5.QtWidgets import QCheckBox, QLabel, QVBoxLayout, QWidget
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
-"""
-Returns an input with a label. If you don't want a label, don't give it one
-"""
-
 
 class AnalysisCheckboxDark(QCheckBox):
+
+    """UI component for creating a dark checkbox with an (optional) label"""
+
     def __init__(self, label="", parent=None):
         super().__init__(label, parent)
 
