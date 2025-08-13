@@ -11,7 +11,14 @@ class FormDoubleSpinBox(FormField):
     for a consistent look throughout the application.
     """
 
-    def __init__(self, label_text, value=0.0, min_value=0.0, max_value=1.0, step=0.1, parent=None):
+    def __init__(
+            self,
+            label_text,
+            value=0.0,
+            min_value=0.0,
+            max_value=1.0,
+            step=0.1,
+            parent=None):
         """
         Initialize a double spin box form field
 
@@ -56,7 +63,7 @@ class FormDoubleSpinBox(FormField):
                 height: 10px;
             }}
             QDoubleSpinBox::down-arrow {{
-                image: url(public/down_arrow_icon.svg);
+                image: url(src/public/down_arrow_icon.svg);
                 width: 10px;
                 height: 10px;
             }}

@@ -2,7 +2,7 @@ import numpy as np
 from core.utils.decomposition.get_spikes import get_spikes
 
 
-def min_cov_isi(w_n, B, Z, fsamp, cov_n, spikes_n):
+def min_cov_isi(w_n, Z, fsamp, cov_n, spikes_n):
     """
     Minimizes coefficient of variation (CoV) of inter-spike intervals.
 

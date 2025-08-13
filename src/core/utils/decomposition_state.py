@@ -125,7 +125,7 @@ class DecompositionState:
                     state['emg_data'] = {
                         'data': decomp_app.emg_obj.signal_dict.get('data', None),
                         'fsamp': decomp_app.emg_obj.signal_dict.get('fsamp', None),
-                        'nchans': decomp_app.emg_obj.signal_dict.get('nchans', None)
+                        'nChan': decomp_app.emg_obj.signal_dict.get('nChan', None)
                     }
                     print(f"EMG data extracted for channel viewer: {state['emg_data']['data'].shape if state['emg_data']['data'] is not None else 'None'}")
         except Exception as e:

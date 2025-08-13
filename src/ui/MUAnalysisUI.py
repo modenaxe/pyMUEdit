@@ -1,32 +1,38 @@
 import sys
-from PyQt5.QtWidgets import (
-    QApplication,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QGridLayout,
-    QPushButton,
-    QLabel,
-    QFrame,
-    QCheckBox,
-    QComboBox,
-    QSpacerItem,
-    QSizePolicy,
-    QStyle,
-    QGraphicsDropShadowEffect,
-    QScrollArea,
-    QMainWindow,
-)
-from PyQt5.QtGui import QFont, QColor
-from PyQt5.QtCore import Qt, QSize, pyqtSignal
-import traceback
+
+from PyQt5.QtCore import QSize, Qt, pyqtSignal
+from PyQt5.QtGui import QColor, QFont
+from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
+                             QMainWindow, QPushButton, QStyle, QVBoxLayout,
+                             QWidget)
 
 from app.ExportResults import ExportResultsWindow
+from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
+from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
+from app.muAnalysisFunctions.ResizeFunc import Resize
+from core.muAnalysisCore.AnalysisResultsHist import store
+from ui.components.muAnalysisComponents.AnalysisPlot import AnalysisPlot
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
+from ui.muanalysis.AdvancedTools import AdvancedTools
+from ui.muanalysis.FileSection import FileSection
+from ui.muanalysis.ForceAnalysisSection import ForceAnalysisSection
+from ui.muanalysis.MotorUnitProperties import MotorUnitPropertiesButton
+from ui.muanalysis.PlotEMG import PlotEMGButton
+from ui.muanalysis.RemoveMUSection import RemoveMUSection
+from ui.muanalysis.ResultSelection import ResultSelection
+from ui.muanalysis.ResultsPanel import ResultsPanel
+from ui.muanalysis.ResultsTable import ResultsTable
+from ui.muanalysis.SignalEditing import SignalEditing
 
 
+# legacy code
 def get_icon(standard_icon):
     """Helper function to get standard icons safely."""
-    return QApplication.style().standardIcon(getattr(QStyle, standard_icon))  # type:ignore
+    return QApplication.style().standardIcon(
+        getattr(QStyle, standard_icon)
+    )  # type:ignore
 
 
 class MUAnalysis(QWidget):
@@ -35,8 +41,14 @@ class MUAnalysis(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        # Variable to store the custom opener function (if any)
-        self._open_export_window_func = None
+        self.data = store
+        self.results_table = ResultsTable()
+        self.result_combo = ResultSelection(self.results_table)
+        # setting instance of function class from
+        # src/app.muAnalysisFunctions.FileUploadFunc
+        self.mu = FileUploadFunc()
+        self.analysis_plot = AnalysisPlot()
+        self.prop = MUPropertiesFunc()
 
         self.colors = {
             "bg_main": "#f8f9fa",
@@ -44,19 +56,13 @@ class MUAnalysis(QWidget):
             "bg_sidebar": "#f8f9fa",
             "bg_topbar": "#ffffff",
             "border_light": "#e9ecef",
-            "border_medium": "#dee2e6",
             "shadow": QColor(0, 0, 0, 25),
             "text_primary": "#212529",
             "text_secondary": "#6c757d",
             "text_title": "#343a40",
-            "placeholder_bg": "#e9ecef",
             "button_dark_bg": "#343a40",
-            "button_dark_text": "#ffffff",
             "button_dark_hover": "#495057",
             "button_grey_bg": "#e9ecee",
-            "button_grey_text": "#495057",
-            "button_grey_border": "#ced4da",
-            "button_grey_hover": "#dee2e6",
             "checkbox_bg": "#f1f3f5",
         }
 
@@ -64,44 +70,21 @@ class MUAnalysis(QWidget):
         self.widget_layout = QVBoxLayout(self)
         self.widget_layout.setContentsMargins(0, 0, 0, 0)
         self.widget_layout.setSpacing(0)
-        self.widget_layout.addWidget(self._create_top_bar())  # Top bar added first
+        self.widget_layout.addWidget(
+            self._create_top_bar())  # Top bar added first
 
         self.content_layout = QHBoxLayout()
         self.content_layout.setContentsMargins(15, 15, 15, 15)
         self.content_layout.setSpacing(20)
+
         self.content_layout.addWidget(self._create_left_sidebar(), stretch=1)
         self.content_layout.addWidget(self._create_center_area(), stretch=5)
-        self.content_layout.addWidget(self._create_right_sidebar(), stretch=2)
-        self.widget_layout.addLayout(self.content_layout)  # Add main content below top bar
+        self.content_layout.addWidget(self._create_right_sidebar(), stretch=3)
+        self.widget_layout.addLayout(
+            self.content_layout
+        )  # Add main content below top bar
 
-    def _trigger_export_window_open(self):
-        """Opens the export results window.
-        If a custom opener function is set, it calls that.
-        Otherwise, it creates an instance of ExportResultsWindow and shows it.
-        """
-        print(">>> Widget: Reached _trigger_export_window_open <<<")
-        if self._open_export_window_func:
-            print(">>> Calling stored opener function...")
-            try:
-                self._open_export_window_func()
-                print(">>> Called stored opener function successfully.")
-            except Exception as e:
-                print(f"!!!!! ERROR calling stored opener function: {e}")
-                traceback.print_exc()
-        else:
-            print(">>> No custom export window opener function set. Using default implementation.")
-            if ExportResultsWindow:
-                self.export_window = ExportResultsWindow()  # Store in instance attribute to keep it alive
-                self.export_window.show()
-                print(">>> ExportResultsWindow shown successfully.")
-            else:
-                print("!!!!! ERROR: ExportResultsWindow class not available.")
-
-    def set_export_window_opener(self, opener_func):
-        """Stores the custom function used to open the export window."""
-        # print(f"DEBUG: Setting export window opener function: {opener_func}")
-        self._open_export_window_func = opener_func
-
+    # legacy code
     def request_return_to_dashboard(self):
         """Emits a signal to tell the main window to switch views."""
         print("Widget: Requesting return to dashboard")
@@ -109,6 +92,7 @@ class MUAnalysis(QWidget):
 
     # --- UI Creation Methods ---
 
+    # legacy code
     def _create_top_bar(self):
         top_bar = QFrame()
         top_bar.setObjectName("topBar")
@@ -140,7 +124,8 @@ class MUAnalysis(QWidget):
         icon_label.setFixedSize(QSize(28, 28))
         title_label = QLabel("Motor Unit Analysis")
         title_label.setFont(QFont("Arial", 11, QFont.Bold))
-        title_label.setStyleSheet(f"color: {self.colors['text_title']}; border: none;")
+        title_label.setStyleSheet(
+            f"color: {self.colors['text_title']}; border: none;")
         top_bar_layout.addWidget(icon_label)
         top_bar_layout.addWidget(title_label)
         top_bar_layout.addStretch(1)
@@ -173,432 +158,126 @@ class MUAnalysis(QWidget):
             print("ERROR: request_return_to_dashboard method missing!")
         return top_bar
 
+    # dropdown order for matrix code
+    # the border on the right sidebar
+    # the dropdown names
+    # global styling
     def _create_left_sidebar(self):
         sidebar = QFrame()
         sidebar.setObjectName("leftSidebar")
-        sidebar_layout = QVBoxLayout(sidebar)
-        sidebar_layout.setContentsMargins(0, 0, 0, 0)
-        sidebar_layout.setSpacing(10)
         sidebar.setStyleSheet(
             f"""
-            #leftSidebar QLabel {{
-                color: {self.colors['text_primary']};
-                font-size: 10pt;
-                font-weight: bold;
-                border: none;
+            #leftSidebar {{
+                background-color: {self.colors['bg_sidebar']};
             }}
-            #leftSidebar QCheckBox {{
-                background-color: {self.colors['checkbox_bg']};
-                color: {self.colors['text_primary']};
-                padding: 8px 12px;
-                border-radius: 4px;
-                border: 1px solid {self.colors['border_light']};
-                font-size: 9pt;
-            }}
-            #leftSidebar QCheckBox::indicator {{
-                width: 13px;
-                height: 13px;
-            }}
-            #leftSidebar QCheckBox:hover {{
-                background-color: {self.colors['border_light']};
-            }}
+
         """
         )
-        title_label = QLabel("Motor Units")
-        sidebar_layout.addWidget(title_label)
-        self.unit_checkboxes = []
-        for i in range(1, 4):
-            checkbox = QCheckBox(f"Motor Unit #{i}")
-            sidebar_layout.addWidget(checkbox)
-            self.unit_checkboxes.append(checkbox)
-            checkbox.stateChanged.connect(self.handle_unit_selection_change)
-        sidebar_layout.addSpacerItem(QSpacerItem(10, 15, QSizePolicy.Minimum, QSizePolicy.Fixed))
-        compare_button = QPushButton("Compare Selected Units")
-        compare_button.setFont(QFont("Arial", 9))
-        compare_button.setMinimumHeight(32)
-        compare_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        compare_button.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {self.colors['button_grey_bg']};
-                color: {self.colors['button_grey_text']};
-                border: 1px solid {self.colors['button_grey_border']};
-                border-radius: 4px;
-                padding: 8px 10px;
-            }}
-            QPushButton:hover {{
-                background-color: {self.colors['button_grey_hover']};
-            }}
-        """
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setContentsMargins(10, 10, 10, 10)
+        sidebar_layout.setSpacing(10)
+
+        # title
+        title_div = QWidget()  # creating layout for the margin spacing
+        title_div_layout = QVBoxLayout(title_div)
+        # tells it to keep left, top, right margins
+        title_div_layout.setContentsMargins(-1, -1, -1, 0)
+        title_label = AnalysisText.create_major_title("Analysis")
+        title_div_layout.addWidget(title_label)
+        sidebar_layout.addWidget(title_div)
+
+        # signal editing
+        # remove mu section
+        remove_mu_section = RemoveMUSection(
+            self.mu, self.analysis_plot, self.colors, parent=sidebar
         )
-        compare_button.clicked.connect(self.handle_compare_units)
-        sidebar_layout.addWidget(compare_button)
+        sidebar_layout.addWidget(remove_mu_section)
+
+        # signal editing
+        signal_editing = SignalEditing(
+            self.mu, self.analysis_plot, parent=sidebar)
+        sidebar_layout.addWidget(signal_editing)
+
+        # force anaylsis
+        force_analysis = ForceAnalysisSection(
+            sidebar, self.analysis_plot
+        )
+        sidebar_layout.addWidget(force_analysis)
+
+        # motor unit properties
+        motor_unit_properties = MotorUnitPropertiesButton(
+            self.analysis_plot, parent=self
+        )
+        motor_unit_properties.mvc_updated.connect(self.prop.set_mvc)
+        sidebar_layout.addWidget(motor_unit_properties)
+        self.motor_unit_properties = motor_unit_properties
+
+        # plot emg button
+        plot_emg_tools = PlotEMGButton(self.analysis_plot, parent=self)
+        sidebar_layout.addWidget(plot_emg_tools)
+        self.plot_emg_tools = plot_emg_tools
+
+        # advanced tools
+        advanced_tools = AdvancedTools(parent=sidebar)
+        sidebar_layout.addWidget(advanced_tools)
+
         sidebar_layout.addStretch(1)
         return sidebar
 
+    # center area where graph is initally loaded
+    # starts with a message widget stating file needs to be loaded
+    # this prop is passed to mu class as it needs the reference to remove it
     def _create_center_area(self):
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setFrameShape(QFrame.NoFrame)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll_area.setStyleSheet("background-color: transparent; border: none;")
-        scroll_content = QWidget()
-        scroll_content.setStyleSheet("background-color: transparent;")
-        grid_layout = QGridLayout(scroll_content)
-        grid_layout.setSpacing(20)
-        grid_layout.addWidget(self._create_plot_panel("Firing Rates", "Firing Rates Graph"), 0, 0)
-        grid_layout.addWidget(self._create_plot_panel("Inter-spike Intervals", "Intervals Graph"), 0, 1)
-        grid_layout.addWidget(self._create_plot_panel("Correlation Plot", "Correlation Plot"), 1, 0)
-        grid_layout.addWidget(self._create_property_comparison_panel(), 1, 1, 2, 1)
-        grid_layout.addWidget(self._create_plot_panel("Motor Unit Distribution", "Interactive\nHistogram Plot"), 2, 0)
-        grid_layout.addWidget(self._create_time_series_panel(), 3, 0, 1, 2)
-        grid_layout.setColumnStretch(0, 1)
-        grid_layout.setColumnStretch(1, 1)
-        scroll_area.setWidget(scroll_content)
-        return scroll_area
+        center = QFrame()
+        center.setObjectName("centerContent")
+        center_layout = QVBoxLayout(center)
 
-    def _create_plot_panel(self, title, placeholder_text):
-        panel = QFrame()
-        panel.setObjectName("plotCard")
-        panel.setStyleSheet(
-            f"""
-            #plotCard {{
-                background-color: {self.colors['bg_card']};
-                border: 1px solid {self.colors['border_light']};
-                border-radius: 6px;
-            }}
-            #plotCard > QLabel {{
-                color: {self.colors['text_primary']};
-                font-size: 10pt;
-                font-weight: bold;
-                padding: 10px 15px 5px 15px;
-                border: none;
-                background: transparent;
-            }}
-        """
-        )
-        panel_layout = QVBoxLayout(panel)
-        panel_layout.setContentsMargins(0, 0, 0, 0)
-        panel_layout.setSpacing(0)
-        title_label = QLabel(title)
-        panel_layout.addWidget(title_label)
-        placeholder = QFrame()
-        placeholder.setObjectName("graphPlaceholder")
-        placeholder.setMinimumHeight(180)
-        placeholder.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        placeholder.setStyleSheet(
-            f"""
-            #graphPlaceholder {{
-                background-color: {self.colors['placeholder_bg']};
-                border-bottom-left-radius: 6px;
-                border-bottom-right-radius: 6px;
-                margin: 0px 15px 15px 15px;
-            }}
-        """
-        )
-        placeholder_layout = QVBoxLayout(placeholder)
-        placeholder_label = QLabel(placeholder_text)
-        placeholder_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        placeholder_label.setStyleSheet(
-            f"color: {self.colors['text_secondary']}; font-size: 10pt; background: transparent;"
-        )
-        placeholder_layout.addWidget(placeholder_label)
-        panel_layout.addWidget(placeholder, stretch=1)
-        shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(10)
-        shadow.setColor(self.colors["shadow"])
-        shadow.setOffset(0, 2)
-        panel.setGraphicsEffect(shadow)
-        return panel
+        resize_file = Resize(self.mu, self.analysis_plot)
+        resize_btn = GeneralButton(
+            "Resize", lambda: resize_file.resize())
+        center_layout.addWidget(resize_btn)
+        self.analysis_plot.set_resize(resize_btn)
+        center_layout.addWidget(self.analysis_plot)
 
-    def _create_property_comparison_panel(self):
-        panel = QFrame()
-        panel.setObjectName("plotCard")
-        panel.setStyleSheet(
-            f"""
-            #plotCard {{
-                background-color: {self.colors['bg_card']};
-                border: 1px solid {self.colors['border_light']};
-                border-radius: 6px;
-            }}
-            #plotCard > QLabel#plotTitle {{
-                color: {self.colors['text_primary']};
-                font-size: 10pt;
-                font-weight: bold;
-                padding: 10px 15px 5px 15px;
-                border: none;
-                background: transparent;
-            }}
-            QComboBox {{
-                border: 1px solid {self.colors['border_medium']};
-                border-radius: 4px;
-                padding: 5px 8px;
-                background-color: {self.colors['bg_card']};
-                color: {self.colors['text_primary']};
-                font-size: 9pt;
-                min-height: 20px;
-            }}
-            QComboBox::drop-down {{
-                subcontrol-origin: padding;
-                subcontrol-position: top right;
-                width: 18px;
-                border-left: 1px solid {self.colors['border_medium']};
-            }}
-            QComboBox::down-arrow {{
-                image: url(:/qt-project.org/styles/commonstyle/images/down_arrow-16.png);
-                width: 10px;
-                height: 10px;
-            }}
-        """
-        )
-        panel_layout = QVBoxLayout(panel)
-        panel_layout.setContentsMargins(0, 0, 0, 0)
-        panel_layout.setSpacing(0)
-        title_label = QLabel("Property Comparison")
-        title_label.setObjectName("plotTitle")
-        panel_layout.addWidget(title_label)
-        placeholder = QFrame()
-        placeholder.setObjectName("graphPlaceholder")
-        placeholder.setMinimumHeight(250)
-        placeholder.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        placeholder.setStyleSheet(
-            f"""
-            #graphPlaceholder {{
-                background-color: {self.colors['placeholder_bg']};
-                margin: 0px 15px 10px 15px;
-            }}
-        """
-        )
-        placeholder_layout = QVBoxLayout(placeholder)
-        placeholder_label = QLabel("Scatter Plot")
-        placeholder_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        placeholder_label.setStyleSheet(
-            f"color: {self.colors['text_secondary']}; font-size: 10pt; background: transparent;"
-        )
-        placeholder_layout.addWidget(placeholder_label)
-        panel_layout.addWidget(placeholder, stretch=1)
-        control_layout = QHBoxLayout()
-        control_layout.setContentsMargins(15, 0, 15, 10)
-        control_layout.setSpacing(10)
-        combo_x = QComboBox()
-        combo_x.addItems(["X-Axis Property", "Firing Rate", "Amplitude", "Duration"])
-        combo_y = QComboBox()
-        combo_y.addItems(["Y-Axis Property", "Firing Rate", "Amplitude", "Duration"])
-        control_layout.addWidget(combo_x)
-        control_layout.addWidget(combo_y)
-        control_layout.addStretch(1)
-        panel_layout.addLayout(control_layout)
-        shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(10)
-        shadow.setColor(self.colors["shadow"])
-        shadow.setOffset(0, 2)
-        panel.setGraphicsEffect(shadow)
-        return panel
+        return center
 
-    def _create_time_series_panel(self):
-        panel = QFrame()
-        panel.setObjectName("plotCard")
-        panel.setStyleSheet(
-            f"""
-            #plotCard {{
-                background-color: {self.colors['bg_card']};
-                border: 1px solid {self.colors['border_light']};
-                border-radius: 6px;
-            }}
-            #plotCard > QLabel#plotTitle {{
-                color: {self.colors['text_primary']};
-                font-size: 10pt;
-                font-weight: bold;
-                padding: 10px 15px 5px 15px;
-                border: none;
-                background: transparent;
-            }}
-            QPushButton#controlButton {{
-                background-color: {self.colors['button_grey_bg']};
-                color: {self.colors['button_grey_text']};
-                border: 1px solid {self.colors['button_grey_border']};
-                border-radius: 4px;
-                padding: 4px 8px;
-                font-size: 8pt;
-            }}
-            QPushButton#controlButton:hover {{
-                background-color: {self.colors['button_grey_hover']};
-            }}
-        """
-        )
-        panel_layout = QVBoxLayout(panel)
-        panel_layout.setContentsMargins(0, 0, 0, 0)
-        panel_layout.setSpacing(0)
-        title_label = QLabel("Time series Analysis")
-        title_label.setObjectName("plotTitle")
-        panel_layout.addWidget(title_label)
-        placeholder = QFrame()
-        placeholder.setObjectName("graphPlaceholder")
-        placeholder.setMinimumHeight(220)
-        placeholder.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        placeholder.setStyleSheet(
-            f"""
-            #graphPlaceholder {{
-                background-color: {self.colors['placeholder_bg']};
-                margin: 0px 15px 10px 15px;
-            }}
-        """
-        )
-        placeholder_layout = QVBoxLayout(placeholder)
-        placeholder_label = QLabel("Time Series Visualization")
-        placeholder_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        placeholder_label.setStyleSheet(
-            f"color: {self.colors['text_secondary']}; font-size: 10pt; background: transparent;"
-        )
-        placeholder_layout.addWidget(placeholder_label)
-        panel_layout.addWidget(placeholder, stretch=1)
-        control_layout = QHBoxLayout()
-        control_layout.setContentsMargins(15, 0, 15, 10)
-        control_layout.setSpacing(8)
-        zoom_btn = QPushButton("Zoom")
-        zoom_btn.setObjectName("controlButton")
-        zoom_btn.setIcon(get_icon("SP_FileDialogContentsView"))
-        pan_btn = QPushButton("Pan")
-        pan_btn.setObjectName("controlButton")
-        pan_btn.setIcon(get_icon("SP_DirOpenIcon"))
-        zoom_btn.setIconSize(QSize(12, 12))
-        pan_btn.setIconSize(QSize(12, 12))
-        control_layout.addWidget(zoom_btn)
-        control_layout.addWidget(pan_btn)
-        control_layout.addStretch(1)
-        panel_layout.addLayout(control_layout)
-        shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(10)
-        shadow.setColor(self.colors["shadow"])
-        shadow.setOffset(0, 2)
-        panel.setGraphicsEffect(shadow)
-        return panel
-
+    # side bar with load file button
+    # loaded from FileSection class
     def _create_right_sidebar(self):
-        # print("--- DEBUG: _create_right_sidebar called ---")
         sidebar = QFrame()
         sidebar.setObjectName("rightSidebar")
-        sidebar_layout = QVBoxLayout(sidebar)
-        sidebar_layout.setContentsMargins(0, 0, 0, 0)
-        sidebar_layout.setSpacing(15)
         sidebar.setStyleSheet(
             f"""
-            #rightSidebar > QLabel#sidebarTitle {{
-                color: {self.colors['text_primary']};
-                font-size: 10pt;
-                font-weight: bold;
-                border: none;
-                background: transparent;
+            #rightSidebar {{
+                background-color: {self.colors['bg_sidebar']};
             }}
-            QFrame#summaryItem {{
-                background-color: {self.colors['checkbox_bg']};
-                border-radius: 4px;
-                border: 1px solid {self.colors['border_light']};
-                padding: 8px 10px;
-            }}
-            QLabel#summaryLabel {{
-                color: {self.colors['text_secondary']};
-                font-size: 8pt;
-                border: none;
-                background: transparent;
-            }}
-            QLabel#summaryValue {{
-                color: {self.colors['text_primary']};
-                font-size: 10pt;
-                font-weight: bold;
-                border: none;
-                background: transparent;
-            }}
+
         """
         )
-        title_label = QLabel("Statistical Summary")
-        title_label.setObjectName("sidebarTitle")
-        sidebar_layout.addWidget(title_label)
-        summary_data = {
-            "Mean Firing Rate": "24.5 Hz",
-            "Variance": "3.2",
-            "Standard Deviation": "1.8",
-            "Coherence": "1.6",
-        }
-        for label, value in summary_data.items():
-            sidebar_layout.addWidget(self._create_summary_item(label, value))
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setContentsMargins(10, 10, 10, 10)
+        sidebar_layout.setSpacing(10)
+
+        file_section = FileSection(sidebar, self.mu, self.analysis_plot)
+        # Connect the reset button's signal to the MUAnalysisFunc method
+        file_section.reset_btn.reset_requested.connect(
+            lambda: self.mu.handle_reset_workflow(self.analysis_plot)
+        )
+        results_section = ResultsPanel(
+            sidebar, self.result_combo, self.results_table)
+
+        sidebar_layout.addWidget(file_section, stretch=1)
+        sidebar_layout.addWidget(results_section, stretch=15)
         sidebar_layout.addStretch(1)
-        refine_button = QPushButton("Refine Data")
-        refine_button.setMinimumHeight(36)
-        refine_button.setFont(QFont("Arial", 9, QFont.Bold))
-        refine_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        refine_button.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {self.colors['button_dark_bg']};
-                color: {self.colors['button_dark_text']};
-                border: none;
-                border-radius: 4px;
-                padding: 8px 10px;
-            }}
-            QPushButton:hover {{
-                background-color: {self.colors['button_dark_hover']};
-            }}
-        """
-        )
-        refine_button.clicked.connect(self.handle_refine_data)
-        sidebar_layout.addWidget(refine_button)
-        # --- Create Export Button ---
-        export_button = QPushButton("Export Analysis Report")
-        export_button.setMinimumHeight(36)
-        export_button.setFont(QFont("Arial", 9, QFont.Bold))
-        export_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        export_button.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {self.colors['button_dark_bg']};
-                color: {self.colors['button_dark_text']};
-                border: none;
-                border-radius: 4px;
-                padding: 8px 10px;
-            }}
-            QPushButton:hover {{
-                background-color: {self.colors['button_dark_hover']};
-            }}
-        """
-        )
-        # Connect the export button to the trigger method
-        if hasattr(self, "_trigger_export_window_open"):
-            # print(f"--- DEBUG: Connecting export_button to {self._trigger_export_window_open} ---")
-            export_button.clicked.connect(self._trigger_export_window_open)
-            # print("--- DEBUG: Connection attempted ---")
-        else:
-            print("--- ERROR: _trigger_export_window_open method not found! Cannot connect export button. ---")
-            export_button.setEnabled(False)
-        sidebar_layout.addWidget(export_button)
+        sidebar.setMaximumWidth(300)
         return sidebar
 
-    def _create_summary_item(self, label_text, value_text):
-        item_frame = QFrame()
-        item_frame.setObjectName("summaryItem")
-        item_layout = QVBoxLayout(item_frame)
-        item_layout.setContentsMargins(0, 0, 0, 0)
-        item_layout.setSpacing(1)
-        label = QLabel(label_text)
-        label.setObjectName("summaryLabel")
-        value = QLabel(value_text)
-        value.setObjectName("summaryValue")
-        item_layout.addWidget(label)
-        item_layout.addWidget(value)
-        return item_frame
-
-    # --- Internal Slot Placeholders or Signal Emitters ---
-    def handle_unit_selection_change(self):
-        print("Widget: Unit selection changed")
-
-    def handle_compare_units(self):
-        print("Widget: Compare selected units")
-
-    def handle_refine_data(self):
-        print("Widget: Refine data action")
+    def calc_result(self, title="title", data=[{}]):
+        self.data.append_analysis_hist(title, data)
 
 
 # --- Main execution block (for testing) ---
+# legacy code
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     analysis_widget = MUAnalysis()
@@ -606,6 +285,7 @@ if __name__ == "__main__":
     test_window.setCentralWidget(analysis_widget)
     test_window.setWindowTitle("Motor Unit Analysis Widget Test")
     test_window.setGeometry(100, 100, 1200, 800)
-    # Do not set a custom export window opener so that the default fallback runs.
+    # Do not set a custom export window opener so that the default fallback
+    # runs.
     test_window.show()
     sys.exit(app.exec_())
