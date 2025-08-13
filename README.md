@@ -74,6 +74,50 @@ https://drive.google.com/drive/folders/1nIpH1ksYWE-vQplEtilz843h2BuCuDmy
    cd src
    python main.py
    ```
+   
+### Running MUedit Comparison Tests
+
+We have some tests that pyMUEdit's results match those of MUedit, not all of which pass yet.
+
+All of these tests require you to first install MATLAB (plus the Image Processing, Signal Processing, and Statistics and Machine Learning toolboxes), download MUedit, and add MUedit's `lib` folder to MATLAB's path.
+
+#### Per-Function Tests
+
+These tests make sure that individual functions in pyMUEdit behave the same as their equivalents in MUedit.
+
+To run:
+
+```sh
+cd tests
+/path/to/matlab -nodisplay -nosplash -nodesktop -r "run('gen_inputs.m'); exit()"
+python testMUeditfunctions2.py
+```
+
+#### Result Tests
+
+These tests (which do not yet pass) make sure that that the results of pyMUEdit, both intermediate and final, match those of MUedit.
+
+To generate the results for comparison:
+
+```sh
+cd tests
+/path/to/matlab -nodisplay -nosplash -nodesktop -r "run('gen_muedit_output.m'); exit()"
+python ../src/run_decomposition.py --output-dir python_output trial1_20MVC.otb+
+```
+
+To compare the intermediate results:
+
+```sh
+cd tests
+python testMUeditIntermediate.py
+```
+
+To compare the final results:
+
+```sh
+cd tests
+python testMUeditOutput.py
+```
 
 ## Application Features
 

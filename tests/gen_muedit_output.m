@@ -84,8 +84,6 @@ else
     [~, signal] = openOTBplus(parameters.pathname, parameters.filename,0);
 end
 
-signal.parameters = parameters
-
 [signal.coordinates, signal.IED, signal.EMGmask, signal.emgtype] = formatsignalHDEMG(signal.data, signal.gridname, signal.fsamp, parameters.checkEMG);
 
 arraynb = zeros(size(signal.data,1),1);
