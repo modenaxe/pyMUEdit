@@ -23,6 +23,7 @@ from workers.SaveMatWorker import SaveMatWorker
 from workers.DecompositionWorker import DecompositionWorker
 from core.scd.main import SCDDecompositionWorker
 from core.utils.config_and_input.prepare_parameters import prepare_parameters
+from core.EmgDecomposition import format_results_2
 from MUeditManual import MUeditManual
 
 
@@ -380,117 +381,7 @@ class DecompositionApp(QMainWindow):
         if self.pathname and self.filename:
             savename = os.path.join(self.pathname, self.filename + "_output_decomp.mat")
 
-            formatted_result = result.copy() if isinstance(result, dict) else result
-
-            # Format Pulsetrain as a MATLAB-compatible cell array
-            if "Pulsetrain" in formatted_result:
-                max_electrode = max(formatted_result["Pulsetrain"].keys()) if formatted_result["Pulsetrain"] else 0
-
-                pulsetrain_obj = np.empty((1, max_electrode + 1), dtype=object)
-
-                # Fill the array with pulse trains
-                for i in range(max_electrode + 1):
-                    if i in formatted_result["Pulsetrain"]:
-                        pulsetrain_obj[0, i] = formatted_result["Pulsetrain"][i]
-                    else:
-                        signal_width = formatted_result["data"].shape[1] if "data" in formatted_result else 0
-                        pulsetrain_obj[0, i] = np.zeros((0, signal_width))
-
-                # Replace dictionary with object array
-                formatted_result["Pulsetrain"] = pulsetrain_obj
-
-            # Format Dischargetimes as a MATLAB-compatible cell array
-            if "Dischargetimes" in formatted_result:
-                max_electrode = 0
-                max_mu = 0
-
-                for key in formatted_result["Dischargetimes"].keys():
-                    if isinstance(key, tuple) and len(key) == 2:
-                        electrode, mu = key
-                        max_electrode = max(max_electrode, electrode)
-                        max_mu = max(max_mu, mu)
-
-                dischargetimes_obj = np.empty((max_electrode + 1, max_mu + 1), dtype=object)
-
-                # Initialize all cells with empty arrays
-                for i in range(max_electrode + 1):
-                    for j in range(max_mu + 1):
-                        dischargetimes_obj[i, j] = np.array([], dtype=int)
-
-                # Fill with actual discharge times
-                for key, value in formatted_result["Dischargetimes"].items():
-                    if isinstance(key, tuple) and len(key) == 2:
-                        electrode, mu = key
-                        dischargetimes_obj[electrode, mu] = value
-
-                formatted_result["Dischargetimes"] = dischargetimes_obj
-
-            # Format other arrays properly for MATLAB compatibility
-            for field_name in ["gridname", "muscle", "auxiliaryname"]:
-                if field_name in formatted_result:
-                    field_data = formatted_result[field_name]
-                    field_obj = np.empty((1, len(field_data)), dtype=object)
-
-                    # Fill the array with the field data
-                    for i, item in enumerate(field_data):
-                        field_obj[0, i] = str(item)
-
-                    formatted_result[field_name] = field_obj
-
-            # Format coordinates and EMG mask
-            if "coordinates" in formatted_result:
-                coordinates = formatted_result["coordinates"]
-                ngrid = formatted_result.get("ngrid", 1)
-
-                coord_obj = np.empty((1, ngrid), dtype=object)
-
-                # Process list of coordinates arrays
-                for i, coord in enumerate(coordinates):
-                    if i < ngrid:
-                        if isinstance(coord, np.ndarray):
-                            if coord.ndim == 2 and coord.shape[1] == 2:
-                                coord_obj[0, i] = coord
-                            else:
-                                coord_obj[0, i] = np.reshape(coord, (-1, 2))
-                        else:
-                            coord_obj[0, i] = np.array(coord).reshape(-1, 2)
-
-                # Fill any empty cells with default
-                for i in range(ngrid):
-                    if coord_obj[0, i] is None:
-                        coord_obj[0, i] = np.zeros((0, 2))
-
-                formatted_result["coordinates"] = coord_obj
-
-            if "EMGmask" in formatted_result:
-                emgmask = formatted_result["EMGmask"]
-                ngrid = formatted_result.get("ngrid", 1)
-
-                mask_obj = np.empty((1, ngrid), dtype=object)
-
-                # Process list of mask arrays
-                for i, mask in enumerate(emgmask):
-                    if i < ngrid:
-                        if isinstance(mask, np.ndarray):
-                            if mask.ndim == 1:
-                                mask_obj[0, i] = mask.reshape(-1, 1)
-                            elif mask.ndim == 2 and mask.shape[1] == 1:
-                                mask_obj[0, i] = mask
-                            else:
-                                mask_obj[0, i] = mask.flatten().reshape(-1, 1)
-                        else:
-                            mask_obj[0, i] = np.array(mask).flatten().reshape(-1, 1)
-
-                # Fill any empty cells with default (empty) mask arrays
-                for i in range(ngrid):
-                    if mask_obj[0, i] is None:
-                        if "coordinates" in formatted_result and formatted_result["coordinates"][0, i] is not None:
-                            coord_len = formatted_result["coordinates"][0, i].shape[0]
-                            mask_obj[0, i] = np.zeros((coord_len, 1), dtype=int)
-                        else:
-                            mask_obj[0, i] = np.zeros((0, 1), dtype=int)
-
-                formatted_result["EMGmask"] = mask_obj
+            formatted_result = format_results_2(result)
 
             # Save with parameters
             parameters = prepare_parameters(self.ui_params, self.algo_choice) if hasattr(self, 'ui_params') else {}

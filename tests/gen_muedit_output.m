@@ -45,7 +45,7 @@ close all;
 clc;
 
 %% Input parameters
-parameters.pathname = 'C:\Users\maxcf\COMP3900\capstone-project-25t2-3900-t11a-banana\tests\'; % add a '/' at the end for Mac OS, add a '\' at the end for Windows
+parameters.pathname = ''; % add a '/' at the end for Mac OS, add a '\' at the end for Windows
 parameters.filename = 'trial1_20MVC.otb+'; % filename.otb+ or filename.mat
 
 % DECOMPOSITION PARAMETERS --- CHANGE AS REQUIRED FOR TESTING AGAINST PYTHON OUTPUT
@@ -71,6 +71,9 @@ parameters.covthr = 0.5; % Threshold for CoV of ISI values
 parameters.peeloffwin = 0.025; % duration of the window (ms) for detecting the action potentials from the EMG signal
 parameters.duplicatesthresh = 0.3; % threshold that define the minimal percentage of common discharge times between duplicated motor units
 parameters.CoVDR = 0.3; % threshold that define the CoV of Discharge rate that we want to reach for cleaning the MU discharge times when refineMU is on
+
+mkdir('matlab_output');
+mkdir('matlab_output/debug_outputs');
 
 %% Step 0: Load the HDsEMG data
 %       0a: determine the number and type of grids
@@ -206,6 +209,7 @@ if j == 1
         actind = sum(signalprocess.X,1).^2;
         [~, idx1(j)] = max(actind);
         signalprocess.w = signalprocess.X(:, idx1(j)); % Initialize w
+        save(strcat("matlab_output/debug_outputs/fast_ICA_and_CKC_electrode_", string(i-1), "_interval_", string(nwin-1), "_iteration_", string(j+1), "_sub_iteration_2"), "-fromstruct", struct("init_its_i", idx1(j), "w_sep_vect_initial", signalprocess.w))
     else
         signalprocess.w = randn(size(signalprocess.X,1),1);
     end
@@ -215,6 +219,7 @@ else
         actind(idx1(j-1)) = 0; % remove the previous vector
         [~, idx1(j)] = max(actind);
         signalprocess.w = signalprocess.X(:, idx1(j)); % Initialize w
+        save(strcat("matlab_output/debug_outputs/fast_ICA_and_CKC_electrode_", string(i-1), "_interval_", string(nwin-1), "_iteration_", string(j+1), "_sub_iteration_2"), "-fromstruct", struct("init_its_i", idx1(j), "w_sep_vect_initial", signalprocess.w))
     else
         signalprocess.w = randn(size(signalprocess.X,1),1);
     end
@@ -223,9 +228,13 @@ end
 signalprocess.w = signalprocess.w - signalprocess.B * signalprocess.B' * signalprocess.w; % Orthogonalization
 signalprocess.w = signalprocess.w / norm(signalprocess.w); % Normalization
 
+save(strcat("matlab_output/debug_outputs/fast_ICA_and_CKC_electrode_", string(i-1), "_interval_", string(nwin-1), "_iteration_", string(j+1), "_sub_iteration_3"), "-fromstruct", struct("w_sep_vect_orthonormalized", signalprocess.w))
+
 %       3a: Fixed point algorithm (end when sparsness is maximized)
 maxiter = 500; % max number of iterations for the fixed point algorithm
 signalprocess.w = fixedpointalg(signalprocess.w, signalprocess.X, signalprocess.B , maxiter, parameters.contrastfunc);
+
+save(strcat("matlab_output/debug_outputs/fast_ICA_and_CKC_electrode_", string(i-1), "_interval_", string(nwin-1), "_iteration_", string(j+1), "_sub_iteration_4"), "-fromstruct", struct("w_sep_vect_after_fpa", signalprocess.w))
 
 % Step 4: Minimization of the CoV of discharge times (end when CoV is
 % minimized)
@@ -233,20 +242,35 @@ signalprocess.w = fixedpointalg(signalprocess.w, signalprocess.X, signalprocess.
 % Initialize CoV (variation of interspike intervals, %) Step 4a => 4e
 [signalprocess.icasig, signalprocess.spikes] = getspikes(signalprocess.w, signalprocess.X, signal.fsamp);
 
+save(strcat("matlab_output/debug_outputs/fast_ICA_and_CKC_electrode_", string(i-1), "_interval_", string(nwin-1), "_iteration_", string(j+1), "_sub_iteration_5"), "-fromstruct", struct("fICA_source", signalprocess.icasig, "spikes", signalprocess.spikes))
+
 if length(signalprocess.spikes) > 10
     ISI = diff(signalprocess.spikes/signal.fsamp); % Interspike interval
     signalprocess.CoV{nwin}(j) = std(ISI)/mean(ISI); % Coefficient of variation
+
+    save(strcat("matlab_output/debug_outputs/fast_ICA_and_CKC_electrode_", string(i-1), "_interval_", string(nwin-1), "_iteration_", string(j+1), "_sub_iteration_6"), "-fromstruct", struct("ISI", ISI, "CoV_initial", signalprocess.CoV{nwin}(j)))
+
     Wini = sum(signalprocess.X(:,signalprocess.spikes),2); % update W by summing the spikes
-                   
+
+    save(strcat("matlab_output/debug_outputs/fast_ICA_and_CKC_electrode_", string(i-1), "_interval_", string(nwin-1), "_iteration_", string(j+1), "_sub_iteration_7"), "-fromstruct", struct("w_n_p1", Wini))
+
+
             % Minimization of the CoV of discharge times (end when CoV is
     % minimized)
     [signalprocess.MUFilters{nwin}(:,j), signalprocess.spikes, signalprocess.CoV{nwin}(j)] = minimizeCOVISI(Wini, signalprocess.X, signalprocess.CoV{nwin}(j), signal.fsamp);
+
+    save(strcat("matlab_output/debug_outputs/fast_ICA_and_CKC_electrode_", string(i-1), "_interval_", string(nwin-1), "_iteration_", string(j+1), "_sub_iteration_8"), "-fromstruct", struct("MU_filters_i", signalprocess.MUFilters{nwin}(:,j), "spikes_after_min_cov_isi", signalprocess.spikes, "CoV_after_min_cov_isi", signalprocess.CoV{nwin}(j)))
+
     signalprocess.B(:,j) = signalprocess.w;
+
+    save(strcat("matlab_output/debug_outputs/fast_ICA_and_CKC_electrode_", string(i-1), "_interval_", string(nwin-1), "_iteration_", string(j+1), "_sub_iteration_9"), "-fromstruct", struct("B_sep_mat_i", signalprocess.B(:,j)))
 
     % Calculate SIL values
     [signalprocess.icasig, signalprocess.spikes, signalprocess.SIL{nwin}(j)] = calcSIL(signalprocess.X, signalprocess.MUFilters{nwin}(:,j), signal.fsamp);
-    
-    % Peel-off of the (reliable) source    
+
+    save(strcat("matlab_output/debug_outputs/fast_ICA_and_CKC_electrode_", string(i-1), "_interval_", string(nwin-1), "_iteration_", string(j+1), "_sub_iteration_10"), "-fromstruct", struct("fICA_source_after_silhouette", signalprocess.icasig, "spikes_after_silhouette", signalprocess.spikes, "SIL_value", signalprocess.SIL{nwin}(j)))
+
+    % Peel-off of the (reliable) source
     if parameters.peeloff == 1 && signalprocess.SIL{nwin}(j) > parameters.silthr
        signalprocess.X = peeloff(signalprocess.X, signalprocess.spikes, signal.fsamp, parameters.peeloffwin);
     end
@@ -343,6 +367,6 @@ end
 
 % Save file
 clearvars signalprocess i j PulseT distime distimenew distimea actind idx1 time ISI CoV maxiter nwin Wini f xwb temp muscle
-savename = 'ExpFinalOut20-10_iters.mat';
+savename = 'matlab_output/trial1_20MVC_decomp.mat';
 save(savename, 'signal', 'parameters'); %removed v7.3 compression
 close all
