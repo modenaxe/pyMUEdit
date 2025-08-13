@@ -1,30 +1,13 @@
 import pyqtgraph as pg
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QCheckBox,
-    QScrollArea,
-    QTabWidget,
-    QFrame,
-    QComboBox,
-)
+from PyQt5.QtWidgets import (QCheckBox, QComboBox, QFrame, QHBoxLayout, QLabel,
+                             QLineEdit, QScrollArea, QTabWidget, QVBoxLayout,
+                             QWidget)
 
 # Import custom components
-from ui.components import (
-    CleanTheme,
-    ActionButton,
-    CleanCard,
-    CollapsiblePanel,
-    VisualizationPanel,
-    FormField,
-    SettingsGroup,
-    SectionHeader,
-    CleanScrollBar,
-)
+from ui.components import (ActionButton, CleanCard, CleanScrollBar, CleanTheme,
+                           CollapsiblePanel, FormField, SectionHeader,
+                           SettingsGroup, VisualizationPanel)
 
 
 def setup_ui(main_window):
@@ -54,7 +37,9 @@ def setup_ui(main_window):
 
     # Add panels to main layout
     main_layout.addWidget(main_window.control_panel)
-    main_layout.addWidget(main_window.display_panel, 1)  # The 1 is the stretch factor
+    main_layout.addWidget(
+        main_window.display_panel,
+        1)  # The 1 is the stretch factor
 
     # Set up keyboard shortcuts
     main_window.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -66,7 +51,8 @@ def setup_control_panel(main_window):
     scroll_area = QScrollArea()
     scroll_area.setWidgetResizable(True)
     scroll_area.setFrameShape(QFrame.NoFrame)
-    scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    scroll_area.setHorizontalScrollBarPolicy(
+        Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
     # Apply clean scrollbar styling
     CleanScrollBar.apply(scroll_area)
@@ -74,7 +60,8 @@ def setup_control_panel(main_window):
     # Create the actual control panel container
     control_panel_widget = QWidget()
     control_panel_widget.setMinimumWidth(380)
-    control_panel_widget.setStyleSheet(f"background-color: {CleanTheme.BG_MAIN};")
+    control_panel_widget.setStyleSheet(
+        f"background-color: {CleanTheme.BG_MAIN};")
     control_layout = QVBoxLayout(control_panel_widget)
     control_layout.setContentsMargins(5, 5, 5, 5)
     control_layout.setSpacing(15)
@@ -104,9 +91,12 @@ def setup_control_panel(main_window):
 
     # Select file button
     main_window.select_file_btn = ActionButton("Select file", primary=True)
-    main_window.select_file_btn.clicked.connect(main_window.select_file_button_pushed)
+    main_window.select_file_btn.clicked.connect(
+        main_window.select_file_button_pushed)
 
-    file_select_layout.addWidget(main_window.file_path_field, 1)  # 1 is stretch factor
+    file_select_layout.addWidget(
+        main_window.file_path_field,
+        1)  # 1 is stretch factor
     file_select_layout.addWidget(main_window.select_file_btn)
 
     # Custom field for file selection layout
@@ -197,7 +187,8 @@ def create_mu_selection_tab(main_window):
     CleanScrollBar.apply(mu_scroll_area)
 
     checkbox_container = QWidget()
-    checkbox_container.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
+    checkbox_container.setStyleSheet(
+        f"background-color: {CleanTheme.BG_CARD};")
     main_window.mu_checkbox_layout = QVBoxLayout(checkbox_container)
     main_window.mu_checkbox_layout.setContentsMargins(0, 0, 0, 0)
     main_window.mu_checkbox_layout.setSpacing(5)
@@ -205,7 +196,8 @@ def create_mu_selection_tab(main_window):
 
     # Initially add a label indicating no MUs
     no_mu_label = QLabel("No MUs loaded")
-    no_mu_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY}; font-size: 13px;")
+    no_mu_label.setStyleSheet(
+        f"color: {CleanTheme.TEXT_PRIMARY}; font-size: 13px;")
     main_window.mu_checkbox_layout.addWidget(no_mu_label)
     main_window.mu_checkbox_layout.addStretch()
 
@@ -238,17 +230,18 @@ def create_batch_processing_tab(main_window):
 
     # Create batch processing buttons
     button_configs = [
-        ("1 - Remove all the outliers", main_window.remove_all_outliers_button_pushed),
-        ("2 - Update all MU filters", main_window.update_all_mu_filters_button_pushed),
-        ("3 - Remove flagged MU", main_window.remove_flagged_mu_button_pushed),
-        (
-            "4 - Remove duplicates within grids",
+        ("1 - Remove all the outliers",
+         main_window.remove_all_outliers_button_pushed),
+        ("2 - Update all MU filters",
+         main_window.update_all_mu_filters_button_pushed),
+        ("3 - Remove flagged MU",
+         main_window.remove_flagged_mu_button_pushed),
+        ("4 - Remove duplicates within grids",
             main_window.remove_duplicates_within_grids_button_pushed,
-        ),
-        (
-            "5 - Remove duplicates between grids",
+         ),
+        ("5 - Remove duplicates between grids",
             main_window.remove_duplicates_between_grids_button_pushed,
-        ),
+         ),
     ]
 
     for text, handler in button_configs:
@@ -334,7 +327,9 @@ def create_visualization_tab(main_window):
     )
 
     ref_layout.addWidget(reference_label)
-    ref_layout.addWidget(main_window.reference_dropdown, 1)  # 1 is stretch factor
+    ref_layout.addWidget(
+        main_window.reference_dropdown,
+        1)  # 1 is stretch factor
     ref_layout.addWidget(main_window.sil_checkbox)
 
     ref_panel.add_widget(ref_contents)
@@ -368,7 +363,8 @@ def create_visualization_tab(main_window):
 
 def setup_display_panel(main_window):
     """Set up the display panel with all controls and plots using modern UI components."""
-    # Use a VisualizationPanel instead of a basic CleanCard for better semantics
+    # Use a VisualizationPanel instead of a basic CleanCard for better
+    # semantics
     main_window.display_panel = VisualizationPanel("EMG Signal Analysis")
 
     # Create main container for all visualization elements
@@ -416,8 +412,10 @@ def setup_display_panel(main_window):
         False
     )  # Initially hidden until SIL checkbox is checked
 
-    main_window.spiketrain_plot = create_plot_widget("Pulse train (au)", "Time (s)")
-    main_window.dr_plot = create_plot_widget("Discharge rate (pps)", "Time (s)")
+    main_window.spiketrain_plot = create_plot_widget(
+        "Pulse train (au)", "Time (s)")
+    main_window.dr_plot = create_plot_widget(
+        "Discharge rate (pps)", "Time (s)")
 
     # Add plots to the layout
     main_window.plots_layout.addWidget(main_window.sil_plot)
@@ -443,26 +441,33 @@ def setup_display_panel(main_window):
 
     # Define all action buttons
     action_button_configs = [
-        ("Add spikes", main_window.add_spikes_button_pushed, "add_spikes_btn"),
-        ("Delete spikes", main_window.delete_spikes_button_pushed, "delete_spikes_btn"),
-        ("Delete DR", main_window.delete_dr_button_pushed, "delete_dr_btn"),
-        ("Lock spikes", main_window.lock_spikes_button_pushed, "lock_spikes_btn"),
-        (
-            "Update MU filter",
+        ("Add spikes",
+         main_window.add_spikes_button_pushed,
+         "add_spikes_btn"),
+        ("Delete spikes",
+         main_window.delete_spikes_button_pushed,
+         "delete_spikes_btn"),
+        ("Delete DR",
+         main_window.delete_dr_button_pushed,
+         "delete_dr_btn"),
+        ("Lock spikes",
+         main_window.lock_spikes_button_pushed,
+         "lock_spikes_btn"),
+        ("Update MU filter",
             main_window.update_mu_filter_button_pushed,
             "update_mu_filter_btn",
-        ),
-        (
-            "Extend MU filter",
+         ),
+        ("Extend MU filter",
             main_window.extend_mu_filter_button_pushed,
             "extend_mu_filter_btn",
-        ),
-        (
-            "Remove outliers",
+         ),
+        ("Remove outliers",
             main_window.remove_outliers_button_pushed,
             "remove_outliers_single_btn",
-        ),
-        ("Undo", main_window.undo_button_pushed, "undo_btn"),
+         ),
+        ("Undo",
+         main_window.undo_button_pushed,
+         "undo_btn"),
     ]
 
     # Create action buttons and store references
@@ -507,7 +512,9 @@ def setup_display_panel(main_window):
     for text, handler, attr_name in nav_button_configs:
         btn = ActionButton(text, primary=False)
         btn.clicked.connect(handler)
-        btn.setMinimumWidth(btn.sizeHint().width() + 20)  # Make buttons slightly wider
+        btn.setMinimumWidth(
+            btn.sizeHint().width() +
+            20)  # Make buttons slightly wider
         btn.setMinimumHeight(36)
         nav_layout.addWidget(btn)
         # Store reference to button in main_window

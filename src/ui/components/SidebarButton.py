@@ -1,8 +1,9 @@
-from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QLabel, QSizePolicy
-from PyQt5.QtGui import QFont, QCursor
-from PyQt5.QtCore import Qt
-from PyQt5.QtSvg import QSvgWidget
 import os
+
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QCursor, QFont
+from PyQt5.QtSvg import QSvgWidget
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QSizePolicy
 
 from .CleanTheme import CleanTheme
 
@@ -37,7 +38,7 @@ class SidebarButton(QPushButton):
         if icon_path:
             # Make sure the file exists
             if os.path.exists(icon_path):
-                self.icon_widget = QSvgWidget(icon_path)
+                self.icon_widget = QSvgWidget(str(icon_path))
                 self.icon_widget.setFixedSize(18, 18)
                 self.layout.addWidget(self.icon_widget)
 

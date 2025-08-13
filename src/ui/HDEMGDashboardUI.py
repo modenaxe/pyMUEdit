@@ -1,26 +1,11 @@
-from PyQt5.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QScrollArea,
-    QStackedWidget,
-    QSizePolicy,
-    QSpacerItem,
-    QLabel,
-)
-from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QScrollArea, QSizePolicy,
+                             QSpacerItem, QStackedWidget, QVBoxLayout, QWidget)
 
 # Import all required components
-from ui.components import (
-    CleanTheme,
-    CleanCard,
-    VisualizationCard,
-    ActionButton,
-    DatasetItem,
-    SectionHeader,
-    Sidebar,
-)
+from ui.components import (ActionButton, CleanCard, CleanTheme, DatasetItem,
+                           SectionHeader, Sidebar, VisualizationCard)
 
 
 def setup_ui(main_window):
@@ -44,25 +29,36 @@ def setup_ui(main_window):
 
     # Create the central stacked widget
     main_window.central_stacked_widget = QStackedWidget()
-    main_window.central_stacked_widget.setStyleSheet("background-color: transparent;")
+    main_window.central_stacked_widget.setStyleSheet(
+        "background-color: transparent;")
 
     # Dashboard page
     main_window.dashboard_page = _create_dashboard_page(main_window)
     main_window.central_stacked_widget.addWidget(main_window.dashboard_page)
 
     # Add other pages based on imported modules
-    if hasattr(main_window, "import_data_page") and main_window.import_data_page is not None:
-        main_window.central_stacked_widget.addWidget(main_window.import_data_page)
+    if hasattr(
+            main_window,
+            "import_data_page") and main_window.import_data_page is not None:
+        main_window.central_stacked_widget.addWidget(
+            main_window.import_data_page)
 
-    if hasattr(main_window, "mu_analysis_page") and main_window.mu_analysis_page is not None:
-        main_window.central_stacked_widget.addWidget(main_window.mu_analysis_page)
+    if hasattr(
+            main_window,
+            "mu_analysis_page") and main_window.mu_analysis_page is not None:
+        main_window.central_stacked_widget.addWidget(
+            main_window.mu_analysis_page)
 
     # Placeholder pages
-    main_window.manual_editing_page = create_placeholder_page("Manual Editing Page", main_window)
-    main_window.central_stacked_widget.addWidget(main_window.manual_editing_page)
+    main_window.manual_editing_page = create_placeholder_page(
+        "Manual Editing Page", main_window)
+    main_window.central_stacked_widget.addWidget(
+        main_window.manual_editing_page)
 
-    main_window.decomposition_page = create_placeholder_page("Decomposition Page", main_window)
-    main_window.central_stacked_widget.addWidget(main_window.decomposition_page)
+    main_window.decomposition_page = create_placeholder_page(
+        "Decomposition Page", main_window)
+    main_window.central_stacked_widget.addWidget(
+        main_window.decomposition_page)
 
     main_window.main_h_layout.addWidget(main_window.central_stacked_widget, 1)
 
@@ -98,7 +94,12 @@ def create_placeholder_page(title, main_window):
     back_button = ActionButton("Back to Dashboard", primary=False)
     back_button.clicked.connect(main_window.show_dashboard_view)
 
-    layout.addItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding))
+    layout.addItem(
+        QSpacerItem(
+            20,
+            20,
+            QSizePolicy.Minimum,
+            QSizePolicy.Expanding))
     layout.addWidget(back_button, 0, Qt.AlignmentFlag.AlignLeft)
 
     return page
@@ -141,16 +142,16 @@ def _create_left_sidebar(main_window):
             button.clicked.connect(main_window.show_dashboard_view)
         elif key == "import":
             button.clicked.connect(
-                main_window.show_import_data_view if hasattr(main_window, "show_import_data_view") else lambda: None
-            )
+                main_window.show_import_data_view if hasattr(
+                    main_window, "show_import_data_view") else lambda: None)
         elif key == "mu_analysis":
             button.clicked.connect(
-                main_window.show_mu_analysis_view if hasattr(main_window, "show_mu_analysis_view") else lambda: None
-            )
+                main_window.show_mu_analysis_view if hasattr(
+                    main_window, "show_mu_analysis_view") else lambda: None)
         elif key == "decomposition":
             button.clicked.connect(
-                main_window.show_decomposition_view if hasattr(main_window, "show_decomposition_view") else lambda: None
-            )
+                main_window.show_decomposition_view if hasattr(
+                    main_window, "show_decomposition_view") else lambda: None)
         elif key == "manual_edit":
             button.clicked.connect(
                 main_window.show_manual_editing_view
@@ -167,8 +168,10 @@ def _create_dashboard_page(main_window):
     dashboard_scroll_area = QScrollArea()
     dashboard_scroll_area.setWidgetResizable(True)
     dashboard_scroll_area.setFrameShape(QScrollArea.NoFrame)
-    dashboard_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-    dashboard_scroll_area.setStyleSheet("background-color: transparent; border: none;")
+    dashboard_scroll_area.setHorizontalScrollBarPolicy(
+        Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    dashboard_scroll_area.setStyleSheet(
+        "background-color: transparent; border: none;")
 
     # Create content widget
     content_area = QWidget()
@@ -191,8 +194,8 @@ def _create_dashboard_page(main_window):
     # New Visualization button
     new_viz_btn = ActionButton("+ New Visualization", primary=True)
     new_viz_btn.clicked.connect(
-        lambda: main_window.show_import_data_view() if hasattr(main_window, "show_import_data_view") else None
-    )
+        lambda: main_window.show_import_data_view() if hasattr(
+            main_window, "show_import_data_view") else None)
 
     header_layout.addWidget(dashboard_title)
     header_layout.addStretch(1)
@@ -237,12 +240,15 @@ def _create_visualizations_section(main_window):
     cards_layout.setSpacing(15)
 
     # Add visualization cards
-    if hasattr(main_window, "recent_visualizations") and main_window.recent_visualizations:
-        for i, viz_data in enumerate(main_window.recent_visualizations[:3]):  # Show only first 3 cards
+    if hasattr(
+            main_window,
+            "recent_visualizations") and main_window.recent_visualizations:
+        for i, viz_data in enumerate(
+                main_window.recent_visualizations[:3]):  # Show only first 3 cards
             # Create card for each visualization with index and state_path
             card = VisualizationCard(
-                title=viz_data["title"], 
-                date=viz_data["date"], 
+                title=viz_data["title"],
+                date=viz_data["date"],
                 icon=viz_data.get("icon", "visualization_icon"),
                 state_path=viz_data.get("state_path"),
                 index=i  # Pass index to track which card was clicked
@@ -250,7 +256,9 @@ def _create_visualizations_section(main_window):
             cards_layout.addWidget(card)
     else:
         # Create a placeholder card
-        empty_card = VisualizationCard(title="No Visualizations", date="Create your first visualization")
+        empty_card = VisualizationCard(
+            title="No Visualizations",
+            date="Create your first visualization")
         cards_layout.addWidget(empty_card)
 
     section_layout.addLayout(cards_layout)
@@ -284,16 +292,18 @@ def _create_datasets_section(main_window):
     if hasattr(main_window, "recent_datasets") and main_window.recent_datasets:
         for dataset in main_window.recent_datasets:
             # Create dataset item that will open the file when clicked
-            dataset_item = DatasetItem(dataset["filename"], dataset["metadata"])
-            
+            dataset_item = DatasetItem(
+                dataset["filename"], dataset["metadata"])
+
             # Store the full path for later use
             if "pathname" in dataset:
                 dataset_item.setProperty("pathname", dataset["pathname"])
-                
+
             # Connect the click event if applicable
             if hasattr(main_window, "open_dataset"):
-                dataset_item.mousePressEvent = lambda event, d=dataset: main_window.open_dataset(d)
-                
+                dataset_item.mousePressEvent = lambda event, d=dataset: main_window.open_dataset(
+                    d)
+
             datasets_layout.addWidget(dataset_item)
     else:
         # Create an empty state message

@@ -1,10 +1,6 @@
 import sys
-
-# Fix matplotlib backend BEFORE importing matplotlib
 import matplotlib
-
-matplotlib.use("Qt5Agg")  # Use Qt5 backend to match PyQt5
-
+matplotlib.use("Qt5Agg")
 from PyQt5.QtWidgets import QFileDialog, QLabel, QMessageBox, QDialog
 from scipy.io import loadmat
 import pandas as pd
@@ -24,25 +20,27 @@ from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
+from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
-
-# This class holds all the functions used for file uploading
 class FileUploadFunc:
+
     """Methods for handling the emgFile and its intital display to centre"""
 
-    # made file a class var, to be accessed via FileUploadFunc.file, so that it can be used across other classes
+    # global instance of file
     file = None
 
     def __init__(self):
-        # Store the original file path for reset functionality
+        """Initialises class instance
+        Params: None
+        Returns: class instance
+        """
         self.original_file_path = None
-        # file holds emg file instance which is used in openHdemg code
-        # canvas hold whatever the widget in the center area is (graph or message saying to load file)
         self.coords = []
         self.cid = None
-        # MVC value for calculations
+        self.error = 1
         self.mvc_value = None
         self.json = False
+        self.unsortedFile = None # store unsorted file version here
 
     def data_loaded(self):
         return FileUploadFunc.file is not None
@@ -114,13 +112,13 @@ class FileUploadFunc:
         # Update NUMBER_OF_MUS
         emgfile["NUMBER_OF_MUS"] = len(indices_to_keep)
 
-    # Triggerd of file upload button: opens file explorer
-    # Checks if file is valid or not
-    # passes to import_data to set center screen
     def select_file_button_pushed(self, analysis_plot, json):
-        """Open file dialog to select file for editing and automatically import it."""
-        FileUploadFunc.file = None
+        """Method trigged on file uplaod button, allowing only valid files and importing the data from a file dialog
+        Params: analysis_plot: centre plot instance, json: make true for testing with json files
+        Returns: None
+        """
         file_dialog = QFileDialog()
+        self.error = 1
         if json:
             self.json = True
             file_path, _ = file_dialog.getOpenFileName(
@@ -130,53 +128,48 @@ class FileUploadFunc:
             file_path, _ = file_dialog.getOpenFileName(
                 None, "Select file", "", "MAT Files (*.mat);;All Files (*.*)"
             )
-
         if file_path:
-            # this is where self. file gets set (inside emg_from_otb)
             if json:
                 valid = self.emg_from_json(file_path)
+                self.original_file_path = file_path
+                self.import_data(file_path, analysis_plot, valid)
             else:
-                valid = self.emg_from_otb(file_path)
-            # Store the original file path for reset functionality
-            self.original_file_path = file_path
-            self.import_data(file_path, analysis_plot, valid)
+                try:
+                    valid = self.emg_from_otb(file_path)
+                except:
+                    self.import_data(None, None, valid)
+                else:
+                    self.original_file_path = file_path
+                    self.import_data(file_path, analysis_plot, valid)
 
-    # If file is not valid it displays an error message
-    # else it removes anything in center layour and replaces with new graph
     def import_data(self, filepath, analysis_plot, valid):
+        """Plots files in centre if the file is valid
+        Params: filepath, analysis_plot: centre plot instance, valid: if an error should be displayed instead
+        Returns: None
+        """
         if valid:
-            # immediately plots it
             self.plot_idr(self.file, analysis_plot)
-        else:
-            canvas = QMessageBox()
-            canvas.setIcon(QMessageBox.Critical)
-            canvas.setText("Error")
-            canvas.setInformativeText("Loaded file has errors")
-            canvas.setWindowTitle("Error")
-            canvas.exec_()
+        elif self.error:
+            ErrorDialog("Loaded File has errors", "Error").exec_()
 
-    #OPENHDEMG (edit with AC)
+
     def emg_from_json(self, filepath):
+        """from openHDEMG but edited to sort and store file (this is for json files for testing)
+        Params: filepath
+        Returns: emgfile
+        """
         with gzip.open(filepath, "rt", encoding="utf-8") as f:
             jsonemgfile = json.load(f)
-        # Access the dictionaries and extract the data.
         source = json.loads(jsonemgfile["SOURCE"])
         filename = json.loads(jsonemgfile["FILENAME"])
-
         if source in ["DEMUSE", "OTB", "CUSTOMCSV", "DELSYS"]:
-            # RAW_SIGNAL
-            # df are stored in json as a dictionary, it can be directly extracted
-            # and converted into a pd.DataFrame.
-            # index and columns are imported as str, we need to convert it to int.
             raw_signal = pd.read_json(
                 StringIO(jsonemgfile["RAW_SIGNAL"]),
                 orient='split',
             )
-            # Check dtypes for safety, little computational cost
             raw_signal.columns = raw_signal.columns.astype(int)
             raw_signal.index = raw_signal.index.astype(int)
             raw_signal.sort_index(inplace=True)
-            # REF_SIGNAL
             ref_signal = pd.read_json(
                 StringIO(jsonemgfile["REF_SIGNAL"]),
                 orient='split',
@@ -184,7 +177,6 @@ class FileUploadFunc:
             ref_signal.columns = ref_signal.columns.astype(int)
             ref_signal.index = ref_signal.index.astype(int)
             ref_signal.sort_index(inplace=True)
-            # ACCURACY
             accuracy = pd.read_json(
                 StringIO(jsonemgfile["ACCURACY"]),
                 orient='split',
@@ -196,31 +188,19 @@ class FileUploadFunc:
                 warnings.warn(
                     "Error while loading accuracy, check or recalculate accuracy"
                 )
-                # TODO error occurring when accuracy was recalculated on empty MUs.
-                # Check if the error is present also for other params.
             accuracy.index = accuracy.index.astype(int)
             accuracy.sort_index(inplace=True)
-            # IPTS
             ipts = pd.read_json(StringIO(jsonemgfile["IPTS"]), orient='split')
             ipts.columns = ipts.columns.astype(int)
             ipts.index = ipts.index.astype(int)
             ipts.sort_index(inplace=True)
-            # MUPULSES
-            # It is s list of lists but has to be converted in a list of ndarrays.
             mupulses = json.loads(jsonemgfile["MUPULSES"])
             for num, element in enumerate(mupulses):
                 mupulses[num] = np.array(element)
-            # FSAMP
-            # Make sure to convert it to float
             fsamp = float(json.loads(jsonemgfile["FSAMP"]))
-            # IED
             ied = float(json.loads(jsonemgfile["IED"]))
-            # EMG_LENGTH
-            # Make sure to convert it to int
             emg_length = int(json.loads(jsonemgfile["EMG_LENGTH"]))
-            # NUMBER_OF_MUS
             number_of_mus = int(json.loads(jsonemgfile["NUMBER_OF_MUS"]))
-            # BINARY_MUS_FIRING
             binary_mus_firing = pd.read_json(
                 StringIO(jsonemgfile["BINARY_MUS_FIRING"]),
                 orient='split',
@@ -228,10 +208,7 @@ class FileUploadFunc:
             binary_mus_firing.columns = binary_mus_firing.columns.astype(int)
             binary_mus_firing.index = binary_mus_firing.index.astype(int)
             binary_mus_firing.sort_index(inplace=True)
-            # EXTRAS
-            # Don't alter index and columns as these could contain anything.
             extras = pd.read_json(StringIO(jsonemgfile["EXTRAS"]), orient='split')
-
             emgfile = {
                 "SOURCE": source,
                 "FILENAME": filename,
@@ -247,11 +224,8 @@ class FileUploadFunc:
                 "BINARY_MUS_FIRING": binary_mus_firing,
                 "EXTRAS": extras,
             }
-
         elif source in ["OTB_REFSIG", "CUSTOMCSV_REFSIG", "DELSYS_REFSIG"]:
-            # FSAMP
             fsamp = float(json.loads(jsonemgfile["FSAMP"]))
-            # REF_SIGNAL
             ref_signal = pd.read_json(
                 StringIO(jsonemgfile["REF_SIGNAL"]),
                 orient='split',
@@ -259,7 +233,6 @@ class FileUploadFunc:
             ref_signal.columns = ref_signal.columns.astype(int)
             ref_signal.index = ref_signal.index.astype(int)
             ref_signal.sort_index(inplace=True)
-            # EXTRAS
             extras = pd.read_json(StringIO(jsonemgfile["EXTRAS"]), orient='split')
 
             emgfile = {
@@ -269,15 +242,17 @@ class FileUploadFunc:
                 "REF_SIGNAL": ref_signal,
                 "EXTRAS": extras,
             }
-
         else:
             raise Exception("\nFile source not recognised\n")
-        #AC
-        FileUploadFunc.file = emgfile
+        self.unsortedFile = emgfile
+        FileUploadFunc.file = self.sort_MUs(emgfile)
         return emgfile
 
-    # OPENHDEMG
     def get_otb_refsignal(self, df, refsig):
+        """from openHDEMG to get reference signal
+        Params (relevant to us): None
+        Returns: ref signal data frame
+        """
         assert refsig[0] in [
             True,
             False,
@@ -289,15 +264,11 @@ class FileUploadFunc:
 
         if refsig[0] is True:
             if refsig[1] == "subsampled":
-                # Extract the performed path (subsampled data)
                 REF_SIGNAL_SUBSAMPLED = df.filter(regex="performed path")
-                # Check if the REF_SIGNAL is available
                 if not REF_SIGNAL_SUBSAMPLED.empty:
                     REF_SIGNAL_SUBSAMPLED = REF_SIGNAL_SUBSAMPLED.rename(
                         columns={REF_SIGNAL_SUBSAMPLED.columns[0]: 0}
                     )
-                    # Verify that there is no value above 100% since the
-                    # REF_SIGNAL is expected to be expressed as % of the MVC
                     if max(REF_SIGNAL_SUBSAMPLED[0]) > 100:
                         warnings.warn(
                             "\nALERT! Ref signal greater than 100, did you use values normalised to the MVC?\n"
@@ -309,14 +280,11 @@ class FileUploadFunc:
                     )
                     return pd.DataFrame(columns=[0])
             elif refsig[1] == "fullsampled":
-                # Extract the acquired path (raw data)
                 REF_SIGNAL_FULLSAMPLED = df.filter(regex="acquired data")
                 if not REF_SIGNAL_FULLSAMPLED.empty:
                     REF_SIGNAL_FULLSAMPLED = REF_SIGNAL_FULLSAMPLED.rename(
                         columns={REF_SIGNAL_FULLSAMPLED.columns[0]: 0}
                     )
-                    # Verify that there is no value above 100% since the
-                    # REF_SIGNAL is expected to be expressed as % of the MVC
                     if max(REF_SIGNAL_FULLSAMPLED[0]) > 100:
                         warnings.warn(
                             "\nALERT! Ref signal grater than 100, did you use values normalised to the MVC?\n"
@@ -333,28 +301,36 @@ class FileUploadFunc:
             )
             return pd.DataFrame(columns=[0])
 
-    # OPENHDEMG
     def get_otb_decomposition(self, df):
-        # Extract the IPTS and rename columns progressively
+        """from openHDEMG to get otb decomp
+        Params (relevant to us): None
+        Returns: Binary MUs Firing and IPTS from imported data
+        """
         IPTS = df.filter(regex="Source for decomposition")
         IPTS.columns = np.arange(len(IPTS.columns))
-        # Verify to have the IPTS
         if IPTS.empty:
+            self.error = 0
+            ErrorDialog("(IPTS) not found", "Error").exec_()
             raise ValueError(
                 "\nSource for decomposition (IPTS) not found in the .mat file\n"
             )
-        # Extract the BINARY_MUS_FIRING and rename columns progressively
+            return
         BINARY_MUS_FIRING = df.filter(regex="Decomposition of")
         BINARY_MUS_FIRING.columns = np.arange(len(BINARY_MUS_FIRING.columns))
-        # Verify to have the BINARY_MUS_FIRING
         if BINARY_MUS_FIRING.empty:
+            self.error = 0
+            ErrorDialog("(BINARY_MUS_FIRING) not found", "Error").exec_()
             raise ValueError(
                 "\nDecomposition of (BINARY_MUS_FIRING) not found in the .mat file\n"
             )
+            return
         return IPTS, BINARY_MUS_FIRING
 
-    # OPENHDEMG
     def get_otb_ied(self, df):
+        """from openHDEMG to get otb_ied
+        Params (relevant to us): None
+        Returns: IED (nan on no IED)
+        """
         OTBelectrodes_ied = {
             "GR04MM1305": 4,
             "GR08MM1305": 8,
@@ -367,21 +343,17 @@ class FileUploadFunc:
             "HD10MM0808": 10,
         }
         for matrix in OTBelectrodes_ied.keys():
-            # Check the matrix used in the columns name
-            # (in the df obtained from OTBiolab+)
             if matrix in str(df.columns):
                 IED = float(OTBelectrodes_ied[matrix])
-
                 return IED
-        # If no matrix is found and we exit the loop:
         warnings.warn("OTB recording grid not found, IED could not be inferred")
         return np.nan
 
-    # OPENHDEMG
     def get_otb_rawsignal(self, df, extras_regex):
-        # Drop all the known columns different from the raw EMG signal.
-        # This is a workaround since the OTBiolab+ software does not export a
-        # unique name for the raw EMG signal.
+        """from openHDEMG to get otb raw signal
+        Params (relevant to us): None
+        Returns: Raw signal
+        """
         base_pattern = (
             "Source for decomposition|Decomposition of|acquired data|performed path"
         )
@@ -391,9 +363,6 @@ class FileUploadFunc:
             pattern = base_pattern + "|" + extras_regex
 
         emg_df = df[df.columns.drop(list(df.filter(regex=pattern)))]
-
-        # Check if the number of remaining columns matches the expected number of
-        # matrix channels.
         expectedchannels = np.nan
         OTBelectrodes_Nelectrodes = {
             "GR04MM1305": 64,
@@ -407,26 +376,29 @@ class FileUploadFunc:
             "HD10MM0808": 64,
         }
         for matrix in OTBelectrodes_Nelectrodes.keys():
-            # Check the matrix used in the columns name (in the emg_df) to know
-            # the number of expected channels.
             if matrix in str(emg_df.columns):
                 expectedchannels = int(OTBelectrodes_Nelectrodes[matrix])
                 break
         if expectedchannels is np.nan:
+            self.error = 0
+            ErrorDialog("Matrix not recognised", "Error").exec_()
             raise ValueError("Matrix not recognised")
         if len(emg_df.columns) == expectedchannels:
             emg_df.columns = np.arange(len(emg_df.columns))
             RAW_SIGNAL = emg_df
             return RAW_SIGNAL
         else:
-            # This check here is usefull to control that only the appropriate
-            # elements have been included in the .mat file exported from OTBiolab+.
+            self.error = 0
+            ErrorDialog("Failure in searching the raw signal", "Error").exec_()
             raise ValueError(
                 "\nFailure in searching the raw signal, please check that it is present in the .mat file and that only the accepted parameters have been included\n"
             )
 
-    # OPENHDEMG
     def get_otb_extras(self, df, extras):
+        """from openHDEMG to get extra features in imported data
+        Params (relevant to us): None
+        Returns: Extra data
+        """
         if extras is None:
             return pd.DataFrame(columns=[0])
         else:
@@ -434,24 +406,20 @@ class FileUploadFunc:
             return EXTRAS
 
     def mupulses_from_binary(self, binarymusfiring):
-        # Create empty list of lists to fill with ndarrays containing the MUPULSES
-        # (point of firing)
+        """from openHDEMG to get mu pulses
+        Params (relevant to us): None
+        Returns: Extra data
+        """
         numberofMUs = len(binarymusfiring.columns)
         MUPULSES = [[] for _ in range(numberofMUs)]
-
-        for mu in binarymusfiring:  # Loop all the MUs
+        for mu in binarymusfiring:
             my_ndarray = []
-            for idx, x in binarymusfiring[mu].items():  # Loop the MU firing times
+            for idx, x in binarymusfiring[mu].items():
                 if x > 0:
                     my_ndarray.append(idx)
-                    # Take the firing time and add it to the ndarray
-
             MUPULSES[mu] = np.array(my_ndarray)
-
         return MUPULSES
 
-    # OPENHDEMG: edited
-    # I will put my intials (AC) next to edited code
     def emg_from_otb(
         self,
         filepath,
@@ -461,111 +429,84 @@ class FileUploadFunc:
         extras=None,
         ignore_negative_ipts=False,
     ):
-        # AC : if the file is invalid we return early and let import_data know to show error
+        """from openHDEMG but edited to sort and store file (this is for otb files) and error on bad mat files
+        Params (relevant to us): filepath
+        Returns: 1 on success
+        """
         try:
             mat_file = loadmat(filepath, simplify_cells=True)
+            valid_versions = [
+            "1.5.3.0",
+            "1.5.4.0",
+            "1.5.5.0",
+            "1.5.6.0",
+            "1.5.7.2",
+            "1.5.7.3",
+            "1.5.8.0",
+            "1.5.9.3",
+            ]
+            if version not in valid_versions:
+                raise ValueError(
+                    f"\nSpecified version is not valid. Use one of:\n{valid_versions}\n"
+                )
+            if version in [
+                "1.5.3.0",
+                "1.5.4.0",
+                "1.5.5.0",
+                "1.5.6.0",
+                "1.5.7.2",
+                "1.5.7.3",
+                "1.5.8.0",
+                "1.5.9.3",
+            ]:
+                df = pd.DataFrame(mat_file["Data"], columns=mat_file["Description"])
+                SOURCE = "OTB"
+                FILENAME = os.path.basename(filepath)
+                FSAMP = float(mat_file["SamplingFrequency"])
+                IED = self.get_otb_ied(df=df)
+                RAW_SIGNAL = self.get_otb_rawsignal(df=df, extras_regex=extras)
+                IPTS, BINARY_MUS_FIRING = self.get_otb_decomposition(df=df)
+                BINARY_MUS_FIRING = BINARY_MUS_FIRING.shift(-int(ext_factor))
+                BINARY_MUS_FIRING.fillna(value=0, inplace=True)
+                MUPULSES = self.mupulses_from_binary(binarymusfiring=BINARY_MUS_FIRING)
+                EMG_LENGTH, NUMBER_OF_MUS = IPTS.shape
+                REF_SIGNAL = self.get_otb_refsignal(df=df, refsig=refsig)
+                if NUMBER_OF_MUS > 0:
+                    to_append = []
+                    for mu in range(NUMBER_OF_MUS):
+                        func = CommonOpenFunc()
+                        sil = func.compute_sil(
+                            ipts=IPTS[mu],
+                            mupulses=MUPULSES[mu],
+                            ignore_negative_ipts=ignore_negative_ipts,
+                        )
+                        to_append.append(sil)
+                    ACCURACY = pd.DataFrame(to_append)
+                else:
+                    ACCURACY = pd.DataFrame(columns=[0])
+                EXTRAS = self.get_otb_extras(df=df, extras=extras)
+            emgfile = {
+                "SOURCE": SOURCE,
+                "FILENAME": FILENAME,
+                "RAW_SIGNAL": RAW_SIGNAL,
+                "REF_SIGNAL": REF_SIGNAL,
+                "ACCURACY": ACCURACY,
+                "IPTS": IPTS,
+                "MUPULSES": MUPULSES,
+                "FSAMP": FSAMP,
+                "IED": IED,
+                "EMG_LENGTH": EMG_LENGTH,
+                "NUMBER_OF_MUS": NUMBER_OF_MUS,
+                "BINARY_MUS_FIRING": BINARY_MUS_FIRING,
+                "EXTRAS": EXTRAS,
+            }
+            self.unsortedFile = emgfile
+            FileUploadFunc.file = self.sort_MUs(emgfile) # sort imported MUs by recruitment order by default
+            return 1
         except:
             return None
+        
 
-        # Check if a valid version has been specified
-        valid_versions = [
-            "1.5.3.0",
-            "1.5.4.0",
-            "1.5.5.0",
-            "1.5.6.0",
-            "1.5.7.2",
-            "1.5.7.3",
-            "1.5.8.0",
-            "1.5.9.3",
-        ]
-        if version not in valid_versions:
-            raise ValueError(
-                f"\nSpecified version is not valid. Use one of:\n{valid_versions}\n"
-            )
-
-        if version in [
-            "1.5.3.0",
-            "1.5.4.0",
-            "1.5.5.0",
-            "1.5.6.0",
-            "1.5.7.2",
-            "1.5.7.3",
-            "1.5.8.0",
-            "1.5.9.3",
-        ]:
-            # Simplify (rename) columns description and extract all the parameters
-            # in a pd.DataFrame
-            df = pd.DataFrame(mat_file["Data"], columns=mat_file["Description"])
-
-            # First, get the basic information and compulsory variables (i.e.,
-            # RAW_SIGNAL, IPTS, MUPULSES, BINARY_MUS_FIRING) in a pd.DataFrame (df) or
-            # list (for matlab cell arrays).
-
-            # Use this to know the data source and name of the file
-            SOURCE = "OTB"
-            FILENAME = os.path.basename(filepath)
-            FSAMP = float(mat_file["SamplingFrequency"])
-            IED = self.get_otb_ied(df=df)
-
-            # Get RAW_SIGNAL
-            RAW_SIGNAL = self.get_otb_rawsignal(df=df, extras_regex=extras)
-
-            # Get IPTS and BINARY_MUS_FIRING
-            IPTS, BINARY_MUS_FIRING = self.get_otb_decomposition(df=df)
-            # Align BINARY_MUS_FIRING to IPTS
-            BINARY_MUS_FIRING = BINARY_MUS_FIRING.shift(-int(ext_factor))
-            BINARY_MUS_FIRING.fillna(value=0, inplace=True)
-
-            # Get MUPULSES
-            MUPULSES = self.mupulses_from_binary(binarymusfiring=BINARY_MUS_FIRING)
-
-            # Get EMG_LENGTH and NUMBER_OF_MUS
-            EMG_LENGTH, NUMBER_OF_MUS = IPTS.shape
-
-            # Get REF_SIGNAL
-            REF_SIGNAL = self.get_otb_refsignal(df=df, refsig=refsig)
-
-            # Estimate ACCURACY (SIL)
-            if NUMBER_OF_MUS > 0:
-                to_append = []
-                for mu in range(NUMBER_OF_MUS):
-                    func = CommonOpenFunc()
-                    sil = func.compute_sil(
-                        ipts=IPTS[mu],
-                        mupulses=MUPULSES[mu],
-                        ignore_negative_ipts=ignore_negative_ipts,
-                    )
-                    to_append.append(sil)
-                ACCURACY = pd.DataFrame(to_append)
-
-            else:
-                ACCURACY = pd.DataFrame(columns=[0])
-
-            # Get EXTRAS
-            EXTRAS = self.get_otb_extras(df=df, extras=extras)
-
-        emgfile = {
-            "SOURCE": SOURCE,
-            "FILENAME": FILENAME,
-            "RAW_SIGNAL": RAW_SIGNAL,
-            "REF_SIGNAL": REF_SIGNAL,
-            "ACCURACY": ACCURACY,
-            "IPTS": IPTS,
-            "MUPULSES": MUPULSES,
-            "FSAMP": FSAMP,
-            "IED": IED,
-            "EMG_LENGTH": EMG_LENGTH,
-            "NUMBER_OF_MUS": NUMBER_OF_MUS,
-            "BINARY_MUS_FIRING": BINARY_MUS_FIRING,
-            "EXTRAS": EXTRAS,
-        }
-
-        # AC : we set file to the emgfile object and return 1 to indicate it is valid
-        FileUploadFunc.file = emgfile
-        return 1
-
-    # OPENHDEMG: edited
-    # I will put my intials (AC) next to edited code throughout this
     def plot_idr(
         self,
         emgfile,
@@ -580,32 +521,25 @@ class FileUploadFunc:
         axes_kwargs=None,
         showimmediately=False,
     ):
-        # Compute the IDR
+        """from openHDEMG to plot idr on graph when first loaded
+        Params (relevant to us): emgfile, analysis_plot(instance of centre plot)
+        Returns: None
+        """
         common = CommonOpenFunc()
         idr = common.compute_idr(emgfile=emgfile)
-
-        # Check if all the MUs have to be plotted
         if isinstance(munumber, str):
-            if emgfile["NUMBER_OF_MUS"] == 1:  # Manage exception of single MU
+            if emgfile["NUMBER_OF_MUS"] == 1:
                 munumber = 0
             else:
                 munumber = [*range(0, emgfile["NUMBER_OF_MUS"])]
-
-        # Check if we have a single mu or a list of mus to plot
         if isinstance(munumber, list) and len(munumber) == 1:
             munumber = munumber[0]
-
-        # Use the subplot function to allow for the use of twinx()
-        # AC : Probably should change this, use for debugging
         figname = "aditi_unique_name"
-        # AC : This is to stop plots from overlaying repeateadly. plt has some strange behaviour so watch out for this in future work
-        plt.close()
+        plt.close() # This is to prevent plots from overlaying in centre on repeated uploads
         fig, ax1 = plt.subplots(
             figsize=(figsize[0] / 2.54, figsize[1] / 2.54),
             num=figname,
         )
-
-        # Check if we have a single MU or a list of MUs to plot.
         if isinstance(munumber, int):
             ax1.plot(
                 idr[munumber]["timesec" if timeinseconds else "mupulses"],
@@ -613,58 +547,40 @@ class FileUploadFunc:
                 ".",
                 markersize=12,
             )
-
             ax1.set_ylabel("MU {} (pps)".format(munumber))
-            # Useful because if the MU is empty it won't show the channel number
             ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
-
         elif isinstance(munumber, list):
-            # Extract the 'idr' column from each df and create a new df of idrs
             idr_all = pd.DataFrame({key: df["idr"] for key, df in idr.items()})
             idr_all = idr_all[munumber]
-            # Normalise the df
             common = CommonOpenFunc()
             norm_idr_all = common.min_max_scaling(data=idr_all, col_by_col=False)
-
             for count, thisMU in enumerate(munumber):
                 norm_idr = norm_idr_all[thisMU]
-
-                # Add value to the previous mu to avoid overlapping
                 if norm_idr.mean() <= 0.5:
                     norm_idr = norm_idr + (0.5 - norm_idr.mean()) + count
                 else:
                     norm_idr = norm_idr - (norm_idr.mean() - 0.5) + count
-
                 ax1.plot(
-                    # Ignore first nan with [1:]
                     idr[thisMU]["timesec" if timeinseconds else "mupulses"][1:],
                     norm_idr.dropna(),
                     ".",
                     markersize=8,
                 )
-
-            # Ensure correct and complete ticks on the left y axis
             ax1.set_yticks(np.arange(0.5, len(munumber) + 0.5, 1))
             ax1.set_yticklabels([str(mu) for mu in munumber])
-
-            # Set axes labels
             ax1.set_ylabel("Motor units")
             ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
-
         else:
             raise TypeError(
                 "While calling the plot_idr function, you should pass an "
                 + "integer, a list or 'all' to munumber"
             )
-
-        # Plot the ref signal
         if addrefsig:
             if not isinstance(emgfile["REF_SIGNAL"], pd.DataFrame):
                 raise TypeError(
                     "REF_SIGNAL is probably absent or it is not contained in a "
                     + "dataframe"
                 )
-
             x_axis = (
                 emgfile["REF_SIGNAL"].index / emgfile["FSAMP"]
                 if timeinseconds
@@ -673,14 +589,10 @@ class FileUploadFunc:
             ax2 = ax1.twinx()
             ax2.plot(x_axis, emgfile["REF_SIGNAL"][0])
             ax2.set_ylabel("MVC")
-
-            # Set z-order so that ax2 is in the background
             ax2.set_zorder(0)
             ax1.set_zorder(1)
             ax1.patch.set_alpha(0)
-
-        # TL : Immediately plots the fig, instead of passing the figure on
-        canvas = SaveablePlot(fig)
+        canvas = SaveablePlot(fig) # plotting in centre with the data now handled
         analysis_plot.display_fig(canvas)
 
     def handle_reset_workflow(self, analysis_plot):
@@ -744,11 +656,18 @@ class FileUploadFunc:
         axes_kwargs=None,
         showimmediately=False,
     ):
+        """From OPENHDEMG. Plots the reference signal 
+        Params: 
+            - emgfile: the file 
+            - analysis_plot: instance used to plot fig in the centre 
+            - timeinseconds: boolean if you want the axis to be plotted in seconds 
+            - figsize: (legacy code) defines the size of the plot, but now it's 
+            plotted in the centre 
+            - tight_layout: specifies different UI for the plot 
+            - line2d_kwargs_ax1: keyword arguments for line2d objects 
+            - axes_kwargs: keyword arguments for axes styling 
+            - showimmediately: (legacy code) plots it immediately, but this function now defaults to plotting it immediately
         """
-        Plots the refsig graph
-        """
-
-        # Check to have the REF_SIGNAL in a pandas dataframe
         if isinstance(emgfile["REF_SIGNAL"], pd.DataFrame):
             refsig = emgfile["REF_SIGNAL"]
         else:
@@ -757,15 +676,13 @@ class FileUploadFunc:
                 + "dataframe"
             )
 
-        # Here we produce an x axis in seconds or samples
         if timeinseconds:
             x_axis = refsig.index / emgfile["FSAMP"]
         else:
             x_axis = refsig.index
 
-        # TL : just did this because aditi seemed to do it too
-        figname = "troy_unique_name"
-        plt.close()  # TL : taking aditi's advice from earlier on
+        figname = "Reference Signal Graph"
+        plt.close() 
         fig, ax1 = plt.subplots(
             figsize=(figsize[0] / 2.54, figsize[1] / 2.54),
             num=figname,
@@ -776,11 +693,72 @@ class FileUploadFunc:
         ax1.set_ylabel("MVC")
         ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
 
-        # the actual plotting
+        # Plotting 
         canvas = SaveablePlot(fig)
-        analysis_plot.display_plot(canvas)
+        analysis_plot.display_fig(canvas)
 
+    def sort_MUs(self, emgfile):
+        # code from openhdemg
+        if emgfile["NUMBER_OF_MUS"] <= 1:
+            return emgfile
 
+        # Create the object to store the sorted emgfile.
+        # Create a deepcopy to avoid changing the original emgfile
+        sorted_emgfile = copy.deepcopy(emgfile)
+        """
+        Need to be changed: ==>
+        emgfile =   {
+                    "SOURCE" : SOURCE,
+                    "RAW_SIGNAL" : RAW_SIGNAL,
+                    "REF_SIGNAL" : REF_SIGNAL,
+                    ==> "ACCURACY": ACCURACY,
+                    ==> "IPTS" : IPTS,
+                    ==> "MUPULSES" : MUPULSES,
+                    "FSAMP" : FSAMP,
+                    "IED" : IED,
+                    "EMG_LENGTH" : EMG_LENGTH,
+                    "NUMBER_OF_MUS" : NUMBER_OF_MUS,
+                    ==> "BINARY_MUS_FIRING" : BINARY_MUS_FIRING,
+                    }
+        """
+
+        # Identify the sorting_order by the first MUpulse of every MUs
+        df = []
+        for mu in range(emgfile["NUMBER_OF_MUS"]):
+            if len(emgfile["MUPULSES"][mu]) > 0:
+                df.append(emgfile["MUPULSES"][mu][0])
+            else:
+                df.append(np.inf)
+
+        df = pd.DataFrame(df, columns=["firstpulses"])
+        df.sort_values(by="firstpulses", inplace=True)
+        sorting_order = list(df.index)
+
+        # Sort ACCURACY (single column)
+        for origpos, newpos in enumerate(sorting_order):
+            sorted_emgfile["ACCURACY"].loc[origpos] = emgfile["ACCURACY"].loc[newpos]
+
+        # Sort IPTS (multiple columns, sort by columns, then reset columns' name)
+        sorted_emgfile["IPTS"] = sorted_emgfile["IPTS"].reindex(columns=sorting_order)
+        sorted_emgfile["IPTS"].columns = np.arange(emgfile["NUMBER_OF_MUS"])
+
+        # Sort BINARY_MUS_FIRING (multiple columns, sort by columns,
+        # then reset columns' name)
+        sorted_emgfile["BINARY_MUS_FIRING"] = sorted_emgfile["BINARY_MUS_FIRING"].reindex(
+            columns=sorting_order
+        )
+        sorted_emgfile["BINARY_MUS_FIRING"].columns = np.arange(emgfile["NUMBER_OF_MUS"])
+
+        # Sort MUPULSES.
+        # Preferable to use the sorting_order as a double-check in alternative to:
+        # sorted_emgfile["MUPULSES"] = sorted(
+        #   sorted_emgfile["MUPULSES"], key=min, reverse=False)
+        # )
+        for origpos, newpos in enumerate(sorting_order):
+            sorted_emgfile["MUPULSES"][origpos] = emgfile["MUPULSES"][newpos]
+
+        return sorted_emgfile
+    
     def updateEMGFile(self, emgfile):
             print(f"updating original file")
             FileUploadFunc.file = emgfile

@@ -17,6 +17,7 @@ class CleanTheme:
     # Borders and shadows
     BORDER = "#E0E0E0"  # Light gray for borders
     SHADOW = QColor(0, 0, 0, 15)  # Very subtle shadow
+    HEADER = "#d0d0d0"
 
     ################################################################
     ########################### ANALYSIS ###########################

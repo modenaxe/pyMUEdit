@@ -1,93 +1,119 @@
-from PyQt5.QtWidgets import (
-    QApplication,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QLabel,
-    QFrame,
-    QStyle,
-    QMainWindow,
-    QComboBox,
-)
+from PyQt5 import QtCore
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (QApplication, QComboBox, QFrame, QHBoxLayout,
+                             QLabel, QMainWindow, QPushButton, QStyle,
+                             QVBoxLayout, QWidget)
+
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from PyQt5.QtCore import Qt
-"""
-If there's no figure/file, a title appears prompting the user to load a file
-"""
+
+
 class AnalysisPlot(QWidget):
+
+    """Widget that manages the revert and resize button, and what's displayed
+    in the centre.
+    """
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
 
-        # setting up toggle button  
-        self.plot = None
+        # Setting up the buttons
         self.resize = None
-        self.toggle_btn = GeneralButton("Revert", lambda: self.revert(), parent=self)
+        self.toggle_btn = GeneralButton(
+            "Revert", lambda: self.revert(), parent=self)
         self.toggle_btn.set_width(100)
         self.toggle_btn.hide()
         self.layout.addWidget(self.toggle_btn)
 
-        # setting up the prompt and future plots 
+        # Setting up the prompt and the canvas
+        self.plot = None
         self.canvas = None
         self.load_file_prompt()
 
-    # loads the prompt into canvas
-    def load_file_prompt(self): 
-        self.canvas = AnalysisText.create_prompt("Press Load File to View Data")
+    def load_file_prompt(self):
+        """Loads in the 'upload file' prompt onto the canvas
+        Params: None
+        Returns: None
+        """
+        self.canvas = AnalysisText.create_prompt(
+            "Press Load File to View Data")
         self.layout.addWidget(self.canvas, alignment=Qt.AlignCenter)
 
-
-    # used to help toggle resize button
-    def set_reseize(self, button):
+    def set_resize(self, button):
+        """Stores the instance of the resize button
+        Params:
+            - button: instance of a button
+        Returns: None
+        """
         self.resize = button
 
-    # removes the canvas, or the last thing in the widget 
+    def focus(self):
+        """Focuses the canvas so that it can be interacted with
+        Params: None
+        Returns: None
+        """
+        self.canvas.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.canvas.setFocus()
+
     def remove_canvas(self):
+        """Removes the current figure/plot in the canvas
+        Params: None
+        Returns: None
+        """
+        if (self.layout.count() <= 1):
+            return
+
+        # Removing last widget in layout, which should always be the canvas
         c = self.layout.itemAt(self.layout.count() - 1)
         cw = c.widget()
         self.layout.removeWidget(cw)
         cw.setParent(None)
 
-    # removes the current plot and returns it to the 'original' 
-    # it's what happens when you press the toggle button
     def revert(self):
-        # removing current 
+        """Reverts the current plot to the last figure displayed
+        Params: None
+        Returns: None
+        """
         self.remove_canvas()
 
-        # restoring old one
+        # Restoring old canvas
         self.layout.addWidget(self.canvas)
 
         self.toggle_btn.hide()
         self.resize.show()
 
-    ############### DISPLAY FIG/PLOT ##############
-    # when calling display_fig or dislay_plot, make sure you first turn it into 
-    # a SaveablePlot(fig), then pass it into the fig param
-
-
-    # used specifically to display figures, and nothing else 
-    # e.g. plot_idr or plot_refsig
     def display_fig(self, fig=None):
-        # removing current
+        """Displays a figure in the canvas. A figure is defined as primary results.
+        Revert will not appear above a recently displayed fig. Revert, when displayed,
+        will restore the canvas to the most recently generated figure.
+        Params:
+            - fig: in the form of a SaveablePlot()
+        Returns: None
+        """
         self.remove_canvas()
 
-        # generating the new one 
-        self.canvas = fig 
+        # Adding the figure to the canvas
+        self.canvas = fig
         self.layout.addWidget(self.canvas)
+        self.resize.show()
 
         self.toggle_btn.hide()
 
-    # used for displaying plots, not figures
-    # in this case, plots refer to anything that isn't the usual MU signal graph
     def display_plot(self, plot=None):
-        # removing current 
+        """Displays a plot in the canvas. A plot is defined as secondary results.
+        For example, SelectRange or remove_offset. When a figure is displayed, the
+        revert button appears above the canvas.
+        Params:
+            - plot: in the form of a SaveablePlot()
+        Returns: None
+        """
         self.remove_canvas()
 
-        self.plot = plot 
+        self.plot = plot
         self.layout.addWidget(self.plot)
+
+        self.focus()
 
         self.resize.hide()
         self.toggle_btn.show()
-
