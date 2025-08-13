@@ -19,9 +19,9 @@ from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.SubsectionTitle import SubsectionTitle
 from ui.components.muAnalysisComponents.PropertiesInnerDialogText import \
     PropertiesInnerDialogText
+from ui.components.muAnalysisComponents.SubsectionTitle import SubsectionTitle
 from ui.muanalysis.ComputeThresholdSection import ComputeThresholdSection
 
 

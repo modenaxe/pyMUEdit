@@ -32,10 +32,10 @@ from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.SubsectionTitle import SubsectionTitle
 from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import \
     PropertiesInnerDialogButton
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
+from ui.components.muAnalysisComponents.SubsectionTitle import SubsectionTitle
 
 
 class PlotEMGToolDialog(QDialog):

@@ -5,14 +5,14 @@ from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
 class SubsectionTitle(QLabel):
     """Styled subsection title label for analysis components.
-    
+
     Creates an uppercase, small-font title used for categorizing
     sections within analysis panels.
     """
-    
+
     def __init__(self, text, parent=None):
         """Initialize the subsection title.
-        
+
         Args:
             text: The title text to display
             parent: Parent widget (optional)
