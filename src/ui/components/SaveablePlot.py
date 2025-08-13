@@ -5,16 +5,8 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QFont, QIcon
-from PyQt5.QtWidgets import (
-    QApplication,
-    QFileDialog,
-    QFrame,
-    QHBoxLayout,
-    QLabel,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt5.QtWidgets import (QApplication, QFileDialog, QFrame, QHBoxLayout,
+                             QLabel, QPushButton, QVBoxLayout, QWidget)
 
 
 class SaveablePlot(QWidget):
@@ -62,7 +54,8 @@ class SaveablePlot(QWidget):
             self.canvas = None
             placeholder = QLabel("No plot data available")
             placeholder.setAlignment(Qt.AlignCenter)
-            placeholder.setStyleSheet("color: #6c757d; font-size: 14px; padding: 40px;")
+            placeholder.setStyleSheet(
+                "color: #6c757d; font-size: 14px; padding: 40px;")
             self.canvas_container.layout().addWidget(placeholder)
 
         self.layout.addWidget(self.canvas_container)
