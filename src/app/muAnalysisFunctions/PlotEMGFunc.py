@@ -44,7 +44,7 @@ def parse_channel_input(raw_text, max_channels=None):
     
     return channels
 
-#OPENHDEMG
+
 def plot_emgsig(
     emgfile,
     analysis_plot,
@@ -59,7 +59,13 @@ def plot_emgsig(
     axes_kwargs=None,
     showimmediately=True,
 ):
-
+    """From OPENHDEMG. Plots the emg signal 
+    Params: 
+        - emgfile: the file 
+        - analysis_plot: instance used to plot fig in the centre 
+        - timeinseconds: boolean if you want the axis to be plotted in seconds 
+        - addrefsig: boolean if you want to add the reference signal
+    """
     # Load signal
     if isinstance(emgfile["RAW_SIGNAL"], pd.DataFrame):
         emgsig = emgfile["RAW_SIGNAL"]
@@ -160,11 +166,8 @@ def plot_emgsig(
     if showimmediately:
         plt.show()
     
-    # TL : function now plots it and doesn't return a figure, similar to plot_idr and plog_refsig in MUAnalysisFunc
-    canvas = SaveablePlot(fig)
-    analysis_plot.display_fig(canvas)
+    return fig
 
-#OPENHDEMG
 def plot_idr(
     emgfile,
     munumber="all",
@@ -177,6 +180,13 @@ def plot_idr(
     axes_kwargs=None,
     showimmediately=False,
 ):
+    """From OPENHDEMG. Plots the IDR 
+    Params: 
+        - emgfile: the file 
+        - analysis_plot: instance used to plot fig in the centre 
+        - timeinseconds: boolean if you want the axis to be plotted in seconds 
+        - addrefsig: boolean if you want to add the reference signal
+    """
     common = CommonOpenFunc()
     idr = common.compute_idr(emgfile=emgfile)
     if isinstance(munumber, str):
@@ -247,7 +257,6 @@ def plot_idr(
     return fig
 
 
-#OPENHDEMG
 def plot_mupulses(
     emgfile,
     munumber="all",
@@ -262,6 +271,13 @@ def plot_mupulses(
     axes_kwargs=None,
     showimmediately=True,
 ):
+    """From OPENHDEMG. Plots the MUPulses 
+    Params: 
+        - emgfile: the file 
+        - analysis_plot: instance used to plot fig in the centre 
+        - timeinseconds: boolean if you want the axis to be plotted in seconds 
+        - addrefsig: boolean if you want to add the reference signal
+    """
     common = CommonOpenFunc()
     # Warn for the use of a deprecated parameter
     if linewidths > 0:
@@ -380,7 +396,6 @@ def plot_mupulses(
 
     return fig
 
-# OPENHDEMG
 def plot_ipts(
     emgfile,
     munumber="all",
@@ -393,6 +408,13 @@ def plot_ipts(
     axes_kwargs=None,
     showimmediately=False,
 ):
+    """From OPENHDEMG. Plots the MU Source 
+    Params: 
+        - emgfile: the file 
+        - analysis_plot: instance used to plot fig in the centre 
+        - timeinseconds: boolean if you want the axis to be plotted in seconds 
+        - addrefsig: boolean if you want to add the reference signal
+    """
     common = CommonOpenFunc()
     # Check if all the MUs have to be plotted
     if isinstance(munumber, str):
@@ -485,7 +507,6 @@ def plot_ipts(
 
     return fig
 
-#OPENHDEMG
 def plot_differentials(
     emgfile,
     differential,
@@ -500,6 +521,13 @@ def plot_differentials(
     axes_kwargs=None,
     showimmediately=True,
 ):
+    """From OPENHDEMG. Plots the Derivation graphs of the EMG signal 
+    Params: 
+        - emgfile: the file 
+        - analysis_plot: instance used to plot fig in the centre 
+        - timeinseconds: boolean if you want the axis to be plotted in seconds 
+        - addrefsig: boolean if you want to add the reference signal
+    """
     common = CommonOpenFunc()
 
     if column not in differential:
@@ -613,9 +641,13 @@ def plot_differentials(
 
     return fig
 
-#OPENHDEMG
 def diff(sorted_rawemg):
-
+    """From OPENHDEMG. Computes the single differential of the EMG signal
+    Params: 
+        - sorted_rawemg: the sorted raw EMG signal
+    Returns:
+        - sd: a dict of pd.DataFrames for the single differential
+    """
     # Create a dict of pd.DataFrames for the single differential
     # {"col0": {}, "col1": {}, "col2": {}, "col3": {}, "col4": {}}
     sd = {col: {} for col in sorted_rawemg.keys()}
@@ -636,7 +668,12 @@ def diff(sorted_rawemg):
 
 #OPENHDEMG
 def double_diff(sorted_rawemg):
-
+    """From OPENHDEMG. Computes the double differential of the EMG signal
+    Params: 
+        - sorted_rawemg: the sorted raw EMG signal
+    Returns:
+        - dd: a dict of pd.DataFrames for the double differential
+    """
     # Create a dict of pd.DataFrames for the double differential
     # {"col0": {}, "col1": {}, "col2": {}, "col3": {}, "col4": {}}
     dd = {col: {} for col in sorted_rawemg.keys()}
@@ -667,7 +704,18 @@ def sort_rawemg(
     n_cols=None,
     custom_sorting_order=None,
 ):
-
+    """From OPENHDEMG. Sorts the raw EMG signal according to the matrix code
+    Params: 
+        - emgfile: the file 
+        - code: the matrix code to sort by
+        - orientation: the orientation of the matrix (0 or 180)
+        - dividebycolumn: boolean to divide by column
+        - n_rows: number of rows in the matrix
+        - n_cols: number of columns in the matrix
+        - custom_sorting_order: custom sorting order if code is 'Custom'
+    Returns:
+        - sorted_rawemg: a dict of pd.DataFrames for the sorted raw EMG signal
+    """
     valid_codes = [
         "GR08MM1305",
         "GR04MM1305",
@@ -874,7 +922,6 @@ def sort_rawemg(
 
     return sorted_rawemg
 
-# OPENHDEMG
 def plot_refsig(
     emgfile,
     analysis_plot,
@@ -885,8 +932,12 @@ def plot_refsig(
     axes_kwargs=None,
     showimmediately=False,
 ):
-    """
-    Plots the refsig graph
+    """From OPENHDEMG. Plots the Refersence Signal 
+    Params: 
+        - emgfile: the file 
+        - analysis_plot: instance used to plot fig in the centre 
+        - timeinseconds: boolean if you want the axis to be plotted in seconds 
+        - addrefsig: boolean if you want to add the reference signal
     """
 
     # Check to have the REF_SIGNAL in a pandas dataframe
