@@ -7,3 +7,4 @@ PyQt5_sip==12.17.0
 pyqtgraph==0.13.7
 scikit_learn==1.6.1
 scipy==1.15.2
+h5py==3.14.0
