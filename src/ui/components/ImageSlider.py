@@ -13,8 +13,8 @@ class ImageSlider(QWidget):
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.images = {
             "step1": os.path.abspath(os.path.join(current_dir, "../../public/WechatIMG1059.png")),
-            "step2": os.path.abspath(os.path.join(current_dir, "../../public/WechatIMG1065.png")),
-            "step3": os.path.abspath(os.path.join(current_dir, "../../public/WechatIMG1072.png")),
+            "step2": os.path.abspath(os.path.join(current_dir, "../../public/WechatIMG1065.jpg")),
+            "step3": os.path.abspath(os.path.join(current_dir, "../../public/WechatIMG1072.jpg")),
         }
 
         self.image_label = QLabel("Let's start\nClick button show image")
