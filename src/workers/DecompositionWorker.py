@@ -192,68 +192,10 @@ class DecompositionWorker(QThread):
 
     def map_parameters_to_emg_obj(self):
         """Map parameters from MUedit UI to offline_EMG parameters."""
-        # Map iteration parameters
-        self.emg_obj.its = self.parameters.get("NITER", 75)
-        self.emg_obj.windows = self.parameters.get("nwindows", 1)
-
-        # Map mode flags
-        self.emg_obj.ref_exist = 1  # We'll check for target in the signal
-        self.emg_obj.check_emg = self.parameters.get("checkEMG", 0)
+        self.emg_obj.apply_muedit_params(self.parameters)
+        self.ref_exist = 1  # We'll check for target in the signal
         self.emg_obj.drawing_mode = 1  # Enable drawing for PyQtGraph updates
-        self.emg_obj.differential_mode = self.parameters.get("differentialmode", 0)
-        self.emg_obj.peel_off = self.parameters.get("peeloff", 0)
-        self.emg_obj.initialisation = self.parameters.get("initialization", 0)
-        self.emg_obj.cov_filter = self.parameters.get("covfilter", 1)
-        self.emg_obj.refine_mu = self.parameters.get("refineMU", 1)
-        self.emg_obj.dup_bgrids = self.parameters.get("duplicatesbgrids", 0)
-
-        # Map thresholds
-        self.emg_obj.sil_thr = self.parameters.get("silthr", 0.9)
-        self.emg_obj.cov_thr = self.parameters.get("covthr", 0.5)
-        self.emg_obj.dup_thr = self.parameters.get("duplicatesthresh", 0.3)
-        self.emg_obj.target_thres = self.parameters.get("thresholdtarget", 0.8)
-        self.emg_obj.ext_factor = self.parameters.get("nbextchan", 1000)
-        self.emg_obj.edges2remove = self.parameters.get("edges", 0.5)
 
     def format_results(self):
         """Format results from offline_EMG to match MUedit's expected format."""
-        # Create a clean output structure
-        result = {}
-
-        # Copy essential fields from the original signal
-        for field in self.emg_obj.signal_dict:
-            if field not in [
-                "batched_data",
-                "extend_obvs",
-                "extend_obvs_old",
-                "filtered_data",
-                "sq_extend_obvs",
-                "inv_extend_obvs",
-                "diff_data",
-            ]:
-                result[field] = self.emg_obj.signal_dict[field]
-
-        # Add spatial information
-        if hasattr(self.emg_obj, "coordinates"):
-            result["coordinates"] = self.emg_obj.coordinates
-        if hasattr(self.emg_obj, "ied"):
-            result["IED"] = self.emg_obj.ied
-        if hasattr(self.emg_obj, "rejected_channels"):
-            result["EMGmask"] = self.emg_obj.rejected_channels
-
-        # Format pulse trains and discharge times using the exact format expected by MUedit
-        result["Pulsetrain"] = {}
-        result["Dischargetimes"] = {}
-
-        if len(self.emg_obj.mu_dict["pulse_trains"]) > 0:
-            for electrode, pulse_trains in enumerate(self.emg_obj.mu_dict["pulse_trains"]):
-                if isinstance(pulse_trains, np.ndarray) and pulse_trains.shape[0] > 0:
-                    result["Pulsetrain"][electrode] = pulse_trains
-
-                    # Check if discharge_times is available for this electrode
-                    if electrode < len(self.emg_obj.mu_dict["discharge_times"]):
-                        for mu, discharge_times in enumerate(self.emg_obj.mu_dict["discharge_times"][electrode]):
-                            if discharge_times is not None and len(discharge_times) > 0:
-                                result["Dischargetimes"][(electrode, mu)] = discharge_times
-
-        return result
+        return self.emg_obj.format_results_1()
