@@ -1,19 +1,16 @@
 import sys
-from PyQt5.QtWidgets import (
-    QApplication,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QLabel,
-    QFrame,
-    QSpacerItem,
-    QSizePolicy,
-    QStyle,
-    QGraphicsDropShadowEffect,
-)
-from PyQt5.QtGui import QIcon, QFont, QColor, QPixmap
-from PyQt5.QtCore import Qt, QSize
+from pathlib import Path
+
+from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QColor, QFont, QIcon, QPixmap
+from PyQt5.QtWidgets import (QApplication, QFrame, QGraphicsDropShadowEffect,
+                             QHBoxLayout, QLabel, QPushButton, QSizePolicy,
+                             QSpacerItem, QStyle, QVBoxLayout, QWidget)
+
+# defining absolute path for icons
+ABS_PATH = Path(__file__).parent.parent
+ICONS_PATH = ABS_PATH / "public"
+cloud_download_path = ICONS_PATH / "cloud_download.svg"
 
 
 def get_icon(standard_icon_enum):
@@ -50,8 +47,15 @@ def setup_ui(widget):
     main_layout.setSpacing(10)
 
     # --- Top: Return Button ---
-    main_layout.addWidget(create_return_button(widget), alignment=Qt.AlignmentFlag.AlignLeft)
-    main_layout.addSpacerItem(QSpacerItem(20, 5, QSizePolicy.Minimum, QSizePolicy.Fixed))
+    main_layout.addWidget(
+        create_return_button(widget),
+        alignment=Qt.AlignmentFlag.AlignLeft)
+    main_layout.addSpacerItem(
+        QSpacerItem(
+            20,
+            5,
+            QSizePolicy.Minimum,
+            QSizePolicy.Fixed))
 
     # --- Center: Content Area (Cards) ---
     content_layout = QVBoxLayout()
@@ -151,23 +155,42 @@ def create_confirmation_card(widget):
     title_label = QLabel("Export Complete!")
     title_label.setFont(QFont("Arial", 16, QFont.Bold))
     title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    title_label.setStyleSheet(f"color: {widget.colors['text_primary']}; border: none;")
+    title_label.setStyleSheet(
+        f"color: {widget.colors['text_primary']}; border: none;")
 
     subtitle_label = QLabel("File has been exported.")
     subtitle_label.setFont(QFont("Arial", 9))
     subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    subtitle_label.setStyleSheet(f"color: {widget.colors['text_secondary']}; border: none;")
+    subtitle_label.setStyleSheet(
+        f"color: {widget.colors['text_secondary']}; border: none;")
     subtitle_label.setWordWrap(True)
 
     # Add elements to layout
-    confirm_layout.addWidget(icon_label, alignment=Qt.AlignmentFlag.AlignCenter)
-    confirm_layout.addSpacerItem(QSpacerItem(10, 5, QSizePolicy.Minimum, QSizePolicy.Fixed))
-    confirm_layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignCenter)
-    confirm_layout.addWidget(subtitle_label, alignment=Qt.AlignmentFlag.AlignCenter)
-    confirm_layout.addSpacerItem(QSpacerItem(20, 10, QSizePolicy.Minimum, QSizePolicy.Fixed))
+    confirm_layout.addWidget(icon_label,
+                             alignment=Qt.AlignmentFlag.AlignCenter)
+    confirm_layout.addSpacerItem(
+        QSpacerItem(
+            10,
+            5,
+            QSizePolicy.Minimum,
+            QSizePolicy.Fixed))
+    confirm_layout.addWidget(title_label,
+                             alignment=Qt.AlignmentFlag.AlignCenter)
+    confirm_layout.addWidget(subtitle_label,
+                             alignment=Qt.AlignmentFlag.AlignCenter)
+    confirm_layout.addSpacerItem(
+        QSpacerItem(
+            20,
+            10,
+            QSizePolicy.Minimum,
+            QSizePolicy.Fixed))
 
     # Add download row with placeholders
-    confirm_layout.addWidget(create_download_row(widget, "Initializing...", "..."))
+    confirm_layout.addWidget(
+        create_download_row(
+            widget,
+            "Initializing...",
+            "..."))
 
     return confirm_card
 
@@ -210,18 +233,20 @@ def create_download_row(widget, filename, filesize):
 
     widget._download_filename_label = QLabel(filename)
     widget._download_filename_label.setFont(QFont("Arial", 10, QFont.Bold))
-    widget._download_filename_label.setStyleSheet(f"color: {widget.colors['text_primary']};")
+    widget._download_filename_label.setStyleSheet(
+        f"color: {widget.colors['text_primary']};")
 
     widget._download_filesize_label = QLabel(filesize)
     widget._download_filesize_label.setFont(QFont("Arial", 9))
-    widget._download_filesize_label.setStyleSheet(f"color: {widget.colors['text_secondary']};")
+    widget._download_filesize_label.setStyleSheet(
+        f"color: {widget.colors['text_secondary']};")
 
     info_layout.addWidget(widget._download_filename_label)
     info_layout.addWidget(widget._download_filesize_label)
 
     # Download button
     download_button = QPushButton("Download")
-    download_button.setIcon(QIcon("public/cloud_download.svg"))
+    download_button.setIcon(QIcon(str(cloud_download_path)))
     download_button.setIconSize(QSize(24, 24))
     download_button.setFont(QFont("Arial", 9, QFont.Bold))
     download_button.setMinimumHeight(30)
@@ -229,7 +254,7 @@ def create_download_row(widget, filename, filesize):
     download_button.setStyleSheet(
         f"""
         QPushButton {{
-            background-color: #3CB371; 
+            background-color: #3CB371;
             color: white;
             border: none;
             border-radius: 5px;
@@ -263,7 +288,8 @@ def create_recent_exports_section(widget):
 
     title_label = QLabel("Recent Exports")
     title_label.setFont(QFont("Arial", 14, QFont.Bold))
-    title_label.setStyleSheet(f"color: {widget.colors['text_primary']}; margin-bottom: 5px;")
+    title_label.setStyleSheet(
+        f"color: {widget.colors['text_primary']}; margin-bottom: 5px;")
     recent_layout.addWidget(title_label)
 
     # Sample recent export data
@@ -274,7 +300,11 @@ def create_recent_exports_section(widget):
     ]
 
     for item_data in recent_exports_data:
-        recent_layout.addWidget(create_recent_export_item(widget, item_data["filename"], item_data["metadata"]))
+        recent_layout.addWidget(
+            create_recent_export_item(
+                widget,
+                item_data["filename"],
+                item_data["metadata"]))
 
     recent_layout.addStretch(1)
     return recent_card
@@ -311,9 +341,12 @@ def create_recent_export_item(widget, filename, metadata):
     # Use a fallback file icon if the svg file is not found
     try:
         pixmap = QPixmap("fileIcon.svg").scaled(
-            QSize(17, 17), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
-        )
-    except:
+            QSize(
+                17,
+                17),
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation)
+    except BaseException:
         # Fallback to standard file icon
         icon = get_icon("SP_FileIcon")
         pixmap = icon.pixmap(QSize(17, 17))
@@ -343,7 +376,7 @@ def create_recent_export_item(widget, filename, metadata):
 
     # Download button
     download_button = QPushButton("")
-    download_button.setIcon(QIcon("public/cloud_download.svg"))
+    download_button.setIcon(QIcon("src/public/cloud_download.svg"))
     download_button.setIconSize(QSize(24, 24))
     download_button.setFont(QFont("Arial", 13))
     download_button.setFixedSize(30, 30)
@@ -365,7 +398,9 @@ def create_recent_export_item(widget, filename, metadata):
         }}
     """
     )
-    download_button.clicked.connect(lambda checked=False, fn=filename: widget.handle_recent_download(fn))
+    download_button.clicked.connect(
+        lambda checked=False,
+        fn=filename: widget.handle_recent_download(fn))
     item_layout.addWidget(download_button)
 
     return item_widget
@@ -378,8 +413,10 @@ if __name__ == "__main__":
 
     # Create dummy handlers for testing
     test_widget.handle_return = lambda: print("Return button clicked")
-    test_widget.handle_main_download = lambda: print("Main download button clicked")
-    test_widget.handle_recent_download = lambda fn: print(f"Recent download clicked: {fn}")
+    test_widget.handle_main_download = lambda: print(
+        "Main download button clicked")
+    test_widget.handle_recent_download = lambda fn: print(
+        f"Recent download clicked: {fn}")
 
     # Set up the UI
     setup_ui(test_widget)
