@@ -403,7 +403,14 @@ class MUeditManual(QMainWindow):
                     self.import_decomposed_file(files)
             else:
                 if "edition" in files:
-                    self.import_h5py_edited_file(files)
+                    arr = files['edition']['Dischargetimes']
+                    if isinstance(arr, np.ndarray) and arr.shape == (2,) and arr.dtype == np.uint64:
+                        WarningDialog(text="We detected that the edition section does not contain any Dischargetimes data; therefore, it has fallen back to the unedited version.",
+                                enableHelpButton=False,
+                                enableCheckBox=False)
+                        self.import_h5py_decomposed_file(files)
+                    else:
+                        self.import_h5py_edited_file(files)
                 else:
                     self.import_h5py_decomposed_file(files)
             
@@ -599,6 +606,7 @@ class MUeditManual(QMainWindow):
                 # Give every MU a Flag tag
                 self.MUedition["edition"]["Flag"][array_idx].append(0)
     
+    
     def import_h5py_edited_file(self, files):
         """Import data from a new decomposition file that hasn't been edited yet."""
         self.MUedition = {"edition": {}, "signal": {}, "parameters": {}}
@@ -629,10 +637,16 @@ class MUeditManual(QMainWindow):
         # Copy Pulsetrain data
         pulsetrain_data = files["edition"]["Pulsetrain"]
 
+        
         # Handle as a 1D array
         for i in range(len(pulsetrain_data)):
-            self.MUedition["edition"]["Pulsetrain"].append(np.array(pulsetrain_data[i][0]).T)
-            
+            if isinstance(pulsetrain_data[i][0][0], float):
+                self.MUedition["edition"]["Pulsetrain"].append(np.array(pulsetrain_data[i]))
+            else:
+                self.MUedition["edition"]["Pulsetrain"].append(np.array(pulsetrain_data[i][0]).T)
+                
+        self.MUedition["signal"]["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"]
+        
         # Copy Dischargetimes
         dischargetimes_data = files["edition"]["Dischargetimes"]
         for i in range(len(dischargetimes_data)):
@@ -642,7 +656,7 @@ class MUeditManual(QMainWindow):
                 if len(dt) > 0:
                     # Flatten and store as tuple key (array_idx, mu_idx)
                     self.MUedition["edition"]["Dischargetimes"][(j, i)] = np.array(dt, dtype=int)
-
+        
         # Load SIL values for each motor unit
         for array_idx in range(len(files["edition"]["silval"][0])):
             # Give every MU array a Flag array
@@ -2947,6 +2961,7 @@ class MUeditManual(QMainWindow):
                     safe_dict[k_str] = v_
                 edition[field] = json.dumps(safe_dict)
         
+        signal["Pulsetrain"] = edition["Pulsetrain"]
         del edition["Pulsetrain"]
         
         progress.setValue(100)
