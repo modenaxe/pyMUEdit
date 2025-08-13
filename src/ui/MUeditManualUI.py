@@ -278,8 +278,6 @@ def create_tab_widget():
         """
     )
     tabs.setMaximumWidth(320)
-    # Set the minimum width for the tabs
-    tabs.setMinimumWidth(380)
     return tabs
 
 
@@ -659,9 +657,7 @@ def setup_display_panel(main_window):
     CleanScrollBar.apply(plots_scroll_area)
 
     main_window.plots_container = QWidget()
-    main_window.plots_container.setStyleSheet(
-        f"background-color: {CleanTheme.BG_CARD};"
-    )
+    main_window.plots_container.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
     main_window.plots_layout = QVBoxLayout(main_window.plots_container)
     main_window.plots_layout.setContentsMargins(0, 0, 0, 0)
     main_window.plots_layout.setSpacing(10)
@@ -669,15 +665,11 @@ def setup_display_panel(main_window):
     main_window.plots_scroll_area = plots_scroll_area
 
     # Create the plots with a helper function
-    main_window.sil_plot = create_plot_widget("SIL", "")
-    main_window.sil_plot.setVisible(
-        False
-    )  # Initially hidden until SIL checkbox is checked
+    main_window.sil_plot = create_plot_widget(main_window, "SIL", "")
+    main_window.sil_plot.setVisible(False)  # Initially hidden until SIL checkbox is checked
 
-    main_window.spiketrain_plot = create_plot_widget(
-        "Pulse train (au)", "Time (s)")
-    main_window.dr_plot = create_plot_widget(
-        "Discharge rate (pps)", "Time (s)")
+    main_window.spiketrain_plot = create_plot_widget(main_window, "Pulse train (au)", "Time (s)")
+    main_window.dr_plot = create_plot_widget(main_window, "Discharge rate (pps)", "Time (s)")
 
     # Add plots to the layout
     main_window.plots_layout.addWidget(main_window.sil_plot)
@@ -893,4 +885,3 @@ def find_sidebar(main_window):
         if sidebar:
             return sidebar
     return None
-

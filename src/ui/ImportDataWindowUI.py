@@ -1,21 +1,18 @@
-from pathlib import Path
-
-from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QApplication, QScrollArea, QStackedWidget, QPushButton
 from PyQt5.QtGui import QFont
+from PyQt5.QtCore import Qt
 from PyQt5.QtSvg import QSvgWidget
-from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
-                             QScrollArea, QVBoxLayout, QWidget)
+import pyqtgraph as pg
 
 # Import custom components
-from ui.components import (ActionButton, CleanCard, CleanTheme, SectionHeader,
-                           Sidebar)
-
-# defining absolute path for icons
-# bit messy. you'll have to adjust the number of .parents you call based on where this
-# file is located
-ABS_PATH = Path(__file__).parent.parent
-ICONS_PATH = ABS_PATH / "public"
-cloud_icon_path = ICONS_PATH / "upload_icon.svg"
+from ui.components import (
+    CleanTheme, 
+    CleanCard, 
+    ActionButton, 
+    SectionHeader, 
+    Sidebar, 
+    VisualizationPanel
+)
 
 
 def setup_ui(import_window):
@@ -52,8 +49,7 @@ def setup_ui(import_window):
     import_window.main_layout.addWidget(content_widget)
 
     # Store references to functions for sidebar management
-    import_window.update_sidebar_with_recent_files = lambda: update_sidebar_with_recent_files(
-        import_window)
+    import_window.update_sidebar_with_recent_files = lambda: update_sidebar_with_recent_files(import_window)
     import_window.restore_sidebar = lambda: restore_sidebar(import_window)
 
 
@@ -63,8 +59,7 @@ def create_right_content(import_window):
     scroll_area = QScrollArea()
     scroll_area.setWidgetResizable(True)
     scroll_area.setFrameShape(QFrame.NoFrame)
-    scroll_area.setHorizontalScrollBarPolicy(
-        Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
     scroll_area.setStyleSheet("background: transparent; border: none;")
 
     # Create container widget
@@ -115,8 +110,8 @@ def create_dropzone_card(import_window):
     icon_layout.setContentsMargins(0, 0, 0, 0)
     icon_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    cloud_icon = QSvgWidget(str(cloud_icon_path))
-    cloud_icon.setFixedSize(48, 33)
+    cloud_icon = QSvgWidget("src/public/upload_icon.svg")
+    cloud_icon.setFixedSize(32, 22)
     cloud_icon.setStyleSheet("margin-bottom: 10px;")
 
     icon_layout.addWidget(cloud_icon)
@@ -131,8 +126,7 @@ def create_dropzone_card(import_window):
     import_window.file_info_label = QLabel("")
     import_window.file_info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
     import_window.file_info_label.setFont(QFont("Segoe UI", 11))
-    import_window.file_info_label.setStyleSheet(
-        f"color: #4CAF50; font-weight: bold;")
+    import_window.file_info_label.setStyleSheet(f"color: #4CAF50; font-weight: bold;")
     import_window.file_info_label.setVisible(False)
 
     # Add "or" label
@@ -200,11 +194,9 @@ def create_preview_section(import_window):
     import_window.failure_message.setVisible(False)
 
     # Create preview message
-    import_window.preview_message = QLabel(
-        "No file selected. Import a file to see a preview.")
+    import_window.preview_message = QLabel("No file selected. Import a file to see a preview.")
     import_window.preview_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    import_window.preview_message.setStyleSheet(
-        f"color: {CleanTheme.TEXT_SECONDARY};")
+    import_window.preview_message.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
 
     # Add preview messages to stacked frame as an active widget
     import_window.preview_messages.addStretch()
@@ -291,16 +283,13 @@ def create_footer(import_window):
 
     # Create file info labels
     import_window.footer_file_info = QLabel("No file selected")
-    import_window.footer_file_info.setStyleSheet(
-        f"color: {CleanTheme.TEXT_PRIMARY};")
+    import_window.footer_file_info.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
 
     import_window.size_info = QLabel("Size: --")
-    import_window.size_info.setStyleSheet(
-        f"color: {CleanTheme.TEXT_SECONDARY};")
+    import_window.size_info.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
 
     import_window.format_info = QLabel("Format: --")
-    import_window.format_info.setStyleSheet(
-        f"color: {CleanTheme.TEXT_SECONDARY};")
+    import_window.format_info.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
 
     # Add file info to layout
     footer_layout.addWidget(import_window.footer_file_info)
@@ -315,8 +304,7 @@ def create_footer(import_window):
     prev_btn.clicked.connect(import_window.go_back)
 
     import_window.next_btn = ActionButton("Next →", primary=True)
-    import_window.next_btn.clicked.connect(
-        import_window.go_to_algorithm_screen)
+    import_window.next_btn.clicked.connect(import_window.go_to_algorithm_screen)
     import_window.next_btn.setEnabled(False)
 
     # Add navigation buttons to layout
@@ -348,9 +336,7 @@ def update_sidebar_with_recent_files(import_window):
     """Update the sidebar to show recent files."""
     sidebar = find_sidebar(import_window)
     if sidebar and hasattr(sidebar, "add_recent_files_section"):
-        sidebar.add_recent_files_section(
-            import_window.recent_files,
-            import_window.load_recent_file)
+        sidebar.add_recent_files_section(import_window.recent_files, import_window.load_recent_file)
 
 
 def restore_sidebar(import_window):
