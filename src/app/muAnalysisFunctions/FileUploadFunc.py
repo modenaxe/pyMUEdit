@@ -644,7 +644,6 @@ class FileUploadFunc:
             error_dialog.setWindowTitle("Error")
             error_dialog.exec_()
 
-    # OPENHDEMG: Edited
     def plot_refsig(
         self,
         emgfile,

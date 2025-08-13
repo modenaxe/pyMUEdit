@@ -309,7 +309,7 @@ class PlotEMGToolDialog(QDialog):
             add_ref_signal = self.ref_signal_checkbox.isChecked()
 
             # Pass the raw text string directly to plot_emgsig for validation
-            plot_emgsig(
+            fig = plot_emgsig(
                 emgfile=emgfile,
                 analysis_plot=self.analysis_plot,
                 channels=raw_text,  # Pass as string for validation
@@ -320,6 +320,9 @@ class PlotEMGToolDialog(QDialog):
                 tight_layout=True,
                 showimmediately=False,
             )
+            canvas = SaveablePlot(fig)
+            self.analysis_plot.display_fig(canvas)
+            plt.close(fig)
         except ValueError as e:
             ErrorDialog('Invalid channel input', 'Error').exec_()
         except Exception as e:
