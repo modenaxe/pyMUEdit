@@ -37,7 +37,7 @@ class ConfirmationDialog(QDialog):
         cancel_button = GeneralButton("Cancel", lambda: self.reject())
         cancel_button.setFixedHeight(30)
 
-        reset_button = GeneralRedButton("Reset")
+        reset_button = GeneralRedButton("Confirm")
         reset_button.clicked.connect(self.accept)
         reset_button.setFixedHeight(30)
 

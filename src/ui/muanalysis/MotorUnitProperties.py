@@ -22,6 +22,7 @@ from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.SubsectionTitle import SubsectionTitle
 from ui.components.muAnalysisComponents.PropertiesInnerDialogText import \
     PropertiesInnerDialogText
+from ui.muanalysis.ComputeThresholdSection import ComputeThresholdSection
 
 
 class MotorUnitPropertiesDialog(QDialog):
@@ -68,6 +69,7 @@ class MotorUnitPropertiesDialog(QDialog):
             self.mvc_input.setText(str(self.current_mvc))
         box.addWidget(mvc_label)
         box.addWidget(self.mvc_input)
+        layout.addLayout(box)
 
         dr_section = QHBoxLayout()
 
@@ -94,7 +96,7 @@ class MotorUnitPropertiesDialog(QDialog):
         )
         dr_section.addWidget(self.dr_firings_steady)
 
-        layout.addLayout(box)
+        # append Compute Threshold section to UI
         compute_threshold = ComputeThresholdSection(func)
         layout.addLayout(compute_threshold)
         layout.addLayout(dr_section)
@@ -183,24 +185,32 @@ class MotorUnitPropertiesBasic(QHBoxLayout):
         self.addWidget(rec_input)
         self.addWidget(steady_input)
 
-# class that holds the inputs to compute threshold
+# general class for any inner inputs inside dialog
 
 
-class ComputeThresholdSection(QHBoxLayout):
-    def __init__(self, func):
+class PropertiesInnerDialogText(QLineEdit):
+    """Inputs within Motor Unit Properties dialogs"""
+
+    def __init__(self, text):
         super().__init__()
-        event_ = AnalysisDropdownDialog(
-            "Event", items=['rt', 'dert', 'rt_dert'])
-        type_ = AnalysisDropdownDialog("Type", items=['abs', 'rel', 'abs_rel'])
-        button = GeneralButton(
-            "Compute Thresholds",
-            lambda: func.compute_thresh(
-                event_.currentText(),
-                type_.currentText()))
-
-        self.addWidget(button)
-        self.addWidget(event_)
-        self.addWidget(type_)
+        self.setMinimumHeight(32)
+        self.setPlaceholderText(text)
+        self.setFont(QFont("Arial", 11))
+        self.setStyleSheet(
+            f"""
+            QLineEdit {{
+                padding: 10px;
+                border: 2px solid {CleanTheme.BORDER};
+                border-radius: 6px;
+                background-color: {CleanTheme.ANALYSIS_BG_CARD};
+                color: {CleanTheme.TEXT_PRIMARY};
+                font-size: 11pt;
+            }}
+            QLineEdit:focus {{
+                border-color: {CleanTheme.ANALYSIS_BG_BUTTON};
+            }}
+        """
+        )
 
 
 class MotorUnitPropertiesButton(QWidget):

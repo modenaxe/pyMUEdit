@@ -91,13 +91,20 @@ class MUPropertiesFunc:
         SelectRange(analysis_plot, self.two_point, False)
 
     def compute_thresh(self, event_, type_):
-        """Compute motor unit recruitment/derecruitment thresholds.
-
-        Args:
-            event_: Event type string for threshold calculation (e.g., 'rt_dert', 'rt', 'dert')
-            type_: Type of threshold calculation ('abs_rel', 'abs', 'rel')
-
-        Validates inputs and calls compute_thresholds with the loaded EMG file.
+        """
+        Validate required inputs and compute thresholds.
+        
+        Parameters
+        ----------
+        event_ : any
+            The event data or selection to be used in threshold computation.
+        type_ : any
+            The type/category selection to be used in threshold computation.
+        
+        This function:
+        1. Checks if a file has been loaded.
+        2. Validates that all required user inputs are provided.
+        3. Calls `compute_thresholds` with the validated inputs.
         """
         file = FileUploadFunc.file
         if file == None:
@@ -228,6 +235,7 @@ class MUPropertiesFunc:
             emgfile=emgfile,
             n_firings=n_firings_rt_dert,
             mvc=mvc,
+            append=False
         )
         exportable_df = pd.concat([exportable_df, mus_thresholds], axis=1)
         mus_dr = self.compute_dr(
@@ -267,14 +275,61 @@ class MUPropertiesFunc:
         type_="abs_rel",
         n_firings=1,
         mvc=0,
+        append=True
     ):
-        """from openHDEMG to get threshold
-        Params (relevant for us): emgfile, mvc
-        Returns: threhold dataframe
         """
+        Compute motor unit (MU) thresholds from an EMG file.
+
+        Parameters
+        ----------
+        emgfile : dict-like
+            Dictionary or object containing EMG data. Must have keys:
+            - "NUMBER_OF_MUS" : int, number of motor units
+            - "MUPULSES" : list of lists/arrays, firing indices for each MU
+            - "REF_SIGNAL" : DataFrame, reference signal values
+        event_ : str, default "rt_dert"
+            Type of event(s) to compute. Options:
+            - "rt_dert" : compute recruitment threshold (RT) and derecruitment threshold (DERT)
+            - "rt" : compute recruitment threshold only
+            - "dert" : compute derecruitment threshold only
+        type_ : str, default "abs_rel"
+            Threshold format. Options:
+            - "abs_rel" : compute both absolute and relative values
+            - "abs" : absolute values only
+            - "rel" : relative values only
+        n_firings : int, default 1
+            Number of initial and final firings to average for threshold computation.
+        mvc : float or int, default 0
+            Maximum voluntary contraction value (used for absolute thresholds).
+        append: boolean, default True
+            Whether results should be appended
+        Returns
+        -------
+        mus_thresholds : pandas.DataFrame
+            DataFrame containing threshold values for each MU.
+        """
+        # Extract the variables of interest from the EMG file
         NUMBER_OF_MUS = emgfile["NUMBER_OF_MUS"]
         MUPULSES = emgfile["MUPULSES"]
         REF_SIGNAL = emgfile["REF_SIGNAL"]
+
+        # Check that all the inputs are correct
+        if event_ not in ["rt_dert", "rt", "dert"]:
+            raise ValueError(
+                f"event_ must be one of : 'rt_dert', 'rt', 'dert'. {event_} was passed instead."
+            )
+
+        if type_ not in ["abs_rel", "rel", "abs"]:
+            raise ValueError(
+                f"event_ must be one of : 'abs_rel', 'rel', 'abs'. {event_} was passed instead."
+            )
+
+        if not isinstance(mvc, (float, int)):
+            raise TypeError(
+                f"mvc must be one of the following types: float, int. {type(mvc)} was passed instead."
+            )
+
+        # Create an object to append the results
         toappend = []
         for mu in range(NUMBER_OF_MUS):
             if len(MUPULSES[mu]) > 0:
@@ -314,10 +369,16 @@ class MUPropertiesFunc:
                 toappend.append({"rel_RT": rel_RT})
             elif event_ == "dert" and type_ == "rel":
                 toappend.append({"rel_DERT": rel_DERT})
+                
+        # Convert results list to a DataFrame
         mus_thresholds = pd.DataFrame(toappend)
-        self.results.append_analysis_hist(
-            "MUs Thresholds", mus_thresholds.to_dict("records")
-        )
+        
+        # Save results in the analysis history
+        if append:
+            self.results.append_analysis_hist(
+                "MUs Thresholds", mus_thresholds.to_dict("records")
+            )
+        
         return mus_thresholds
 
     def compute_dr(

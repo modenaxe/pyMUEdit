@@ -6,8 +6,16 @@ from ui.components.CleanTheme import CleanTheme
 
 
 class ResultsTable(QAbstractTableModel):
+    """
+    Table model for displaying analysis results in the results section.
 
-    """Actual data handling within tables that are displayed in results section"""
+    This model:
+    - Connects to the shared `store` to receive updates when analysis data changes or is cleared.
+    - Stores tabular result data as a list of dictionaries (`_data`) along with column headers.
+    - Supports standard QAbstractTableModel methods (`rowCount`, `columnCount`, `data`, `headerData`)
+      for integration with PyQt table views.
+    - Handles dynamic updates, result selection from historical data, and clearing results.
+    """
 
     def __init__(self):
         super().__init__()
@@ -19,6 +27,9 @@ class ResultsTable(QAbstractTableModel):
         self.columns = []
 
     def _updateData(self, df):
+        """
+        Internal helper to update stored table data from a DataFrame.
+        """
         if df.empty:
             self.df = df
             self._data = []
@@ -46,6 +57,14 @@ class ResultsTable(QAbstractTableModel):
         return None
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
+        """
+        Customize table headers.
+
+        - DisplayRole (horizontal): show column names.
+        - FontRole (horizontal): make headers bold.
+        - BackgroundRole (horizontal): apply CleanTheme.HEADER background color.
+        - Fallback: call the base implementation for other roles/orientations.
+        """
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
             return self.columns[section]
 
@@ -59,12 +78,22 @@ class ResultsTable(QAbstractTableModel):
         return super().headerData(section, orientation, role)
 
     def update_dataframe(self, new_df):
-        # Notify the view that the model is about to change
+        """
+        Public slot connected to store.data_changed.
+
+        Updates the model's data from a new DataFrame while
+        notifying the view to refresh.
+        """
         self.beginResetModel()
         self._updateData(new_df)
         self.endResetModel()
 
     def select_result(self, index):
+        """
+        Replace current table data with results from a specific index in the history.
+
+        Called when user selects a past result from the analysis history.
+        """
         if index < len(self.df):
             self.beginResetModel()
             self._data = self.df.iloc[index]['table']

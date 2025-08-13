@@ -79,6 +79,10 @@ class AdvancedTools(QWidget):
             self.on_PIC_selection)
 
     def on_PIC_selection(self):
+        """
+        Enable or disable matrix configuration dropdowns based on the current
+        selection in the analysis tools dropdown.
+        """
         disable = (self.analysis_tools_dropdown.currentText()
                    == "Persistent Inward Currents")
         self.matrix_orientation_dropdown.setDisabled(disable)
@@ -102,7 +106,11 @@ class AdvancedTools(QWidget):
     def show_analysis(self):
         selected_tool = self.analysis_tools_dropdown.currentText()
         if selected_tool == "Motor Unit Tracking":
-            dialog = MotorUnitTrackingDialog(self)
+            dialog = MotorUnitTrackingDialog(
+                parent=self,
+                matrix_orientation=self.matrix_orientation_dropdown.currentText(),
+                matrix_code=self.matrix_code_dropdown.currentText(),
+            )
             dialog.exec_()
         elif selected_tool == "Conduction Velocity Estimation":
             dialog = ConductionVelocityDialog(self)
