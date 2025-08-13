@@ -1,6 +1,9 @@
 from PyQt5.QtWidgets import QHBoxLayout
-from ui.components.muAnalysisComponents.AnalysisDropdownDialog import AnalysisDropdownDialog
+
+from ui.components.muAnalysisComponents.AnalysisDropdownDialog import \
+    AnalysisDropdownDialog
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
+
 
 class ComputeThresholdSection(QHBoxLayout):
     """
@@ -17,6 +20,7 @@ class ComputeThresholdSection(QHBoxLayout):
     Args:
         func: An object that implements a `compute_thresh(event, type)` method.
     """
+
     def __init__(self, func):
         super().__init__()
         event_ = AnalysisDropdownDialog(

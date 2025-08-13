@@ -19,9 +19,9 @@ from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.muanalysis.ComputeThresholdSection import ComputeThresholdSection
 from ui.components.muAnalysisComponents.PropertiesInnerDialogText import \
     PropertiesInnerDialogText
+from ui.muanalysis.ComputeThresholdSection import ComputeThresholdSection
 
 
 class MotorUnitPropertiesDialog(QDialog):
@@ -185,6 +185,8 @@ class MotorUnitPropertiesBasic(QHBoxLayout):
         self.addWidget(steady_input)
 
 # general class for any inner inputs inside dialog
+
+
 class PropertiesInnerDialogText(QLineEdit):
     """Inputs within Motor Unit Properties dialogs"""
 
@@ -208,6 +210,7 @@ class PropertiesInnerDialogText(QLineEdit):
             }}
         """
         )
+
 
 class MotorUnitPropertiesButton(QWidget):
 

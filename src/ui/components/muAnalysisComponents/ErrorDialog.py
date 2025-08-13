@@ -3,7 +3,8 @@ from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import (QDialog, QHBoxLayout, QLabel, QPushButton, QStyle,
                              QVBoxLayout)
 
-from ui.components.muAnalysisComponents.GeneralRedButton import GeneralRedButton
+from ui.components.muAnalysisComponents.GeneralRedButton import \
+    GeneralRedButton
 
 
 class ErrorDialog(QDialog):
