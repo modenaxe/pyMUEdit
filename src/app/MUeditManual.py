@@ -2370,7 +2370,7 @@ class MUeditManual(QMainWindow):
         # Update the current MU display
         self.mu_checkbox_state_changed()
 
-    def remove_outliers(pulse_trains, discharge_times, fsamp, mu_names=None):
+    def remove_outliers(self, pulse_trains, discharge_times, fsamp, mu_names=None):
         """
         Remove outlier discharges: for each spike pair with high discharge rate,
         remove the spike with lower amplitude. Logic follows MATLAB implementation.
@@ -3067,6 +3067,7 @@ class MUeditManual(QMainWindow):
         self.sub_panel.show()
         sidebar = find_sidebar(self)
         sidebar.setFixedWidth(340)
+        self.window().left_sidebar_scroll_area.setFixedWidth(340)
 
         # Call the parent method
         super().showEvent(event)
@@ -3076,6 +3077,7 @@ class MUeditManual(QMainWindow):
         self.sub_panel.hide()
         sidebar = find_sidebar(self)
         sidebar.setFixedWidth(180)
+        self.window().left_sidebar_scroll_area.setFixedWidth(180)
 
         # Call the parent method
         super().hideEvent(event)
