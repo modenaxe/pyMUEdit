@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM debian:stable-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -31,19 +31,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libqt5svg5-dev \
     libgl1 \
     libdbus-1-3 \
+    ca-certificates \
+    dbus-x11 \
     fonts-liberation \
     net-tools \
     netcat-openbsd \
     git \
-    python3-pip \
-    python3-numpy \
-    python3-scipy \
     python3-matplotlib \
+    python3-numba \
+    python3-numpy \
     python3-pandas \
-    python3-sklearn \
     python3-pyqt5 \
     python3-pyqt5.qtsvg \
-    python3-seaborn \
+    python3-pyqtgraph \
+    python3-sklearn \
+    python3-scipy \
+    python3-torch \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

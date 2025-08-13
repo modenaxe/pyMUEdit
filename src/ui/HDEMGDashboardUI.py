@@ -21,6 +21,7 @@ from ui.components import (
     SectionHeader,
     Sidebar,
 )
+from ui.components.CleanScrollBar import CleanScrollBar
 
 
 def setup_ui(main_window):
@@ -40,7 +41,14 @@ def setup_ui(main_window):
 
     # Create sidebar with buttons
     main_window.sidebar_buttons = {}
-    main_window.main_h_layout.addWidget(_create_left_sidebar(main_window))
+    sidebar = _create_left_sidebar(main_window)
+    scroll_area = QScrollArea()
+    scroll_area.setWidgetResizable(True)
+    scroll_area.setFixedWidth(180)
+    CleanScrollBar.apply(scroll_area)
+    sidebar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+    scroll_area.setWidget(sidebar)
+    main_window.main_h_layout.addWidget(scroll_area)
 
     # Create the central stacked widget
     main_window.central_stacked_widget = QStackedWidget()
@@ -57,12 +65,15 @@ def setup_ui(main_window):
     if hasattr(main_window, "mu_analysis_page") and main_window.mu_analysis_page is not None:
         main_window.central_stacked_widget.addWidget(main_window.mu_analysis_page)
 
+    if hasattr(main_window, "decomposition_page") and main_window.decomposition_page is not None:
+        main_window.central_stacked_widget.addWidget(main_window.decomposition_page)
+    else:
+        main_window.decomposition_page = create_placeholder_page("Decomposition Page", main_window)
+        main_window.central_stacked_widget.addWidget(main_window.decomposition_page)
+
     # Placeholder pages
     main_window.manual_editing_page = create_placeholder_page("Manual Editing Page", main_window)
     main_window.central_stacked_widget.addWidget(main_window.manual_editing_page)
-
-    main_window.decomposition_page = create_placeholder_page("Decomposition Page", main_window)
-    main_window.central_stacked_widget.addWidget(main_window.decomposition_page)
 
     main_window.main_h_layout.addWidget(main_window.central_stacked_widget, 1)
 

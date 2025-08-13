@@ -5,44 +5,175 @@
 A Python-based application for High-Density Electromyography (HDEMG) signal analysis with motor unit decomposition, visualization, and editing capabilities.
 
 Original matlab code the application is based off:
-https://github.com/simonavrillon/MUedit 
+https://github.com/simonavrillon/MUedit
 Drive containing data files used for testing:
 https://drive.google.com/drive/folders/1nIpH1ksYWE-vQplEtilz843h2BuCuDmy
 
-## Dockerized Application
-
-This application has been dockerized to allow for easy deployment and use on any system with Docker installed, eliminating the need to install dependencies locally. The application runs entirely inside the container and is accessed through your web browser or a VNC client.
 
 ### Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/)
-- [Docker Compose](https://docs.docker.com/compose/install/) (optional but recommended)
-- A web browser or VNC client
+- Python 3.13+
+- Pip 25.1+
 
 ### Quick Start Guide
 
-#### The Easy Way (Using the Scripts)
+#### The Easy Way [NO docker] (to be scripted)
 
 1. Clone this repository:
 
    ```bash
    git clone git@github.com:unsw-cse-comp99-3900/capstone-project-2025-t1-25t1-3900-w16a-celery.git
-   cd capstone-project-2025-11-25t1-3900-w16a-celery
+   cd capstone-project-2025-11-25t1-3900-w16a-celery [TO BE REPLACED]
    ```
 
-2. Run the application:
+2. Ensure Python 3.13 or higher is installed
 
-   - **Linux/macOS**: Make the script executable and run it
-     ```bash
-     chmod +x run-hdemg.sh
-     ./run-hdemg.sh
-     ```
-   - **Windows**: Double-click on `run-hdemg.bat`
+   ```bash
+   python --version
+   ```
 
-3. Access the application:
-   - Open your web browser and navigate to: http://localhost:6080/vnc.html
-   - Click the "Connect" button
-   - You'll see the HDEMG Analysis Tool running in your browser
+3. Ensure Pip 25.1 or higher is installed
+
+   ```bash
+   pip --version
+   ```
+
+4. Create virtual environment
+
+   ```bash
+   python -m venv .venv
+   ```
+
+5. Activate the virtual environment
+
+   ```bash
+   Windows:
+   .venv\Scripts\activate
+   ```
+
+   ```bash
+   Linux/MacOS:
+   source myenv/bin/activate
+   ```
+
+6. Install base requirements
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+7. Install gpu requirements (ONLY if you have windows and nvidia gpu) - For cuda-enabled SCD
+
+   ```bash
+   pip install -r requirements-gpu.txt
+   ```
+
+8. Run the application:
+
+   ```bash
+   cd src
+   python main.py
+   ```
+   
+### Running MUedit Comparison Tests
+
+We have some tests that pyMUEdit's results match those of MUedit, not all of which pass yet.
+
+All of these tests require you to first install MATLAB (plus the Image Processing, Signal Processing, and Statistics and Machine Learning toolboxes), download MUedit, and add MUedit's `lib` folder to MATLAB's path.
+
+#### Per-Function Tests
+
+These tests make sure that individual functions in pyMUEdit behave the same as their equivalents in MUedit.
+
+To run:
+
+```sh
+cd tests
+/path/to/matlab -nodisplay -nosplash -nodesktop -r "run('gen_inputs.m'); exit()"
+python testMUeditfunctions2.py
+```
+
+#### Result Tests
+
+These tests (which do not yet pass) make sure that that the results of pyMUEdit, both intermediate and final, match those of MUedit.
+
+To generate the results for comparison:
+
+```sh
+cd tests
+/path/to/matlab -nodisplay -nosplash -nodesktop -r "run('gen_muedit_output.m'); exit()"
+python ../src/run_decomposition.py --output-dir python_output trial1_20MVC.otb+
+```
+
+To compare the intermediate results:
+
+```sh
+cd tests
+python testMUeditIntermediate.py
+```
+
+To compare the final results:
+
+```sh
+cd tests
+python testMUeditOutput.py
+```
+
+## Application Features
+
+### Importing Data
+To begin, drag and drop or use the file selection UI to choose a `.otb+` or `.mat` file.\
+The page will then display an aggregate graph of each electrode reading, each electrode being visible by using the left and right arrows.\
+Importing a file also enables the **Set Configuration** (only on `.otb+` files), **Segment Session** (shortly after processing the file) and **Channel Viewer** buttons, which provide data modification, segmenting and viewing functionality respectively.
+
+#### Set Configuration
+Set Configuration contains a visualisation of the Quattrocento tool used for recording HDEMG signals. The left and right sidebars contain each of the inputs on the Quattrocento, displaying which are enabled or disabled which can be toggled with the checkboxes in the top left corner of each input box. The visualisation in the center provides a summary of which inputs are active (green when active, red when not) and responds to input changes. The following can be signal data can be modified:
+- **Array type:** the electrode grid type used to collect the signal, which varies in arrangement and number of electrodes. If the selected array type does not correspond to the provided signal the decomposition will fail.
+- **Muscle name:** a label used to indicate where a group of signals originate from, which can be helpful in correlating signal output to specific muscles.
+- **Number of channels:** allows for the recorded number of channels to be specified if modification has occurred.
+
+Click ‘Done’ when configuration is complete for changes to be applied to data.
+
+#### Segment Session
+Segment session provides the capability to inspect the imported EMG recording and either concatenate selected segments or split them into separate `.mat` files.
+1. To begin, select the *auxiliary channel* you would like to display for segmentation.
+2. Select a *segmentation method*:\
+   a. **Automatic:** set a threshold to segment the session (two same-coloured lines mark the borders for each window)
+
+   <img src="./src/public/automatic-segment-selection.jpg" alt="Automatic Segment Selection" width="500" height="400">
+
+   b. **Manual:** set the number of windows to select regions of interest (drag-and-drop and resize windows to determine ROIs)
+
+   <img src="./src/public/manual-segment-selection.jpg" alt="Manual Segment Selection" width="500" height="400">
+
+3. Choose output option:\
+   a. **Concatenate:** merge selected windows, deleting the data between selected regions.
+   b. **Split:** save each selected window as a separate `.mat` file
+
+Note: All segmented files will be populated in the **'Recent Files'** panel for easy access.
+
+
+#### Channel Viewer
+Channel Viewer provides an interactive interface for exploring and managing signal channels in the HD-EMG dataset.\
+It provides you with the following features:
+- **Channel Viewing:**
+   - When opened, the panel displays all available channel signals in the uploaded EMG recording.
+- **Channel Selection:**
+   - Toggle the checkboxes next to each channel to either include or exclude channels from the decomposition process.
+   - This can be used to remove channels with poor signal-to-noise ratio or to refine the decomposition target by selecting only relevant channels.
+- **Adjustable Pagination:**
+   - Control how many channel signals are displayed per page
+- **Electrode Grid:**
+   - Visualise all channels in their respective electrode grid configuration, providing the capability to navigate to particular channels via their grid config.
+
+
+<img src="./src/public/channel-viewer.jpg" alt="Manual Segment Selection" width="500" height="400">
+
+
+## Dockerized Application
+
+This application has been dockerized to allow for easy deployment and use on any system with Docker installed, eliminating the need to install dependencies locally. The application runs entirely inside the container and is accessed through your web browser or a VNC client.
+
 
 #### Manual Setup
 

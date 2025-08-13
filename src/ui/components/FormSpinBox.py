@@ -41,8 +41,8 @@ class FormSpinBox(FormField):
         down_arrow_path = ICONS_PATH / "down_arrow_icon.svg"
 
         self.spinbox = QSpinBox()
-        self.spinbox.setValue(value)
         self.spinbox.setRange(min_value, max_value)
+        self.spinbox.setValue(value)
         self.spinbox.setStyleSheet(
             f"""
             QSpinBox {{

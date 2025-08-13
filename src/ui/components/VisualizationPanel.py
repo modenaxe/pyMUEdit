@@ -12,12 +12,12 @@ class VisualizationPanel(CleanCard):
     or other visualization widgets.
     """
 
-    def __init__(self, title, plot_widget=None, parent=None):
+    def __init__(self, title=None, plot_widget=None, parent=None):
         """
         Initialize a visualization panel
 
         Args:
-            title (str): The title for the panel
+            title (str, optional): The title for the panel
             plot_widget (QWidget, optional): The plot widget to add
             parent (QWidget, optional): Parent widget
         """
@@ -28,10 +28,14 @@ class VisualizationPanel(CleanCard):
         self.panel_layout.setContentsMargins(0, 0, 0, 0)
         self.panel_layout.setSpacing(10)
 
-        # Create header
-        self.header = SectionHeader(title)
-        self.panel_layout.addWidget(self.header)
-        self.title_label = self.header.title_label
+        # Create header if title provided
+        if title:
+            self.header = SectionHeader(title)
+            self.panel_layout.addWidget(self.header)
+            
+        else:
+            self.panel_layout.setContentsMargins(0, 10, 0, 0)
+
         # Add plot widget if provided
         if plot_widget:
             self.plot_widget = plot_widget

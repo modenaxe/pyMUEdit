@@ -5,6 +5,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QFrame, QLabel, QVBoxLayout
 
+from core.utils.config_and_input.filesize_formatter import filesize_formatter
+
 from .CleanTheme import CleanTheme
 from .DatasetItem import DatasetItem
 from .SectionHeader import SectionHeader
@@ -148,12 +150,11 @@ class Sidebar(QFrame):
         from PyQt5.QtGui import QCursor
 
         for filename in recent_files:
-            # Calculate file size (for demonstration)
-            file_size = "2.4 MB"  # Placeholder
-            metadata = f"{file_size}"
+            size_str = filesize_formatter(filename)
 
             # Create dataset item
-            dataset_item = DatasetItem(filename, metadata, True)
+            basename = os.path.basename(filename)
+            dataset_item = DatasetItem(basename, size_str, True)
 
             # Make the dataset item clickable
             dataset_item.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))

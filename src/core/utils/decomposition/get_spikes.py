@@ -26,7 +26,7 @@ def get_spikes(w_n, Z, fsamp):
         spikes = peaks[np.where(kmeans.labels_ == spikes_ind)]
 
         # remove outliers from the spikes cluster with a std-based threshold
-        spikes = spikes[source_pred[spikes] <= np.mean(source_pred[spikes]) + 4 * np.std(source_pred[spikes])]
+        spikes = spikes[source_pred[spikes] <= np.mean(source_pred[spikes]) + 3 * np.std(source_pred[spikes], ddof=1)]
     else:
         spikes = peaks
 
