@@ -22,12 +22,12 @@ import numpy as np
 from scipy.io import loadmat
 
 # === File Paths (CHANGE AS NEEDED) ===
-FILE_1 = 'ActualFinalOut20_10iters.mat' #pymuedit output
-FILE_2 = 'ExpFinalOut20-10_iters.mat'   #muedit output
+FILE_1 = 'python_output/trial1_20MVC_decomp.mat' #pymuedit output
+FILE_2 = 'matlab_output/trial1_20MVC_decomp.mat'   #muedit output
 
 # === fields to compare inside the 'signal' struct (some i have left out as they are unlikely to change (i.e. fsamp, IED, etc))===
 FIELDS_TO_COMPARE = [
-    'data', 'auxiliary', 'path', 'target',
+    'data', 'auxiliary', 'path', 'target', 'parameters',
     'coordinates', 'EMGmask', 'Pulsetrain', 'Dischargetimes'
 ]
 

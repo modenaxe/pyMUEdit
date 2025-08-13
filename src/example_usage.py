@@ -47,7 +47,7 @@ def main():
     # Print information about the signal
     print("\nSignal Information:")
     print(f"Sampling frequency: {signal_dict['fsamp']} Hz")
-    print(f"Number of electrodes: {signal_dict['nelectrodes']}")
+    print(f"Number of electrodes: {signal_dict['ngrid']}")
     print(f"Signal duration: {signal_dict['target'].shape[0] / signal_dict['fsamp']:.2f} seconds")
     
     # Print information about the motor units

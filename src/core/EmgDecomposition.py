@@ -61,9 +61,40 @@ class EMG:
         self.cov_thr = 0.5  # Threshold for CoV values when discarding MUs after two fastICA phases
         self.cov_filter = 1
         self.dup_thr = 0.3  # Correlation threshold for defining a pair of spike trains as derived from the same MU
+        self.cov_disch_rate_thr = 0.3
         self.refine_mu = 1
         self.dup_bgrids = 0
         print(f"EMG initialization parameters: its={self.its}, sil_thr={self.sil_thr}, cov_thr={self.cov_thr}")
+
+    def apply_muedit_params(self, parameters):
+        """Apply parameters in the format MUedit expects to this object."""
+        # Map iteration parameters
+        self.its = parameters.get("NITER", 75)
+        self.windows = parameters.get("nwindows", 1)
+
+        # Map mode flags
+        self.ref_exist = parameters.get("ref_exist", 1)
+        self.check_emg = parameters.get("checkEMG", 0)
+        self.drawing_mode = parameters.get("drawingmode", 1)
+        self.differential_mode = parameters.get("differentialmode", 0)
+        self.peel_off = parameters.get("peeloff", 0)
+        self.initialisation = parameters.get("initialization", 0)
+        self.cov_filter = parameters.get("covfilter", 1)
+        self.refine_mu = parameters.get("refineMU", 1)
+        self.dup_bgrids = parameters.get("duplicatesbgrids", 0)
+
+        # Map thresholds
+        self.sil_thr = parameters.get("silthr", 0.9)
+        self.cov_thr = parameters.get("covthr", 0.5)
+        self.dup_thr = parameters.get("duplicatesthresh", 0.3)
+        self.target_thres = parameters.get("thresholdtarget", 0.8)
+        self.ext_factor = parameters.get("nbextchan", 1000)
+        self.edges2remove = parameters.get("edges", 0.5)
+        self.cov_disch_rate_thr = parameters.get("CoVDR", 0.3)
+
+        # TODO: apply rest of params:
+        # - contrastfunc, currently passed as arg
+        # - peeloffwin, currently hardcoded in peel_off.py
 
 
 #######################################################################################################
@@ -78,7 +109,7 @@ class offline_EMG(EMG):
         self.save_dir = save_dir  # directory at which final discharges will be saved
         self.to_filter = to_filter  # whether or not you notch and butter filter the
         self.debug_dir = os.path.join(save_dir, "debug_outputs")  # directory for intermediate outputs
-        self.save_intermediate = True  # flag to enable/disable saving intermediate outputs
+        self.save_intermediate = False  # flag to enable/disable saving intermediate outputs
 
         # Create debug directory if it doesn't exist
         if not os.path.exists(self.debug_dir):
@@ -636,7 +667,7 @@ class offline_EMG(EMG):
                 )
 
             ################# MINIMISATION OF COV OF DISCHARGES ############################
-            if len(spikes) > 1:
+            if len(spikes) > 10:
                 # determine the interspike interval
                 ISI = np.diff(spikes / self.signal_dict["fsamp"])
                 # determine the coefficient of variation
@@ -706,11 +737,12 @@ class offline_EMG(EMG):
                     Z = peel_off(Z, spikes, self.signal_dict["fsamp"])
 
                     # Save peel off results
-                    if self.save_intermediate:
-                        self.save_intermediate_output(
-                            {"Z_before_peel": Z_before_peel, "Z_after_peel": Z.copy()},
-                            "fast_ICA_and_CKC", g, interval, i+2, 11
-                        )
+                    # very slow
+                    # if self.save_intermediate:
+                    #     self.save_intermediate_output(
+                    #         {"Z_before_peel": Z_before_peel, "Z_after_peel": Z.copy()},
+                    #         "fast_ICA_and_CKC", g, interval, i+2, 11
+                    #     )
 
                 print(
                     f"Iteration {i+1}/{self.its} - SIL: {self.decomp_dict['SILs'][interval, i]:.4f}, "
@@ -918,7 +950,7 @@ class offline_EMG(EMG):
             if self.refine_mu:
                 # removing outliers generating irrelvant discharge rates
                 discharge_times_new = remove_outliers(
-                    pulse_trains_new, discharge_times_new, self.signal_dict["fsamp"], self.cov_thr
+                    pulse_trains_new, discharge_times_new, self.signal_dict["fsamp"], self.cov_disch_rate_thr
                 )
 
                 # Save outlier removal results
@@ -954,7 +986,7 @@ class offline_EMG(EMG):
 
                 # removing outliers second pass
                 discharge_times_new = remove_outliers(
-                    pulse_trains_new, discharge_times_new, self.signal_dict["fsamp"], self.cov_thr
+                    pulse_trains_new, discharge_times_new, self.signal_dict["fsamp"], self.cov_disch_rate_thr
                 )
 
                 # Save second outlier removal results
@@ -1323,3 +1355,168 @@ class offline_EMG(EMG):
             )
 
         print("Processing across electrodes complete")
+
+    # TODO: merge these, right now they've just been pulled out of their previous
+    # tightly-coupled homes (DecompositionWorker and DecompositionApp) without any
+    # modification.
+    def format_results_1(self):
+        """Format results from offline_EMG to match MUedit's expected format."""
+        # Create a clean output structure
+        result = {}
+
+        # Copy essential fields from the original signal
+        for field in self.signal_dict:
+            if field not in [
+                "batched_data",
+                "extend_obvs",
+                "extend_obvs_old",
+                "filtered_data",
+                "sq_extend_obvs",
+                "inv_extend_obvs",
+                "diff_data",
+            ]:
+                result[field] = self.signal_dict[field]
+
+        # Add spatial information
+        if hasattr(self, "coordinates"):
+            result["coordinates"] = self.coordinates
+        if hasattr(self, "ied"):
+            result["IED"] = self.ied
+            if hasattr(self, "rejected_channels"):
+                result["EMGmask"] = self.rejected_channels
+
+        # Format pulse trains and discharge times using the exact format expected by MUedit
+        result["Pulsetrain"] = {}
+        result["Dischargetimes"] = {}
+
+        if len(self.mu_dict["pulse_trains"]) > 0:
+            for electrode, pulse_trains in enumerate(self.mu_dict["pulse_trains"]):
+                if isinstance(pulse_trains, np.ndarray) and pulse_trains.shape[0] > 0:
+                    result["Pulsetrain"][electrode] = pulse_trains
+
+                    # Check if discharge_times is available for this electrode
+                    if electrode < len(self.mu_dict["discharge_times"]):
+                        for mu, discharge_times in enumerate(self.mu_dict["discharge_times"][electrode]):
+                            if discharge_times is not None and len(discharge_times) > 0:
+                                result["Dischargetimes"][(electrode, mu)] = discharge_times
+
+        return result
+
+def format_results_2(result):
+    """
+    Returns the results of decomposition in the same format as MATLAB's `signal`
+    structure.
+    """
+    formatted_result = result.copy() if isinstance(result, dict) else result
+
+    # Format Pulsetrain as a MATLAB-compatible cell array
+    if "Pulsetrain" in formatted_result:
+        max_electrode = max(formatted_result["Pulsetrain"].keys()) if formatted_result["Pulsetrain"] else 0
+
+        pulsetrain_obj = np.empty((1, max_electrode + 1), dtype=object)
+
+        # Fill the array with pulse trains
+        for i in range(max_electrode + 1):
+            if i in formatted_result["Pulsetrain"]:
+                pulsetrain_obj[0, i] = formatted_result["Pulsetrain"][i]
+            else:
+                signal_width = formatted_result["data"].shape[1] if "data" in formatted_result else 0
+                pulsetrain_obj[0, i] = np.zeros((0, signal_width))
+
+        # Replace dictionary with object array
+        formatted_result["Pulsetrain"] = pulsetrain_obj
+
+    # Format Dischargetimes as a MATLAB-compatible cell array
+    if "Dischargetimes" in formatted_result:
+        max_electrode = 0
+        max_mu = 0
+
+        for key in formatted_result["Dischargetimes"].keys():
+            if isinstance(key, tuple) and len(key) == 2:
+                electrode, mu = key
+                max_electrode = max(max_electrode, electrode)
+                max_mu = max(max_mu, mu)
+
+        dischargetimes_obj = np.empty((max_electrode + 1, max_mu + 1), dtype=object)
+
+        # Initialize all cells with empty arrays
+        for i in range(max_electrode + 1):
+            for j in range(max_mu + 1):
+                dischargetimes_obj[i, j] = np.array([], dtype=int)
+
+        # Fill with actual discharge times
+        for key, value in formatted_result["Dischargetimes"].items():
+            if isinstance(key, tuple) and len(key) == 2:
+                electrode, mu = key
+                dischargetimes_obj[electrode, mu] = value
+
+        formatted_result["Dischargetimes"] = dischargetimes_obj
+
+    # Format other arrays properly for MATLAB compatibility
+    for field_name in ["gridname", "muscle", "auxiliaryname"]:
+        if field_name in formatted_result:
+            field_data = formatted_result[field_name]
+            field_obj = np.empty((1, len(field_data)), dtype=object)
+
+            # Fill the array with the field data
+            for i, item in enumerate(field_data):
+                field_obj[0, i] = str(item)
+
+            formatted_result[field_name] = field_obj
+
+    # Format coordinates and EMG mask
+    if "coordinates" in formatted_result:
+        coordinates = formatted_result["coordinates"]
+        ngrid = formatted_result.get("ngrid", 1)
+
+        coord_obj = np.empty((1, ngrid), dtype=object)
+
+        # Process list of coordinates arrays
+        for i, coord in enumerate(coordinates):
+            if i < ngrid:
+                if isinstance(coord, np.ndarray):
+                    if coord.ndim == 2 and coord.shape[1] == 2:
+                        coord_obj[0, i] = coord
+                    else:
+                        coord_obj[0, i] = np.reshape(coord, (-1, 2))
+                else:
+                    coord_obj[0, i] = np.array(coord).reshape(-1, 2)
+
+        # Fill any empty cells with default
+        for i in range(ngrid):
+            if coord_obj[0, i] is None:
+                coord_obj[0, i] = np.zeros((0, 2))
+
+        formatted_result["coordinates"] = coord_obj
+
+    if "EMGmask" in formatted_result:
+        emgmask = formatted_result["EMGmask"]
+        ngrid = formatted_result.get("ngrid", 1)
+
+        mask_obj = np.empty((1, ngrid), dtype=object)
+
+        # Process list of mask arrays
+        for i, mask in enumerate(emgmask):
+            if i < ngrid:
+                if isinstance(mask, np.ndarray):
+                    if mask.ndim == 1:
+                        mask_obj[0, i] = mask.reshape(-1, 1)
+                    elif mask.ndim == 2 and mask.shape[1] == 1:
+                        mask_obj[0, i] = mask
+                    else:
+                        mask_obj[0, i] = mask.flatten().reshape(-1, 1)
+                else:
+                    mask_obj[0, i] = np.array(mask).flatten().reshape(-1, 1)
+
+        # Fill any empty cells with default (empty) mask arrays
+        for i in range(ngrid):
+            if mask_obj[0, i] is None:
+                if "coordinates" in formatted_result and formatted_result["coordinates"][0, i] is not None:
+                    coord_len = formatted_result["coordinates"][0, i].shape[0]
+                    mask_obj[0, i] = np.zeros((coord_len, 1), dtype=int)
+                else:
+                    mask_obj[0, i] = np.zeros((0, 1), dtype=int)
+
+        formatted_result["EMGmask"] = mask_obj
+
+    return formatted_result
