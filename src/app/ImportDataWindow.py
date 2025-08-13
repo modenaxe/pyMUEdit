@@ -264,6 +264,7 @@ class ImportDataWindow(QMainWindow):
             self.preview_plot.setTitle("Invalid electrode selected")
             return
 
+        electrode_grid_name = self.emg_obj.signal_dict["gridname"][selected_electrode_idx]
         # Determine channel indices for selected electrode
         start_index = sum(chans_per_electrode[:self.cur_electrode_preview_idx])
         end_index = start_index + chans_per_electrode[self.cur_electrode_preview_idx]
@@ -289,7 +290,7 @@ class ImportDataWindow(QMainWindow):
         # Plot the average signal
         self.preview_plot.plot(mean_trace, pen=pg.mkPen(color="r", width=2))
 
-        self.preview_plot.setTitle(f"Electrode {selected_electrode_idx + 1}: {len(valid_indices)} valid channels")
+        self.preview_plot.setTitle(f"Electrode Grid {selected_electrode_idx + 1}, {electrode_grid_name} ({len(valid_indices)} valid channels)")
 
     def get_n_chans_per_electrode(self):
         grid_names = self.emg_obj.signal_dict["gridname"]
