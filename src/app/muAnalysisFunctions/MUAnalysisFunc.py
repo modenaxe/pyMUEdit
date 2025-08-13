@@ -2,13 +2,37 @@ from PyQt5.QtWidgets import QMessageBox
 
 
 class MUAnalysisFunc:
+    """Functionality handler for motor unit analysis operations.
+
+    Provides methods for manipulating motor unit data including
+    removal of specified MUs and data validation checks.
+    """
+
     def __init__(self):
+        """Initialize the MU analysis functionality handler."""
         self.MUedition = None
 
     def data_loaded(self):
+        """Check if MU edition data is currently loaded.
+
+        Returns:
+            Boolean indicating whether MUedition data is available
+        """
         return self.MUedition is not None
 
     def remove_mus_by_range(self, input_text):
+        """Remove motor units specified by input text with array-MU format.
+
+        Args:
+            input_text: String specifying MUs to remove in format:
+                       - Single MU: "array-mu" (e.g., "1-5" removes MU 5 from array 1)
+                       - Range: "array-start-end" (e.g., "1-3-7" removes MUs 3-7 from array 1)
+                       - Multiple: comma-separated (e.g., "1-5,2-3-6")
+
+        Removes specified motor units from the Pulsetrain data and updates
+        associated dictionaries (Dischargetimes, silval, silvalcon) accordingly.
+        Indices are 1-based in input but converted to 0-based internally.
+        """
         mus_to_remove = []
         parts = input_text.split(",")
         for part in parts:

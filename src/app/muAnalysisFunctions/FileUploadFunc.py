@@ -1,5 +1,6 @@
 import sys
 import matplotlib
+
 matplotlib.use("Qt5Agg")
 from PyQt5.QtWidgets import QFileDialog, QLabel, QMessageBox, QDialog
 from scipy.io import loadmat
@@ -22,8 +23,8 @@ from PyQt5.QtGui import QFont
 from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
-class FileUploadFunc:
 
+class FileUploadFunc:
     """Methods for handling the emgFile and its intital display to centre"""
 
     # global instance of file
@@ -40,12 +41,32 @@ class FileUploadFunc:
         self.error = 1
         self.mvc_value = None
         self.json = False
-        self.unsortedFile = None # store unsorted file version here
+        self.unsortedFile = None  # store unsorted file version here
 
     def data_loaded(self):
+        """Check if an EMG file is currently loaded.
+
+        Returns:
+            Boolean indicating whether FileUploadFunc.file contains valid data
+        """
         return FileUploadFunc.file is not None
 
     def remove_mus_by_range(self, input_text):
+        """Remove motor units specified by input text from the loaded EMG file.
+
+        Args:
+            input_text: String specifying MUs to remove in format:
+                       - Single MU: "5" (removes MU 5)
+                       - Range: "3-7" (removes MUs 3,4,5,6,7)
+                       - Multiple: "1,3-5,8" (removes MUs 1,3,4,5,8)
+
+        Updates all related data structures including BINARY_MUS_FIRING, IPTS,
+        MUPULSES, ACCURACY, and NUMBER_OF_MUS. Indices are 1-based in input
+        but converted to 0-based internally for array operations.
+
+        Raises:
+            ValueError: If no file is loaded or input format is invalid
+        """
         if not self.data_loaded():
             raise ValueError("No file loaded.")
 
@@ -122,7 +143,7 @@ class FileUploadFunc:
         if json:
             self.json = True
             file_path, _ = file_dialog.getOpenFileName(
-            None, "Select file", "", "JSON Files (*.json);;All Files (*.*)"
+                None, "Select file", "", "JSON Files (*.json);;All Files (*.*)"
             )
         else:
             file_path, _ = file_dialog.getOpenFileName(
@@ -152,7 +173,6 @@ class FileUploadFunc:
         elif self.error:
             ErrorDialog("Loaded File has errors", "Error").exec_()
 
-
     def emg_from_json(self, filepath):
         """from openHDEMG but edited to sort and store file (this is for json files for testing)
         Params: filepath
@@ -165,21 +185,21 @@ class FileUploadFunc:
         if source in ["DEMUSE", "OTB", "CUSTOMCSV", "DELSYS"]:
             raw_signal = pd.read_json(
                 StringIO(jsonemgfile["RAW_SIGNAL"]),
-                orient='split',
+                orient="split",
             )
             raw_signal.columns = raw_signal.columns.astype(int)
             raw_signal.index = raw_signal.index.astype(int)
             raw_signal.sort_index(inplace=True)
             ref_signal = pd.read_json(
                 StringIO(jsonemgfile["REF_SIGNAL"]),
-                orient='split',
+                orient="split",
             )
             ref_signal.columns = ref_signal.columns.astype(int)
             ref_signal.index = ref_signal.index.astype(int)
             ref_signal.sort_index(inplace=True)
             accuracy = pd.read_json(
                 StringIO(jsonemgfile["ACCURACY"]),
-                orient='split',
+                orient="split",
             )
             try:
                 accuracy.columns = accuracy.columns.astype(int)
@@ -190,7 +210,7 @@ class FileUploadFunc:
                 )
             accuracy.index = accuracy.index.astype(int)
             accuracy.sort_index(inplace=True)
-            ipts = pd.read_json(StringIO(jsonemgfile["IPTS"]), orient='split')
+            ipts = pd.read_json(StringIO(jsonemgfile["IPTS"]), orient="split")
             ipts.columns = ipts.columns.astype(int)
             ipts.index = ipts.index.astype(int)
             ipts.sort_index(inplace=True)
@@ -203,12 +223,12 @@ class FileUploadFunc:
             number_of_mus = int(json.loads(jsonemgfile["NUMBER_OF_MUS"]))
             binary_mus_firing = pd.read_json(
                 StringIO(jsonemgfile["BINARY_MUS_FIRING"]),
-                orient='split',
+                orient="split",
             )
             binary_mus_firing.columns = binary_mus_firing.columns.astype(int)
             binary_mus_firing.index = binary_mus_firing.index.astype(int)
             binary_mus_firing.sort_index(inplace=True)
-            extras = pd.read_json(StringIO(jsonemgfile["EXTRAS"]), orient='split')
+            extras = pd.read_json(StringIO(jsonemgfile["EXTRAS"]), orient="split")
             emgfile = {
                 "SOURCE": source,
                 "FILENAME": filename,
@@ -228,12 +248,12 @@ class FileUploadFunc:
             fsamp = float(json.loads(jsonemgfile["FSAMP"]))
             ref_signal = pd.read_json(
                 StringIO(jsonemgfile["REF_SIGNAL"]),
-                orient='split',
+                orient="split",
             )
             ref_signal.columns = ref_signal.columns.astype(int)
             ref_signal.index = ref_signal.index.astype(int)
             ref_signal.sort_index(inplace=True)
-            extras = pd.read_json(StringIO(jsonemgfile["EXTRAS"]), orient='split')
+            extras = pd.read_json(StringIO(jsonemgfile["EXTRAS"]), orient="split")
 
             emgfile = {
                 "SOURCE": source,
@@ -436,14 +456,14 @@ class FileUploadFunc:
         try:
             mat_file = loadmat(filepath, simplify_cells=True)
             valid_versions = [
-            "1.5.3.0",
-            "1.5.4.0",
-            "1.5.5.0",
-            "1.5.6.0",
-            "1.5.7.2",
-            "1.5.7.3",
-            "1.5.8.0",
-            "1.5.9.3",
+                "1.5.3.0",
+                "1.5.4.0",
+                "1.5.5.0",
+                "1.5.6.0",
+                "1.5.7.2",
+                "1.5.7.3",
+                "1.5.8.0",
+                "1.5.9.3",
             ]
             if version not in valid_versions:
                 raise ValueError(
@@ -501,11 +521,12 @@ class FileUploadFunc:
                 "EXTRAS": EXTRAS,
             }
             self.unsortedFile = emgfile
-            FileUploadFunc.file = self.sort_MUs(emgfile) # sort imported MUs by recruitment order by default
+            FileUploadFunc.file = self.sort_MUs(
+                emgfile
+            )  # sort imported MUs by recruitment order by default
             return 1
         except:
             return None
-        
 
     def plot_idr(
         self,
@@ -535,7 +556,7 @@ class FileUploadFunc:
         if isinstance(munumber, list) and len(munumber) == 1:
             munumber = munumber[0]
         figname = "aditi_unique_name"
-        plt.close() # This is to prevent plots from overlaying in centre on repeated uploads
+        plt.close()  # This is to prevent plots from overlaying in centre on repeated uploads
         fig, ax1 = plt.subplots(
             figsize=(figsize[0] / 2.54, figsize[1] / 2.54),
             num=figname,
@@ -592,7 +613,7 @@ class FileUploadFunc:
             ax2.set_zorder(0)
             ax1.set_zorder(1)
             ax1.patch.set_alpha(0)
-        canvas = SaveablePlot(fig) # plotting in centre with the data now handled
+        canvas = SaveablePlot(fig)  # plotting in centre with the data now handled
         analysis_plot.display_fig(canvas)
 
     def handle_reset_workflow(self, analysis_plot):
@@ -655,16 +676,16 @@ class FileUploadFunc:
         axes_kwargs=None,
         showimmediately=False,
     ):
-        """From OPENHDEMG. Plots the reference signal 
-        Params: 
-            - emgfile: the file 
-            - analysis_plot: instance used to plot fig in the centre 
-            - timeinseconds: boolean if you want the axis to be plotted in seconds 
-            - figsize: (legacy code) defines the size of the plot, but now it's 
-            plotted in the centre 
-            - tight_layout: specifies different UI for the plot 
-            - line2d_kwargs_ax1: keyword arguments for line2d objects 
-            - axes_kwargs: keyword arguments for axes styling 
+        """From OPENHDEMG. Plots the reference signal
+        Params:
+            - emgfile: the file
+            - analysis_plot: instance used to plot fig in the centre
+            - timeinseconds: boolean if you want the axis to be plotted in seconds
+            - figsize: (legacy code) defines the size of the plot, but now it's
+            plotted in the centre
+            - tight_layout: specifies different UI for the plot
+            - line2d_kwargs_ax1: keyword arguments for line2d objects
+            - axes_kwargs: keyword arguments for axes styling
             - showimmediately: (legacy code) plots it immediately, but this function now defaults to plotting it immediately
         """
         if isinstance(emgfile["REF_SIGNAL"], pd.DataFrame):
@@ -681,7 +702,7 @@ class FileUploadFunc:
             x_axis = refsig.index
 
         figname = "Reference Signal Graph"
-        plt.close() 
+        plt.close()
         fig, ax1 = plt.subplots(
             figsize=(figsize[0] / 2.54, figsize[1] / 2.54),
             num=figname,
@@ -692,7 +713,7 @@ class FileUploadFunc:
         ax1.set_ylabel("MVC")
         ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
 
-        # Plotting 
+        # Plotting
         canvas = SaveablePlot(fig)
         analysis_plot.display_fig(canvas)
 
@@ -759,16 +780,18 @@ class FileUploadFunc:
 
         # Sort BINARY_MUS_FIRING (multiple columns, sort by columns,
         # then reset columns' name)
-        sorted_emgfile["BINARY_MUS_FIRING"] = sorted_emgfile["BINARY_MUS_FIRING"].reindex(
-            columns=sorting_order
+        sorted_emgfile["BINARY_MUS_FIRING"] = sorted_emgfile[
+            "BINARY_MUS_FIRING"
+        ].reindex(columns=sorting_order)
+        sorted_emgfile["BINARY_MUS_FIRING"].columns = np.arange(
+            emgfile["NUMBER_OF_MUS"]
         )
-        sorted_emgfile["BINARY_MUS_FIRING"].columns = np.arange(emgfile["NUMBER_OF_MUS"])
 
         for origpos, newpos in enumerate(sorting_order):
             sorted_emgfile["MUPULSES"][origpos] = emgfile["MUPULSES"][newpos]
 
         return sorted_emgfile
-    
+
     def updateEMGFile(self, emgfile):
-            print(f"updating original file")
-            FileUploadFunc.file = emgfile
+        print(f"updating original file")
+        FileUploadFunc.file = emgfile

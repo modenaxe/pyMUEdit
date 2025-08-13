@@ -13,6 +13,7 @@ from ui.components.muAnalysisComponents.AnalysisDropdown import \
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
+from ui.components.muAnalysisComponents.SubsectionTitle import SubsectionTitle
 from ui.muanalysis.PIC import PICDialog
 
 
@@ -25,7 +26,7 @@ class AdvancedTools(QWidget):
         adv_layout = QVBoxLayout(self)
         adv_layout.setContentsMargins(10, 0, 10, 0)
         # the title
-        advanced_label = AnalysisText.create_subtitle("ADVANCED TOOLS")
+        advanced_label = SubsectionTitle("ADVANCED TOOLS")
         adv_layout.addWidget(advanced_label)
 
         # declaring the dropdown options

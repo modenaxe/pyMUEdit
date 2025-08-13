@@ -32,6 +32,7 @@ from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
+from ui.components.muAnalysisComponents.SubsectionTitle import SubsectionTitle
 from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import \
     PropertiesInnerDialogButton
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
@@ -685,7 +686,7 @@ class PlotEMGButton(QWidget):
         layout = QVBoxLayout(self)
 
         # Subtitle
-        subtitle_label = AnalysisText.create_subtitle("PLOT EMG")
+        subtitle_label = SubsectionTitle("PLOT EMG")
         subtitle_label.setObjectName("motorUnitAnalysisSubTitle")
         layout.addWidget(subtitle_label)
 
