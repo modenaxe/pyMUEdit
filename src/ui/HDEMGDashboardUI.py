@@ -46,6 +46,7 @@ def setup_ui(main_window):
     scroll_area.setWidgetResizable(True)
     scroll_area.setFixedWidth(180)
     CleanScrollBar.apply(scroll_area)
+    main_window.left_sidebar_scroll_area = scroll_area
     sidebar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
     scroll_area.setWidget(sidebar)
     main_window.main_h_layout.addWidget(scroll_area)
