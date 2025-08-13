@@ -38,12 +38,16 @@ from core.utils.manual_editing.h5_import import h5py_convert
 from core.utils.manual_editing.save_worker import Save_worker
 from core.utils.manual_editing.extendfilter import extendfilter
 from core.utils.manual_editing.selection_tools import SelectionTool, process_selection
+
 from core.utils.decomposition.remove_duplicates import remove_duplicates
 from core.utils.decomposition.remove_duplicates_between_arrays import remove_duplicates_between_arrays
 from core.utils.decomposition.extend_emg import extend_emg
 from core.utils.decomposition.whiten_emg import whiten_emg
+
 from core.utils.manual_editing.smart_button_pushed import smart_button_pushed
-from core.utils.manual_editing.BatchFilterWorker import BatchFilterWorker
+from core.utils.manual_editing.batch_filter_worker import batch_filter_worker
+from core.utils.manual_editing.duplicates_within_grids_worker import duplicates_within_grids_worker
+from core.utils.manual_editing.duplicates_between_grids_worker import duplicates_between_grids_worker
 
 # Import custom components
 from ui.components import (
@@ -408,7 +412,14 @@ class MUeditManual(QMainWindow):
                     self.import_decomposed_file(files)
             else:
                 if "edition" in files:
-                    self.import_h5py_edited_file(files)
+                    arr = files['edition']['Dischargetimes']
+                    if isinstance(arr, np.ndarray) and arr.shape == (2,) and arr.dtype == np.uint64:
+                        WarningDialog(text="We detected that the edition section does not contain any Dischargetimes data; therefore, it has fallen back to the unedited version.",
+                                enableHelpButton=False,
+                                enableCheckBox=False)
+                        self.import_h5py_decomposed_file(files)
+                    else:
+                        self.import_h5py_edited_file(files)
                 else:
                     self.import_h5py_decomposed_file(files)
             
@@ -604,6 +615,7 @@ class MUeditManual(QMainWindow):
                 # Give every MU a Flag tag
                 self.MUedition["edition"]["Flag"][array_idx].append(0)
     
+    
     def import_h5py_edited_file(self, files):
         """Import data from a new decomposition file that hasn't been edited yet."""
         self.MUedition = {"edition": {}, "signal": {}, "parameters": {}}
@@ -634,10 +646,16 @@ class MUeditManual(QMainWindow):
         # Copy Pulsetrain data
         pulsetrain_data = files["edition"]["Pulsetrain"]
 
+        
         # Handle as a 1D array
         for i in range(len(pulsetrain_data)):
-            self.MUedition["edition"]["Pulsetrain"].append(np.array(pulsetrain_data[i][0]).T)
-            
+            if isinstance(pulsetrain_data[i][0][0], float):
+                self.MUedition["edition"]["Pulsetrain"].append(np.array(pulsetrain_data[i]))
+            else:
+                self.MUedition["edition"]["Pulsetrain"].append(np.array(pulsetrain_data[i][0]).T)
+                
+        self.MUedition["signal"]["Pulsetrain"] = self.MUedition["edition"]["Pulsetrain"]
+        
         # Copy Dischargetimes
         dischargetimes_data = files["edition"]["Dischargetimes"]
         for i in range(len(dischargetimes_data)):
@@ -647,7 +665,7 @@ class MUeditManual(QMainWindow):
                 if len(dt) > 0:
                     # Flatten and store as tuple key (array_idx, mu_idx)
                     self.MUedition["edition"]["Dischargetimes"][(j, i)] = np.array(dt, dtype=int)
-
+        
         # Load SIL values for each motor unit
         for array_idx in range(len(files["edition"]["silval"][0])):
             # Give every MU array a Flag array
@@ -2411,7 +2429,7 @@ class MUeditManual(QMainWindow):
         progress.setMinimumDuration(0)
         progress.setValue(0)
 
-        self._filterWorker = BatchFilterWorker(
+        self._filterWorker = batch_filter_worker(
             self.MUedition,
             (
                 copy.deepcopy(self.MUedition["edition"]["Pulsetrain"]),
@@ -2546,69 +2564,27 @@ class MUeditManual(QMainWindow):
         progress.setMinimumDuration(0)
         progress.setValue(0)
 
-        # Extract the sampling frequency as a scalar
-        if self.MUedition["signal"]["fsamp"].ndim > 1:
-            fsamp = float(self.MUedition["signal"]["fsamp"][0, 0])
-        else:
-            fsamp = float(self.MUedition["signal"]["fsamp"][0])
+        self._duplicatesInGridsWorker = duplicates_within_grids_worker(
+            self.MUedition,
+            (
+                copy.deepcopy(self.MUedition["edition"]["Pulsetrain"]),
+                copy.deepcopy(self.MUedition["edition"]["Dischargetimes"]),
+                copy.deepcopy(self.MUedition["edition"]["silval"]),
+                copy.deepcopy(self.MUedition["edition"]["silvalcon"]),
+            ),
+            self
+        )
 
-        # Count total arrays
-        total_arrays = len(self.MUedition["edition"]["Pulsetrain"])
+        self._duplicatesInGridsWorker.progress_changed.connect(lambda val, text: (
+            progress.setValue(val), progress.setLabelText(text)
+        ))
+        # Update the current MU display
+        self._duplicatesInGridsWorker.finished.connect(lambda: (progress.close(), self.update_save_button(), self.mu_checkbox_state_changed()))
+        self._duplicatesInGridsWorker.error.connect(lambda msg: (progress.close(), print("Error:", msg)))
 
-        # Process each array
-        for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
-            progress.setValue(int(array_idx / total_arrays * 100))
-            progress.setLabelText(f"Processing Array #{array_idx + 1}")
-            QApplication.processEvents()
+        progress.canceled.connect(self._duplicatesInGridsWorker.cancel)
+        self._duplicatesInGridsWorker.start()
 
-            if progress.wasCanceled():
-                progress.close()
-                print("Batch processing interruption!")
-                return
-            
-            # Skip if there are no MUs
-            if self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0] == 0:
-                continue
-
-            # Create arrays for remduplicates
-            pulse_train = self.MUedition["edition"]["Pulsetrain"][array_idx]
-
-            discharge_times = []
-            for mu_idx in range(pulse_train.shape[0]):
-                if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
-                    discharge_times.append(self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx])
-                else:
-                    discharge_times.append(np.array([]))
-
-            # Remove duplicates
-            unique_discharge_times, unique_pulse_train, _ = remove_duplicates(
-                pulse_train,
-                discharge_times,
-                discharge_times,
-                np.zeros([np.shape(pulse_train)[0], np.shape(pulse_train)[1]]),  # Placeholder for mu_filters (not used)
-                round(fsamp / 40),
-                0.00025,
-                0.3,  # Duplicate threshold
-                fsamp,
-            )
-
-            # Replace with unique MUs
-            if isinstance(unique_pulse_train, list):
-                if len(unique_pulse_train) == 0:
-                    unique_pulse_train = unique_pulse_train
-                else:
-                    unique_pulse_train = np.stack(unique_pulse_train)
-            self.MUedition["edition"]["Pulsetrain"][array_idx] = unique_pulse_train
-
-            # Update discharge times and SIL values
-            for mu_idx in range(unique_pulse_train.shape[0]):  # type:ignore
-                self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = unique_discharge_times[mu_idx]
-                self.calculate_silval(array_idx, mu_idx)
-        progress.setValue(100)
-
-        self.update_save_button()
-        # Update the MU checkboxes
-        self.update_mu_checkboxes()
         # print(f"[DEBUG] Done: remove_duplicates_within_grids  (t={time.time()-t0:.2f}s)") # debug if this button real work moy
 
     def remove_duplicates_between_grids_button_pushed(self):
@@ -2629,97 +2605,27 @@ class MUeditManual(QMainWindow):
         progress.setMinimumDuration(0)
         progress.setValue(0)
 
-        # Extract the sampling frequency as a scalar
-        if self.MUedition["signal"]["fsamp"].ndim > 1:
-            fsamp = float(self.MUedition["signal"]["fsamp"][0, 0])
-        else:
-            fsamp = float(self.MUedition["signal"]["fsamp"][0])
-
-        # Count total arrays
-        total_arrays = len(self.MUedition["edition"]["Pulsetrain"])
-
-        # Count total MUs
-        mu_count = 0
-        for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
-            mu_count += self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]
-
-        # Create arrays for remduplicatesbgrids
-        all_pulse_trains = np.zeros((mu_count, self.MUedition["edition"]["time"].shape[0]))
-        all_discharge_times = []
-        muscle = np.zeros(mu_count, dtype=int)
-
-        # Collect all MUs
-        mu_idx_global = 0
-        for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
-            for mu_idx in range(self.MUedition["edition"]["Pulsetrain"][array_idx].shape[0]):
-                all_pulse_trains[mu_idx_global] = self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx]
-
-                if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
-                    all_discharge_times.append(self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx])
-                else:
-                    all_discharge_times.append(np.array([]))
-
-                muscle[mu_idx_global] = array_idx
-                mu_idx_global += 1
-
-        progress.setLabelText(f"Canculating duplicates....")
-        QApplication.processEvents()
-
-        # Remove duplicates between arrays
-        unique_discharge_times, unique_pulse_train, unique_muscle = remove_duplicates_between_arrays(
-            all_pulse_trains, all_discharge_times, muscle, round(fsamp / 40), 0.00025, 0.3, fsamp  # Duplicate threshold
+        self._duplicatesWithGridsWorker = duplicates_between_grids_worker(
+            self.MUedition,
+            (
+                copy.deepcopy(self.MUedition["edition"]["Pulsetrain"]),
+                copy.deepcopy(self.MUedition["edition"]["Dischargetimes"]),
+                copy.deepcopy(self.MUedition["edition"]["silval"]),
+                copy.deepcopy(self.MUedition["edition"]["silvalcon"]),
+            ),
+            self
         )
 
-        progress.setValue(50)
-        QApplication.processEvents()
-        
-        # Recreate data structures
-        new_pulsetrain = []
-        new_dischargetimes = {}
+        self._duplicatesWithGridsWorker.progress_changed.connect(lambda val, text: (
+            progress.setValue(val), progress.setLabelText(text)
+        ))
 
-        # Initialize arrays for each grid
-        for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
-            progress.setValue(int(array_idx / total_arrays * 50 + 50))
-            progress.setLabelText(f"Processing Array #{array_idx + 1}")
-            QApplication.processEvents()
+        # Update the current MU display
+        self._duplicatesWithGridsWorker.finished.connect(lambda: (progress.close(), self.update_save_button(), self.mu_checkbox_state_changed()))
+        self._duplicatesWithGridsWorker.error.connect(lambda msg: (progress.close(), print("Error:", msg)))
 
-            array_indices = np.where(unique_muscle == array_idx)[0]
-
-            if len(array_indices) > 0:
-                # Get pulse trains for this array
-                array_pulse_train = unique_pulse_train[array_indices]
-                new_pulsetrain.append(array_pulse_train)
-
-                # Get discharge times for this array
-                for mu_idx, global_idx in enumerate(array_indices):
-                    if global_idx < len(unique_discharge_times):
-                        new_dischargetimes[array_idx, mu_idx] = unique_discharge_times[global_idx]
-
-                    # Calculate SIL values
-                    self.calculate_silval(array_idx, mu_idx)
-            else:
-                # Add empty array
-                new_pulsetrain.append(
-                    np.zeros(
-                        (
-                            0,
-                            (
-                                unique_pulse_train.shape[1]
-                                if unique_pulse_train.shape[0] > 0
-                                else self.MUedition["edition"]["time"].shape[0]
-                            ),
-                        )
-                    )
-                )
-
-        # Update the data
-        self.MUedition["edition"]["Pulsetrain"] = new_pulsetrain
-        self.MUedition["edition"]["Dischargetimes"] = new_dischargetimes
-
-        progress.setValue(100)
-        self.update_save_button()
-        # Update the MU checkboxes
-        self.update_mu_checkboxes()
+        progress.canceled.connect(self._duplicatesWithGridsWorker.cancel)
+        self._duplicatesWithGridsWorker.start()
         # print(f"[DEBUG] Done: remove_duplicates_within_grids  (t={time.time()-t0:.2f}s)") # debug if this button real work moy
 
     # Visualization methods
@@ -3110,6 +3016,7 @@ class MUeditManual(QMainWindow):
                     safe_dict[k_str] = v_
                 edition[field] = json.dumps(safe_dict)
         
+        signal["Pulsetrain"] = edition["Pulsetrain"]
         del edition["Pulsetrain"]
         
         progress.setValue(100)
