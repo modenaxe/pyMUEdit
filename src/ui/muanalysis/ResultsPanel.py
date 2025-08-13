@@ -1,18 +1,14 @@
 import csv
-import sys
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QFont
-from PyQt5.QtWidgets import (QFileDialog, QFrame, QHBoxLayout, QLabel,
-                             QPushButton, QTableView, QVBoxLayout)
+from PyQt5.QtWidgets import (QFileDialog, QFrame, QTableView, QVBoxLayout, QDialog)
 
 from core.muAnalysisCore.AnalysisResultsHist import store
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.GeneralRedButton import \
-    GeneralRedButton
-
+from ui.components.muAnalysisComponents.GeneralRedButton import GeneralRedButton
+from ui.components.muAnalysisComponents.ConfirmationDialog import ConfirmationDialog
+from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
 class ResultsPanel(QFrame):
 
@@ -83,4 +79,13 @@ class ClearButton(GeneralRedButton):
         self.clicked.connect(lambda: self.clear_results())
 
     def clear_results(self):
-        store.clear_results()
+        if store.is_empty():
+            error_dialog = ErrorDialog("No Results to Clear", title="Error")
+            error_dialog.exec()
+            return
+        
+        confirm_dialog = ConfirmationDialog(
+            "This will clear the current results", "Confirm Clear Results"
+        )
+        if confirm_dialog.exec_() == QDialog.Accepted:
+            store.clear_results()
