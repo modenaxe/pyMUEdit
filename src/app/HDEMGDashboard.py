@@ -2,13 +2,11 @@ import sys
 import traceback
 import os
 import datetime
-from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QPushButton, QStyle, QWidget, QVBoxLayout
+from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QPushButton, QWidget, QVBoxLayout
 from PyQt5.QtCore import Qt
-import pyqtgraph as pg
 
 # Import UI setup function
 from ui.HDEMGDashboardUI import setup_ui, update_sidebar_selection
-from core.EmgDecomposition import offline_EMG
 
 # Import for external windows/widgets
 from app.ImportDataWindow import ImportDataWindow
@@ -28,6 +26,7 @@ class HDEMGDashboard(QMainWindow):
         self.mu_analysis_page = None
         self.manual_editing_page = None
         self.decomposition_page = None
+        self.decomp_app = None
 
         # Colors and recent items for demonstration
         self.colors = {
@@ -59,6 +58,9 @@ class HDEMGDashboard(QMainWindow):
         # Set up the UI (imported from main_window_ui.py)
         setup_ui(self)
 
+        # Create import view
+        self.create_import_view()
+
         # Now create the manual editing view
         self.create_manual_editing_view()
 
@@ -83,19 +85,10 @@ class HDEMGDashboard(QMainWindow):
             else:
                 print("WARNING: MotorUnitAnalysisWidget does not have 'set_export_window_opener' method.")
 
-        # Initialize Import Data page
-        if ImportDataWindow:
-            self.import_data_page = ImportDataWindow(parent=self)
-            # Use the correct windowflags
-            self.import_data_page.setWindowFlags(getattr(Qt.WindowType, "Widget"))
-            if hasattr(self.import_data_page, "return_to_dashboard_requested"):
-                self.import_data_page.return_to_dashboard_requested.connect(self.show_dashboard_view)
-            # Connect the new signal for decomposition
-            if hasattr(self.import_data_page, "decomposition_requested"):
-                self.import_data_page.decomposition_requested.connect(self.create_decomposition_view)
-            # Connect the fileImported signal to our recent datasets function
-            if hasattr(self.import_data_page, "fileImported"):
-                self.import_data_page.fileImported.connect(self.handle_file_imported)
+        if DecompositionApp:
+            self.decomposition_page = DecompositionApp()
+            self.decomposition_page.setWindowFlags(getattr(Qt.WindowType, "Widget"))
+
 
         # Note: Manual Editing page is now created after setup_ui in __init__
 
@@ -108,9 +101,45 @@ class HDEMGDashboard(QMainWindow):
         filename = file_info.get("filename", "Unknown file")
         pathname = file_info.get("pathname", "")
         filesize = file_info.get("filesize", None)
-        
+
         # Add to recent datasets
         self.add_recent_dataset(filename, pathname, filesize)
+
+    def create_import_view(self):
+        try:
+            # Create a wrapper widget to hold the import view
+            wrapper = QWidget()
+            wrapper.setObjectName("import_data_page_wrapper")
+            wrapper_layout = QVBoxLayout(wrapper)
+            wrapper_layout.setContentsMargins(0, 0, 0, 0)
+
+            # Initialize Import Data page
+            import_page = ImportDataWindow(parent=self)
+
+            # Set window flags to make it a widget instead of a window
+            import_page.setWindowFlags(Qt.WindowType.Widget)
+
+            if hasattr(import_page, "return_to_dashboard_requested"):
+                import_page.return_to_dashboard_requested.connect(self.show_dashboard_view)
+            # Connect the new signal for decomposition
+            if hasattr(import_page, "decomposition_requested"):
+                import_page.decomposition_requested.connect(self.create_decomposition_view)
+            # Connect the fileImported signal to our recent datasets function
+            if hasattr(import_page, "fileImported"):
+                import_page.fileImported.connect(self.handle_file_imported)
+
+            # Add to layout
+            wrapper_layout.addWidget(import_page)
+
+            # Replace the placeholder with our real import view
+            self.import_data_page = wrapper
+
+            # Add the wrapper to the stacked widget
+            self.central_stacked_widget.addWidget(wrapper)
+
+        except Exception as e:
+            print(f"Error creating import view: {e}")
+            traceback.print_exc()
 
     def create_manual_editing_view(self):
         """Creates a manual editing view and adds it to the stacked widget."""
@@ -147,7 +176,7 @@ class HDEMGDashboard(QMainWindow):
             print(f"Error creating manual editing view: {e}")
             traceback.print_exc()
 
-    def create_decomposition_view(self, emg_obj, filename, pathname, imported_signal):
+    def create_decomposition_view(self, emg_obj, filename, pathname, imported_signal, config):
         """Creates a decomposition view with the provided data and adds it to the stacked widget."""
         try:
             print("Creating decomposition view with provided data")
@@ -159,23 +188,24 @@ class HDEMGDashboard(QMainWindow):
             wrapper_layout.setContentsMargins(0, 0, 0, 0)
 
             # Create DecompositionApp instance
-            decomp_app = DecompositionApp(
+            self.decomp_app = DecompositionApp(
                 emg_obj=emg_obj,
                 filename=filename,
                 pathname=pathname,
                 imported_signal=imported_signal,
+                config=config,
                 parent=self,  # Set parent for proper widget hierarchy
             )
 
             # Set window flags to make it a widget instead of a window
-            decomp_app.setWindowFlags(Qt.WindowType.Widget)
+            self.decomp_app.setWindowFlags(Qt.WindowType.Widget)
 
             # Add to layout
-            wrapper_layout.addWidget(decomp_app)
+            wrapper_layout.addWidget(self.decomp_app)
 
             # Connect back button to show import view
-            if hasattr(decomp_app, "back_to_import_btn"):
-                decomp_app.back_to_import_btn.clicked.connect(self.show_import_data_view)
+            if hasattr(self.decomp_app, "back_to_import_btn"):
+                self.decomp_app.back_to_import_btn.clicked.connect(self.show_import_data_view)
 
             # Replace the placeholder with our real decomposition view
             self.decomposition_page = wrapper
@@ -207,11 +237,7 @@ class HDEMGDashboard(QMainWindow):
         self.sidebar_buttons["mu_analysis"].clicked.connect(self.show_mu_analysis_view)
         self.sidebar_buttons["decomposition"].clicked.connect(self.show_decomposition_view)
         self.sidebar_buttons["manual_edit"].clicked.connect(self.show_manual_editing_view)
-
-        if ImportDataWindow:
-            self.sidebar_buttons["import"].clicked.connect(self.show_import_data_view)
-        else:
-            self.sidebar_buttons["import"].setEnabled(False)
+        self.sidebar_buttons["import"].clicked.connect(self.show_import_data_view)
 
         if not MUAnalysis:
             self.sidebar_buttons["mu_analysis"].setEnabled(False)
@@ -244,25 +270,25 @@ class HDEMGDashboard(QMainWindow):
         # Store the current index of the dashboard page
         old_dashboard = self.dashboard_page
         old_index = self.central_stacked_widget.indexOf(old_dashboard)
-        
+
         # Create a new dashboard page
         from ui.HDEMGDashboardUI import _create_dashboard_page
         self.dashboard_page = _create_dashboard_page(self)
-        
+
         # Replace the old dashboard with the new one
         if old_index >= 0:
             self.central_stacked_widget.removeWidget(old_dashboard)
             self.central_stacked_widget.insertWidget(old_index, self.dashboard_page)
         else:
             self.central_stacked_widget.addWidget(self.dashboard_page)
-        
+
         # Show the new dashboard
         self.central_stacked_widget.setCurrentWidget(self.dashboard_page)
-        
+
         # Update sidebar selection
         from ui.HDEMGDashboardUI import update_sidebar_selection
         update_sidebar_selection(self, "dashboard")
-        
+
         # Schedule old dashboard for deletion to avoid memory leaks
         if old_dashboard is not None and old_dashboard != self.dashboard_page:
             old_dashboard.deleteLater()
@@ -278,12 +304,12 @@ class HDEMGDashboard(QMainWindow):
 
     def show_import_data_view(self):
         """Switches the central widget to the Import Data page."""
-        if ImportDataWindow is None or self.import_data_page is None:
-            print("ImportDataWindow not available.")
-            return
         print("Switching to Import Data view")
-        self.central_stacked_widget.setCurrentWidget(self.import_data_page)
-        update_sidebar_selection(self, "import")
+        if hasattr(self, "import_data_page") and self.import_data_page:
+            self.central_stacked_widget.setCurrentWidget(self.import_data_page)
+            update_sidebar_selection(self, "import")
+        else:
+            print("ImportDataWindow not available.")
 
     def show_manual_editing_view(self):
         """Switches to Manual Editing view."""
@@ -384,17 +410,17 @@ class HDEMGDashboard(QMainWindow):
         Called during initialization to populate the dashboard with saved visualizations.
         """
         from core.utils.decomposition_state import DecompositionState
-        
+
         # Get saved states
         try:
             saved_states = DecompositionState.list_saved_states()
-            
+
             # Convert to visualization data format
             self.recent_visualizations = []
             for i, state in enumerate(saved_states[:5]):  # Limit to 5 most recent
                 timestamp = datetime.datetime.fromtimestamp(state['timestamp'])
                 date_str = timestamp.strftime("Last modified: %b %d, %Y")
-                
+
                 self.recent_visualizations.append({
                     'title': state.get('title', f"Analysis {i+1}"),
                     'date': date_str,
@@ -417,7 +443,7 @@ class HDEMGDashboard(QMainWindow):
         # Get timestamp in user-friendly format
         timestamp = datetime.datetime.fromtimestamp(state_meta['timestamp'])
         date_str = timestamp.strftime("Last modified: %b %d, %Y")
-        
+
         # Create visualization metadata
         viz_data = {
             'title': state_meta['title'],
@@ -427,15 +453,15 @@ class HDEMGDashboard(QMainWindow):
             'state_path': state_meta['state_path'],
             'motor_units_count': state_meta['motor_units_count'],
         }
-        
+
         # Add to recent visualizations list
         if not hasattr(self, 'recent_visualizations'):
             self.recent_visualizations = []
-        
+
         # Insert at the beginning and limit to 5 items
         self.recent_visualizations.insert(0, viz_data)
         self.recent_visualizations = self.recent_visualizations[:5]
-        
+
         # Update the UI if dashboard is visible
         if hasattr(self, 'central_stacked_widget') and self.central_stacked_widget.currentWidget() == self.dashboard_page:
             self.show_dashboard_view()  # Refresh to show the new visualization
@@ -443,7 +469,7 @@ class HDEMGDashboard(QMainWindow):
     def on_visualization_card_clicked(self, card_index):
         """
         Handle clicks on visualization cards in the dashboard.
-        
+
         Args:
             card_index: Index of the clicked card in recent_visualizations list
         """
@@ -459,7 +485,7 @@ class HDEMGDashboard(QMainWindow):
     def load_visualization(self, state_path):
         """
         Load a saved visualization state and display it.
-        
+
         Args:
             state_path: Path to the saved state file
         """
@@ -467,21 +493,21 @@ class HDEMGDashboard(QMainWindow):
         import pyqtgraph as pg
         from PyQt5.QtWidgets import QWidget, QVBoxLayout
         from core.EmgDecomposition import offline_EMG
-        
+
         try:
             # Load the state
             state = DecompositionState.load_state(state_path)
-            
+
             # Create a new DecompositionApp instance 
             from app.DecompositionApp import DecompositionApp
             decomp_app = DecompositionApp(parent=self)
-            
+
             # Set data from the state
             decomp_app.filename = state['filename']
             decomp_app.pathname = state['pathname']
             decomp_app.ui_params = state['ui_params']
             decomp_app.decomposition_result = state.get('decomposition_result')
-            
+
             # Reconstruct EMG object for channel viewer if data is available
             if state.get('emg_data') and state['emg_data'].get('data') is not None:
                 try:
@@ -491,60 +517,61 @@ class HDEMGDashboard(QMainWindow):
                     decomp_app.emg_obj.signal_dict = {
                         'data': emg_data['data'],
                         'fsamp': emg_data['fsamp'],
-                        'nchans': emg_data['nchans'],
+                        'nChan': emg_data['nChan'],
+                        'electrodes': emg_data['electrodes'],
                     }
                     print(f"Restored EMG data for channel viewer: shape={emg_data['data'].shape}")
                 except Exception as e:
                     print(f"Warning: Failed to restore EMG object: {e}")
-            
+
             # Update file info display
             if hasattr(decomp_app, 'update_ui_with_loaded_data'):
                 decomp_app.update_ui_with_loaded_data()
-            
+
             # Update UI elements
             decomp_app.edit_field.setText("Restored previous decomposition")
+            decomp_app.save_output_button.setEnabled(True)
+            decomp_app.next_button.setEnabled(True)
             decomp_app.status_text.setText("Complete")
             decomp_app.status_progress.setValue(100)
-            
+
             if state.get('motor_units_count'):
                 decomp_app.motor_units_label.setText(f"Motor Units: {state['motor_units_count']}")
             if state.get('sil_value'):
                 decomp_app.sil_value_label.setText(f"SIL: {state['sil_value']}")
             if state.get('cov_value'):
                 decomp_app.cov_value_label.setText(f"CoV: {state['cov_value']}")
-            
+
             # ======== Reconstruct the plots from the saved state ========
-            
+
             # Current plot data for any callbacks that might need it
             if state.get('current_plot_data'):
                 decomp_app.current_plot_data = state['current_plot_data']
-                
+
             # Reconstruct plot data from saved state
             plot_data = state.get('plot_data', {})
-            
+
             # Reconstruct reference plot
             if 'reference' in plot_data and plot_data['reference']:
                 self._reconstruct_plot(decomp_app.ui_plot_reference, plot_data['reference'])
-            
+
             # Reconstruct pulse train plot 
             if 'pulsetrain' in plot_data and plot_data['pulsetrain']:
                 self._reconstruct_plot(decomp_app.ui_plot_pulsetrain, plot_data['pulsetrain'])
-            
+
             # Enable buttons
             decomp_app.start_button.setEnabled(True)
-            decomp_app.save_output_button.setEnabled(True)
-            decomp_app.channel_view_button.setEnabled(True if decomp_app.emg_obj else False)
-            
+
             # Create a wrapper widget to hold the DecompositionApp
             wrapper = QWidget()
             wrapper.setObjectName("decomposition_wrapper")
             wrapper_layout = QVBoxLayout(wrapper)
             wrapper_layout.setContentsMargins(0, 0, 0, 0)
             wrapper_layout.addWidget(decomp_app)
-            
+
             # Store the wrapper as the decomposition page
             self.decomposition_page = wrapper
-            
+
             # Add it to the stacked widget if needed
             if hasattr(self, 'central_stacked_widget'):
                 # Remove old decomposition page if it exists
@@ -553,13 +580,13 @@ class HDEMGDashboard(QMainWindow):
                     if widget and widget.objectName() == "decomposition_wrapper":
                         self.central_stacked_widget.removeWidget(widget)
                         break
-                
+
                 # Add the new one
                 self.central_stacked_widget.addWidget(wrapper)
-                
+
                 # Switch to it
                 self.show_decomposition_view()
-            
+
             print(f"Successfully loaded visualization from {state_path}")
         except Exception as e:
             print(f"Error loading visualization: {e}")
@@ -569,47 +596,47 @@ class HDEMGDashboard(QMainWindow):
     def _reconstruct_plot(self, plot_widget, plot_data):
         """
         Reconstructs a plot from saved plot data
-        
+
         Args:
             plot_widget: PyQtGraph PlotWidget to populate
             plot_data: Dictionary of plot data from the state
         """
         import pyqtgraph as pg
         from PyQt5.QtCore import Qt
-        
+
         # Clear the plot
         plot_widget.clear()
-        
+
         # Set plot title if available
         if plot_data.get('title'):
             plot_widget.setTitle(plot_data['title'])
-        
+
         # Reconstruct each item in the plot
         for item in plot_data.get('items', []):
             item_type = item.get('type')
-            
+
             if item_type == 'plot':
                 # Recreate line plot
                 x_data = item.get('x_data')
                 y_data = item.get('y_data')
-                
+
                 if x_data is not None and y_data is not None:
                     # Create pen from saved settings
                     pen_data = item.get('pen', {})
-                    
+
                     try:
                         # Get the color, defaulting to black
                         color = pen_data.get('color', '#000000')
                         if color is None:
                             color = '#000000'  # Force black if None was saved
-                            
+
                         width = pen_data.get('width', 1)
                         if width is None:
                             width = 1  # Force width 1 if None was saved
-                        
+
                         # Create the pen
                         pen = pg.mkPen(color=color, width=width)
-                        
+
                         # Add style if it was saved
                         if pen_data.get('style') == 'dash':
                             pen.setStyle(Qt.PenStyle.DashLine)
@@ -617,49 +644,49 @@ class HDEMGDashboard(QMainWindow):
                         print(f"Error creating pen, using default black: {e}")
                         # Default to simple black pen
                         pen = pg.mkPen(color='k', width=1)
-                    
+
                     # Create the plot item
                     plot_widget.plot(x_data, y_data, pen=pen)
-            
+
             elif item_type == 'infinite_line':
                 # Recreate vertical or horizontal line (plateau markers)
                 pos = item.get('pos')
                 angle = item.get('angle', 90)
-                
+
                 if pos is not None:
                     # Create pen from saved settings
                     pen_data = item.get('pen', {})
-                    
+
                     # Use a more compatible way to create the pen
                     try:
                         # Method 1: Create pen with color and width
                         color = pen_data.get('color', '#FF0000')
                         width = pen_data.get('width', 2)
-                        
+
                         # Ensure width is not None
                         if width is None:
                             width = 2
-                            
+
                         pen = pg.mkPen(color=color, width=width)
                     except Exception as e:
                         print(f"Error creating pen, using default: {e}")
                         pen = pg.mkPen(color='r', width=2)  # Default to simple red pen
-                    
+
                     # Create the line
                     line = pg.InfiniteLine(pos=pos, angle=angle, pen=pen)
                     plot_widget.addItem(line)
-            
+
             elif item_type == 'scatter':
                 # Recreate scatter plot (spikes)
                 x_data = item.get('x_data')
                 y_data = item.get('y_data')
-                
+
                 if x_data is not None and y_data is not None and len(x_data) == len(y_data):
                     try:
                         # Create the scatter plot safely
                         size = item.get('size', 10)
                         brush_color = item.get('brush', '#FF0000')
-                        
+
                         scatter = pg.ScatterPlotItem(
                             x=x_data,
                             y=y_data,
@@ -672,58 +699,58 @@ class HDEMGDashboard(QMainWindow):
                         # Fallback to simpler construction
                         scatter = pg.ScatterPlotItem(pos=list(zip(x_data, y_data)))
                     plot_widget.addItem(scatter)
-        
+
         # Set axis ranges if available
         if plot_data.get('x_range'):
             plot_widget.setXRange(*plot_data['x_range'])
-        
+
         if plot_data.get('y_range'):
             plot_widget.setYRange(*plot_data['y_range'])
 
     def _reconstruct_plot(self, plot_widget, plot_data):
         """
         Reconstructs a plot from saved plot data
-        
+
         Args:
             plot_widget: PyQtGraph PlotWidget to populate
             plot_data: Dictionary of plot data from the state
         """
         import pyqtgraph as pg
         from PyQt5.QtCore import Qt
-        
+
         # Clear the plot
         plot_widget.clear()
-        
+
         # Set plot title if available
         if plot_data.get('title'):
             plot_widget.setTitle(plot_data['title'])
-        
+
         # Reconstruct each item in the plot
         for item in plot_data.get('items', []):
             item_type = item.get('type')
-            
+
             if item_type == 'plot':
                 # Recreate line plot
                 x_data = item.get('x_data')
                 y_data = item.get('y_data')
-                
+
                 if x_data is not None and y_data is not None:
                     # Create pen from saved settings
                     pen_data = item.get('pen', {})
-                    
+
                     try:
                         # Get the color, defaulting to black
                         color = pen_data.get('color', '#000000')
                         if color is None:
                             color = '#000000'  # Force black if None was saved
-                            
+
                         width = pen_data.get('width', 1)
                         if width is None:
                             width = 1  # Force width 1 if None was saved
-                        
+
                         # Create the pen
                         pen = pg.mkPen(color=color, width=width)
-                        
+
                         # Add style if it was saved
                         if pen_data.get('style') == 'dash':
                             pen.setStyle(Qt.PenStyle.DashLine)
@@ -731,49 +758,49 @@ class HDEMGDashboard(QMainWindow):
                         print(f"Error creating pen, using default black: {e}")
                         # Default to simple black pen
                         pen = pg.mkPen(color='k', width=1)
-                    
+
                     # Create the plot item
                     plot_widget.plot(x_data, y_data, pen=pen)
-            
+
             elif item_type == 'infinite_line':
                 # Recreate vertical or horizontal line (plateau markers)
                 pos = item.get('pos')
                 angle = item.get('angle', 90)
-                
+
                 if pos is not None:
                     # Create pen from saved settings
                     pen_data = item.get('pen', {})
-                    
+
                     # Use a more compatible way to create the pen
                     try:
                         # Method 1: Create pen with color and width
                         color = pen_data.get('color', '#FF0000')
                         width = pen_data.get('width', 2)
-                        
+
                         # Ensure width is not None
                         if width is None:
                             width = 2
-                            
+
                         pen = pg.mkPen(color=color, width=width)
                     except Exception as e:
                         print(f"Error creating pen, using default: {e}")
                         pen = pg.mkPen(color='r', width=2)  # Default to simple red pen
-                    
+
                     # Create the line
                     line = pg.InfiniteLine(pos=pos, angle=angle, pen=pen)
                     plot_widget.addItem(line)
-            
+
             elif item_type == 'scatter':
                 # Recreate scatter plot (spikes)
                 x_data = item.get('x_data')
                 y_data = item.get('y_data')
-                
+
                 if x_data is not None and y_data is not None and len(x_data) == len(y_data):
                     try:
                         # Create the scatter plot safely
                         size = item.get('size', 10)
                         brush_color = item.get('brush', '#FF0000')
-                        
+
                         scatter = pg.ScatterPlotItem(
                             x=x_data,
                             y=y_data,
@@ -786,11 +813,11 @@ class HDEMGDashboard(QMainWindow):
                         # Fallback to simpler construction
                         scatter = pg.ScatterPlotItem(pos=list(zip(x_data, y_data)))
                     plot_widget.addItem(scatter)
-        
+
         # Set axis ranges if available
         if plot_data.get('x_range'):
             plot_widget.setXRange(*plot_data['x_range'])
-        
+
         if plot_data.get('y_range'):
             plot_widget.setYRange(*plot_data['y_range'])
 
@@ -810,12 +837,12 @@ class HDEMGDashboard(QMainWindow):
                 size_str = f"{filesize_bytes/1024**3:.1f} GB"
         else:
             size_str = "Unknown size"
-        
+
         # Current timestamp for "today" display
         import datetime
         now = datetime.datetime.now()
         date_str = f"• Added {now.strftime('%d %b %Y')}"
-        
+
         # Create dataset metadata
         dataset_info = {
             "filename": filename,
@@ -823,24 +850,24 @@ class HDEMGDashboard(QMainWindow):
             "metadata": f"{size_str} {date_str}",
             "timestamp": now.timestamp()  # Store timestamp for sorting
         }
-        
+
         # Check if this dataset already exists in the list
         existing_index = -1
         for i, dataset in enumerate(self.recent_datasets):
             if dataset.get("filename") == filename and dataset.get("pathname") == pathname:
                 existing_index = i
                 break
-        
+
         # If it exists, remove it so we can add it to the top
         if existing_index >= 0:
             self.recent_datasets.pop(existing_index)
-        
+
         # Add to the beginning of the list
         self.recent_datasets.insert(0, dataset_info)
-        
+
         # Limit to maximum 5 recent datasets
         self.recent_datasets = self.recent_datasets[:5]
-        
+
         # If dashboard is currently visible, refresh it
         if hasattr(self, 'central_stacked_widget') and self.central_stacked_widget.currentWidget() == self.dashboard_page:
             self.show_dashboard_view()  # Refresh to show the new dataset
@@ -848,41 +875,41 @@ class HDEMGDashboard(QMainWindow):
     def open_dataset(self, dataset):
         """
         Open a dataset from the recent datasets list.
-        
+
         Args:
             dataset: Dictionary with dataset information
         """
         print(f"Opening dataset: {dataset['filename']}")
-        
+
         # Extract file information
         filename = dataset.get("filename")
         pathname = dataset.get("pathname", "")
-        
+
         # Check if the file exists
         full_path = os.path.join(pathname, filename)
         if not os.path.exists(full_path):
             # Show an error message
             from PyQt5.QtWidgets import QMessageBox
             QMessageBox.warning(
-                self, 
-                "File Not Found", 
+                self,
+                "File Not Found",
                 f"The file {filename} could not be found at {pathname}.\n\nIt may have been moved or deleted.",
                 QMessageBox.Ok
             )
-            
+
             # Remove the file from recent datasets
             for i, d in enumerate(self.recent_datasets):
                 if d.get("filename") == filename and d.get("pathname") == pathname:
                     self.recent_datasets.pop(i)
                     break
-                    
+
             # Refresh the dashboard view
             self.show_dashboard_view()
             return
-        
+
         # Switch to import view and load the file
         self.show_import_data_view()
-        
+
         # Use QTimer to ensure the import view is fully loaded before loading the file
         from PyQt5.QtCore import QTimer
         QTimer.singleShot(100, lambda: self._load_dataset_in_import_view(pathname, filename))
@@ -890,7 +917,7 @@ class HDEMGDashboard(QMainWindow):
     def _load_dataset_in_import_view(self, pathname, filename):
         """
         Helper method to load a dataset in the import view.
-        
+
         Args:
             pathname: Path to the file
             filename: Name of the file
@@ -899,18 +926,18 @@ class HDEMGDashboard(QMainWindow):
             # Set file information
             self.import_data_page.filename = filename
             self.import_data_page.pathname = pathname
-            
+
             # Update UI elements
             self.import_data_page.file_info_label.setText(f"Selected: {filename}")
             self.import_data_page.file_info_label.setVisible(True)
             self.import_data_page.footer_file_info.setText(f"File: {filename}")
-            
+
             # Get file size
             try:
                 full_path = os.path.join(pathname, filename)
                 file_size = os.path.getsize(full_path)
                 file_format = os.path.splitext(filename)[1].upper().replace(".", "")
-                
+
                 # Format file size
                 if file_size < 1024:
                     size_str = f"{file_size} bytes"
@@ -918,18 +945,18 @@ class HDEMGDashboard(QMainWindow):
                     size_str = f"{file_size/1024:.1f} KB"
                 else:
                     size_str = f"{file_size/(1024*1024):.1f} MB"
-                    
+
                 self.import_data_page.size_info.setText(f"Size: {size_str}")
                 self.import_data_page.format_info.setText(f"Format: {file_format}")
-                
+
                 # Load the file
                 self.import_data_page.load_file(pathname, filename)
-                
+
             except Exception as e:
                 print(f"Error loading file: {e}")
                 import traceback
                 traceback.print_exc()
-                
+
                 # Show error in preview
                 self.import_data_page.preview_message.setText(f"Error loading file: {str(e)}")
 
