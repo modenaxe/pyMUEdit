@@ -150,7 +150,7 @@ def plot_emgsig(
         if not isinstance(emgfile["REF_SIGNAL"], pd.DataFrame):
             raise TypeError("REF_SIGNAL is missing or not a DataFrame")
         ax2 = ax1.twinx()
-        ax2.plot(x_axis, emgfile["REF_SIGNAL"][0], **line2d_kwargs_ax2)
+        ax2.plot(x_axis, emgfile["REF_SIGNAL"][0], **line2d_kwargs_ax2, color='#555555')
         ax2.set_ylabel("MVC")
         ax2.set_zorder(0)
         ax1.set_zorder(1)
@@ -245,7 +245,7 @@ def plot_idr(
             else emgfile["REF_SIGNAL"].index
         )
         ax2 = ax1.twinx()
-        ax2.plot(x_axis, emgfile["REF_SIGNAL"][0])
+        ax2.plot(x_axis, emgfile["REF_SIGNAL"][0], color='#555555')
         ax2.set_ylabel("MVC")
         ax2.set_zorder(0)
         ax1.set_zorder(1)
@@ -379,7 +379,7 @@ def plot_mupulses(
                 "dataframe"
             )
         ax2 = ax1.twinx()
-        ax2.plot(x_axis, emgfile["REF_SIGNAL"][0])
+        ax2.plot(x_axis, emgfile["REF_SIGNAL"][0], color='#555555')
         ax2.set_ylabel("MVC")
 
         # Set z-order so that ax2 is in the background
@@ -490,7 +490,7 @@ def plot_ipts(
             )
 
         ax2 = ax1.twinx()
-        ax2.plot(x_axis, emgfile["REF_SIGNAL"][0])
+        ax2.plot(x_axis, emgfile["REF_SIGNAL"][0], color='#555555')
         ax2.set_ylabel("MVC")
 
         # Set z-order so that ax2 is in the background
@@ -624,7 +624,7 @@ def plot_differentials(
             )
 
         ax2 = ax1.twinx()
-        ax2.plot(x_axis, emgfile["REF_SIGNAL"][0])
+        ax2.plot(x_axis, emgfile["REF_SIGNAL"][0], color='#555555')
         ax2.set_ylabel("MVC")
 
         # Set z-order so that ax2 is in the background
@@ -961,7 +961,7 @@ def plot_refsig(
         num=figname,
     )
 
-    ax1.plot(x_axis, refsig[0])
+    ax1.plot(x_axis, refsig[0], color='#555555')
 
     ax1.set_ylabel("MVC")
     ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
