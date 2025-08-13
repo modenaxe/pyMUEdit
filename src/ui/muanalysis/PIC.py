@@ -29,10 +29,11 @@ class PICDialog(QDialog):
         clean_checkbox: Checkbox to enable or disable cleaning/filtering of results.
         PIC_button: Button to trigger computation of PIC.
     """
+
     def __init__(self, parent=None):
         """
         Initialize the PICDialog window and set up its UI components.
-        
+
         Args:
             parent: Optional parent widget.
         """
