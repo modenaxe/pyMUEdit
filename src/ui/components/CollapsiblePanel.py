@@ -1,9 +1,17 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame
-from PyQt5.QtCore import Qt, QSize
+from pathlib import Path
+
+from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtSvg import QSvgWidget
+from PyQt5.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton,
+                             QVBoxLayout, QWidget)
 
 from .CleanTheme import CleanTheme
+
+ABS_PATH = Path(__file__).parent.parent.parent
+ICONS_PATH = ABS_PATH / "public"
+up_arrow_path = ICONS_PATH / "up_arrow_icon.svg"
+down_arrow_path = ICONS_PATH / "down_arrow_icon.svg"
 
 
 class CollapsiblePanel(QFrame):
@@ -16,7 +24,7 @@ class CollapsiblePanel(QFrame):
         """
         Initialize a collapsible panel
 
-        Args:
+        Args:from pathlib import Path
             title (str): The title for the panel
             parent (QWidget, optional): Parent widget
         """
@@ -66,7 +74,8 @@ class CollapsiblePanel(QFrame):
         self.title_label = QLabel(title)
         self.title_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
         self.title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
-        self.title_label.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
+        self.title_label.setStyleSheet(
+            f"background-color: {CleanTheme.BG_CARD};")
 
         # Expand/collapse indicator
         self.toggle_button = QPushButton()
@@ -83,7 +92,7 @@ class CollapsiblePanel(QFrame):
         self.toggle_button.setFixedSize(20, 20)
 
         # Use SVG icon for toggle button
-        self.toggle_button.setIcon(QIcon("public/down_arrow_icon.svg"))
+        self.toggle_button.setIcon(QIcon(str(down_arrow_path)))
         self.toggle_button.setIconSize(QSize(10, 10))
         # Add header components
         self.header_layout.addWidget(self.title_label)
@@ -138,9 +147,9 @@ class CollapsiblePanel(QFrame):
 
         # Update the toggle button icon based on state
         if self.is_expanded:
-            self.toggle_button.setIcon(QIcon("public/down_arrow_icon.svg"))
+            self.toggle_button.setIcon(QIcon(str(down_arrow_path)))
         else:
-            self.toggle_button.setIcon(QIcon("public/up_arrow_icon.svg"))
+            self.toggle_button.setIcon(QIcon(str(up_arrow_path)))
 
         # Show/hide content
         self.content_widget.setVisible(self.is_expanded)

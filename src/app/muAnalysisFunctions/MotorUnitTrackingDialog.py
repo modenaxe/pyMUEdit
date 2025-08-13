@@ -94,6 +94,7 @@ class MotorUnitTrackingDialog(QDialog):
         window_layout.addWidget(self.window_input)
         main_layout.addLayout(window_layout)
 
+
         main_layout.addItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
         track_btn = QPushButton("Track")

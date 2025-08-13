@@ -27,17 +27,23 @@ class CleanTheme:
     ANALYSIS_BG_SIDEBAR = "#343a40"
     ANALYSIS_BG_TOPBAR = "#ffffff"
     ANALYSIS_BG_DROPDOWN = "#394150"
+    ANALYSIS_BG_DROPDOWN_DISABLED = "#7d8aa3"
+    ANALYSIS_BG_DROPDOWN_SEC = "#0A0C0E"
     ANALYSIS_BG_BUTTON = "#495057"
     ANALYSIS_TEXT_PRIMARY = "#ffffff"
     ANALYSIS_TEXT_SECONDARY = "#cccccc"
     ANALYSIS_TEXT_TERTIARY = "#8e8e8e"
     ANALYSIS_TEXT_BUTTON = "#e9ecee"
     ANALYSIS_TEXT_PROMPT = "#6c757d"
+    ANALYSIS_TEXT_DARK = "#444444"
+    ANALYSIS_DIALOG_BACKGROUND = "#e4e2e2"
+    ANALYSIS_DIALOG_TEXT = "#394150"
+    ANALYSIS_DIALOG_DROPDOWN = "#60676E"  # unused
 
     ################################################################
     ########################### DIALOG ###########################
     ################################################################
-    
+
     DIALOG_TEXT = "#212529"
     DIALOG_CANCEL = "#6c757d"
     DIALOG_CANCEL_HOVER = "#5a6268"
@@ -47,12 +53,10 @@ class CleanTheme:
     ################################################################
     ########################### REDS ###########################
     ################################################################
-    
-    RED_BACKGROUND = "#f44336"
-    RED_HOVER = "#d32f2f"
-    
-    
-    
+
+    RED_BACKGROUND = "#e04136"
+    RED_HOVER = "#c72b2b"
+
     """
         self.colors = {
             "bg_main": "#f8f9fa",
