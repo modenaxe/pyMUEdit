@@ -6,10 +6,12 @@ from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.PICFunc import compute_deltaf
 from ui.components.muAnalysisComponents.AnalysisCheckboxDark import \
     AnalysisCheckboxDark
-from ui.components.muAnalysisComponents.AnalysisDropdown import \
+from ui.components.muAnalysisComponents.AnalysisDropdownDialog import \
+    AnalysisDropdownDialog
+from ui.components.muAnalysisComponents.AnalysisLabeledDropdown import \
     AnalysisLabeledDropdown
-from ui.components.muAnalysisComponents.AnalysisDropdownDialog import (
-    AnalysisDropdownDialog, AnalysisLabeledDropdownDialog)
+from ui.components.muAnalysisComponents.AnalysisLabeledDropdownDialog import \
+    AnalysisLabeledDropdownDialog
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog

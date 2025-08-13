@@ -656,11 +656,18 @@ class FileUploadFunc:
         axes_kwargs=None,
         showimmediately=False,
     ):
+        """From OPENHDEMG. Plots the reference signal 
+        Params: 
+            - emgfile: the file 
+            - analysis_plot: instance used to plot fig in the centre 
+            - timeinseconds: boolean if you want the axis to be plotted in seconds 
+            - figsize: (legacy code) defines the size of the plot, but now it's 
+            plotted in the centre 
+            - tight_layout: specifies different UI for the plot 
+            - line2d_kwargs_ax1: keyword arguments for line2d objects 
+            - axes_kwargs: keyword arguments for axes styling 
+            - showimmediately: (legacy code) plots it immediately, but this function now defaults to plotting it immediately
         """
-        Plots the refsig graph
-        """
-
-        # Check to have the REF_SIGNAL in a pandas dataframe
         if isinstance(emgfile["REF_SIGNAL"], pd.DataFrame):
             refsig = emgfile["REF_SIGNAL"]
         else:
@@ -669,15 +676,13 @@ class FileUploadFunc:
                 + "dataframe"
             )
 
-        # Here we produce an x axis in seconds or samples
         if timeinseconds:
             x_axis = refsig.index / emgfile["FSAMP"]
         else:
             x_axis = refsig.index
 
-        # TL : just did this because aditi seemed to do it too
-        figname = "troy_unique_name"
-        plt.close()  # TL : taking aditi's advice from earlier on
+        figname = "Reference Signal Graph"
+        plt.close() 
         fig, ax1 = plt.subplots(
             figsize=(figsize[0] / 2.54, figsize[1] / 2.54),
             num=figname,
@@ -688,7 +693,7 @@ class FileUploadFunc:
         ax1.set_ylabel("MVC")
         ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
 
-        # the actual plotting
+        # Plotting 
         canvas = SaveablePlot(fig)
         analysis_plot.display_fig(canvas)
 
