@@ -14,6 +14,7 @@ from ui.components.muAnalysisComponents.CleanTheme import \
     CleanTheme as AnalysisTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
+from ui.components.muAnalysisComponents.SubsectionTitle import SubsectionTitle
 
 
 class ForceAnalysisSection(QWidget):
@@ -24,7 +25,7 @@ class ForceAnalysisSection(QWidget):
         super().__init__(sidebar)
 
         layout = QVBoxLayout(self)
-        subtitle_label = AnalysisText.create_subtitle("FORCE ANALYSIS")
+        subtitle_label = SubsectionTitle("FORCE ANALYSIS")
         layout.addWidget(subtitle_label)
         rfd_layout = QHBoxLayout()
         rfd_value = AnalysisInput("", "")
