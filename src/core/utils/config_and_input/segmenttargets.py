@@ -1,8 +1,7 @@
 import numpy as np
 
-
 def segmenttargets(target, nwindows, threshold):
-    plateau = np.where(target >= np.max(target) * threshold)[0]
+    plateau = np.where(target >= np.nanmax(target) * threshold)[0]
     sep = np.where(np.diff(plateau) > 1)[0]
 
     if nwindows > 1 and len(sep) > 0:
@@ -24,7 +23,6 @@ def segmenttargets(target, nwindows, threshold):
             coordinates[:, i * 2 + 1] = coordinatestmp[:, 0] + i * lwin
 
         coordinates = coordinates.flatten()
-
     elif nwindows > 1:
         coordinatestmp = np.array([[plateau[0], plateau[-1]]])
         lplat = coordinatestmp[:, 1] - coordinatestmp[:, 0]
@@ -36,7 +34,6 @@ def segmenttargets(target, nwindows, threshold):
             coordinates[:, i * 2 + 1] = coordinatestmp[:, 0] + i * lwin
 
         coordinates = coordinates.flatten()
-
     elif nwindows == 1 and len(sep) > 0:
         coordinatestmp = np.zeros((len(sep) + 1, 2), dtype=int)
         coordinatestmp[0, :] = [plateau[0], plateau[sep[0]]]
