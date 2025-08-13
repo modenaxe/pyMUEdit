@@ -110,7 +110,7 @@ def create_dropzone_card(import_window):
     icon_layout.setContentsMargins(0, 0, 0, 0)
     icon_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    cloud_icon = QSvgWidget("public/upload_icon.svg")
+    cloud_icon = QSvgWidget("src/public/upload_icon.svg")
     cloud_icon.setFixedSize(32, 22)
     cloud_icon.setStyleSheet("margin-bottom: 10px;")
 
