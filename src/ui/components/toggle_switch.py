@@ -39,7 +39,6 @@ class ToggleSwitch(QWidget):
         self._color_anim.setEasingCurve(QEasingCurve.InOutQuad)
         self._disabled = False
 
-    # --- 属性：xPos 用来做动画滑动 ---
     def getX(self):  return self._x_pos
     def setX(self,v):
         self._x_pos = v
@@ -76,15 +75,12 @@ class ToggleSwitch(QWidget):
         self._color_anim.setEndValue(1 if self._checked else 0)
         self._color_anim.start()
         
-        # 发一个信号给外层
         self.toggled.emit(self._checked)
 
-    # --- 绘制 ---
     def paintEvent(self, ev):
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
         
-        # 轨道
         mixed_color = self.mix_colors(self._bg_off, self._bg_on, self._progress)
         
         if self._disabled:
@@ -101,7 +97,6 @@ class ToggleSwitch(QWidget):
             p.setPen(Qt.NoPen)
             p.drawRoundedRect(0, 0, 40, 22, 11, 11)
         
-        # 滑块
         knob_color = QColor("#ffffff") if not self._disabled else QColor("#eeeeee")
         p.setBrush(QBrush(knob_color))
         p.drawEllipse(self._x_pos, 1, 20, 20)

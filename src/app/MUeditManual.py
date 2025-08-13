@@ -21,7 +21,11 @@ from PyQt5.QtWidgets import (
     QLayout,
     QStackedWidget,
     QProgressDialog, # moy
+    QShortcut,
 )
+from PyQt5.QtGui import QKeySequence
+
+import h5py
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -30,6 +34,8 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from ui.MUeditManualUI import setup_ui, find_sidebar
 from core.utils.manual_editing.getsil import getsil
 from core.utils.manual_editing.refinesil import refinesil
+from core.utils.manual_editing.h5_import import h5py_convert
+from core.utils.manual_editing.save_worker import Save_worker
 from core.utils.manual_editing.extendfilter import extendfilter
 from core.utils.manual_editing.selection_tools import SelectionTool, process_selection
 from core.utils.decomposition.remove_outliers import remove_outliers
@@ -85,6 +91,7 @@ class MUeditManual(QMainWindow):
         self.DischagePlotDialog = None
         self.spike_train_plot_sort_mode = True
         self._save_flag = True
+        self._ish5 = False
         
         # Set up the UI
         setup_ui(self)
@@ -96,6 +103,8 @@ class MUeditManual(QMainWindow):
         # Add back button if needed when used in embedded mode
         if parent:
             self.add_back_button()
+        
+        self._create_shortcuts()
 
     def show_tip(self, text, duration_ms=3000):
         self.tip_bar.setText(text)
@@ -148,7 +157,18 @@ class MUeditManual(QMainWindow):
                     return True
         return False
 
-    def update_save_button(self):
+    def update_save_button(self, on_save=False):
+        if on_save:
+            self.floating_save_btn.setEnabled(False)
+            self.floating_save_btn.setText("")
+            self.floating_save_btn.setIcon("hourglass_half", (36, 36))
+            self.floating_save_btn.setStyleSheet("""
+                QPushButton{background:#fff;color:#fff;border:none;border-radius:4px;padding:8px 15px;}
+                QPushButton:hover{background:#2383ff;}
+            """)
+            self.floating_save_btn.setText("Saving")
+            return
+        
         save_flag = self.check_current_data_save_by_dirty()
         if save_flag == self._save_flag:
             return
@@ -272,39 +292,33 @@ class MUeditManual(QMainWindow):
             self.selection_tool = None
 
         print("Exited editing mode (via ESC)")
+        
+    def _create_shortcuts(self):
+        # Short cut
+        mapping = {
+            "Ctrl+S":       self.save_btn.click,
+            Qt.Key_Left:    self.scroll_left_button_pushed,
+            Qt.Key_Right:   self.scroll_right_button_pushed,
+            Qt.Key_Up:      self.zoom_slider.slider_increase,
+            Qt.Key_Down:    self.zoom_slider.slider_decrease,
+            "A":            self.add_spikes_btn.click,
+            "D":            self.delete_spikes_btn.click,
+            "R":            self.remove_outliers_single_btn.click,
+            "Space":        self.update_mu_filter_btn.click,
+            "L":            self.lock_spikes_btn.click,
+            "E":            self.extend_mu_filter_btn.click,
+            "Z":            self.undo_title_btn.click,
+            "X":            self.redo_title_btn.click,
+            "Esc":          self.exit_edit_mode,
+        }
 
-    def keyPressEvent(self, event):
-        """Handle keyboard shortcuts."""
-        if event.key() == Qt.Key.Key_S and event.modifiers() & Qt.ControlModifier:
-            self.save_btn.click()
-        elif event.key() == Qt.Key.Key_Left:
-            self.scroll_left_button_pushed()
-        elif event.key() == Qt.Key.Key_Right:
-            self.scroll_right_button_pushed()
-        elif event.key() == Qt.Key.Key_Up:
-            self.zoom_slider.slider_increase()
-        elif event.key() == Qt.Key.Key_Down:
-            self.zoom_slider.slider_decrease()
-        elif event.key() == Qt.Key.Key_A:
-            self.add_spikes_btn.click()
-        elif event.key() == Qt.Key.Key_D:
-            self.delete_spikes_btn.click()
-        elif event.key() == Qt.Key.Key_R:
-            self.remove_outliers_single_btn.click()
-        elif event.key() == Qt.Key.Key_Space:
-            self.update_mu_filter_btn.click()
-        elif event.key() == Qt.Key.Key_L:
-            self.lock_spikes_btn.click()
-        elif event.key() == Qt.Key.Key_E:
-            self.extend_mu_filter_btn.click()
-        elif event.key() == Qt.Key.Key_Z:
-            self.undo_title_btn.click()
-        elif event.key() == Qt.Key.Key_X:
-            self.redo_title_btn.click()
-        elif event.key() == Qt.Key_Escape:
-            self.exit_edit_mode()
-        else:
-            super().keyPressEvent(event)
+        for seq, slot in mapping.items():
+
+            ks = QKeySequence(seq) if isinstance(seq, str) else QKeySequence(seq)
+            sc = QShortcut(ks, self)  
+            sc.setContext(Qt.WindowShortcut)  
+            sc.activated.connect(slot)
+
 
     # Event handlers
     def select_file_button_pushed(self):
@@ -320,10 +334,13 @@ class MUeditManual(QMainWindow):
 
             self.import_data()
             
+            
     def import_data(self):
         """Import data from selected file."""
         if not self.filename or not self.pathname:
             return
+        
+        self.ish5 = False
 
         # Wrong Format
         if not self.filename.lower().endswith(".mat"):
@@ -336,24 +353,52 @@ class MUeditManual(QMainWindow):
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
             filepath = os.path.join(self.pathname, self.filename)
-            files = sio.loadmat(filepath)
+            try:
+                files = sio.loadmat(filepath)
+            except NotImplementedError:
+                try:
+                    f = h5py.File(filepath, "r")
+                    print("h5py File load success")
+                    self.ish5 = True
+                    files = h5py_convert().h5py_to_dict(f)
+                    print("h5py File convert complete")
+                except Exception:
+                    import traceback
+                    traceback.print_exc()
+                # f.close()
 
-            #check the data with "signal" and "Pulsetrain"
-            if "signal" not in files or (
-                    "Pulsetrain" not in files["signal"].dtype.names
-                    and "Pulsetrain" not in files  # 有些是顶层字段
-            ):
-                QApplication.restoreOverrideCursor()  # 还原鼠标
-                raise KeyError("Missing 'signal' or 'Pulsetrain'")
+            if not self.ish5:
+                #check the data with "signal" and "Pulsetrain"
+                if "signal" not in files or (
+                        "Pulsetrain" not in files["signal"].dtype.names
+                        and "Pulsetrain" not in files  # 有些是顶层字段
+                ):
+                    QApplication.restoreOverrideCursor()  # 还原鼠标
+                    raise KeyError("Missing 'signal' or 'Pulsetrain'")
+            else:
+                #check the data with "signal" and "Pulsetrain"
+                if "signal" not in files or (
+                        "Pulsetrain" not in files["signal"].keys()
+                ):
+                    QApplication.restoreOverrideCursor()  # 还原鼠标
+                    raise KeyError("Missing 'signal' or 'Pulsetrain'")
 
             # Initialize the MUedition data structure
             self.MUedition = {"edition": {}, "signal": {}, "parameters": {}}
             #edition contains all the data to be edit
 
-            if "edition" in files:   #edited file, recover edition
-                self.import_edited_file(files)
-            else:   #new file
-                self.import_decomposed_file(files)
+            if not self.ish5:
+                if "edition" in files:   #edited file, recover edition
+                    self.import_edited_file(files)
+                else:   #new file
+                    self.import_decomposed_file(files)
+            else:
+                if "edition" in files:
+                    self.import_h5py_edited_file(files)
+                else:
+                    self.import_h5py_decomposed_file(files)
+            
+            print("File import complete")
 
             # Calculate array numbers for each channel
             self.MUedition["edition"]["arraynb"] = np.zeros(self.MUedition["signal"]["data"].shape[0], dtype=int)
@@ -367,6 +412,7 @@ class MUeditManual(QMainWindow):
                 mask_length = len(mask)
                 self.MUedition["edition"]["arraynb"][ch1 : ch1 + mask_length] = i
                 ch1 += mask_length
+            
 
             # Update reference dropdown
             self.reference_dropdown.clear()
@@ -407,11 +453,297 @@ class MUeditManual(QMainWindow):
         except KeyError as ke:
             QApplication.restoreOverrideCursor()
             ErrorDialog(title_label="Missing Field", text=f"The .mat file is missing required fields:\n{ke}")
+            import traceback
+            traceback.print_exc()
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             QApplication.restoreOverrideCursor()
             ErrorDialog(title_label="Import Error", text=f"Failed to load the file:\n{str(e)}")
 
+    def import_edited_file(self, files):
+        """Import data from a previously edited file."""
+        if not self.MUedition:
+            return
 
+        # Copy structured data from MATLAB file
+        edition_data = files["edition"][0, 0]
+        #恢复"Dischargetimes", "silval", "silvalcon"这三个字典
+        for field in edition_data.dtype.names:
+            val = edition_data[field]
+            # 检查是不是json字符串
+            if field in ("Dischargetimes", "silval", "silvalcon") and isinstance(val, np.ndarray) and val.dtype.kind in {'U','S','O'}:
+                # 这里val是一个长度为1的array，里面是string
+                str_val = str(val.item())
+                try:
+                    raw_dict = json.loads(str_val)
+                    # key从"[i,j]"字符串恢复为tuple
+                    new_dict = {}
+                    for k, v in raw_dict.items():
+                        idx = tuple(json.loads(k.replace("'", '"')))  # 将"[i, j]" -> (i, j)
+                        # value如果是list，转回np.array；如果是float/int，直接用
+                        if isinstance(v, list):
+                            new_dict[idx] = np.array(v)
+                        else:
+                            new_dict[idx] = v
+                    self.MUedition["edition"][field] = new_dict
+                except Exception as e:
+                    print(f"Error loading field {field}: {e}")
+                    self.MUedition["edition"][field] = {}
+            elif field == "Pulsetrain" and isinstance(val, np.ndarray): #处理pulsetrain
+                self.MUedition["edition"][field] = [x for x in val.flatten()]
+            elif field == "Flag" and isinstance(val, np.ndarray):   #处理flag
+                self.MUedition["edition"][field] = [
+                                            [0] * arr.shape[0]
+                                            for arr in self.MUedition["edition"]["Pulsetrain"]
+                                            ]
+            elif field == "time" and isinstance(val, np.ndarray):   #处理time
+                self.MUedition["edition"][field] = val.flatten()
+            elif field == "arraynb" and isinstance(val, np.ndarray):    #处理arraynb
+                self.MUedition["edition"][field] = val.flatten()
+            else:
+                self.MUedition["edition"][field] = val
+
+        signal_data = files["signal"][0, 0]
+        for field in signal_data.dtype.names:
+            self.MUedition["signal"][field] = signal_data[field]
+
+        if "parameters" in files:
+            parameters_data = files["parameters"][0, 0]
+            for field in parameters_data.dtype.names:
+                self.MUedition["parameters"][field] = parameters_data[field]
+
+    def import_decomposed_file(self, files):
+        """Import data from a new decomposition file that hasn't been edited yet."""
+        if not self.MUedition:
+            return
+
+        signal_data = files["signal"][0, 0]
+
+        # Copy signal fields
+        for field in signal_data.dtype.names:
+            self.MUedition["signal"][field] = signal_data[field]
+
+        # Copy parameters if available
+        if "parameters" in files:
+            parameters_data = files["parameters"][0, 0]
+            for field in parameters_data.dtype.names:
+                self.MUedition["parameters"][field] = parameters_data[field]
+
+        # Initialize edition data structures
+        self.MUedition["edition"]["Pulsetrain"] = []
+        self.MUedition["edition"]["Dischargetimes"] = {}
+        self.MUedition["edition"]["silval"] = {}
+        self.MUedition["edition"]["silvalcon"] = {}
+        self.MUedition["edition"]["Flag"] = []
+        
+        
+
+        # Extract scalar values
+        ngrid = int(self.MUedition["signal"]["ngrid"][0, 0])
+        fsamp = float(self.MUedition["signal"]["fsamp"][0, 0])
+
+        # Calculate time vector
+        signal_length = self.MUedition["signal"]["data"].shape[1]
+        self.MUedition["edition"]["time"] = np.linspace(0, signal_length / fsamp, signal_length)
+
+        # Copy Pulsetrain data
+        pulsetrain_data = self.MUedition["signal"]["Pulsetrain"][0]
+
+        # Handle as a 1D array
+        for i in range(len(pulsetrain_data)):
+            self.MUedition["edition"]["Pulsetrain"].append(pulsetrain_data[i])
+        
+        # Copy Dischargetimes
+        dischargetimes_data = self.MUedition["signal"]["Dischargetimes"]
+        for i in range(dischargetimes_data.shape[0]):
+            for j in range(dischargetimes_data.shape[1]):
+                # Get the discharge times array and check if it's not empty
+                dt = dischargetimes_data[i, j]
+                if dt.size > 0:
+                    # Flatten and store as tuple key (array_idx, mu_idx)
+                    self.MUedition["edition"]["Dischargetimes"][(i, j)] = dt.flatten()
+
+        # Calculate SIL values for each motor unit
+        for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
+            pulse_train = self.MUedition["edition"]["Pulsetrain"][array_idx]
+            
+            # Give every MU array a Flag array
+            self.MUedition["edition"]["Flag"].append([])
+            
+            for mu_idx in range(pulse_train.shape[0]):
+                if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
+                    self.calculate_silval(array_idx, mu_idx)
+                    
+                # Give every MU a Flag tag
+                self.MUedition["edition"]["Flag"][array_idx].append(0)
+    
+    def import_h5py_edited_file(self, files):
+        """Import data from a new decomposition file that hasn't been edited yet."""
+        self.MUedition = {"edition": {}, "signal": {}, "parameters": {}}
+
+        signal_data = files["signal"]
+
+        # Copy signal fields
+        for field in signal_data:
+            self.MUedition["signal"][field] = signal_data[field]
+
+        # Copy parameters if available
+        if "parameters" in files:
+            parameters_data = files["parameters"]
+            for field in parameters_data:
+                self.MUedition["parameters"][field] = parameters_data[field]
+
+        # Initialize edition data structures
+        self.MUedition["edition"]["Pulsetrain"] = []
+        self.MUedition["edition"]["Dischargetimes"] = {}
+        self.MUedition["edition"]["silval"] = {}
+        self.MUedition["edition"]["silvalcon"] = {}
+        self.MUedition["edition"]["Flag"] = []
+        
+        # Calculate time vector
+        self.MUedition["signal"]["data"] = self.MUedition["signal"]["data"].T
+        self.MUedition["edition"]["time"] = files["edition"]["time"].squeeze()
+        
+        # Copy Pulsetrain data
+        pulsetrain_data = files["edition"]["Pulsetrain"]
+
+        # Handle as a 1D array
+        for i in range(len(pulsetrain_data)):
+            self.MUedition["edition"]["Pulsetrain"].append(np.array(pulsetrain_data[i][0]).T)
+            
+        # Copy Dischargetimes
+        dischargetimes_data = files["edition"]["Dischargetimes"]
+        for i in range(len(dischargetimes_data)):
+            for j in range(len(dischargetimes_data[0])):
+                # Get the discharge times array and check if it's not empty
+                dt = dischargetimes_data[i][j]
+                if len(dt) > 0:
+                    # Flatten and store as tuple key (array_idx, mu_idx)
+                    self.MUedition["edition"]["Dischargetimes"][(j, i)] = np.array(dt, dtype=int)
+
+        # Load SIL values for each motor unit
+        for array_idx in range(len(files["edition"]["silval"][0])):
+            # Give every MU array a Flag array
+            self.MUedition["edition"]["Flag"].append([])
+            
+            for mu_idx in range(len(files["edition"]["silval"])):
+                if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
+                    
+                    self.MUedition["edition"]["silval"][(array_idx, mu_idx)] = files["edition"]["silval"][mu_idx][array_idx][0]
+                    self.MUedition["edition"]["silvalcon"][(array_idx, mu_idx)] = np.array(files["edition"]["silvalcon"][mu_idx][array_idx]).T
+                self.MUedition["edition"]["Flag"][array_idx].append(0)
+        
+        # Refactored data structures to align with downstream processing requirements.
+        EMGmask_list = []
+        for array_idx in range(len(self.MUedition["signal"]["EMGmask"])):
+            EMGmask = self.MUedition["signal"]["EMGmask"][array_idx][0][0]
+            EMGmask_list.append(EMGmask)
+
+        self.MUedition["signal"]["EMGmask"] = np.array([EMGmask_list])
+        
+        # Refactored data structures to align with downstream processing requirements.
+        auxname_list = []
+        for name_list in self.MUedition["signal"]["auxiliaryname"]:
+            name_str = bytes(name_list[0]).decode('ascii')
+            auxname_list.append(name_str)
+
+        self.MUedition["signal"]["auxiliaryname"] = np.array([auxname_list])
+        self.MUedition["signal"]["auxiliary"] = self.MUedition["signal"]["auxiliary"].T
+        
+    def import_h5py_decomposed_file(self, files):
+        """Import data from a new decomposition file that hasn't been edited yet."""
+
+        signal_data = files["signal"]
+
+        # Copy signal fields
+        for field in signal_data:
+            self.MUedition["signal"][field] = signal_data[field]
+
+        # Copy parameters if available
+        if "parameters" in files:
+            parameters_data = files["parameters"]
+            for field in parameters_data:
+                self.MUedition["parameters"][field] = parameters_data[field]
+
+        # Initialize edition data structures
+        self.MUedition["edition"]["Pulsetrain"] = []
+        self.MUedition["edition"]["Dischargetimes"] = {}
+        self.MUedition["edition"]["silval"] = {}
+        self.MUedition["edition"]["silvalcon"] = {}
+        self.MUedition["edition"]["Flag"] = []
+        
+        # Extract scalar values
+        ngrid = int(self.MUedition["signal"]["ngrid"][0, 0])
+        fsamp = float(self.MUedition["signal"]["fsamp"][0, 0])
+
+        # Calculate time vector
+        self.MUedition["signal"]["data"] = self.MUedition["signal"]["data"].T
+        signal_length = self.MUedition["signal"]["data"].shape[1]
+        self.MUedition["edition"]["time"] = np.linspace(0, signal_length / fsamp, signal_length)
+
+        # Copy Pulsetrain data
+        pulsetrain_data = self.MUedition["signal"]["Pulsetrain"]
+
+        # Handle as a 1D array
+        for i in range(len(pulsetrain_data)):
+            self.MUedition["edition"]["Pulsetrain"].append(np.array(pulsetrain_data[i][0]).T)
+        
+        # Copy Dischargetimes
+        dischargetimes_data = self.MUedition["signal"]["Dischargetimes"]
+        for i in range(len(dischargetimes_data)):
+            for j in range(len(dischargetimes_data[0])):
+                # Get the discharge times array and check if it's not empty
+                dt = dischargetimes_data[i][j]
+                if len(dt) > 0:
+                    # Flatten and store as tuple key (array_idx, mu_idx)
+                    self.MUedition["edition"]["Dischargetimes"][(j, i)] = np.array(dt, dtype=int)
+
+        max_progress = sum(pt.shape[0] for pt in self.MUedition["edition"]["Pulsetrain"])
+        progress = QProgressDialog("Caculating SIL values for each motor unit...", "Cancle", 0, max_progress, self)
+        cancel_btn = progress.findChild(QPushButton)
+        if cancel_btn:
+            cancel_btn.hide()
+        cur_progress = 0
+        # Calculate SIL values for each motor unit
+        for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
+            pulse_train = self.MUedition["edition"]["Pulsetrain"][array_idx]
+            
+            # Give every MU array a Flag array
+            self.MUedition["edition"]["Flag"].append([])
+            
+            for mu_idx in range(pulse_train.shape[0]):
+                if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
+                    cur_progress += 1
+                    self.calculate_silval(array_idx, mu_idx)
+                    progress.setValue(cur_progress)
+                    progress.setLabelText(f"Calculating for Array {array_idx}: MU {mu_idx}")
+                    QApplication.processEvents()
+                    
+                # Give every MU a Flag tag
+                self.MUedition["edition"]["Flag"][array_idx].append(0)
+        
+        # Refactored data structures to align with downstream processing requirements.
+        EMGmask_list = []
+        for array_idx in range(len(self.MUedition["signal"]["EMGmask"])):
+            EMGmask = self.MUedition["signal"]["EMGmask"][array_idx][0][0]
+            EMGmask_list.append(EMGmask)
+        
+        self.MUedition["signal"]["EMGmask"] = np.array([EMGmask_list])
+        
+        # Refactored data structures to align with downstream processing requirements.
+        auxname_list = []
+        for name_list in self.MUedition["signal"]["auxiliaryname"]:
+            name_str = bytes(name_list[0]).decode('ascii')
+            auxname_list.append(name_str)
+            
+        self.MUedition["signal"]["auxiliaryname"] = np.array([auxname_list])
+        
+        self.MUedition["signal"]["auxiliary"] = self.MUedition["signal"]["auxiliary"].T     
+           
+    
+    
+                
     def update_action_button_states(self):
         enabled = self.plot_display_mode == 0
         self.add_spikes_btn.setEnabled(enabled)
@@ -429,7 +761,6 @@ class MUeditManual(QMainWindow):
         
         if hasattr(self, "selection_tool"): self.selection_tool.disable()
         
-    
     def help_button_pushed(self):
         HelpDialog()
 
@@ -614,118 +945,6 @@ class MUeditManual(QMainWindow):
         for checkbox in self.array_checkboxes:
             checkbox.blockSignals(False)
 
-    def import_edited_file(self, files):
-        """Import data from a previously edited file."""
-        if not self.MUedition:
-            return
-
-        # Copy structured data from MATLAB file
-        edition_data = files["edition"][0, 0]
-        #恢复"Dischargetimes", "silval", "silvalcon"这三个字典
-        for field in edition_data.dtype.names:
-            val = edition_data[field]
-            # 检查是不是json字符串
-            if field in ("Dischargetimes", "silval", "silvalcon") and isinstance(val, np.ndarray) and val.dtype.kind in {'U','S','O'}:
-                # 这里val是一个长度为1的array，里面是string
-                str_val = str(val.item())
-                try:
-                    raw_dict = json.loads(str_val)
-                    # key从"[i,j]"字符串恢复为tuple
-                    new_dict = {}
-                    for k, v in raw_dict.items():
-                        idx = tuple(json.loads(k.replace("'", '"')))  # 将"[i, j]" -> (i, j)
-                        # value如果是list，转回np.array；如果是float/int，直接用
-                        if isinstance(v, list):
-                            new_dict[idx] = np.array(v)
-                        else:
-                            new_dict[idx] = v
-                    self.MUedition["edition"][field] = new_dict
-                except Exception as e:
-                    print(f"Error loading field {field}: {e}")
-                    self.MUedition["edition"][field] = {}
-            elif field == "Pulsetrain" and isinstance(val, np.ndarray): #处理pulsetrain
-                self.MUedition["edition"][field] = [x for x in val.flatten()]
-            elif field == "Flag" and isinstance(val, np.ndarray):   #处理flag
-                self.MUedition["edition"][field] = [x.tolist()[0] if isinstance(x, np.ndarray) else list(x) for x in
-                                   val.flatten()]
-            elif field == "time" and isinstance(val, np.ndarray):   #处理time
-                self.MUedition["edition"][field] = val.flatten()
-            elif field == "arraynb" and isinstance(val, np.ndarray):    #处理arraynb
-                self.MUedition["edition"][field] = val.flatten()
-            else:
-                self.MUedition["edition"][field] = val
-
-        signal_data = files["signal"][0, 0]
-        for field in signal_data.dtype.names:
-            self.MUedition["signal"][field] = signal_data[field]
-
-        if "parameters" in files:
-            parameters_data = files["parameters"][0, 0]
-            for field in parameters_data.dtype.names:
-                self.MUedition["parameters"][field] = parameters_data[field]
-
-    def import_decomposed_file(self, files):
-        """Import data from a new decomposition file that hasn't been edited yet."""
-        if not self.MUedition:
-            return
-
-        signal_data = files["signal"][0, 0]
-
-        # Copy signal fields
-        for field in signal_data.dtype.names:
-            self.MUedition["signal"][field] = signal_data[field]
-
-        # Copy parameters if available
-        if "parameters" in files:
-            parameters_data = files["parameters"][0, 0]
-            for field in parameters_data.dtype.names:
-                self.MUedition["parameters"][field] = parameters_data[field]
-
-        # Initialize edition data structures
-        self.MUedition["edition"]["Pulsetrain"] = []
-        self.MUedition["edition"]["Dischargetimes"] = {}
-        self.MUedition["edition"]["silval"] = {}
-        self.MUedition["edition"]["silvalcon"] = {}
-        self.MUedition["edition"]["Flag"] = []
-
-        # Extract scalar values
-        ngrid = int(self.MUedition["signal"]["ngrid"][0, 0])
-        fsamp = float(self.MUedition["signal"]["fsamp"][0, 0])
-
-        # Calculate time vector
-        signal_length = self.MUedition["signal"]["data"].shape[1]
-        self.MUedition["edition"]["time"] = np.linspace(0, signal_length / fsamp, signal_length)
-
-        # Copy Pulsetrain data
-        pulsetrain_data = self.MUedition["signal"]["Pulsetrain"][0]
-
-        # Handle as a 1D array
-        for i in range(len(pulsetrain_data)):
-            self.MUedition["edition"]["Pulsetrain"].append(pulsetrain_data[i])
-
-        # Copy Dischargetimes
-        dischargetimes_data = self.MUedition["signal"]["Dischargetimes"]
-        for i in range(dischargetimes_data.shape[0]):
-            for j in range(dischargetimes_data.shape[1]):
-                # Get the discharge times array and check if it's not empty
-                dt = dischargetimes_data[i, j]
-                if dt.size > 0:
-                    # Flatten and store as tuple key (array_idx, mu_idx)
-                    self.MUedition["edition"]["Dischargetimes"][(i, j)] = dt.flatten()
-
-        # Calculate SIL values for each motor unit
-        for array_idx in range(len(self.MUedition["edition"]["Pulsetrain"])):
-            pulse_train = self.MUedition["edition"]["Pulsetrain"][array_idx]
-            
-            # Give every MU array a Flag array
-            self.MUedition["edition"]["Flag"].append([])
-            
-            for mu_idx in range(pulse_train.shape[0]):
-                if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
-                    self.calculate_silval(array_idx, mu_idx)
-                    
-                # Give every MU a Flag tag
-                self.MUedition["edition"]["Flag"][array_idx].append(0)
 
     def calculate_silval(self, array_idx, mu_idx):
         """Calculate silhouette value for a motor unit."""
@@ -859,7 +1078,6 @@ class MUeditManual(QMainWindow):
                 self.spiketrain_plot.addItem(scatter)
             self.spiketrainCurves.append(scatter)
 
-        self.spiketrain_plot.setFocus()
 
 
     def display_selected_mus(self, checked_mus, pluse_train_color="#D95535"):
@@ -984,8 +1202,6 @@ class MUeditManual(QMainWindow):
             # self.dr_plot.getViewBox().sigXRangeChanged.connect(on_xrange_changed, type=Qt.UniqueConnection) 
             self.spiketrain_plot.getViewBox().sigXRangeChanged.connect(on_xrange_changed, type=Qt.UniqueConnection)
             
-            # Ensure shortcut key responsiveness after plot creation 
-            self.spiketrain_plot.setFocus()
             self.resetPlot = False
 
         else:
@@ -1185,7 +1401,7 @@ class MUeditManual(QMainWindow):
         self.graphstart = center - duration / 2
         self.graphend = center + duration / 2
         self.update_plot_limits()
-        self._sync_pan_slider()#moy
+        self._sync_pan_slider() #moy
 
     def zoom_out_button_pushed(self):
         """Zoom out on the time axis."""
@@ -1700,6 +1916,8 @@ class MUeditManual(QMainWindow):
             self.show_tip("Update filter successfully! Green means SIL improve. Blue means SIL decrease.", duration_ms=4000)
             #SuccessDialog(text="Update filter successfully!\nGreen means SIL improve. Blue means SIL decrease.")
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             QApplication.restoreOverrideCursor()
             print(e)
             ErrorDialog(text="Fail to update filter.")
@@ -2768,21 +2986,21 @@ class MUeditManual(QMainWindow):
 
     def save_button_pushed(self):
         """Save the edited motor units to a file."""
-                # Determine the save filename
+        # Determine the save filename
         if self.filename is None:
             return
 
-        if "edited" in self.filename:
+        if os.path.splitext(self.filename)[0].endswith("_pyedited"):
             savename = os.path.join(self.pathname or "", self.filename)
         else:
-            savename = os.path.join(self.pathname or "", os.path.splitext(self.filename)[0] + "_edited.mat")
-            self.filename = self.filename + "_edited.mat"
+            savename = os.path.join(self.pathname or "", os.path.splitext(self.filename)[0] + "_pyedited.mat")
+            self.filename = self.filename + "_pyedited.mat"
 
         self.file_path_field.setText(self.filename)
         self.select_file_title_btn.setText(self.filename)
         
         self.save_file(savename)
-        self.show_tip("Save Complete! Data saved to: {filepath}", duration_ms=8000)
+
         
             
             
@@ -2861,13 +3079,14 @@ class MUeditManual(QMainWindow):
                                 "silvalcon"
                             ][array_idx, shift_mu]
                             del self.MUedition["edition"]["silvalcon"][array_idx, shift_mu]
-
-        progress.setValue(100)
+        progress.setValue(50)
+        import time
 
         # Prepare data for saving
-        signal = copy.deepcopy(self.MUedition["signal"])
+        signal = self.MUedition["signal"]
         parameters = copy.deepcopy(self.MUedition.get("parameters", {}))
         edition = copy.deepcopy(self.MUedition["edition"])
+
 
 
         # 在保存前重置所有未删除（即实际存在的MU）的Flag为0（直接操作edition）
@@ -2907,12 +3126,33 @@ class MUeditManual(QMainWindow):
                         v_ = v
                     safe_dict[k_str] = v_
                 edition[field] = json.dumps(safe_dict)
-
+        
+        
+        progress.setValue(100)
         # Save the data
-        sio.savemat(filepath, {"signal": signal, "parameters": parameters, "edition": edition})
-        self.dirty_depth = 0 
-        self.initial_data = copy.deepcopy(self.MUedition["edition"]) 
-        self.update_save_button()
+                
+        data = {
+            "signal":     signal,
+            "parameters": parameters,
+            "edition":    edition
+        }
+        self.update_save_button(on_save=True)
+        self._save_thread = Save_worker(
+            filepath, data,
+            on_finished=lambda: (
+                self.update_save_button(),
+                self.show_tip(f"Save Complete! Data saved to: {filepath}", duration_ms=8000)
+            ),
+            on_error=lambda errmsg: ErrorDialog(
+                title_label="Save File Error",
+                text=errmsg
+            )
+        )
+
+        self._save_thread.start()
+        
+        self.dirty_depth = 0 #shr
+        self.initial_data = copy.deepcopy(self.MUedition["edition"])    #保存新的原始数据
         # Show a confirmation message
         from PyQt5.QtWidgets import QMessageBox
         #QMessageBox.information(self, "Save Complete", f"Data saved to {savename}", QMessageBox.Ok)
