@@ -15,26 +15,25 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
     Args:
         emg_obj: Instance of offline_EMG class
     """
-    electrode_names = emg_obj.signal_dict["electrodes"]
-    print(f"Electrode names: {electrode_names}")
+    grid_names = emg_obj.signal_dict["gridname"]
+    print(f"Grid names: {grid_names}")
     ElChannelMap = []
     coordinates = []
     emg_obj.emgopt = []
     IED = []
     c_map = []
     r_map = []
-    rejected_channels = []
     chans_per_electrode = []
     emg_obj.signal_dict["filtered_data"] = np.zeros(
         [np.shape(emg_obj.signal_dict["data"])[0], np.shape(emg_obj.signal_dict["data"])[1]]
     )
     print(f"Initialized filtered_data with shape {emg_obj.signal_dict['filtered_data'].shape}")
 
-    for i in range(emg_obj.signal_dict["nelectrodes"]):
-        print(f"\nProcessing electrode {i+1}/{emg_obj.signal_dict['nelectrodes']}: {electrode_names[i]}")
+    for i in range(emg_obj.signal_dict["ngrid"]):
+        print(f"\nProcessing grid {i+1}/{emg_obj.signal_dict['ngrid']}: {grid_names[i]}")
 
-        if electrode_names[i] == "GR04MM1305":
-            print(f"Configuring {electrode_names[i]} (4mm grid)")
+        if grid_names[i] == "GR04MM1305":
+            print(f"Configuring {grid_names[i]} (4mm grid)")
             ElChannelMap.append(
                 [
                     [0, 24, 25, 50, 51],
@@ -53,14 +52,13 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
                 ]
             )
 
-            rejected_channels.append(np.zeros([65]))
             IED.append(4)
             ElChannelMap[i] = np.squeeze(np.array(ElChannelMap[i]))
             chans_per_electrode.append((np.shape(ElChannelMap[i])[0] * np.shape(ElChannelMap[i])[1]) - 1)
             emg_obj.emgopt.append("surface")
 
-        elif electrode_names[i] == "ELSCH064NM2":
-            print(f"Configuring {electrode_names[i]} (non-mapped EMG)")
+        elif grid_names[i] == "ELSCH064NM2":
+            print(f"Configuring {grid_names[i]} (non-mapped EMG)")
             ElChannelMap.append(
                 [
                     [0, 0, 1, 2, 3],
@@ -79,14 +77,13 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
                 ]
             )
 
-            rejected_channels.append(np.zeros([65]))
             IED.append(8)
             ElChannelMap[i] = np.squeeze(np.array(ElChannelMap[i]))
             chans_per_electrode.append((np.shape(ElChannelMap[i])[0] * np.shape(ElChannelMap[i])[1]) - 1)
             emg_obj.emgopt.append("surface")
 
-        elif electrode_names[i] == "GR08MM1305":
-            print(f"Configuring {electrode_names[i]} (8mm grid)")
+        elif grid_names[i] == "GR08MM1305":
+            print(f"Configuring {grid_names[i]} (8mm grid)")
             ElChannelMap.append(
                 [
                     [0, 24, 25, 50, 51],
@@ -105,14 +102,13 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
                 ]
             )
 
-            rejected_channels.append(np.zeros([65]))
             IED.append(8)
             ElChannelMap[i] = np.squeeze(np.array(ElChannelMap[i]))
             chans_per_electrode.append((np.shape(ElChannelMap[i])[0] * np.shape(ElChannelMap[i])[1]) - 1)
             emg_obj.emgopt.append("surface")
 
-        elif electrode_names[i] == "GR10MM0808":
-            print(f"Configuring {electrode_names[i]} (10mm grid)")
+        elif grid_names[i] == "GR10MM0808":
+            print(f"Configuring {grid_names[i]} (10mm grid)")
             ElChannelMap.append(
                 [
                     [7, 15, 23, 31, 39, 47, 55, 63],
@@ -126,14 +122,13 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
                 ]
             )
 
-            rejected_channels.append(np.zeros([65]))
             IED.append(10)
             ElChannelMap[i] = np.squeeze(np.array(ElChannelMap[i]))
             chans_per_electrode.append((np.shape(ElChannelMap[i])[0] * np.shape(ElChannelMap[i])[1]) - 1)
             emg_obj.emgopt.append("surface")
 
-        elif electrode_names[i] == "other":
-            print(f"Configuring {electrode_names[i]} (other type - assuming thin-film)")
+        elif grid_names[i] == "other":
+            print(f"Configuring {grid_names[i]} (other type - assuming thin-film)")
             # TO DO: match up to the relevant configuration for a thin-film
             ElChannelMap.append(
                 [
@@ -153,14 +148,13 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
                 ]
             )
 
-            rejected_channels.append(np.zeros([65]))
             IED.append(1)
             ElChannelMap[i] = np.squeeze(np.array(ElChannelMap[i]))
             chans_per_electrode.append((np.shape(ElChannelMap[i])[0] * np.shape(ElChannelMap[i])[1]) - 1)
             emg_obj.emgopt.append("intra")
 
-        elif electrode_names[i] == "Thin film":
-            print(f"Configuring {electrode_names[i]} (thin film)")
+        elif grid_names[i] == "Thin film":
+            print(f"Configuring {grid_names[i]} (thin film)")
             ElChannelMap.append(
                 [
                     [0, 10, 20, 30],
@@ -176,24 +170,22 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
                 ]
             )
 
-            rejected_channels.append(np.zeros([40]))
             IED.append(1)
             ElChannelMap[i] = np.squeeze(np.array(ElChannelMap[i]))
             chans_per_electrode.append((np.shape(ElChannelMap[i])[0] * np.shape(ElChannelMap[i])[1]))
             emg_obj.emgopt.append("intra")
 
-        elif electrode_names[i] == "4-wire needle":
-            print(f"Configuring {electrode_names[i]} (4-wire needle)")
+        elif grid_names[i] == "4-wire needle":
+            print(f"Configuring {grid_names[i]} (4-wire needle)")
             ElChannelMap.append([[0, 8], [1, 9], [2, 10], [3, 11], [4, 12], [5, 13], [6, 14], [7, 15]])
 
-            rejected_channels.append(np.zeros([16]))
             IED.append(4)
             ElChannelMap[i] = np.squeeze(np.array(ElChannelMap[i]))
             chans_per_electrode.append((np.shape(ElChannelMap[i])[0] * np.shape(ElChannelMap[i])[1]))
             emg_obj.emgopt.append("intra")
 
-        elif electrode_names[i] == "Myomatrix Monopolar":
-            print(f"Configuring {electrode_names[i]} (Myomatrix Monopolar)")
+        elif grid_names[i] == "Myomatrix Monopolar":
+            print(f"Configuring {grid_names[i]} (Myomatrix Monopolar)")
             ElChannelMap.append(
                 [
                     [0, 8, 16, 24],
@@ -207,18 +199,16 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
                 ]
             )
 
-            rejected_channels.append(np.zeros([16]))
             IED.append(4)
             ElChannelMap[i] = np.squeeze(np.array(ElChannelMap[i]))
             chans_per_electrode.append((np.shape(ElChannelMap[i])[0] * np.shape(ElChannelMap[i])[1]))
             emg_obj.emgopt.append("intra")
 
         else:
-            print(f"Unknown electrode type {electrode_names[i]} - assuming intramuscular array")
+            print(f"Unknown electrode type {grid_names[i]} - assuming intramuscular array")
             # assume that it is some variation of an intramusuclar array
             ElChannelMap.append([[0, 8], [1, 9], [2, 10], [3, 11], [4, 12], [5, 13], [6, 14], [7, 15]])
 
-            rejected_channels.append(np.zeros([16]))
             IED.append(4)
             ElChannelMap[i] = np.squeeze(np.array(ElChannelMap[i]))
             chans_per_electrode.append((np.shape(ElChannelMap[i])[0] * np.shape(ElChannelMap[i])[1]))
@@ -263,7 +253,6 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
 
     emg_obj.c_maps = c_map
     emg_obj.r_maps = r_map
-    emg_obj.rejected_channels = rejected_channels
     emg_obj.ied = IED
     emg_obj.chans_per_electrode = chans_per_electrode
     emg_obj.coordinates = coordinates

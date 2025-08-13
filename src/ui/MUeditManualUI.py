@@ -885,4 +885,3 @@ def find_sidebar(main_window):
         if sidebar:
             return sidebar
     return None
-

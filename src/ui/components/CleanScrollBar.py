@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QScrollArea
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QScrollArea
 
 
 class CleanScrollBar:
@@ -9,8 +9,11 @@ class CleanScrollBar:
 
     @staticmethod
     def apply(
-        scroll_area: QScrollArea, with_padding=True, width=8, handle_color="#BBBBBB", handle_hover_color="#999999"
-    ):
+            scroll_area: QScrollArea,
+            with_padding=True,
+            width=8,
+            handle_color="#BBBBBB",
+            handle_hover_color="#999999"):
         """
         Apply clean scrollbar styling to a QScrollArea
 
@@ -22,7 +25,8 @@ class CleanScrollBar:
             handle_hover_color (str): Color of the scrollbar handle on hover
         """
         # Set scrollbar visibility policies
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll_area.setFrameShape(QScrollArea.NoFrame)
 
         # Create padding margin if requested
@@ -40,7 +44,6 @@ class CleanScrollBar:
                 background: #F0F0F0;
                 width: {width}px;
                 margin: {padding_margin}; /* Top and bottom padding */
-
                 border-radius: {width//2}px;
             }}
             QScrollBar::handle:vertical {{

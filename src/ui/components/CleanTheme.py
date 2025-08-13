@@ -17,3 +17,35 @@ class CleanTheme:
     # Borders and shadows
     BORDER = "#E0E0E0"  # Light gray for borders
     SHADOW = QColor(0, 0, 0, 15)  # Very subtle shadow
+    HEADER = "#d0d0d0"
+
+    ################################################################
+    ########################### ANALYSIS ###########################
+    ################################################################
+    ANALYSIS_BG_MAIN = "#f8f9fa"
+    ANALYSIS_BG_CARD = "#ffffff"
+    ANALYSIS_BG_SIDEBAR = "#343a40"
+    ANALYSIS_BG_TOPBAR = "#ffffff"
+    ANALYSIS_BG_DROPDOWN = "#394150"
+    ANALYSIS_BG_BUTTON = "#495057"
+    ANALYSIS_TEXT_PRIMARY = "#ffffff"
+    ANALYSIS_TEXT_SECONDARY = "#cccccc"
+    ANALYSIS_TEXT_TERTIARY = "#8e8e8e"
+    ANALYSIS_TEXT_BUTTON = "#e9ecee"
+
+    """
+        self.colors = {
+            "bg_main": "#f8f9fa",
+            "bg_card": "#ffffff",
+            "bg_sidebar": "#f8f9fa",
+            "bg_topbar": "#ffffff",
+            "border_light": "#e9ecef",
+            "shadow": QColor(0, 0, 0, 25),
+            "text_primary": "#212529",
+            "text_secondary": "#6c757d",
+            "text_title": "#343a40",
+            "button_dark_bg": "#343a40",
+            "button_dark_hover": "#495057",
+            "button_grey_bg": "#e9ecee",
+            "checkbox_bg": "#f1f3f5",
+    """

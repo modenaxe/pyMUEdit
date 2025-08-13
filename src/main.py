@@ -1,6 +1,10 @@
 import sys
 import os
 
+# Fix matplotlib backend BEFORE importing any other modules
+import matplotlib
+matplotlib.use('Qt5Agg')  # Use Qt5 backend to match PyQt5
+
 project_root = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, project_root)
 

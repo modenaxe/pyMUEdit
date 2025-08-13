@@ -38,7 +38,12 @@ from core.utils.manual_editing.h5_import import h5py_convert
 from core.utils.manual_editing.save_worker import Save_worker
 from core.utils.manual_editing.extendfilter import extendfilter
 from core.utils.manual_editing.selection_tools import SelectionTool, process_selection
-from core.utils.decomposition.remove_outliers import remove_outliers
+
+from core.utils.decomposition.remove_duplicates import remove_duplicates
+from core.utils.decomposition.remove_duplicates_between_arrays import remove_duplicates_between_arrays
+from core.utils.decomposition.extend_emg import extend_emg
+from core.utils.decomposition.whiten_emg import whiten_emg
+
 from core.utils.manual_editing.smart_button_pushed import smart_button_pushed
 from core.utils.manual_editing.batch_filter_worker import batch_filter_worker
 from core.utils.manual_editing.duplicates_within_grids_worker import duplicates_within_grids_worker
@@ -65,12 +70,12 @@ class MUeditManual(QMainWindow):
     # Add signal to return to dashboard if needed
     return_to_dashboard_requested = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, filename=None, pathname=None, parent=None):
         super().__init__(parent)
 
         # Initialize main data structures
-        self.filename = None
-        self.pathname = None
+        self.filename = filename
+        self.pathname = pathname
         self.MUedition = None
         self.Backup = {"lock": 0, "Pulsetrain": None, "Dischargetimes": None, "lock_changable": 1}
         self.undo_stack = [] # add undo stack moy
@@ -91,18 +96,22 @@ class MUeditManual(QMainWindow):
         self._save_flag = True
         self._on_save = 0
         self._ish5 = False
-        
+
         # Set up the UI
         setup_ui(self)
 
         self.dirty = False
         self.update_save_button()
         self.dirty_depth = 0  #shr
+        # Imports data (only if filename and pathname exist)
+        if filename and pathname:
+            self.file_path_field.setText(self.filename)
+            self.import_data()
 
         # Add back button if needed when used in embedded mode
         if parent:
             self.add_back_button()
-        
+
         self._create_shortcuts()
 
     def show_tip(self, text, duration_ms=3000):
@@ -1813,7 +1822,7 @@ class MUeditManual(QMainWindow):
             distime_list = [self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx]]
 
             # Call the function
-            filtered_distime, removal_dict = remove_outliers(
+            filtered_distime, removal_dict = self.remove_outliers(
                 pulse_trains, distime_list, self.MUedition["signal"]["fsamp"], [mu_text]
             )
 
@@ -2328,7 +2337,7 @@ class MUeditManual(QMainWindow):
                 # Apply remoutliers if there are discharge times
                 if len(distime_list[0]) > 1:
                     mu_name = f"Array_{array_idx+1}_MU_{mu_idx+1}"
-                    filtered_distime, removal_dict = remove_outliers(
+                    filtered_distime, removal_dict = self.remove_outliers(
                         pulse_trains,
                         distime_list,
                         self.MUedition["signal"]["fsamp"],
@@ -2360,6 +2369,52 @@ class MUeditManual(QMainWindow):
         self.update_save_button()
         # Update the current MU display
         self.mu_checkbox_state_changed()
+
+    def remove_outliers(pulse_trains, discharge_times, fsamp, mu_names=None):
+        """
+        Remove outlier discharges: for each spike pair with high discharge rate,
+        remove the spike with lower amplitude. Logic follows MATLAB implementation.
+        Only a single pass is applied, no iteration.
+        """
+        removal_summary = {}
+        for mu in range(len(discharge_times)):
+            # Discharge rate between consecutive spikes
+            drates = 1 / (np.diff(discharge_times[mu]) / fsamp)
+            drates = np.array(drates).flatten()
+            mean_dr = np.mean(drates)
+            std_dr = np.std(drates, ddof=1)
+            threshold = mean_dr + 3 * std_dr
+
+            # Indices where DR exceeds threshold
+            artifact_inds = np.where(drates > threshold)[0]
+
+            del_indices = []
+
+            for i in artifact_inds:
+                t1 = discharge_times[mu][i]
+                t2 = discharge_times[mu][i + 1]
+
+                amp1 = pulse_trains[mu][t1]
+                amp2 = pulse_trains[mu][t2]
+
+                if amp1 < amp2:
+                    del_indices.append(i)
+                else:
+                    del_indices.append(i + 1)
+
+            # Remove duplicates & sort
+            del_indices = sorted(set(del_indices))
+
+            # Ensure not out of bounds
+            del_indices = [idx for idx in del_indices if idx < len(discharge_times[mu])]
+
+            # Perform deletion
+            discharge_times[mu] = np.delete(discharge_times[mu], del_indices)
+            # Identify MU name (fallback to MU_{index} if no name provided)
+            mu_name = mu_names[mu] if mu_names and mu < len(mu_names) else f"MU_{mu}"
+            removal_summary[mu_name] = len(del_indices)
+
+        return discharge_times, removal_summary
 
     def update_all_mu_filters_button_pushed(self):
         """Update filters for all motor units."""

@@ -1,47 +1,35 @@
 import numpy as np
 
-def remove_outliers(pulse_trains, discharge_times, fsamp, mu_names=None):
+def remove_outliers(pulse_trains, discharge_times, fsamp, threshold=0.4, max_its=30):
     """
-    Remove outlier discharges: for each spike pair with high discharge rate,
-    remove the spike with lower amplitude. Logic follows MATLAB implementation.
-    Only a single pass is applied, no iteration.
+    Removes outlier discharge times that would create unrealistic firing rates.
+
+    Identifies and eliminates motor unit discharges that would lead to
+    physiologically implausible discharge rates, improving the reliability
+    of the identified motor unit.
     """
-    removal_summary = {}
+
     for mu in range(len(discharge_times)):
-        # Discharge rate between consecutive spikes
-        drates = 1 / (np.diff(discharge_times[mu]) / fsamp)
-        drates = np.array(drates).flatten()
-        mean_dr = np.mean(drates)
-        std_dr = np.std(drates, ddof=1)
-        threshold = mean_dr + 3 * std_dr
+        discharge_rates = 1 / (np.diff(discharge_times[mu]) / fsamp)
+        it = 1
+        while (np.std(discharge_rates) / np.mean(discharge_rates)) > threshold and it < max_its:
+            artifact_limit = np.mean(discharge_rates) + 3 * np.std(discharge_rates)
 
-        # Indices where DR exceeds threshold
-        artifact_inds = np.where(drates > threshold)[0]
+            # identify the indices for which this limit is exceeded
+            artifact_inds = np.argwhere(discharge_rates > artifact_limit).flatten()
 
-        del_indices = []
+            if artifact_inds.size > 0:
+                # vectorising the comparisons between the numerator terms used to calculate the rate, for indices at rate artifacts
+                diff_artifact_comp = (
+                    pulse_trains[mu][discharge_times[mu][artifact_inds]]
+                    < pulse_trains[mu][discharge_times[mu][artifact_inds + 1]]
+                )
 
-        for i in artifact_inds:
-            t1 = discharge_times[mu][i]
-            t2 = discharge_times[mu][i + 1]
+                # 0 means discharge_times[mu][artifact_inds]] was less, 1 means discharge_times[mu][artifact_inds + 1]] was more
+                less_or_more = np.argmax([diff_artifact_comp, ~diff_artifact_comp], axis=0)
+                discharge_times[mu] = np.delete(discharge_times[mu], artifact_inds + less_or_more)
 
-            amp1 = pulse_trains[mu][t1]
-            amp2 = pulse_trains[mu][t2]
+            discharge_rates = 1 / (np.diff(discharge_times[mu]) / fsamp)
+            it += 1
 
-            if amp1 < amp2:
-                del_indices.append(i)
-            else:
-                del_indices.append(i + 1)
-
-        # Remove duplicates & sort
-        del_indices = sorted(set(del_indices))
-
-        # Ensure not out of bounds
-        del_indices = [idx for idx in del_indices if idx < len(discharge_times[mu])]
-
-        # Perform deletion
-        discharge_times[mu] = np.delete(discharge_times[mu], del_indices)
-        # Identify MU name (fallback to MU_{index} if no name provided)
-        mu_name = mu_names[mu] if mu_names and mu < len(mu_names) else f"MU_{mu}"
-        removal_summary[mu_name] = len(del_indices)
-
-    return discharge_times, removal_summary
+    return discharge_times

@@ -12,7 +12,7 @@ class DecompositionWorker(QThread):
     """
 
     progress = pyqtSignal(str, object)
-    plot_update = pyqtSignal(object, object, object, object, object, object, object, object)
+    plot_update = pyqtSignal(object, object, object, object, object)
     finished = pyqtSignal(object)
     error = pyqtSignal(str)
 
@@ -69,10 +69,10 @@ class DecompositionWorker(QThread):
             nwins = int(len(self.emg_obj.plateau_coords) / 2)
 
             # For each electrode
-            for g in range(int(self.emg_obj.signal_dict["nelectrodes"])):
-                electrode_progress = 0.25 + (0.6 * g / self.emg_obj.signal_dict["nelectrodes"])
+            for g in range(int(self.emg_obj.signal_dict["ngrid"])):
+                electrode_progress = 0.25 + (0.6 * g / self.emg_obj.signal_dict["ngrid"])
                 self.progress.emit(
-                    f"Processing electrode {g+1}/{self.emg_obj.signal_dict['nelectrodes']}", electrode_progress
+                    f"Processing electrode {g+1}/{self.emg_obj.signal_dict['ngrid']}", electrode_progress
                 )
 
                 # Calculate extension factor
@@ -119,7 +119,7 @@ class DecompositionWorker(QThread):
 
                 # For each window interval
                 for interval in range(nwins):
-                    interval_progress = electrode_progress + (0.6 / self.emg_obj.signal_dict["nelectrodes"]) * (
+                    interval_progress = electrode_progress + (0.6 / self.emg_obj.signal_dict["ngrid"]) * (
                         interval / nwins
                     )
                     self.progress.emit(f"Electrode {g+1}, interval {interval+1}/{nwins}", interval_progress)
@@ -183,83 +183,19 @@ class DecompositionWorker(QThread):
             traceback.print_exc()
             self.error.emit(str(e))
 
-    def send_plot_update(self, time_axis, target, plateau_coords, fICA_source, spikes, time2, sil, cov):
+    def send_plot_update(self, fICA_source, spikes, time2, sil, cov):
         """Send plot update signals to the main UI thread"""
         # Throttle updates to avoid overwhelming the UI
-        self.plot_update.emit(time_axis, target, plateau_coords, fICA_source, spikes, time2, sil, cov)
+        self.plot_update.emit(fICA_source, spikes, time2, sil, cov)
         # Process events to keep the UI responsive during long computations
         time.sleep(0.01)  # Small delay to prevent UI freezing
 
     def map_parameters_to_emg_obj(self):
         """Map parameters from MUedit UI to offline_EMG parameters."""
-        # Map iteration parameters
-        self.emg_obj.its = self.parameters.get("NITER", 75)
-        self.emg_obj.windows = self.parameters.get("nwindows", 1)
-
-        # Map mode flags
-        self.emg_obj.ref_exist = 1  # We'll check for target in the signal
-        self.emg_obj.check_emg = self.parameters.get("checkEMG", 0)
+        self.emg_obj.apply_muedit_params(self.parameters)
+        self.ref_exist = 1  # We'll check for target in the signal
         self.emg_obj.drawing_mode = 1  # Enable drawing for PyQtGraph updates
-        self.emg_obj.differential_mode = self.parameters.get("differentialmode", 0)
-        self.emg_obj.peel_off = self.parameters.get("peeloff", 0)
-        self.emg_obj.initialisation = self.parameters.get("initialization", 0)
-        self.emg_obj.cov_filter = self.parameters.get("covfilter", 1)
-        self.emg_obj.refine_mu = self.parameters.get("refineMU", 1)
-        self.emg_obj.dup_bgrids = self.parameters.get("duplicatesbgrids", 0)
-
-        # Map thresholds
-        self.emg_obj.sil_thr = self.parameters.get("silthr", 0.9)
-        self.emg_obj.cov_thr = self.parameters.get("covthr", 0.5)
-        self.emg_obj.dup_thr = self.parameters.get("duplicatesthresh", 0.3)
-        self.emg_obj.target_thres = self.parameters.get("thresholdtarget", 0.8)
-        self.emg_obj.ext_factor = self.parameters.get("nbextchan", 1000)
-        self.emg_obj.edges2remove = self.parameters.get("edges", 0.5)
 
     def format_results(self):
         """Format results from offline_EMG to match MUedit's expected format."""
-        # Create a clean output structure
-        result = {}
-
-        # Copy essential fields from the original signal
-        for field in self.emg_obj.signal_dict:
-            if field not in [
-                "batched_data",
-                "extend_obvs",
-                "extend_obvs_old",
-                "filtered_data",
-                "sq_extend_obvs",
-                "inv_extend_obvs",
-                "diff_data",
-            ]:
-                result[field] = self.emg_obj.signal_dict[field]
-
-        # Map field names to expected MUedit format
-        result["data"] = self.emg_obj.signal_dict.get("data", np.array([]))
-        result["ngrid"] = self.emg_obj.signal_dict.get("nelectrodes", 1)
-        result["gridname"] = self.emg_obj.signal_dict.get("electrodes", [])
-        result["muscle"] = self.emg_obj.signal_dict.get("muscles", [])
-
-        # Add spatial information
-        if hasattr(self.emg_obj, "coordinates"):
-            result["coordinates"] = self.emg_obj.coordinates
-        if hasattr(self.emg_obj, "ied"):
-            result["IED"] = self.emg_obj.ied
-        if hasattr(self.emg_obj, "rejected_channels"):
-            result["EMGmask"] = self.emg_obj.rejected_channels
-
-        # Format pulse trains and discharge times using the exact format expected by MUedit
-        result["Pulsetrain"] = {}
-        result["Dischargetimes"] = {}
-
-        if len(self.emg_obj.mu_dict["pulse_trains"]) > 0:
-            for electrode, pulse_trains in enumerate(self.emg_obj.mu_dict["pulse_trains"]):
-                if isinstance(pulse_trains, np.ndarray) and pulse_trains.shape[0] > 0:
-                    result["Pulsetrain"][electrode] = pulse_trains
-
-                    # Check if discharge_times is available for this electrode
-                    if electrode < len(self.emg_obj.mu_dict["discharge_times"]):
-                        for mu, discharge_times in enumerate(self.emg_obj.mu_dict["discharge_times"][electrode]):
-                            if discharge_times is not None and len(discharge_times) > 0:
-                                result["Dischargetimes"][(electrode, mu)] = discharge_times
-
-        return result
+        return self.emg_obj.format_results_1()
