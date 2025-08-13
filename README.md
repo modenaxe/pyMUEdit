@@ -83,7 +83,12 @@ The page will then display an aggregate graph of each electrode reading, each el
 Importing a file also enables the **Set Configuration** (only on `.otb+` files), **Segment Session** (shortly after processing the file) and **Channel Viewer** buttons, which provide data modification, segmenting and viewing functionality respectively.
 
 #### Set Configuration
-...
+Set Configuration contains a visualisation of the Quattrocento tool used for recording HDEMG signals. The left and right sidebars contain each of the inputs on the Quattrocento, displaying which are enabled or disabled which can be toggled with the checkboxes in the top left corner of each input box. The visualisation in the center provides a summary of which inputs are active (green when active, red when not) and responds to input changes. The following can be signal data can be modified:
+- **Array type:** the electrode grid type used to collect the signal, which varies in arrangement and number of electrodes. If the selected array type does not correspond to the provided signal the decomposition will fail.
+- **Muscle name:** a label used to indicate where a group of signals originate from, which can be helpful in correlating signal output to specific muscles.
+- **Number of channels:** allows for the recorded number of channels to be specified if modification has occurred.
+
+Click ‘Done’ when configuration is complete for changes to be applied to data.
 
 #### Segment Session
 Segment session provides the capability to inspect the imported EMG recording and either concatenate selected segments or split them into separate `.mat` files.
