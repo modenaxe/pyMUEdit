@@ -68,7 +68,7 @@ class SelectRange:
         plt.close()
         data_to_plot = emgfile["REF_SIGNAL"][0]
         fig, ax = plt.subplots()
-        ax.plot(data_to_plot)
+        ax.plot(data_to_plot, color='#555555')
         ax.set_xlabel("Samples")
         plt.rcParams["axes.titlesize"] = 8
         title = 'Click red lines to select/release range, drag to adjust. Press enter once satisfied'
