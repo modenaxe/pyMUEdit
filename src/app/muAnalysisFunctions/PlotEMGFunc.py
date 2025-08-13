@@ -12,6 +12,7 @@ from ui.components.SaveablePlot import SaveablePlot
 
 
 def parse_channel_input(raw_text, max_channels=None):
+    """Parse a string of channel numbers and ranges into a list of integers."""
     channels = []
     raw_text = raw_text.strip()
     if not raw_text:
@@ -380,7 +381,6 @@ def plot_mupulses(
     return fig
 
 # OPENHDEMG
-# plots the source? not entirely sure yet
 def plot_ipts(
     emgfile,
     munumber="all",
@@ -501,9 +501,6 @@ def plot_differentials(
     showimmediately=True,
 ):
     common = CommonOpenFunc()
-    
-    #print("column: ", column)
-    #print("keys: ", differential.keys())
 
     if column not in differential:
         print(f"ERROR: '{column}' not in differential keys: {list(differential.keys())}")
