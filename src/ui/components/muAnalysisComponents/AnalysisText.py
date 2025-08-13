@@ -6,15 +6,18 @@ from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
 class AnalysisText(QLabel):
 
-    """
-    (Factory Method)
-    Each method returns an instance of different types of text (titles, headings, text etc.)
+    """UI component that defines a variety of methods, each responsible for
+    a different text (e.g. headings, captions etc.) via the factory method
     """
 
-    # for the major titles in the sidebars
     def create_major_title(text=""):
+        """Creates the equivalent of a heading 1, the biggest hierarchical heading
+        Params:
+            - text="": the text inside the heading
+        Returns:
+            - instance of major_title
+        """
         major_title = QLabel(text)
-        # original font was segoe ui
         major_title.setStyleSheet(
             f"""
             color: {CleanTheme.ANALYSIS_TEXT_DARK};
@@ -25,8 +28,13 @@ class AnalysisText(QLabel):
         )
         return major_title
 
-    # for titles in modals
     def create_title(text=""):
+        """Create a headings that's used as the biggest hierarchical heading inside modals
+        Params:
+            - text="": the text inside the title
+        Returns:
+            - instance of title
+        """
         title = QLabel(text)
         title.setStyleSheet(
             f"""
@@ -39,6 +47,12 @@ class AnalysisText(QLabel):
         return title
 
     def create_title_dark(text=""):
+        """Creates a dark heading that's used as the biggest hierarchical heading inside modals
+        Params:
+            - text="": the text inside the title
+        Returns:
+            - instance of title
+        """
         title = QLabel(text)
         title.setStyleSheet(
             f"""
@@ -50,8 +64,13 @@ class AnalysisText(QLabel):
         )
         return title
 
-    # for headings you see on popups, such as the signal editing popup
     def create_heading(text=""):
+        """Creates a heading that's used as a secondary heading inside modals
+        Params:
+            - text="": the text inside the heading
+        Returns:
+            - instance of heading
+        """
         heading = QLabel(text)
         heading.setStyleSheet(
             f"""
@@ -61,10 +80,15 @@ class AnalysisText(QLabel):
             font-weight: 400;
             """
         )
-
         return heading
 
     def create_heading_dark(text=""):
+        """Creates a dark heading that's used as a secondary heading inside modals
+        Params:
+            - text="": the text inside the heading
+        Returns:
+            - instance of heading
+        """
         heading = QLabel(text)
         heading.setStyleSheet(
             f"""
@@ -74,11 +98,15 @@ class AnalysisText(QLabel):
             font-weight: 400;
             """
         )
-
         return heading
 
-    # for the small titles you see on the sidebars
     def create_subtitle(text=""):
+        """Creates a heading that's used as a secondary heading in sidebars
+        Params:
+            - text="": the text inside the subtitle
+        Returns:
+            - instance of subtitle
+        """
         subtitle = QLabel(text)
         subtitle.setStyleSheet(
             f"""
@@ -89,11 +117,15 @@ class AnalysisText(QLabel):
             font-weight: 500;
             """
         )
-
         return subtitle
 
-    # for the labels you see on inputs
     def create_label(text=""):
+        """Creates the labels used on top of UI components, such as dropdowns
+        Params:
+            - text="": the text inside the label
+        Returns:
+            - instance of label
+        """
         label = QLabel(text)
         label.setStyleSheet(
             f"""
@@ -103,11 +135,15 @@ class AnalysisText(QLabel):
             font-weight: 500;
             """
         )
-
         return label
 
-    # for the load file prompt on the center screen
     def create_prompt(text=""):
+        """Creates the prompt used in the centre canvas
+        Params:
+            - text="": the text inside the prompt
+        Returns:
+            - instance of prompt
+        """
         prompt = QLabel(text)
         prompt.setStyleSheet(
             f"""
@@ -117,11 +153,15 @@ class AnalysisText(QLabel):
                 font-weight: 500
             """
         )
-
         return prompt
 
-    # used for the italic warning inside signal editing
     def create_italic_text(text=""):
+        """Creates caption text used for in-modal warnings. See SignalEditing.
+        Params:
+            - text="": the text inside the caption
+        Returns:
+            - instance of caption
+        """
         italic = QLabel(text)
         italic.setStyleSheet(
             f"""

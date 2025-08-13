@@ -4,7 +4,16 @@ import numpy as np
 from matplotlib.figure import Figure
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
 
+
+"""Functions from OPENHDEMG used to plot MUAPS"""
+
 def extract_delsys_muaps(emgfile):
+    """openhdemg: extract MUAPS obtained from Delsys decomposition
+    Params:
+        - emgfile: the file
+    Returns:
+        - dictionary of MUAPS for every MU
+    """
     all_muaps = emgfile["EXTRAS"]
     muaps_dict = {mu: None for mu in range(emgfile["NUMBER_OF_MUS"])}
     for mu in range(emgfile["NUMBER_OF_MUS"]):
@@ -14,8 +23,60 @@ def extract_delsys_muaps(emgfile):
 
     return muaps_dict
 
-# originally called plot_muaps from openhdemg, but there's another function with that name
-# plots it in the center immediately 
+def sta(
+    emgfile, sorted_rawemg, firings=[0, 50], timewindow=50
+):
+    """openhdemg: Computes the spike-triggered average (STA) of every MU 
+    Params:
+        - emgfile: the file
+        - sorted_rawemg: dict of sorted electrodes 
+        - firings: list or str {"all"}. The range of firings for STA
+        - timewindow: timewindow to compute STA in ms
+    Returns:
+        - dictionary of STAs
+    """
+    timewindow_samples = round((timewindow / 1000) * emgfile["FSAMP"])
+    halftime = round(timewindow_samples / 2)
+    tottime = halftime * 2
+
+    sta_dict = {mu: {} for mu in range(emgfile["NUMBER_OF_MUS"])}
+
+    for mu in sta_dict.keys():
+        tot_firings = len(emgfile["MUPULSES"][mu])
+        if tot_firings == 0:
+            warnings.warn(f"Empty MU {mu} in sta(). It will be set to 0.")
+
+        if firings == "all":
+            firings_ = [0, tot_firings]
+        else:
+            firings_ = firings
+
+        thismups = emgfile["MUPULSES"][mu][firings_[0]: firings_[1]]
+
+        # Calculate STA for each column in sorted_rawemg
+        sorted_rawemg_sta = {}
+        for col in sorted_rawemg.keys():
+            row_dict = {}
+            for row in sorted_rawemg[col].columns:
+                emg_array = sorted_rawemg[col][row].to_numpy()
+                # Calculate STA using NumPy vectorized operations
+                sta_values = []
+                if len(thismups) > 0: 
+                    for pulse in thismups:
+                        ls = emg_array[pulse - halftime: pulse + halftime]
+                        if len(ls) == tottime:
+                            sta_values.append(ls)
+                else:
+                    if np.all(np.isnan(emg_array)):
+                        sta_values.append(np.full((tottime, ), np.nan))
+                    else:
+                        sta_values.append(np.full((tottime, ), 0))
+                row_dict[row] = np.mean(sta_values, axis=0)
+            sorted_rawemg_sta[col] = pd.DataFrame(row_dict)
+        sta_dict[mu] = sorted_rawemg_sta
+
+    return sta_dict
+
 def muaps_from_sta(
     analysis_plot,
     sta_dict,
@@ -24,6 +85,16 @@ def muaps_from_sta(
     tight_layout=False,
     line2d_kwargs_ax1=None,
 ):
+    """openhdemg: plots MUAPs obtained from STA. Originally called plot_muaps 
+    Params:
+        - analysis_plot: instance of AnalysisPlot
+        - sta_dict: dictionary generated from extract_delsys_muaps() or sta()
+        - title: title of the plot 
+        - figsize: size of the figure (legacy, plot goes in centre now)
+        - tight_layout: adjusts the UI of the plot 
+        - line2d_kwargs_ax1: arguments for a set of line2d objects
+    Returns: None
+    """
     if isinstance(sta_dict, dict):
         sta_dict = [sta_dict]
 
@@ -33,7 +104,6 @@ def muaps_from_sta(
     # Find the largest and smallest value to define common y axis limits.
     ymax = 0
     ymin = 0
-    # Loop each sta_dict and MU, c means matrix columns
     for thisdict in sta_dict:
         for c in thisdict:
             max_ = thisdict[c].max().max()
@@ -42,12 +112,10 @@ def muaps_from_sta(
                 ymax = max_
             if min_ < ymin:
                 ymin = min_
-    # Manage exception of singular transformation
     if ymax == 0 and ymin == 0:
         ymax = 1
         ymin = -1
 
-    # Obtain number of columns and rows
     cols = len(sta_dict[0])
     rows = len(sta_dict[0][next(iter(sta_dict[0]))].columns)
 
@@ -62,31 +130,23 @@ def muaps_from_sta(
     # Manage exception of arrays instead of matrices and check that they
     # are correctly oriented.
     if cols > 1 and rows > 1:
-        # Matrices
         for thisdict in sta_dict:
-            # Plot all the MUAPs, c means matrix columns, r rows
+            # Plot all the MUAPs
             for r in range(rows):
                 for pos, c in enumerate(thisdict.keys()):
                     axs[r, pos].plot(thisdict[c].iloc[:, r])
 
                     axs[r, pos].set_ylim(ymin, ymax)
-                    # axs[r, pos].xaxis.set_visible(False)
-                    # axs[r, pos].set(yticklabels=[])
-                    # axs[r, pos].tick_params(left=False)
                     axs[r, pos].axis('off')
 
     elif cols == 1 and rows > 1:
-        # Arrays
         for thisdict in sta_dict:
-            # Plot all the MUAPs, c means matrix columns, r rows
+            # Plot all the MUAPs
             for r in range(rows):
                 for pos, c in enumerate(thisdict.keys()):
                     axs[r].plot(thisdict[c].iloc[:, r])
 
                     axs[r].set_ylim(ymin, ymax)
-                    # axs[r].xaxis.set_visible(False)
-                    # axs[r].set(yticklabels=[])
-                    # axs[r].tick_params(left=False)
                     axs[r, pos].axis('off')
 
     elif cols > 1 and rows == 1:
@@ -104,61 +164,7 @@ def muaps_from_sta(
     if tight_layout:
         plt.tight_layout()
 
-    return fig
+    canvas = SaveablePlot(fig)
+    analysis_plot.display_fig(canvas)
+    plt.close()
 
-
-# OPENDEMG
-def sta(
-    emgfile, sorted_rawemg, firings=[0, 50], timewindow=50
-):
-    # Compute half of the timewindow in samples
-    timewindow_samples = round((timewindow / 1000) * emgfile["FSAMP"])
-    halftime = round(timewindow_samples / 2)
-    tottime = halftime * 2
-
-    # Container of the STA for every MUs
-    # {0: {}, 1: {}, 2: {}, 3: {}}
-    sta_dict = {mu: {} for mu in range(emgfile["NUMBER_OF_MUS"])}
-
-    # Calculate STA on sorted_rawemg for every mu and put it into sta_dict[mu]
-    for mu in sta_dict.keys():
-        # Check if there are firings in this MU
-        tot_firings = len(emgfile["MUPULSES"][mu])
-        if tot_firings == 0:
-            warnings.warn(f"Empty MU {mu} in sta(). It will be set to 0.")
-
-        # Set firings if firings="all"
-        if firings == "all":
-            firings_ = [0, tot_firings]
-        else:
-            firings_ = firings
-
-        # Get current mupulses
-        thismups = emgfile["MUPULSES"][mu][firings_[0]: firings_[1]]
-
-        # Calculate STA for each column in sorted_rawemg
-        sorted_rawemg_sta = {}
-        for col in sorted_rawemg.keys():
-            row_dict = {}
-            for row in sorted_rawemg[col].columns:
-                emg_array = sorted_rawemg[col][row].to_numpy()
-                # Calculate STA using NumPy vectorized operations
-                sta_values = []
-                if len(thismups) > 0:  # Manage exception of no firings
-                    for pulse in thismups:
-                        ls = emg_array[pulse - halftime: pulse + halftime]
-                        # Avoid incomplete muaps
-                        if len(ls) == tottime:
-                            sta_values.append(ls)
-                else:
-                    # If no firings, set STA to zeros (while preserving the
-                    # empty channel.
-                    if np.all(np.isnan(emg_array)):
-                        sta_values.append(np.full((tottime, ), np.nan))
-                    else:
-                        sta_values.append(np.full((tottime, ), 0))
-                row_dict[row] = np.mean(sta_values, axis=0)
-            sorted_rawemg_sta[col] = pd.DataFrame(row_dict)
-        sta_dict[mu] = sorted_rawemg_sta
-
-    return sta_dict

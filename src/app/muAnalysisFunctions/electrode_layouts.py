@@ -1,49 +1,6 @@
-"""
-Electrode matrix sorting utilities for HD-EMG plotting
-(copied and adapted from OpenHD-EMG style definitions)
-"""
-
 import numpy as np
-import copy
-import itertools
 
-OTBelectrodes_tuple = (
-    "GR04MM1305",
-    "GR08MM1305",
-    "GR100ML1305",
-    "GR10MM0804",
-    "GR10MM0808",
-    "HD04MM1305",
-    "HD08MM1305",
-    "HD10MM0804",
-    "HD10MM0808",
-)
-
-OTBelectrodes_ied = {
-    "GR04MM1305": 4,
-    "GR08MM1305": 8,
-    "GR100ML1305": 2.5,
-    "GR10MM0804": 10,
-    "GR10MM0808": 10,
-    "HD04MM1305": 4,
-    "HD08MM1305": 8,
-    "HD10MM0804": 10,
-    "HD10MM0808": 10,
-}
-
-OTBelectrodes_Nelectrodes = {
-    "GR04MM1305": 64,
-    "GR08MM1305": 64,
-    "GR100ML1305": 64,
-    "GR10MM0804": 32,
-    "GR10MM0808": 64,
-    "HD04MM1305": 64,
-    "HD08MM1305": 64,
-    "HD10MM0804": 32,
-    "HD10MM0808": 64,
-}
-
-# --- Mappings (0 and 180 degree) for the most common grids ---
+# --- GR08MM1305 / GR04MM1305 (13 rows × 5 cols; one NaN) ---
 GR08MM1305_0 = [
     [63, 38, 37, 12, 11],
     [62, 39, 36, 13, 10],
@@ -75,20 +32,41 @@ GR08MM1305_180 = [
     [11,     12, 37, 38, 63],
 ]
 
+# GR04MM1305 uses the same geometry as GR08MM1305
+GR04MM1305_0   = GR08MM1305_0
+GR04MM1305_180 = GR08MM1305_180
 
-# You can add other grid layouts here as needed...
+# --- GR10MM0808 (8 rows × 8 cols) ---
+GR10MM0808_0 = [
+    [56, 48, 40, 32, 24, 16,  8,  0],
+    [57, 49, 41, 33, 25, 17,  9,  1],
+    [58, 50, 42, 34, 26, 18, 10,  2],
+    [59, 51, 43, 35, 27, 19, 11,  3],
+    [60, 52, 44, 36, 28, 20, 12,  4],
+    [61, 53, 45, 37, 29, 21, 13,  5],
+    [62, 54, 46, 38, 30, 22, 14,  6],
+    [63, 55, 47, 39, 31, 23, 15,  7],
+]
+GR10MM0808_180 = [
+    [ 7, 15, 23, 31, 39, 47, 55, 63],
+    [ 6, 14, 22, 30, 38, 46, 54, 62],
+    [ 5, 13, 21, 29, 37, 45, 53, 61],
+    [ 4, 12, 20, 28, 36, 44, 52, 60],
+    [ 3, 11, 19, 27, 35, 43, 51, 59],
+    [ 2, 10, 18, 26, 34, 42, 50, 58],
+    [ 1,  9, 17, 25, 33, 41, 49, 57],
+    [ 0,  8, 16, 24, 32, 40, 48, 56],
+]
 
 def get_electrode_grid(code="GR08MM1305", orientation=180):
     """
-    Returns the mapping grid for a given code and orientation.
-    Only GR08MM1305 (0 or 180) is supported for now.
+    Return row-major (plot-ready) mapping grid for a given code/orientation.
+    Supported codes: GR08MM1305, GR04MM1305, GR10MM0808
+    Orientations: 0 or 180
     """
-    if code == "GR08MM1305":
-        if orientation == 180:
-            return GR08MM1305_180
-        elif orientation == 0:
-            return GR08MM1305_0
-        else:
-            raise ValueError("Unknown orientation for GR08MM1305")
-    else:
-        raise NotImplementedError("Grid code not implemented: %s" % code)
+    if code in ("GR08MM1305", "GR04MM1305","None",
+            "Custom Order"):
+        return GR08MM1305_180 if orientation == 180 else GR08MM1305_0
+    if code == "GR10MM0808":
+        return GR10MM0808_180 if orientation == 180 else GR10MM0808_0
+    raise NotImplementedError(f"Grid code not implemented: {code}")

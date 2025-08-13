@@ -4,12 +4,13 @@ from PyQt5.QtWidgets import QLabel, QLineEdit, QVBoxLayout, QWidget
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
-"""
-Returns an input with a label. If you don't want a label, don't give it one
-"""
-
 
 class AnalysisInput(QWidget):
+
+    """UI component for defining a text input with an (optional)
+    label on top, and/or an (optional) placeholder label
+    """
+
     def __init__(self, label="", placeholder="", parent=None):
         super().__init__(parent)
 
@@ -46,10 +47,19 @@ class AnalysisInput(QWidget):
         self.input = input
         layout.addWidget(input)
 
-    def set(self, value=None):
+    def set(self, value=""):
+        """Defines the text within the input
+        Params:
+            - value="": the text to-be placed within the input
+        Returns: None
+        """
         self.input.setText(value)
 
-    def get(self, value=None):
+    def get(self):
+        """Returns the text within the input
+        Params: None
+        Returns: None
+        """
         return self.input.text()
 
     # sets a specific width
