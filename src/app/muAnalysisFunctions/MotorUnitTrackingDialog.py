@@ -172,8 +172,6 @@ class MotorUnitTrackingDialog(QDialog):
 
         self.setLayout(main_layout)
         
-        #print(self.matrix_code)
-
     def load_file1(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Select File 1", "", "MAT Files (*.mat)")
         if file_path:
@@ -222,7 +220,6 @@ class MotorUnitTrackingDialog(QDialog):
             except Exception as e:
                 ErrorDialog(f"Failed to load JSON File 2:\n{str(e)}", 'Error').exec_()
     def on_track(self):
-        print(self.matrix_code)
         if self.file1 is None or self.file2 is None:
             ErrorDialog("Both files must be selected", 'Error').exec_()
             return
