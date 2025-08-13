@@ -32,7 +32,7 @@ class MotorUnitTrackingDialog(QDialog):
 
     """Motor Unit Tracking Advaced Tool functionality and display"""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, matrix_orientation=None, matrix_code=None):
         super().__init__(parent)
         self.setWindowTitle("Motor Unit Tracking")
         self.setMinimumWidth(1200)
@@ -43,6 +43,11 @@ class MotorUnitTrackingDialog(QDialog):
         self.results = []
         self.inclusion_status = []
         self.init_ui()
+        
+        
+        self.matrix_orientation = int(matrix_orientation) if matrix_orientation else 0
+        self.matrix_code = None if matrix_code in (None, "", "None") else matrix_code
+        
 
     def init_ui(self):
         main_layout = QVBoxLayout()
@@ -167,6 +172,8 @@ class MotorUnitTrackingDialog(QDialog):
         main_layout.addWidget(self.table, stretch=2)
 
         self.setLayout(main_layout)
+        
+        #print(self.matrix_code)
 
     def load_file1(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Select File 1", "", "MAT Files (*.mat)")
@@ -216,6 +223,7 @@ class MotorUnitTrackingDialog(QDialog):
             except Exception as e:
                 ErrorDialog(f"Failed to load JSON File 2:\n{str(e)}", 'Error').exec_()
     def on_track(self):
+        print(self.matrix_code)
         if self.file1 is None or self.file2 is None:
             ErrorDialog("Both files must be selected", 'Error').exec_()
             return
@@ -358,7 +366,7 @@ class MotorUnitTrackingDialog(QDialog):
             return
 
         # Get grid definition
-        grid = get_electrode_grid(code="GR08MM1305", orientation=180)
+        grid = get_electrode_grid(code=self.matrix_code, orientation=self.matrix_orientation)
         n_rows = len(grid)
         n_cols = len(grid[0])
 
