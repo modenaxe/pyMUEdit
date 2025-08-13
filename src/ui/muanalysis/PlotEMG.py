@@ -109,9 +109,8 @@ class PlotEMGToolDialog(QDialog):
         filter_row_layout.addWidget(dropdowns, stretch=1)
 
         layout.addWidget(filter_row)
-        # layout.addSpacing(5)
 
-        # --- Plot EMGsig, REFsig, IDR, and MUPulses Buttons with Inputs (each in their own row, aligned) ---
+        # --- Buttons, input boxes and dropdowns for each function in the plot emg window  ---
 
         # layout for the middle of the dialog
         mid = QWidget()
@@ -311,7 +310,7 @@ class PlotEMGToolDialog(QDialog):
             add_ref_signal = self.ref_signal_checkbox.isChecked()
 
             # Pass the raw text string directly to plot_emgsig for validation
-            plot_emgsig(
+            fig = plot_emgsig(
                 emgfile=emgfile,
                 analysis_plot=self.analysis_plot,
                 channels=raw_text,  # Pass as string for validation
@@ -322,12 +321,20 @@ class PlotEMGToolDialog(QDialog):
                 tight_layout=True,
                 showimmediately=False,
             )
+            canvas = SaveablePlot(fig)
+            self.analysis_plot.display_fig(canvas)
+            plt.close(fig)
         except ValueError as e:
             ErrorDialog('Invalid channel input', 'Error').exec_()
         except Exception as e:
             ErrorDialog('Error plotting EMG', 'Error').exec_()
 
     def handle_refsig_clicked(self):
+        """Function that plots REFsig based on the selected configuration
+        and inputs.
+        Params: None
+        Returns: None
+        """
         emgfile = FileUploadFunc.file
         if emgfile is None:
             ErrorDialog('No file has been loaded', 'Error').exec_()
@@ -345,6 +352,11 @@ class PlotEMGToolDialog(QDialog):
             ErrorDialog('Error plotting REFsig', 'Error').exec_()
 
     def handle_idr_clicked(self):
+        """Function that plots IDR based on the selected configuration
+        and inputs.
+        Params: None
+        Returns: None
+        """
         emgfile = FileUploadFunc.file
         if emgfile is None:
             ErrorDialog('No file has been loaded', 'Error').exec_()
@@ -370,6 +382,11 @@ class PlotEMGToolDialog(QDialog):
             ErrorDialog('Error plotting IDR', 'Error').exec_()
 
     def handle_mupulses_clicked(self):
+        """Function that plots MUPulses based on the selected configuration
+        and inputs.
+        Params: None
+        Returns: None
+        """
         emgfile = FileUploadFunc.file
         if emgfile is None:
             ErrorDialog('No file has been loaded', 'Error').exec_()
@@ -398,6 +415,17 @@ class PlotEMGToolDialog(QDialog):
             ErrorDialog('Error plotting MUPulses', 'Error').exec_()
 
     def parse_mu_input(self, raw_text):
+        """Parses the MU input text and returns a sorted list of MU numbers.
+
+        Args:
+            raw_text (str): The input text containing MU numbers or ranges.
+
+        Returns:
+            list: A sorted list of unique MU numbers.
+
+        Raises:
+            ValueError: If the input format is invalid.
+        """
         # Accepts comma-separated and dash ranges, e.g. '1,3,5-7'
         mus = []
         raw_text = raw_text.strip()
@@ -421,6 +449,11 @@ class PlotEMGToolDialog(QDialog):
         return sorted(set(mus))
 
     def handle_source_clicked(self):
+        """Function that plots the source EMG signals based on the selected
+        configuration and inputs.
+        Params: None
+        Returns: None
+        """
         emgfile = FileUploadFunc.file
         if emgfile is None:
             ErrorDialog('No file has been loaded', 'Error').exec_()
@@ -446,6 +479,11 @@ class PlotEMGToolDialog(QDialog):
             ErrorDialog('Error plotting Source', 'Error').exec_()
 
     def handle_derivation_clicked(self):
+        """Function that plots the differential EMG signals based on the
+        selected configuration and inputs.
+        Params: None
+        Returns: None
+        """
         emgfile = FileUploadFunc.file
 
         if emgfile is None:

@@ -19,7 +19,24 @@ from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 
 
 class PICDialog(QDialog):
+    """
+    Dialog window for configuring and computing Persistent Inward Currents (PIC).
+
+    Attributes:
+        file: Reference to the loaded EMG data file from FileUploadFunc.
+        avg_method_dropdown: Dropdown to select average method ("Test Unit Average" or "All").
+        normalisation_dropdown: Dropdown to select normalization method ("False" or "Ctrl Max Desc").
+        clean_checkbox: Checkbox to enable or disable cleaning/filtering of results.
+        PIC_button: Button to trigger computation of PIC.
+    """
+
     def __init__(self, parent=None):
+        """
+        Initialize the PICDialog window and set up its UI components.
+
+        Args:
+            parent: Optional parent widget.
+        """
         super().__init__(parent)
         self.file = FileUploadFunc.file
 
@@ -75,6 +92,13 @@ class PICDialog(QDialog):
         layout.addWidget(self.PIC_button, stretch=1)
 
     def computePIC(self):
+        """
+        Trigger computation of Persistent Inward Currents based on current UI selections.
+
+        Performs basic validation to check if EMG data is loaded, retrieves selected
+        average method, normalization, and clean options, and calls the
+        compute_deltaf function with these parameters.
+        """
         if self.file is None:
             ErrorDialog("EMG data not loaded.", "Error").exec_()
             return

@@ -30,9 +30,41 @@ def load_otb_data(filepath):
 
 class MotorUnitTrackingDialog(QDialog):
 
-    """Motor Unit Tracking Advaced Tool functionality and display"""
+    """
+    Motor Unit Tracking Advanced Tool UI and logic.
 
-    def __init__(self, parent=None):
+    Provides a PyQt5 dialog for loading two EMG recordings, computing MU
+    matches across files via cross-correlation of MUAP averages, visualising
+    IDR and MUAP overlays, and curating inclusion/exclusion for result pairs.
+
+    Args:
+        parent (QWidget, optional): Parent widget. Defaults to None.
+        matrix_orientation (int|str|None): Electrode grid orientation used by
+            get_electrode_grid. Cast to int if provided. Defaults to 0.
+        matrix_code (str|None): Electrode grid code for layout lookup.
+            Use None if not provided.
+
+    Attributes:
+        file1 (dict|None): Parsed EMG data for File 1.
+        file2 (dict|None): Parsed EMG data for File 2.
+        results (list[tuple[int,int,float]]): [(mu1, mu2, xcc_score), ...].
+        inclusion_status (list[str]): Parallel list of "Included"/"Excluded".
+        matrix_orientation (int): Orientation passed to grid helper.
+        matrix_code (str|None): Grid code passed to grid helper.
+    """
+
+    def __init__(self, parent=None, matrix_orientation=None, matrix_code=None):
+        """
+        Initialize the dialog, theme, state, and build the UI.
+
+        Args:
+            parent (QWidget, optional): Parent widget. Defaults to None.
+            matrix_orientation (int|str|None): Orientation index. Defaults to 0.
+            matrix_code (str|None): Electrode grid code. Defaults to None.
+
+        Returns:
+            None
+        """
         super().__init__(parent)
         self.setWindowTitle("Motor Unit Tracking")
         self.setMinimumWidth(1200)
@@ -43,8 +75,22 @@ class MotorUnitTrackingDialog(QDialog):
         self.results = []
         self.inclusion_status = []
         self.init_ui()
+        
+        
+        self.matrix_orientation = int(matrix_orientation) if matrix_orientation else 0
+        self.matrix_code = None if matrix_code in (None, "", "None") else matrix_code
+        
 
     def init_ui(self):
+        """
+        Build and lay out all UI controls and connect signal handlers.
+
+        Creates file loaders, parameter inputs, plotting canvases, and the results
+        table. Wires up selection syncing between widgets.
+
+        Returns:
+            None
+        """
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(10, 10, 10, 10)
         main_layout.setSpacing(5)
@@ -89,10 +135,6 @@ class MotorUnitTrackingDialog(QDialog):
         window_layout.addWidget(self.window_input)
         main_layout.addLayout(window_layout)
 
-        # self.filter_checkbox = QCheckBox("Apply Filter")
-        # self.exclude_checkbox = QCheckBox("Exclude Below Threshold")
-        # main_layout.addWidget(self.filter_checkbox)
-        # main_layout.addWidget(self.exclude_checkbox)
 
         main_layout.addItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
@@ -143,10 +185,14 @@ class MotorUnitTrackingDialog(QDialog):
         
         # Right: IDR plots
         idr_plots_layout = QVBoxLayout()
-        self.fig1, self.ax1 = plt.subplots(figsize=(2, 1))
+
+        self.fig1, self.ax1 = plt.subplots(figsize=(2.9, 1.4), constrained_layout=True)
         self.canvas1 = FigureCanvas(self.fig1)
         idr_plots_layout.addWidget(self.canvas1)
-        self.fig2, self.ax2 = plt.subplots(figsize=(2, 1))
+
+        self.fig2, self.ax2 = plt.subplots(figsize=(2.9, 1.4), constrained_layout=True)
+
+
         self.canvas2 = FigureCanvas(self.fig2)
         idr_plots_layout.addWidget(self.canvas2)
         plots_layout.addLayout(idr_plots_layout)
@@ -167,8 +213,17 @@ class MotorUnitTrackingDialog(QDialog):
         main_layout.addWidget(self.table, stretch=2)
 
         self.setLayout(main_layout)
-
+        
     def load_file1(self):
+        """
+            Prompt for and load File 1 (.mat), updating the label and state.
+
+            Returns:
+                None
+
+            Raises:
+                ValueError: Propagated as a user dialog if loading fails.
+        """
         file_path, _ = QFileDialog.getOpenFileName(self, "Select File 1", "", "MAT Files (*.mat)")
         if file_path:
             self.file1_label.setText(os.path.basename(file_path))
@@ -179,6 +234,15 @@ class MotorUnitTrackingDialog(QDialog):
                 
 
     def load_file2(self):
+        """
+        Prompt for and load File 1 (.mat), updating the label and state.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: Propagated as a user dialog if loading fails.
+        """
         file_path, _ = QFileDialog.getOpenFileName(self, "Select File 2", "", "MAT Files (*.mat)")
         if file_path:
             self.file2_label.setText(os.path.basename(file_path))
@@ -187,6 +251,15 @@ class MotorUnitTrackingDialog(QDialog):
             except Exception as e:
                 ErrorDialog(f"Failed to load File 2:\n{str(e)}", 'Error').exec_()
     def load_json1(self):
+        """
+        Prompt for and load File 1 from JSON/JSON.GZ, updating state.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: Propagated as a user dialog if loading fails.
+        """
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Select JSON File 1", "", "JSON Files (*.json *.json.gz);;All Files (*)"
         )
@@ -202,6 +275,15 @@ class MotorUnitTrackingDialog(QDialog):
                 ErrorDialog(f"Failed to load JSON File 1:\n{str(e)}", 'Error').exec_()
 
     def load_json2(self):
+        """
+        Prompt for and load File 2 from JSON/JSON.GZ, updating state.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: Propagated as a user dialog if loading fails.
+        """
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Select JSON File 2", "", "JSON Files (*.json *.json.gz);;All Files (*)"
         )
@@ -216,6 +298,20 @@ class MotorUnitTrackingDialog(QDialog):
             except Exception as e:
                 ErrorDialog(f"Failed to load JSON File 2:\n{str(e)}", 'Error').exec_()
     def on_track(self):
+        """
+        Run MU tracking between File 1 and File 2 using cross-correlation.
+
+        Parses threshold and time window, computes averaged MUAP templates for
+        each MU in File 1 and finds the best match in File 2. Displays pairs with
+        XCC >= threshold.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If threshold/time window parsing fails.
+            RuntimeError: If FSAMP is missing or invalid in File 1.
+        """
         if self.file1 is None or self.file2 is None:
             ErrorDialog("Both files must be selected", 'Error').exec_()
             return
@@ -261,6 +357,15 @@ class MotorUnitTrackingDialog(QDialog):
 
 
     def display_results(self, results):
+        """
+        Populate the table and selector with tracking results.
+
+        Args:
+            results (list[tuple[int,int,float]]): Pairs and scores to display.
+
+        Returns:
+            None
+        """
         self.results = results
         self.inclusion_status = ["Included"] * len(results)
         self.table.setRowCount(0)
@@ -280,6 +385,11 @@ class MotorUnitTrackingDialog(QDialog):
             self.clear_all_plots()
 
     def on_table_selection_changed(self):
+        """Synchronizes table selection with dropdown and updates plots.
+        Params: None
+        Returns: None
+        """
+
         selected = self.table.selectedItems()
         if selected and len(selected) >= 1:
             row = selected[0].row()
@@ -287,19 +397,38 @@ class MotorUnitTrackingDialog(QDialog):
             self.update_plots(row)
 
     def on_mu_pair_changed(self, idx):
+        """Handles MU pair dropdown changes.
+        Args:
+            idx (int): Selected index in results.
+        Returns:
+            None
+        """
+
         if idx >= 0 and idx < len(self.results):
             self.table.selectRow(idx)
             self.update_plots(idx)
 
     def update_plots(self, idx):
+        """
+        Refresh all plots for the selected MU pair.
+
+        Plots IDR for each file and overlays MUAP grids using the configured
+        electrode layout. Also updates the inclusion label.
+
+        Args:
+            idx (int): Index into self.results for the selected pair.
+
+        Returns:
+            None
+        """
+
         # --- Update all plots and grids for the selected MU pair ---
         ch1, ch2, _ = self.results[idx]
         # IDR plots
-        self.plot_idr(self.file1, ch1, self.ax1, self.canvas1)
-        self.plot_idr(self.file2, ch2, self.ax2, self.canvas2)
+        self.plot_idr(self.file1, ch1, self.ax1, self.canvas1,color='blue')
+        self.plot_idr(self.file2, ch2, self.ax2, self.canvas2,color='orange')
         # MUAP grids
-        # self.plot_muap_grid(self.file1, ch1, self.muap_fig1, self.muap_canvas1)
-        # self.plot_muap_grid(self.file2, ch2, self.muap_fig2, self.muap_canvas2)
+
         self.plot_muap_grid_overlay(self.file1, ch1, self.file2, ch2, self.muap_fig1, self.muap_canvas1)
 
         # Inclusion label
@@ -308,7 +437,44 @@ class MotorUnitTrackingDialog(QDialog):
             "color: green; font-weight: bold;" if self.inclusion_status[idx] == "Included" else "color: red; font-weight: bold;"
         )
     def plot_muap_grid_overlay(self, file1, mu_index1, file2, mu_index2, fig, canvas):
+        """
+        Overlay averaged MUAP waveforms from two files on an electrode grid.
+
+        Computes per-channel averaged MUAP segments around MU pulse times
+        and draws File 1 vs File 2 traces in each grid cell.
+
+        Args:
+            file1 (dict): Parsed EMG structure for File 1.
+            mu_index1 (int): MU index in file1.
+            file2 (dict): Parsed EMG structure for File 2.
+            mu_index2 (int): MU index in file2.
+            fig (matplotlib.figure.Figure): Target figure.
+            canvas (FigureCanvasQTAgg): Canvas to draw/update.
+
+        Returns:
+            None
+
+        Raises:
+            KeyError: If required keys (RAW_SIGNAL, MUPULSES, FSAMP) are missing.
+            ValueError: If RAW_SIGNAL has unexpected shape or type.
+
+        Notes:
+            - Uses get_electrode_grid(matrix_code, matrix_orientation) to map
+            channel indices to grid rows/cols.
+            - Channels without data are hidden.
+        """
+
         def compute_muaps(file, mu_index, window):
+            """Builds an averaged MUAP template for one MU (overlay helper).
+            Args:
+                file (dict): EMG data with RAW_SIGNAL, MUPULSES, FSAMP.
+                mu_index (int): MU index to average.
+                window (int): Half-window size in samples.
+            Returns:
+                tuple: (muaps (np.ndarray|None), fsamp (int|float)).
+            """
+
+          
             # Extract signals
             raw_signal = file.get("RAW_SIGNAL")
             mu_pulses = file.get("MUPULSES")
@@ -358,7 +524,7 @@ class MotorUnitTrackingDialog(QDialog):
             return
 
         # Get grid definition
-        grid = get_electrode_grid(code="GR08MM1305", orientation=180)
+        grid = get_electrode_grid(code=self.matrix_code, orientation=self.matrix_orientation)
         n_rows = len(grid)
         n_cols = len(grid[0])
 
@@ -396,7 +562,7 @@ class MotorUnitTrackingDialog(QDialog):
                 valid1 = muaps1[ch, :].shape[0] > 0 and np.any(np.isfinite(muaps1[ch, :]))
                 valid2 = muaps2[ch, :].shape[0] > 0 and np.any(np.isfinite(muaps2[ch, :]))
                 if valid1:
-                    ax.plot(time_ms, muaps1[ch, :], color='black', linewidth=1, label='File 1')
+                    ax.plot(time_ms, muaps1[ch, :], color='blue', linewidth=1, label='File 1')
                 if valid2:
                     ax.plot(time_ms, muaps2[ch, :], color='orange', linewidth=1, label='File 2')
                 ax.set_xticks([])
@@ -418,6 +584,12 @@ class MotorUnitTrackingDialog(QDialog):
 
 
     def clear_all_plots(self):
+        """
+        Clear and redraw all figures/canvases to a blank state.
+
+        Returns:
+            None
+        """
         self.fig1.clf()
         self.canvas1.draw()
         self.fig2.clf()
@@ -426,8 +598,17 @@ class MotorUnitTrackingDialog(QDialog):
         self.muap_canvas1.draw()
         self.muap_fig2.clf()
         self.muap_canvas2.draw()
+        
 
     def toggle_inclusion(self):
+        """
+        Toggle Included/Excluded status for the currently selected MU pair.
+
+        Updates the table cell and status label styling accordingly.
+
+        Returns:
+            None
+        """
         idx = self.mu_pair_selector.currentIndex()
         if idx >= 0 and idx < len(self.inclusion_status):
             if self.inclusion_status[idx] == "Included":
@@ -441,39 +622,86 @@ class MotorUnitTrackingDialog(QDialog):
             )
 
     def plot_idr(self, file, mu_index, ax, canvas, color='blue'):
+        """
+        Plot instantaneous discharge rate (IDR) for one MU and overlay MVC.
+
+        Computes IDR via CommonOpenFunc().compute_idr(file), renders MU IDR
+        points on the left y-axis, and overlays reference signal (MVC) as a line
+        on a twin right axis when available.
+
+        Args:
+            file (dict): Parsed EMG structure containing REF_SIGNAL and FSAMP.
+            mu_index (int): Index of the MU to plot.
+            ax (matplotlib.axes.Axes): Axes for the IDR plot (left y-axis).
+            canvas (FigureCanvasQTAgg): Canvas to draw/update.
+            color (str, optional): Matplotlib color for IDR points. Defaults to 'blue'.
+
+        Returns:
+            None
+
+        Raises:
+            IndexError: If mu_index is out of range for computed IDR.
+        """
         common = CommonOpenFunc()
         idr = common.compute_idr(file)
 
-        ax.clear()
-        ax2 = ax.twinx()
+        # get or make a persistent right axis for this left axis
+        if not hasattr(self, "_idr_right_axes"):
+            self._idr_right_axes = {}
+        key = id(ax)
+        ax_right = self._idr_right_axes.get(key)
 
-        # Plot MU IDR dots
+        # if missing/stale, create and remember it
+        if ax_right is None or ax_right.figure is not ax.figure:
+            ax_right = ax.twinx()
+            self._idr_right_axes[key] = ax_right
+
+        # clear BOTH axes before plotting
+        ax.clear()
+        ax_right.clear()
+
+        # Plot MU IDR dots on left axis
         ax.plot(
-            idr[mu_index]["timesec"][1:], 
-            idr[mu_index]["idr"].dropna(), 
-            '.', 
+            idr[mu_index]["timesec"][1:],
+            idr[mu_index]["idr"].dropna(),
+            '.',
             markersize=8,
             label="MU IDR",
-            color=color
+            color=color,
         )
         ax.set_ylabel("Discharge Rate (pps)")
-
         ax.set_xlabel("Time (Sec)")
         ax.set_title(f"MU {mu_index}")
 
-        # Plot reference signal (MVC) on secondary y-axis
-        if isinstance(file["REF_SIGNAL"], pd.DataFrame) and not file["REF_SIGNAL"].empty:
+        # Plot MVC on right axis
+        if isinstance(file.get("REF_SIGNAL"), pd.DataFrame) and not file["REF_SIGNAL"].empty:
             ref = file["REF_SIGNAL"][0]
             time = np.arange(len(ref)) / file["FSAMP"]
-            ax2.plot(time, ref, color='gray', alpha=0.7, linewidth=1.5, label="MVC")
-            ax2.set_ylabel("MVC (%)")
-            ax2.set_zorder(0)
+            ax_right.plot(time, ref, color='gray', alpha=0.7, linewidth=1.5, label="MVC")
+            ax_right.yaxis.set_label_position("right")
+            ax_right.yaxis.tick_right()
+            ax_right.set_ylabel("MVC (%)", labelpad=8, rotation=270)  # rotation=270 looks natural on the right
+            # optional: nudge the right spine outward a bit for even more space
+            ax_right.spines["right"].set_position(("outward", 6))
+            # optional: match label color to the MVC trace
+            ax_right.yaxis.label.set_color("gray")
+
+            # keep dots visible above the MVC trace
+            ax_right.set_zorder(0)
             ax.set_zorder(1)
-            ax.patch.set_alpha(0)  # Make primary axis background transparent
+            ax.patch.set_alpha(0)
 
         canvas.draw()
 
+
     def _get_stylesheet(self):
+        """
+        Build the Qt stylesheet string for the dialog.
+
+        Returns:
+            str: Stylesheet (QSS) applied to the dialog and child widgets.
+        """
+
         return f"""
         QDialog {{
             background-color: {CleanTheme.ANALYSIS_BG_CARD};
@@ -505,6 +733,19 @@ class MotorUnitTrackingDialog(QDialog):
 
     # --- Add handler for manual MU pair input ---
     def on_manual_mu_pair_input(self):
+        """
+        Jump to a specific MU pair typed as 'a-b' and update views.
+
+        Parses user text (e.g., '3-7'), finds the matching pair in self.results,
+        and selects it. Shows an error dialog if parsing or lookup fails.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If the typed pair is not in 'int-int' format.
+        """
+
         text = self.mu_pair_input.text().strip()
         if '-' not in text:
             ErrorDialog("Invalid Motor unit provided", 'Error').exec_()
@@ -533,6 +774,23 @@ class MotorUnitTrackingDialog(QDialog):
     from scipy.signal import correlate2d
 
     def compute_xcc(self, muap1, muap2):
+        """
+        Compute normalized 2D cross-correlation between two MUAP templates.
+
+        The inputs are averaged MUAP matrices with shape
+        (channels, samples). NaNs are mean-centered and replaced with zeros
+        before correlation; the result is normalized by vector norms.
+
+        Args:
+            muap1 (np.ndarray): MUAP template 1, shape (C, T).
+            muap2 (np.ndarray): MUAP template 2, shape (C, T).
+
+        Returns:
+            float: Normalized cross-correlation score in [-1, 1].
+
+        Raises:
+            ValueError: If inputs are not 2D arrays.
+        """
         muap1 = muap1 - np.nanmean(muap1)
         muap2 = muap2 - np.nanmean(muap2)
 
@@ -546,6 +804,29 @@ class MotorUnitTrackingDialog(QDialog):
         return (corr[0, 0] / norm) if norm != 0 else 0
         
     def compute_muaps(self, file, mu_index, window):
+        """
+        Build an averaged MUAP template for a given MU.
+
+        Extracts RAW_SIGNAL and MUPULSES from the file, collects segments of
+        length (2*window + 1) around each valid pulse, and averages per channel.
+        Pads/truncates to a maximum of 64 channels.
+
+        Args:
+            file (dict): Parsed EMG data containing RAW_SIGNAL, MUPULSES, FSAMP.
+            mu_index (int): Index of the MU to average.
+            window (int): Half-window size (samples) around each pulse.
+
+        Returns:
+            tuple:
+                np.ndarray: MUAP template of shape (64, 2*window+1) with NaNs
+                    where data is unavailable.
+                int|float: Sampling frequency FSAMP.
+
+        Raises:
+            KeyError: If necessary keys are missing from the file.
+            ValueError: If RAW_SIGNAL cannot be coerced to a 2D array.
+        """
+
         # Extract signals
         raw_signal = file.get("RAW_SIGNAL")
         mu_pulses = file.get("MUPULSES")

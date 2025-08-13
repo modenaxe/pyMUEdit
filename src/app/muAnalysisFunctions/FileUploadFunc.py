@@ -608,7 +608,7 @@ class FileUploadFunc:
                 else emgfile["REF_SIGNAL"].index
             )
             ax2 = ax1.twinx()
-            ax2.plot(x_axis, emgfile["REF_SIGNAL"][0])
+            ax2.plot(x_axis, emgfile["REF_SIGNAL"][0], color='#555555')
             ax2.set_ylabel("MVC")
             ax2.set_zorder(0)
             ax1.set_zorder(1)
@@ -665,7 +665,6 @@ class FileUploadFunc:
             error_dialog.setWindowTitle("Error")
             error_dialog.exec_()
 
-    # OPENHDEMG: Edited
     def plot_refsig(
         self,
         emgfile,
@@ -709,7 +708,7 @@ class FileUploadFunc:
             num=figname,
         )
 
-        ax1.plot(x_axis, refsig[0])
+        ax1.plot(x_axis, refsig[0], color='#555555')
 
         ax1.set_ylabel("MVC")
         ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
@@ -719,7 +718,23 @@ class FileUploadFunc:
         analysis_plot.display_fig(canvas)
 
     def sort_MUs(self, emgfile):
-        # code from openhdemg
+        """
+        Sort motor units (MUs) in an EMG file based on the timing of their
+        first detected pulse.
+
+        Parameters
+        ----------
+        emgfile : dict
+            A dictionary containing EMG data fields, including MU pulse timings,
+            accuracy metrics, binary firing patterns, and other related signals.
+
+        Returns
+        -------
+        dict
+            A new EMG file dictionary with all MU-related fields sorted according
+            to the order of their first pulses.
+        """
+        
         if emgfile["NUMBER_OF_MUS"] <= 1:
             return emgfile
 
@@ -772,11 +787,6 @@ class FileUploadFunc:
             emgfile["NUMBER_OF_MUS"]
         )
 
-        # Sort MUPULSES.
-        # Preferable to use the sorting_order as a double-check in alternative to:
-        # sorted_emgfile["MUPULSES"] = sorted(
-        #   sorted_emgfile["MUPULSES"], key=min, reverse=False)
-        # )
         for origpos, newpos in enumerate(sorting_order):
             sorted_emgfile["MUPULSES"][origpos] = emgfile["MUPULSES"][newpos]
 
