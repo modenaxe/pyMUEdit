@@ -1,29 +1,11 @@
-# 0. Copy input data (e.g. trial1_20MVC.otb+ into tests folder)
-# 1. generate muedit output:
-#   a) cd into tests folder
-#   b) edit parameters in gen_muedit_output.m file to reflect what you want to test
-#   c) run in terminal ==> "C:\...\matlab.exe" -nodisplay -nosplash -nodesktop -r "run('gen_muedit_output.m'); exit();"
-# 2. generate pymuedit output (this software):
-#   a) run src/main.py, change input parameters (e.g. iterations, ref signal, initialisation, filters, etc. to match muedit inputs)
-#   b) save results in tests folder
-# -- You should now have two .mat output files in tests folder; actual output (pymuedit) and expected output (muedit)
-
-# 3. run testMUeditOutput.py to compare these two files
-
-# Tests folder file structure should look like the following after (excluding other test files which are not used in this process):
-# tests/
-#   ActualFinalOutxyz.mat
-#   ExpFinalOutxyz.mat
-#   gen_muedit_output.m
-#   testMUeditOutput.py
-#   xyz.otb+
+# See README.md for usage instructions.
 
 import numpy as np
 from scipy.io import loadmat
 
 # === File Paths (CHANGE AS NEEDED) ===
-FILE_1 = 'ActualFinalOut20_10iters.mat' #pymuedit output
-FILE_2 = 'ExpFinalOut20-10_iters.mat'   #muedit output
+FILE_1 = 'python_output/trial1_20MVC_decomp.mat' #pymuedit output
+FILE_2 = 'matlab_output/trial1_20MVC_decomp.mat'   #muedit output
 
 # === fields to compare inside the 'signal' struct (some i have left out as they are unlikely to change (i.e. fsamp, IED, etc))===
 FIELDS_TO_COMPARE = [

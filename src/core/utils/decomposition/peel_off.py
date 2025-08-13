@@ -11,7 +11,7 @@ def peel_off(Z, spikes, fsamp):
     by subtracting the estimated waveform of identified motor units from the signal.
     """
 
-    windowl = round(0.05 * fsamp)
+    windowl = round(0.025 * fsamp)
     waveform = np.zeros([windowl * 2 + 1])
     firings = np.zeros([np.shape(Z)[1]])
     firings[spikes] = 1  # make the firings binary
