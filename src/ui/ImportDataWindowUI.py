@@ -1,25 +1,37 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QApplication, QScrollArea
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QApplication, QScrollArea, QStackedWidget, QPushButton
 from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt
 from PyQt5.QtSvg import QSvgWidget
+import pyqtgraph as pg
 
 # Import custom components
-from ui.components import CleanTheme, CleanCard, ActionButton, SectionHeader, Sidebar
+from ui.components import (
+    CleanTheme, 
+    CleanCard, 
+    ActionButton, 
+    SectionHeader, 
+    Sidebar, 
+    VisualizationPanel
+)
 
 
 def setup_ui(import_window):
     """Set up the UI for the import data window using custom components."""
     # Set widget properties
     import_window.setWindowTitle("HDEMG Analysis - Import Data")
-    import_window.resize(1200, 800)
+    import_window.setGeometry(100, 100, 1200, 800)
+    import_window.setStyleSheet(f"background-color: {CleanTheme.BG_MAIN};")
 
-    # Set up main layout
-    main_layout = QVBoxLayout(import_window)
-    main_layout.setContentsMargins(0, 0, 0, 0)
-    main_layout.setSpacing(0)
+    # Main widget and layout
+    import_window.central_widget = QWidget()
+    import_window.setCentralWidget(import_window.central_widget)
+    import_window.main_layout = QHBoxLayout(import_window.central_widget)
+    import_window.main_layout.setContentsMargins(0, 0, 0, 0)
+    import_window.main_layout.setSpacing(0)
 
     # Create main content layout
-    content_layout = QHBoxLayout()
+    content_widget = QWidget()
+    content_layout = QVBoxLayout(content_widget)
     content_layout.setContentsMargins(0, 0, 0, 0)
     content_layout.setSpacing(0)
 
@@ -28,11 +40,13 @@ def setup_ui(import_window):
     content_layout.addWidget(right_content, 1)
 
     # Add content to main layout
-    main_layout.addLayout(content_layout, 1)
+    content_layout.addLayout(content_layout, 1)
 
     # Add footer
     footer = create_footer(import_window)
-    main_layout.addWidget(footer)
+    content_layout.addWidget(footer)
+
+    import_window.main_layout.addWidget(content_widget)
 
     # Store references to functions for sidebar management
     import_window.update_sidebar_with_recent_files = lambda: update_sidebar_with_recent_files(import_window)
@@ -52,7 +66,7 @@ def create_right_content(import_window):
     right_content = QWidget()
     right_layout = QVBoxLayout(right_content)
     right_layout.setContentsMargins(25, 25, 25, 25)
-    right_layout.setSpacing(20)
+    right_layout.setSpacing(10)
 
     # Add section header
     header = SectionHeader("Import HDEMG Data")
@@ -66,6 +80,10 @@ def create_right_content(import_window):
     preview_section = create_preview_section(import_window)
     right_layout.addWidget(preview_section)
 
+    # Create configuration section
+    configuration_section = create_configuration_section(import_window)
+    right_layout.addLayout(configuration_section)
+
     # Add stretch to push content to the top
     right_layout.addStretch(1)
 
@@ -78,12 +96,12 @@ def create_right_content(import_window):
 def create_dropzone_card(import_window):
     """Create a clean card for the file dropzone."""
     dropzone_card = CleanCard()
-    dropzone_card.setMinimumHeight(250)
+    dropzone_card.setMinimumHeight(175)
 
     # Create layout for content
     dropzone_layout = QVBoxLayout()
-    dropzone_layout.setContentsMargins(20, 20, 20, 20)
-    dropzone_layout.setSpacing(15)
+    dropzone_layout.setContentsMargins(10, 10, 10, 10)
+    dropzone_layout.setSpacing(10)
     dropzone_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     # Add SVG icon
@@ -93,7 +111,7 @@ def create_dropzone_card(import_window):
     icon_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     cloud_icon = QSvgWidget("public/upload_icon.svg")
-    cloud_icon.setFixedSize(48, 33)
+    cloud_icon.setFixedSize(32, 22)
     cloud_icon.setStyleSheet("margin-bottom: 10px;")
 
     icon_layout.addWidget(cloud_icon)
@@ -139,6 +157,7 @@ def create_dropzone_card(import_window):
     return dropzone_card
 
 
+# NOTE: Creates 'Signal Preview' window
 def create_preview_section(import_window):
     """Create the signal preview section."""
     preview_card = CleanCard()
@@ -147,13 +166,7 @@ def create_preview_section(import_window):
     # Create layout for content
     preview_layout = QVBoxLayout()
     preview_layout.setContentsMargins(0, 0, 0, 0)
-    preview_layout.setSpacing(15)
-
-    # Add section header
-    preview_header = QLabel("Signal Preview")
-    preview_header.setFont(QFont("Segoe UI", 14, QFont.Bold))
-    preview_header.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
-    preview_layout.addWidget(preview_header)
+    preview_layout.setSpacing(5)
 
     # Create preview frame
     preview_frame = QFrame()
@@ -168,17 +181,65 @@ def create_preview_section(import_window):
     )
     preview_frame.setMinimumHeight(220)
 
+    # Create stacked widget to display either the label or the visualisation of the file
+    import_window.preview_stacked_frame = QStackedWidget()
+
+    # Create preview messages
+    import_window.preview_messages = QVBoxLayout()
+
+    # Create import failure message
+    import_window.failure_message = QLabel("Error Loading Signal Preview")
+    import_window.failure_message.setStyleSheet(f"color: #FA0000; font-weight: bold;")
+    import_window.failure_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    import_window.failure_message.setVisible(False)
+
     # Create preview message
     import_window.preview_message = QLabel("No file selected. Import a file to see a preview.")
     import_window.preview_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
     import_window.preview_message.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
 
+    # Add preview messages to stacked frame as an active widget
+    import_window.preview_messages.addStretch()
+    import_window.preview_messages.addWidget(import_window.failure_message)
+    import_window.preview_messages.addSpacing(20)
+    import_window.preview_messages.addWidget(import_window.preview_message)
+    import_window.preview_messages.addStretch()
+    import_window.preview_messages_widget = QWidget()
+    import_window.preview_messages_widget.setLayout(import_window.preview_messages)
+    import_window.preview_stacked_frame.addWidget(import_window.preview_messages_widget)
+
+    # Create visualization panel to preview the data in a selected file
+    import_window.preview_plot = pg.PlotWidget()
+    import_window.preview_plot.setBackground("w")  # White background
+    import_window.preview_plot.setLabel("left", "Amplitude")
+    import_window.preview_plot.setLabel("bottom", "Time (s)")
+    import_window.preview_plot.showGrid(x=True, y=True)
+    import_window.preview_plot.setMinimumHeight(250)
+
+    signal_panel = VisualizationPanel(plot_widget=import_window.preview_plot)
+    import_window.preview_stacked_frame.addWidget(signal_panel)
+    import_window.preview_stacked_frame.setCurrentIndex(0)
+
     # Add message to preview frame
     preview_frame_layout = QVBoxLayout(preview_frame)
-    preview_frame_layout.addWidget(import_window.preview_message)
+    preview_frame_layout.addWidget(import_window.preview_stacked_frame, stretch=3)
 
     # Add preview frame to layout
     preview_layout.addWidget(preview_frame)
+
+    # left and right buttons
+    lrbuttons = QWidget()
+    button_layout = QHBoxLayout()
+    import_window.left_button = ActionButton("←", primary=False)
+    import_window.left_button.setEnabled(False)
+    import_window.right_button = ActionButton("→", primary=False)
+    import_window.right_button.setEnabled(False)
+    import_window.left_button.clicked.connect(import_window.leftClicked)
+    import_window.right_button.clicked.connect(import_window.rightClicked)
+    button_layout.addWidget(import_window.left_button)
+    button_layout.addWidget(import_window.right_button)
+    lrbuttons.setLayout(button_layout)
+    preview_layout.addWidget(lrbuttons)
 
     # Add layout to card
     preview_card.content_layout.addLayout(preview_layout)
@@ -188,6 +249,21 @@ def create_preview_section(import_window):
 
     return preview_card
 
+def create_configuration_section(import_window):
+    config_group = QHBoxLayout()
+    import_window.set_configuration_button = ActionButton("Set Configuration", primary=False)
+    import_window.set_configuration_button.setEnabled(False)
+    config_group.addWidget(import_window.set_configuration_button)
+
+    import_window.segment_session_button = ActionButton("Segment Session", primary=False)
+    import_window.segment_session_button.setEnabled(False)
+    config_group.addWidget(import_window.segment_session_button)
+
+    import_window.channel_view_button = ActionButton("Channel Viewer", primary=False)
+    import_window.channel_view_button.setEnabled(False)
+    config_group.addWidget(import_window.channel_view_button)
+
+    return config_group
 
 def create_footer(import_window):
     """Create the footer with file info and navigation buttons."""
