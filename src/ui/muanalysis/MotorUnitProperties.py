@@ -19,6 +19,7 @@ from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
+from ui.components.muAnalysisComponents.SubsectionTitle import SubsectionTitle
 from ui.components.muAnalysisComponents.PropertiesInnerDialogText import \
     PropertiesInnerDialogText
 
@@ -219,7 +220,7 @@ class MotorUnitPropertiesButton(QWidget):
         layout.setContentsMargins(10, 0, 10, 0)
 
         # Subtitle
-        subtitle_label = AnalysisText.create_subtitle("MOTOR UNIT ANALYSIS")
+        subtitle_label = SubsectionTitle("MOTOR UNIT ANALYSIS")
         subtitle_label.setObjectName("motorUnitAnalysisSubTitle")
         layout.addWidget(subtitle_label)
 
