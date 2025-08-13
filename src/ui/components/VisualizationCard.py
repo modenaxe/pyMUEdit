@@ -10,7 +10,14 @@ from .CleanTheme import CleanTheme
 class VisualizationCard(QFrame):
     """A card specifically for visualizations with icon and text below"""
 
-    def __init__(self, title=None, icon=None, date=None, state_path=None, index=0, parent=None):
+    def __init__(
+            self,
+            title=None,
+            icon=None,
+            date=None,
+            state_path=None,
+            index=0,
+            parent=None):
         super().__init__(parent)
 
         # Set up styling for the entire card
@@ -49,7 +56,9 @@ class VisualizationCard(QFrame):
         self.icon_area = QFrame()
         self.icon_area.setObjectName("iconArea")
         self.icon_area.setMinimumHeight(100)
-        self.icon_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.icon_area.setSizePolicy(
+            QSizePolicy.Expanding,
+            QSizePolicy.Expanding)
         self.icon_area.setStyleSheet(
             f"""
             QFrame#iconArea {{
