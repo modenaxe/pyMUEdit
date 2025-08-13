@@ -5,8 +5,7 @@ from PyQt5.QtWidgets import (QDialog, QHBoxLayout, QLabel, QPushButton,
 
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.GeneralRedButton import \
-    GeneralRedButton
+from ui.components.muAnalysisComponents.GeneralRedButton import GeneralRedButton
 
 
 class ConfirmationDialog(QDialog):
@@ -37,7 +36,7 @@ class ConfirmationDialog(QDialog):
         cancel_button = GeneralButton("Cancel", lambda: self.reject())
         cancel_button.setFixedHeight(30)
 
-        reset_button = GeneralRedButton("Reset")
+        reset_button = GeneralRedButton("Confirm")
         reset_button.clicked.connect(self.accept)
         reset_button.setFixedHeight(30)
 

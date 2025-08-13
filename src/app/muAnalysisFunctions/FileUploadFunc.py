@@ -698,7 +698,23 @@ class FileUploadFunc:
         analysis_plot.display_fig(canvas)
 
     def sort_MUs(self, emgfile):
-        # code from openhdemg
+        """
+        Sort motor units (MUs) in an EMG file based on the timing of their
+        first detected pulse.
+
+        Parameters
+        ----------
+        emgfile : dict
+            A dictionary containing EMG data fields, including MU pulse timings,
+            accuracy metrics, binary firing patterns, and other related signals.
+
+        Returns
+        -------
+        dict
+            A new EMG file dictionary with all MU-related fields sorted according
+            to the order of their first pulses.
+        """
+        
         if emgfile["NUMBER_OF_MUS"] <= 1:
             return emgfile
 
@@ -749,11 +765,6 @@ class FileUploadFunc:
         )
         sorted_emgfile["BINARY_MUS_FIRING"].columns = np.arange(emgfile["NUMBER_OF_MUS"])
 
-        # Sort MUPULSES.
-        # Preferable to use the sorting_order as a double-check in alternative to:
-        # sorted_emgfile["MUPULSES"] = sorted(
-        #   sorted_emgfile["MUPULSES"], key=min, reverse=False)
-        # )
         for origpos, newpos in enumerate(sorting_order):
             sorted_emgfile["MUPULSES"][origpos] = emgfile["MUPULSES"][newpos]
 

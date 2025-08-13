@@ -22,6 +22,30 @@ def compute_deltaf(
     corr_cutoff=0.7,
     controlunitmodulation_cutoff=0.5,
 ):
+    """
+    Compute deltaF values for pairs of motor units (MUs) from EMG data.
+
+    Parameters
+    ----------
+    average_method : str, optional
+        Method for averaging deltaF values. Default is "test_unit_average".
+    normalisation : str, optional
+        Normalisation method for deltaF ("False" or "ctrl_max_desc").
+    clean : bool, optional
+        If True, apply exclusion criteria to remove unreliable measurements.
+    recruitment_difference_cutoff : float, optional
+        Minimum recruitment time difference (in seconds) between control and test units.
+    corr_cutoff : float, optional
+        Minimum correlation between MU discharge rates for inclusion.
+    controlunitmodulation_cutoff : float, optional
+        Minimum modulation in the control unit's firing rate.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame containing MUs and their computed deltaF values.
+    """
+    
     smoothfits = compute_svr()["gensvr"]
     emgfile = FileUploadFunc.file
     dfret_ret = []
@@ -241,6 +265,32 @@ def compute_svr(
     endpointweights_magnitude=5,
     discontfiring_dur=1.0,
 ):
+    """
+    Compute smoothed instantaneous discharge rates (IDR) for all motor units
+    (MUs) using Support Vector Regression (SVR).
+
+    Parameters
+    ----------
+    gammain : float, optional
+        Gamma parameter for the SVR RBF kernel.
+    regparam : float, optional
+        Regularization parameter (C) for the SVR.
+    endpointweights_numpulses : int, optional
+        Number of MU pulses at each endpoint to upweight.
+    endpointweights_magnitude : float, optional
+        Magnitude of weight applied to endpoints.
+    discontfiring_dur : float, optional
+        Minimum duration (seconds) of a firing gap considered a discontinuity.
+
+    Returns
+    -------
+    dict
+        Dictionary containing:
+        - "svrfit": list of fitted discharge rate arrays per MU.
+        - "svrtime": list of corresponding time vectors per MU.
+        - "gensvr": list of full-length time-aligned fitted arrays.
+    """
+        
     emgfile = FileUploadFunc.file
     idr = CommonOpenFunc().compute_idr(emgfile)  # Calc IDR
 
@@ -371,7 +421,8 @@ def compute_svr(
             svrfit_acm.append(smoothfit.copy())
             svrtime_acm.append(np.squeeze(newtm.copy()))
             gensvr_acm.append(gen_svr.copy())
-
+            
+   # Return results as dictionary
     svrfits = {
         "svrfit": svrfit_acm,
         "svrtime": svrtime_acm,
