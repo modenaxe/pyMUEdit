@@ -94,11 +94,6 @@ class MotorUnitTrackingDialog(QDialog):
         window_layout.addWidget(self.window_input)
         main_layout.addLayout(window_layout)
 
-        self.filter_checkbox = QCheckBox("Apply Filter")
-        self.exclude_checkbox = QCheckBox("Exclude Below Threshold")
-        main_layout.addWidget(self.filter_checkbox)
-        main_layout.addWidget(self.exclude_checkbox)
-
         main_layout.addItem(QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
         track_btn = QPushButton("Track")
@@ -148,10 +143,14 @@ class MotorUnitTrackingDialog(QDialog):
         
         # Right: IDR plots
         idr_plots_layout = QVBoxLayout()
-        self.fig1, self.ax1 = plt.subplots(figsize=(2, 1))
+
+        self.fig1, self.ax1 = plt.subplots(figsize=(2.9, 1.4), constrained_layout=True)
         self.canvas1 = FigureCanvas(self.fig1)
         idr_plots_layout.addWidget(self.canvas1)
-        self.fig2, self.ax2 = plt.subplots(figsize=(2, 1))
+
+        self.fig2, self.ax2 = plt.subplots(figsize=(2.9, 1.4), constrained_layout=True)
+
+
         self.canvas2 = FigureCanvas(self.fig2)
         idr_plots_layout.addWidget(self.canvas2)
         plots_layout.addLayout(idr_plots_layout)
@@ -303,8 +302,8 @@ class MotorUnitTrackingDialog(QDialog):
         # --- Update all plots and grids for the selected MU pair ---
         ch1, ch2, _ = self.results[idx]
         # IDR plots
-        self.plot_idr(self.file1, ch1, self.ax1, self.canvas1)
-        self.plot_idr(self.file2, ch2, self.ax2, self.canvas2)
+        self.plot_idr(self.file1, ch1, self.ax1, self.canvas1,color='blue')
+        self.plot_idr(self.file2, ch2, self.ax2, self.canvas2,color='orange')
         # MUAP grids
         # self.plot_muap_grid(self.file1, ch1, self.muap_fig1, self.muap_canvas1)
         # self.plot_muap_grid(self.file2, ch2, self.muap_fig2, self.muap_canvas2)
@@ -404,7 +403,7 @@ class MotorUnitTrackingDialog(QDialog):
                 valid1 = muaps1[ch, :].shape[0] > 0 and np.any(np.isfinite(muaps1[ch, :]))
                 valid2 = muaps2[ch, :].shape[0] > 0 and np.any(np.isfinite(muaps2[ch, :]))
                 if valid1:
-                    ax.plot(time_ms, muaps1[ch, :], color='black', linewidth=1, label='File 1')
+                    ax.plot(time_ms, muaps1[ch, :], color='blue', linewidth=1, label='File 1')
                 if valid2:
                     ax.plot(time_ms, muaps2[ch, :], color='orange', linewidth=1, label='File 2')
                 ax.set_xticks([])
@@ -434,6 +433,7 @@ class MotorUnitTrackingDialog(QDialog):
         self.muap_canvas1.draw()
         self.muap_fig2.clf()
         self.muap_canvas2.draw()
+        
 
     def toggle_inclusion(self):
         idx = self.mu_pair_selector.currentIndex()
@@ -452,34 +452,54 @@ class MotorUnitTrackingDialog(QDialog):
         common = CommonOpenFunc()
         idr = common.compute_idr(file)
 
-        ax.clear()
-        ax2 = ax.twinx()
+        # get or make a persistent right axis for this left axis
+        if not hasattr(self, "_idr_right_axes"):
+            self._idr_right_axes = {}
+        key = id(ax)
+        ax_right = self._idr_right_axes.get(key)
 
-        # Plot MU IDR dots
+        # if missing/stale, create and remember it
+        if ax_right is None or ax_right.figure is not ax.figure:
+            ax_right = ax.twinx()
+            self._idr_right_axes[key] = ax_right
+
+        # clear BOTH axes before plotting
+        ax.clear()
+        ax_right.clear()
+
+        # Plot MU IDR dots on left axis
         ax.plot(
-            idr[mu_index]["timesec"][1:], 
-            idr[mu_index]["idr"].dropna(), 
-            '.', 
+            idr[mu_index]["timesec"][1:],
+            idr[mu_index]["idr"].dropna(),
+            '.',
             markersize=8,
             label="MU IDR",
-            color=color
+            color=color,
         )
         ax.set_ylabel("Discharge Rate (pps)")
-
         ax.set_xlabel("Time (Sec)")
         ax.set_title(f"MU {mu_index}")
 
-        # Plot reference signal (MVC) on secondary y-axis
-        if isinstance(file["REF_SIGNAL"], pd.DataFrame) and not file["REF_SIGNAL"].empty:
+        # Plot MVC on right axis
+        if isinstance(file.get("REF_SIGNAL"), pd.DataFrame) and not file["REF_SIGNAL"].empty:
             ref = file["REF_SIGNAL"][0]
             time = np.arange(len(ref)) / file["FSAMP"]
-            ax2.plot(time, ref, color='gray', alpha=0.7, linewidth=1.5, label="MVC")
-            ax2.set_ylabel("MVC (%)")
-            ax2.set_zorder(0)
+            ax_right.plot(time, ref, color='gray', alpha=0.7, linewidth=1.5, label="MVC")
+            ax_right.yaxis.set_label_position("right")
+            ax_right.yaxis.tick_right()
+            ax_right.set_ylabel("MVC (%)", labelpad=8, rotation=270)  # rotation=270 looks natural on the right
+            # optional: nudge the right spine outward a bit for even more space
+            ax_right.spines["right"].set_position(("outward", 6))
+            # optional: match label color to the MVC trace
+            ax_right.yaxis.label.set_color("gray")
+
+            # keep dots visible above the MVC trace
+            ax_right.set_zorder(0)
             ax.set_zorder(1)
-            ax.patch.set_alpha(0)  # Make primary axis background transparent
+            ax.patch.set_alpha(0)
 
         canvas.draw()
+
 
     def _get_stylesheet(self):
         return f"""
