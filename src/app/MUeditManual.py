@@ -102,7 +102,7 @@ class MUeditManual(QMainWindow):
 
         self.dirty = False
         self.update_save_button()
-        self.dirty_depth = 0  #shr
+        self.dirty_depth = 0 
         # Imports data (only if filename and pathname exist)
         if filename and pathname:
             self.file_path_field.setText(self.filename)
@@ -130,36 +130,37 @@ class MUeditManual(QMainWindow):
     def check_current_data_save_by_dirty(self):
         if self.MUedition is None:
             return False
-        """比较当前数据与初始状态是否有变更"""
-        current_data = self.MUedition["edition"]  #返回相反值，既相同时为False，不同时为True
+        """Compare Current Data With initial Data"""
+        current_data = self.MUedition["edition"]
+        #Same == False，Different == True
         answer = self.compare_current_initial_data(current_data, self.initial_data)
         return answer
 
-    def compare_current_initial_data(self, current_data, initial_data): #不相等时返回True
-        # 字段名列表（可根据实际情况增减）
+    def compare_current_initial_data(self, current_data, initial_data):
+
         fields = ["Pulsetrain", "Dischargetimes", "silval", "silvalcon", "time", "arraynb"]
         for field in fields:
             val1 = current_data.get(field)
             val2 = initial_data.get(field)
-            # 比较list of numpy arrays
+            # Compare list of numpy arrays
             if isinstance(val1, list) and all(isinstance(x, np.ndarray) for x in val1):
                 if len(val1) != len(val2):
                     return True
                 for arr1, arr2 in zip(val1, val2):
                     if not np.array_equal(arr1, arr2, equal_nan=True):
                         return True
-            # 比较dict
+            # Compare dict
             elif isinstance(val1, dict):
                 if val1.keys() != val2.keys():
                     return True
                 for k in val1:
                     if not np.array_equal(val1[k], val2[k], equal_nan=True):
                         return True
-            # 比较numpy array
+            # Compare numpy array
             elif isinstance(val1, np.ndarray):
                 if not np.array_equal(val1, val2, equal_nan=True):
                     return True
-            # 比较普通类型
+            # Compare others
             else:
                 if val1 != val2:
                     return True
@@ -188,7 +189,7 @@ class MUeditManual(QMainWindow):
         else:
             self._save_flag = save_flag
             
-        if save_flag:   #当前data与初始data相同，则禁止save；不同，则允许save
+        if save_flag:
             self.floating_save_btn.setEnabled(True)
             self.floating_save_btn.setStyleSheet("""
                 QPushButton{background:#0072ee;color:#fff;border:none;border-radius:4px;padding:8px 15px;}
@@ -294,13 +295,11 @@ class MUeditManual(QMainWindow):
 
         if hasattr(self, "add_spikes_btn") and self.add_spikes_btn.get_active():
             print("ESC: deactivating add_spikes button")
-            # self._undo_all_edits()
             self.add_spikes_button_pushed()
             return 
 
         elif hasattr(self, "delete_spikes_btn") and self.delete_spikes_btn.get_active():
             print("ESC: deactivating delete_spikes button")
-            # self._undo_all_edits()
             self.delete_spikes_button_pushed()
             return
 
@@ -367,7 +366,7 @@ class MUeditManual(QMainWindow):
         
         from PyQt5.QtWidgets import QApplication
         from PyQt5.QtCore import Qt
-        # 设置鼠标为等待
+        # Set Mouse State to Wait
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
             filepath = os.path.join(self.pathname, self.filename)
@@ -389,16 +388,16 @@ class MUeditManual(QMainWindow):
                 #check the data with "signal" and "Pulsetrain"
                 if "signal" not in files or (
                         "Pulsetrain" not in files["signal"].dtype.names
-                        and "Pulsetrain" not in files  # 有些是顶层字段
+                        and "Pulsetrain" not in files
                 ):
-                    QApplication.restoreOverrideCursor()  # 还原鼠标
+                    QApplication.restoreOverrideCursor()  # Restore Mouse State
                     raise KeyError("Missing 'signal' or 'Pulsetrain'")
             else:
                 #check the data with "signal" and "Pulsetrain"
                 if "signal" not in files or (
                         "Pulsetrain" not in files["signal"].keys()
                 ):
-                    QApplication.restoreOverrideCursor()  # 还原鼠标
+                    QApplication.restoreOverrideCursor()  # Restore Mouse State
                     raise KeyError("Missing 'signal' or 'Pulsetrain'")
 
             # Initialize the MUedition data structure
@@ -470,9 +469,9 @@ class MUeditManual(QMainWindow):
             self.update_plot_limits()
             self._sync_pan_slider()#moy
 
-            QApplication.restoreOverrideCursor()  # 还原鼠标
+            QApplication.restoreOverrideCursor()  # Restore Mouse State
 
-            #获取初始读取的数据值，对比作为save按钮的开关
+            # Set current data as clear data
             self.initial_data = copy.deepcopy(self.MUedition["edition"])
 
         except KeyError as ke:
@@ -505,20 +504,22 @@ class MUeditManual(QMainWindow):
            
         # Copy structured data from MATLAB file
         edition_data = files["edition"][0, 0]
-        #恢复"Dischargetimes", "silval", "silvalcon"这三个字典
+
+        # Restore the three dictionaries: "Dischargetimes", "silval", "silvalcon"
         for field in edition_data.dtype.names:
             val = edition_data[field]
-            # 检查是不是json字符串
-            if field in ("Dischargetimes", "silval", "silvalcon") and isinstance(val, np.ndarray) and val.dtype.kind in {'U','S','O'}:
-                # 这里val是一个长度为1的array，里面是string
+            
+            # Check if it is a JSON string
+            if field in ("Dischargetimes", "silval", "silvalcon") and isinstance(val, np.ndarray) and val.dtype.kind in {'U', 'S', 'O'}:
+                # Here `val` is an array of length 1, containing a string
                 str_val = str(val.item())
                 try:
                     raw_dict = json.loads(str_val)
-                    # key从"[i,j]"字符串恢复为tuple
+                    # Restore keys from "[i,j]" string format to tuple
                     new_dict = {}
                     for k, v in raw_dict.items():
-                        idx = tuple(json.loads(k.replace("'", '"')))  # 将"[i, j]" -> (i, j)
-                        # value如果是list，转回np.array；如果是float/int，直接用
+                        idx = tuple(json.loads(k.replace("'", '"')))  # Convert "[i, j]" -> (i, j)
+                        # If value is a list, convert back to np.array; if float/int, use directly
                         if isinstance(v, list):
                             new_dict[idx] = np.array(v)
                         else:
@@ -527,19 +528,29 @@ class MUeditManual(QMainWindow):
                 except Exception as e:
                     print(f"Error loading field {field}: {e}")
                     self.MUedition["edition"][field] = {}
-            elif field == "Pulsetrain" and isinstance(val, np.ndarray): #处理pulsetrain
+            
+            # Process pulsetrain
+            elif field == "Pulsetrain" and isinstance(val, np.ndarray):
                 self.MUedition["edition"][field] = [x for x in val.flatten()]
-            elif field == "Flag" and isinstance(val, np.ndarray):   #处理flag
+            
+            # Process flag
+            elif field == "Flag" and isinstance(val, np.ndarray):
                 self.MUedition["edition"][field] = [
-                                            [0] * arr.shape[0]
-                                            for arr in self.MUedition["edition"]["Pulsetrain"]
-                                            ]
-            elif field == "time" and isinstance(val, np.ndarray):   #处理time
+                    [0] * arr.shape[0]
+                    for arr in self.MUedition["edition"]["Pulsetrain"]
+                ]
+            
+            # Process time
+            elif field == "time" and isinstance(val, np.ndarray):
                 self.MUedition["edition"][field] = val.flatten()
-            elif field == "arraynb" and isinstance(val, np.ndarray):    #处理arraynb
+            
+            # Process arraynb
+            elif field == "arraynb" and isinstance(val, np.ndarray):
                 self.MUedition["edition"][field] = val.flatten()
+            
             else:
                 self.MUedition["edition"][field] = val
+
 
         signal_data = files["signal"][0, 0]
         for field in signal_data.dtype.names:
@@ -1879,7 +1890,7 @@ class MUeditManual(QMainWindow):
 
         from PyQt5.QtWidgets import QApplication
         from PyQt5.QtCore import Qt
-        # 设置鼠标为等待
+        # Set Mouse State to Wait
         QApplication.setOverrideCursor(Qt.WaitCursor)
 
         try:
@@ -1971,7 +1982,7 @@ class MUeditManual(QMainWindow):
             QApplication.restoreOverrideCursor()
             print(e)
             ErrorDialog(text="Fail to update filter.")
-        self.update_save_button()   #刷新save按钮状态
+        self.update_save_button()
             
 
     def extend_mu_filter_button_pushed(self):
@@ -1999,7 +2010,7 @@ class MUeditManual(QMainWindow):
 
         from PyQt5.QtWidgets import QApplication
         from PyQt5.QtCore import Qt
-        # 设置鼠标为等待
+        # Set Mouse State to Wait
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
             array_idx = int(parts[1]) - 1
@@ -2125,12 +2136,7 @@ class MUeditManual(QMainWindow):
             QApplication.restoreOverrideCursor()
             print(e)
             ErrorDialog(text="Fail to extend filter.")
-        self.update_save_button()   #刷新save按钮状态
-
-    def _undo_all_edits(self):
-        """Undo all spike editing changes by popping the entire undo stack."""
-        while self.undo_stack:
-            self.undo_button_pushed()
+        self.update_save_button()
 
     def undo_button_pushed(self): # moy
         if not self.undo_stack:
@@ -2977,23 +2983,20 @@ class MUeditManual(QMainWindow):
         edition = copy.deepcopy(self.MUedition["edition"])
 
 
-
-        # 在保存前重置所有未删除（即实际存在的MU）的Flag为0（直接操作edition）
         for array_idx, pt in enumerate(edition["Pulsetrain"]):
             n_mu = pt.shape[0]
             flag_arr = edition["Flag"][array_idx]
             for i in range(n_mu):
                 flag_arr[i] = 0
-            # 不动flag_arr[n_mu:]，保持原来长度
 
 
-        # 解决单个MU保存后读取失败的问题，Convert Pulsetrain to MATLAB-compatible 1xN cell array
+        # Convert Pulsetrain to MATLAB-compatible 1xN cell array
         pulsetrain_list = self.MUedition["edition"]["Pulsetrain"]
         pulsetrain_matlab_cell = np.empty((1, len(pulsetrain_list)), dtype=object)
         for i, pt in enumerate(pulsetrain_list):
             pulsetrain_matlab_cell[0, i] = pt
         edition["Pulsetrain"] = pulsetrain_matlab_cell  # overwrite with proper format
-        # #保存flag字段
+
         # flag_list = self.MUedition["edition"]["Flag"]
         # flag_matlab_cell = np.empty((1, len(flag_list)), dtype=object)
         # for i, pt in enumerate(flag_list):
@@ -3003,7 +3006,7 @@ class MUeditManual(QMainWindow):
         # Store as string，Fix .mat can not store dict
         for field in ("Dischargetimes", "silval", "silvalcon"):
             if field in edition and isinstance(edition[field], dict):
-                # tuple key转str
+                # tuple key to str
                 safe_dict = {}
                 for k, v in edition[field].items():
                     # key: (i,j) -> "[i,j]"
@@ -3045,7 +3048,9 @@ class MUeditManual(QMainWindow):
         self._save_thread.start()
         
         self.dirty_depth = 0 #shr
-        self.initial_data = copy.deepcopy(self.MUedition["edition"])    #保存新的原始数据
+        
+        # Set current data as clear data
+        self.initial_data = copy.deepcopy(self.MUedition["edition"])
 
         # Show a confirmation message
         from PyQt5.QtWidgets import QMessageBox
