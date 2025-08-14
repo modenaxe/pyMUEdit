@@ -6,10 +6,69 @@ A Python-based application for High-Density Electromyography (HDEMG) signal anal
 
 Original matlab code the application is based off:
 https://github.com/simonavrillon/MUedit 
-Drive containing data files used for testing:
-https://drive.google.com/drive/folders/1nIpH1ksYWE-vQplEtilz843h2BuCuDmy
 
-## Dockerized Application
+### Quick Start Guide
+
+### Prerequisites
+
+- Python 3.13+
+- Pip 25.1+
+
+
+#### The Easy Way [NO docker]
+
+1. Clone this repository:
+
+   ```bash
+   git clone git@github.com:unsw-cse-comp99-3900/capstone-project-25t2-9900-t09a-almond.git
+   cd capstone-project-25t2-9900-t09a-almond [TO BE REPLACED]
+   ```
+
+2. Ensure Python 3.13 or higher is installed
+
+   ```bash
+   python --version
+   ```
+
+3. Ensure Pip 25.1 or higher is installed
+
+   ```bash
+   pip --version
+   ```
+
+4. Create virtual environment
+
+   ```bash
+   python -m venv .venv
+   ```
+
+5. Activate the virtual environment
+
+   ```bash
+   Windows:
+   .venv\Scripts\activate
+   ```
+
+   ```bash
+   Linux/MacOS:
+   source myenv/bin/activate
+   ```
+
+6. Install requirements
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+7. Run the application:
+
+   ```bash
+   cd src
+   python main.py
+   ```
+
+
+### Dockerized Application
 
 This application has been dockerized to allow for easy deployment and use on any system with Docker installed, eliminating the need to install dependencies locally. The application runs entirely inside the container and is accessed through your web browser or a VNC client.
 
@@ -19,38 +78,13 @@ This application has been dockerized to allow for easy deployment and use on any
 - [Docker Compose](https://docs.docker.com/compose/install/) (optional but recommended)
 - A web browser or VNC client
 
-### Quick Start Guide
-
-#### The Easy Way (Using the Scripts)
-
-1. Clone this repository:
-
-   ```bash
-   git clone git@github.com:unsw-cse-comp99-3900/capstone-project-2025-t1-25t1-3900-w16a-celery.git
-   cd capstone-project-2025-11-25t1-3900-w16a-celery
-   ```
-
-2. Run the application:
-
-   - **Linux/macOS**: Make the script executable and run it
-     ```bash
-     chmod +x run-hdemg.sh
-     ./run-hdemg.sh
-     ```
-   - **Windows**: Double-click on `run-hdemg.bat`
-
-3. Access the application:
-   - Open your web browser and navigate to: http://localhost:6080/vnc.html
-   - Click the "Connect" button
-   - You'll see the HDEMG Analysis Tool running in your browser
-
 #### Manual Setup
 
 1. Clone this repository:
 
    ```bash
-   git clone git@github.com:unsw-cse-comp99-3900/capstone-project-2025-t1-25t1-3900-w16a-celery.git
-   cd capstone-project-2025-11-25t1-3900-w16a-celery
+   git clone git@github.com:unsw-cse-comp99-3900/capstone-project-25t2-9900-t09a-almond.git
+   cd capstone-project-25t2-9900-t09a-almond
    ```
 
 2. Create a data directory:
@@ -64,10 +98,6 @@ This application has been dockerized to allow for easy deployment and use on any
    ```bash
    # With Docker Compose (recommended)
    docker-compose up -d
-
-   # Or with Docker only
-   docker build -t hdemg-analysis-tool .
-   docker run -d --name hdemg-analysis-tool -p 5900:5900 -p 6080:6080 -v $(pwd)/data:/app/data hdemg-analysis-tool
    ```
 
 4. Access the application:
@@ -129,12 +159,6 @@ capstone-project-2025-11-25t1-3900-w16a-celery/
   docker-compose down
   ```
 
-- **With Docker only**:
-  ```bash
-  docker stop hdemg-analysis-tool
-  docker rm hdemg-analysis-tool
-  ```
-
 ### Application Features
 
 - Import and analyze HDEMG data
@@ -143,60 +167,7 @@ capstone-project-2025-11-25t1-3900-w16a-celery/
 - Visualize signal patterns
 - Export analysis results
 
----
-
-### Supported Input Formats  
-
-* `.otb+` (OT BioLab +)  
-* `.rhd` (Intan RHX “one file per channel”)  
-* `.mat` / `.csv`
-
-> **Minimum array sizes** — at least **32 surface** *or* **16 intramuscular** electrodes are required.
-
-### Session Segmentation  
-
-1. Click **Segment Session**.  
-2. Choose an auxiliary channel or **EMG amplitude**.  
-3. Enter a **threshold** *or* specify **number of windows** and drag-select them.  
-4. Click **Concatenate** (merge) or **Split** (each window to its own `.mat`).
-
----
-
-### Decomposition Parameters  
-
-| Setting | Purpose |
-|---------|---------|
-| **Reference** | Auto segmentation on `Target`, or manual on any trace. |
-| **Check EMG** | “Yes” opens per-column QC to discard noisy channels. |
-| **Contrast** | `logcosh`, `skew`, `kurtosis`. |
-| **Initialisation** | `EMG max` (deterministic) or `Random`. |
-| **CoV filter** | Keep units with ISI-CoV below threshold. |
-| **Peel-off** | Subtract accepted unit before next iteration. |
-| **Refine MUs** | Automatic outlier removal & filter update. |
-| **Iterations** | FastICA iterations per grid & window. |
-| **Windows** | Number of ROIs. |
-| **Threshold target** | Fraction (0-1) of target force. |
-| **Extended channels** | Size after time-delay embedding. |
-| **Duplicate thr.** | Overlap % to tag duplicates (default 0.30). |
-| **SIL / CoV thresholds** | Quality cut-offs. |
-
----
-
-### Running Decomposition  
-
-1. Perform channel QC if **Check EMG = Yes**.  
-2. Select ROIs if manual segmentation.  
-3. Progress bar reports `Grid`, `Iteration`, `SIL`, `CoV`.  
-4. Output `*_output_decomp.mat` contains  
-
-| Variable | Content |
-|----------|---------|
-| `signal.Pulsetrain` | Cell (units × time) per grid |
-| `signal.Dischargetimes` | 2-D cell `[grid, unit]` |
-
----
-
-### Manual Editing  
+### Manual Editing And Shortcut Keys  
 
 | Action | Key | Effect |
 |--------|-----|--------|
@@ -206,13 +177,18 @@ capstone-project-2025-11-25t1-3900-w16a-celery/
 | Delete spikes | **d** | Box-select false positives |
 | Update filter | **Space** | Re-estimate separation vector (current window) |
 | Extend filter | **e** | Slide window (50 % overlap) across recording |
-| Lock spikes | **s** | Freeze current spikes before re-evaluation |
-| Undo / Redo | Ctrl-Z / Ctrl-Y | Unlimited stack |
+| Lock spikes | **l** | Freeze current spikes before re-evaluation |
+| Undo / Redo | **z** / **x** | Unlimited stack |
+| Save | **Ctrl+S** | Quick save files |
+| Undo / Redo | **z** / **x** | Unlimited stack |
+| Scroll Left / Right | **ArrowLeft** / **ArrowRight** | Scroll the plot view horizontally |
+| Zoom In / Out | **ArrowUp** / **ArrowDown** | Zoom in or out on the plot view |
+
 
 *Marker colours* — green (+SIL), blue, orange, red (–SIL).
 
 Batch buttons: **Remove all outliers**, **Update all MU filters**.  
-**Save** → `*_edited.mat` containing an `edition` structure (edited pulse trains & times).
+**Save** → `*_pyedited.mat` containing an `edition` structure (edited pulse trains & times).
 
 ---
 
@@ -225,27 +201,6 @@ Buttons: **Remove duplicates within grid** / **across grids**.
 * **Plot MU spike trains** — raster per grid  
 * **Plot MU firing rates** — 1 s Hanning-smoothed rate
 
----
-
-## Algorithmic Detail (advanced users)  
-
-> For those who wish to extend or audit the pipeline.
-
-```
-import  → grid/muscle  → segment  → channel QC
-     ↓                   ↓
-filter (notch + BP)  →  extend + whiten
-     ↓
-FastICA (fixed_point_alg)
-     ↓
-K-means spike/noise  ↻  refine (min_cov_isi)
-     ↓
-SIL assessment  →  accept & peel-off  →  repeat until done
-```
-
-*Built with:* Python 3 · NumPy · SciPy · scikit-learn · Matplotlib/PyQtGraph · PyQt5
-
----
 
 ### Troubleshooting
 
@@ -271,5 +226,5 @@ If you encounter issues:
    - Rebuild the Docker image after updating: `docker-compose build` or `docker build -t hdemg-analysis-tool .`
 
 ```
-*Prepared by **Team W16A-CELERY** — UNSW Capstone 2025.*
+*Prepared by **Team T09A-ALMOND**
 ```
