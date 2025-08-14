@@ -126,7 +126,7 @@ The Docker setup mounts a `data` directory from your host machine to `/app/data`
 ### Project Structure
 
 ```
-capstone-project-2025-11-25t1-3900-w16a-celery/
+capstone-project-25t2-9900-t09a-almond/
 ├── data/                  # Data directory mounted into the container
 ├── docs/                  # Documentation
 ├── src/                   # Source code
