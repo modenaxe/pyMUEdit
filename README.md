@@ -401,6 +401,15 @@ If you encounter issues:
    - If you encounter missing module errors, you may need to add them to requirements.txt
    - Rebuild the Docker image after updating: `docker-compose build` or `docker build -t hdemg-analysis-tool .`
 
-```
-*Prepared by **Team W16A-CELERY** — UNSW Capstone 2025.*
+--- 
+
+## Analysis Tab Documentation
+The analysis tab aims to replicate features from the openHDEMG application [https://www.giacomovalli.com/openhdemg/]
+
+Documentation for the implemeneted features can be found in [analysis_tab-documentation.pdf]
+
+*Note - currently the file upload function does not support output files from the decomposition and edit tabs, for testing purposes, please use [otb_testfile.mat]
+
+
+*Prepared by **Team 25t1: W16A-CELERY, 25t2: T09A-ALMOND, T11A-BANANA, W18A-BANANA, ** — UNSW Capstone 2025.*
 ```
