@@ -83,7 +83,7 @@ class duplicates_between_grids_worker(QThread):
                 percent = int(array_idx / total_arrays * 50 + 50)
                 self.progress_changed.emit(
                     percent,
-                    f"Processing Array #{array_idx + 1}: Set new data and canculate SIL"
+                    f"Processing Array #{array_idx + 1}: Set new data and calculate SIL"
                 )
                 array_indices = np.where(unique_muscle == array_idx)[0]
 

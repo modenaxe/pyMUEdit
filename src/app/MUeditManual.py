@@ -102,7 +102,7 @@ class MUeditManual(QMainWindow):
 
         self.dirty = False
         self.update_save_button()
-        self.dirty_depth = 0  #shr
+        self.dirty_depth = 0 
         # Imports data (only if filename and pathname exist)
         if filename and pathname:
             self.file_path_field.setText(self.filename)
@@ -294,13 +294,11 @@ class MUeditManual(QMainWindow):
 
         if hasattr(self, "add_spikes_btn") and self.add_spikes_btn.get_active():
             print("ESC: deactivating add_spikes button")
-            # self._undo_all_edits()
             self.add_spikes_button_pushed()
             return 
 
         elif hasattr(self, "delete_spikes_btn") and self.delete_spikes_btn.get_active():
             print("ESC: deactivating delete_spikes button")
-            # self._undo_all_edits()
             self.delete_spikes_button_pushed()
             return
 
@@ -2126,11 +2124,6 @@ class MUeditManual(QMainWindow):
             print(e)
             ErrorDialog(text="Fail to extend filter.")
         self.update_save_button()   #刷新save按钮状态
-
-    def _undo_all_edits(self):
-        """Undo all spike editing changes by popping the entire undo stack."""
-        while self.undo_stack:
-            self.undo_button_pushed()
 
     def undo_button_pushed(self): # moy
         if not self.undo_stack:
