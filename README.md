@@ -228,3 +228,116 @@ If you encounter issues:
 ```
 *Prepared by **Team T09A-ALMOND**
 ```
+
+# UI Test
+## Test Case 1 — Launch Application and Perform Basic Operations
+
+### 📝 Preconditions
+- The application is not running.
+
+---
+
+### 🔄 Test Steps & Expected Results
+
+1. **Action:** Navigate to the `src` folder and launch `main.py`.  
+   **Expected Result:** The GUI window appears.
+
+2. **Action:** Click the **MUEditing** button.  
+   **Expected Result:**  
+   - The interface switches to the **MUEditing** view.  
+   - The left sidebar expands to show the MUEditing control panel.  
+   - The MUEditing interface displays:  
+     <img src="image/t1s1.png"  width="50%">
+
+3. **Action:** Click the **Press here to select file** button.  
+   **Expected Result:** A **Select File** dialog opens.
+   - The MUEditing interface displays:  
+   <img src="image/t1s2.png"  width="50%">
+
+4. **Action:** In the `data` folder, select the file `matlab_output_trial1_40MVC.otb+_decomp.mat` and confirm.  
+   **Expected Result:**  
+   - The program begins loading the file.  
+   - After a short delay, the **PulseTrain Plot** and **Discharge Rate Plot** show curves and red dots.  
+   - The **Press here to select file** button text changes to the selected filename.
+   - The MUEditing interface displays:  
+   <img src="image/t1s3.png"  width="50%">
+
+5. **Action:** Click the **Delete Spikes** button.  
+   **Expected Result:**  
+   - The **Delete Spikes** button turns green.  
+   - All other action buttons turn grey and become disabled.
+   <img src="image/t1s4.png"  width="50%">
+
+6. **Action:** Move the mouse pointer over the **PulseTrain Plot**.  
+   **Expected Result:** The mouse cursor changes to a crosshair.
+
+7. **Action:** Use click‑and‑drag (marquee) selection or single click to select red dots to delete.  
+   **Expected Result:**  
+   - Selected red dots are removed.  
+   - The **Save** button in the top‑left corner becomes enabled and turns blue.
+   <img src="image/t1s6.png"  width="50%">
+
+8. **Action:** Click the **Delete Spikes** button again.  
+   **Expected Result:**  
+   - The **Delete Spikes** button turns blue.  
+   - All other action buttons turn blue and are re‑enabled.
+   <img src="image/t1s7.png"  width="50%">
+
+9. **Action:** Click the **Add Spikes** button.  
+   **Expected Result:**  
+   - The **Add Spikes** button turns green.  
+   - All other action buttons turn grey and become disabled.
+   <img src="image/t1s8.png"  width="50%">
+
+10. **Action:** Move the mouse pointer over the **PulseTrain Plot**.  
+    **Expected Result:** The mouse cursor changes to a crosshair.
+
+11. **Action:** Use click‑and‑drag (marquee) selection or single click to add spikes (red dots).  
+    **Expected Result:** Selected spike positions are marked with red dots.
+    <img src="image/t1s10.png"  width="50%">
+
+12. **Action:** Click the **Add Spikes** button again.  
+    **Expected Result:**  
+    - The **Add Spikes** button turns blue.  
+    - All other action buttons turn blue and are re‑enabled.
+     <img src="image/t1s7.png"  width="50%">
+
+13. **Action:** Click the **Save** button.  
+    **Expected Result:**  
+    - The **Save** button changes to an hourglass icon during save.  
+    - After saving, the **Save** button turns grey and is disabled.  
+    - The file selection button text updates to the newly created file:  
+      `matlab_output_trial1_40MVC.otb+_decomp_pyedited.mat`  
+    - The `data` folder contains the new file.
+    <img src="image/t1s12.png"  width="50%">
+    <img src="image/t1s13.png"  width="50%">
+---
+
+## Test Case 2 — Modify While Saving
+
+### 📝 Preconditions
+- Test Case 1 has been performed at least once.
+- The application is in a state where the **Save** button is active (blue).
+
+---
+
+### 🔄 Test Steps & Expected Results
+
+1. **Action:** Click the **Save** button.  
+   **Expected Result:**  
+   - The button changes to an hourglass icon.  
+   - File save operation begins.
+   <img src="image/t1s12.png"  width="50%">
+
+2. **Action:** While the save is in progress, continue modifying the data (e.g., adding or deleting spikes).  
+   **Expected Result:**  
+   - Modifications are accepted without error.  
+   - Saving continues in the background.
+   <img src="image/t1s12.png"  width="50%">
+
+3. **Action:** Wait for the save operation to complete.  
+   **Expected Result:**  
+   - The **Save** button returns to **blue and enabled** state (instead of grey/disabled).  
+   - The latest modifications remain in the UI and can be saved again if required.
+   <img src="image/t2s1.png"  width="50%">
+---
