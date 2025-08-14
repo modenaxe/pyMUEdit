@@ -265,7 +265,8 @@ If you encounter issues:
 5. **Action:** Click the **Delete Spikes** button.  
    **Expected Result:**  
    - The **Delete Spikes** button turns green.  
-   - All other action buttons turn grey and become disabled.
+   - All other action buttons turn grey and become disabled:
+
    <img src="image/t1s4.png"  width="50%">
 
 6. **Action:** Move the mouse pointer over the **PulseTrain Plot**.  
@@ -275,18 +276,21 @@ If you encounter issues:
    **Expected Result:**  
    - Selected red dots are removed.  
    - The **Save** button in the top‑left corner becomes enabled and turns blue.
+
    <img src="image/t1s6.png"  width="50%">
 
 8. **Action:** Click the **Delete Spikes** button again.  
    **Expected Result:**  
    - The **Delete Spikes** button turns blue.  
    - All other action buttons turn blue and are re‑enabled.
+
    <img src="image/t1s7.png"  width="50%">
 
 9. **Action:** Click the **Add Spikes** button.  
    **Expected Result:**  
    - The **Add Spikes** button turns green.  
    - All other action buttons turn grey and become disabled.
+
    <img src="image/t1s8.png"  width="50%">
 
 10. **Action:** Move the mouse pointer over the **PulseTrain Plot**.  
@@ -294,12 +298,14 @@ If you encounter issues:
 
 11. **Action:** Use click‑and‑drag (marquee) selection or single click to add spikes (red dots).  
     **Expected Result:** Selected spike positions are marked with red dots.
+
     <img src="image/t1s10.png"  width="50%">
 
 12. **Action:** Click the **Add Spikes** button again.  
     **Expected Result:**  
     - The **Add Spikes** button turns blue.  
     - All other action buttons turn blue and are re‑enabled.
+
      <img src="image/t1s7.png"  width="50%">
 
 13. **Action:** Click the **Save** button.  
@@ -309,6 +315,7 @@ If you encounter issues:
     - The file selection button text updates to the newly created file:  
       `matlab_output_trial1_40MVC.otb+_decomp_pyedited.mat`  
     - The `data` folder contains the new file.
+
     <img src="image/t1s12.png"  width="50%">
     <img src="image/t1s13.png"  width="50%">
 ---
@@ -327,17 +334,47 @@ If you encounter issues:
    **Expected Result:**  
    - The button changes to an hourglass icon.  
    - File save operation begins.
+
    <img src="image/t1s12.png"  width="50%">
 
 2. **Action:** While the save is in progress, continue modifying the data (e.g., adding or deleting spikes).  
    **Expected Result:**  
    - Modifications are accepted without error.  
    - Saving continues in the background.
+
    <img src="image/t1s12.png"  width="50%">
 
 3. **Action:** Wait for the save operation to complete.  
    **Expected Result:**  
    - The **Save** button returns to **blue and enabled** state (instead of grey/disabled).  
    - The latest modifications remain in the UI and can be saved again if required.
+
    <img src="image/t2s1.png"  width="50%">
 ---
+
+## Test Case 3 — Button State Change When Toggling ControlPanel Array1 MU2
+
+### 📝 Preconditions
+- The application is running with data already loaded (see Test Case 1 for initialization steps).
+- Either the **Add Spikes** or **Delete Spikes** button is currently active (green).
+
+---
+
+### 🔄 Test Steps & Expected Results
+
+1. **Action:** In the **ControlPanel**, click **Array1 MU2**.  
+   **Expected Result:**  
+   - All Action Buttons, **except** the **Remove Outlier** button, turn black and become disabled.  
+   - The right‑side plot view switches to **multi‑MU view**, displaying the **PulseTrain** for both MUs.  
+   - No button (other than **Remove Outlier**) responds to clicks while in this state.
+
+   <img src="image/t3s1.png"  width="50%">
+
+2. **Action:** Click **Array1 MU2** in the **ControlPanel** again.  
+   **Expected Result:**  
+   - All Action Buttons return to their normal enabled state (blue).  
+   - The previously active mode (**Add Spikes** or **Delete Spikes**) is no longer active; all buttons are in their default state.
+   
+   <img src="image/t3s2.png"  width="50%">
+---
+
