@@ -60,7 +60,6 @@ class ToggleSwitch(QWidget):
         
     progress = pyqtProperty(float, fget=getProgress, fset=setProgress)
 
-    # --- 鼠标点击切换状态 ---
     def mousePressEvent(self, ev):
         if self._disabled:
             return
