@@ -180,8 +180,8 @@ This application has been dockerized to allow for easy deployment and use on any
 1. Clone this repository:
 
    ```bash
-   git clone git@github.com:unsw-cse-comp99-3900/capstone-project-25t2-9900-t09a-almond.git
-   cd capstone-project-25t2-9900-t09a-almond
+   git clone git@github.com:unsw-cse-comp99-3900/capstone-project-2025-t1-25t1-3900-w16a-celery.git
+   cd capstone-project-2025-11-25t1-3900-w16a-celery
    ```
 
 2. Create a data directory:
@@ -195,6 +195,10 @@ This application has been dockerized to allow for easy deployment and use on any
    ```bash
    # With Docker Compose (recommended)
    docker-compose up -d
+
+   # Or with Docker only
+   docker build -t hdemg-analysis-tool .
+   docker run -d --name hdemg-analysis-tool -p 5900:5900 -p 6080:6080 -v $(pwd)/data:/app/data hdemg-analysis-tool
    ```
 
 4. Access the application:
@@ -223,7 +227,7 @@ The Docker setup mounts a `data` directory from your host machine to `/app/data`
 ### Project Structure
 
 ```
-capstone-project-25t2-9900-t09a-almond/
+capstone-project-2025-11-25t1-3900-w16a-celery/
 ├── data/                  # Data directory mounted into the container
 ├── docs/                  # Documentation
 ├── src/                   # Source code
@@ -256,6 +260,12 @@ capstone-project-25t2-9900-t09a-almond/
   docker-compose down
   ```
 
+- **With Docker only**:
+  ```bash
+  docker stop hdemg-analysis-tool
+  docker rm hdemg-analysis-tool
+  ```
+
 ### Application Features
 
 - Import and analyze HDEMG data
@@ -264,7 +274,60 @@ capstone-project-25t2-9900-t09a-almond/
 - Visualize signal patterns
 - Export analysis results
 
-### Manual Editing And Shortcut Keys  
+---
+
+### Supported Input Formats  
+
+* `.otb+` (OT BioLab +)  
+* `.rhd` (Intan RHX “one file per channel”)  
+* `.mat` / `.csv`
+
+> **Minimum array sizes** — at least **32 surface** *or* **16 intramuscular** electrodes are required.
+
+### Session Segmentation  
+
+1. Click **Segment Session**.  
+2. Choose an auxiliary channel or **EMG amplitude**.  
+3. Enter a **threshold** *or* specify **number of windows** and drag-select them.  
+4. Click **Concatenate** (merge) or **Split** (each window to its own `.mat`).
+
+---
+
+### Decomposition Parameters  
+
+| Setting | Purpose |
+|---------|---------|
+| **Reference** | Auto segmentation on `Target`, or manual on any trace. |
+| **Check EMG** | “Yes” opens per-column QC to discard noisy channels. |
+| **Contrast** | `logcosh`, `skew`, `kurtosis`. |
+| **Initialisation** | `EMG max` (deterministic) or `Random`. |
+| **CoV filter** | Keep units with ISI-CoV below threshold. |
+| **Peel-off** | Subtract accepted unit before next iteration. |
+| **Refine MUs** | Automatic outlier removal & filter update. |
+| **Iterations** | FastICA iterations per grid & window. |
+| **Windows** | Number of ROIs. |
+| **Threshold target** | Fraction (0-1) of target force. |
+| **Extended channels** | Size after time-delay embedding. |
+| **Duplicate thr.** | Overlap % to tag duplicates (default 0.30). |
+| **SIL / CoV thresholds** | Quality cut-offs. |
+
+---
+
+### Running Decomposition  
+
+1. Perform channel QC if **Check EMG = Yes**.  
+2. Select ROIs if manual segmentation.  
+3. Progress bar reports `Grid`, `Iteration`, `SIL`, `CoV`.  
+4. Output `*_output_decomp.mat` contains  
+
+| Variable | Content |
+|----------|---------|
+| `signal.Pulsetrain` | Cell (units × time) per grid |
+| `signal.Dischargetimes` | 2-D cell `[grid, unit]` |
+
+---
+
+### Manual Editing  
 
 | Action | Key | Effect |
 |--------|-----|--------|
@@ -274,18 +337,13 @@ capstone-project-25t2-9900-t09a-almond/
 | Delete spikes | **d** | Box-select false positives |
 | Update filter | **Space** | Re-estimate separation vector (current window) |
 | Extend filter | **e** | Slide window (50 % overlap) across recording |
-| Lock spikes | **l** | Freeze current spikes before re-evaluation |
-| Undo / Redo | **z** / **x** | Unlimited stack |
-| Save | **Ctrl+S** | Quick save files |
-| Undo / Redo | **z** / **x** | Unlimited stack |
-| Scroll Left / Right | **ArrowLeft** / **ArrowRight** | Scroll the plot view horizontally |
-| Zoom In / Out | **ArrowUp** / **ArrowDown** | Zoom in or out on the plot view |
-
+| Lock spikes | **s** | Freeze current spikes before re-evaluation |
+| Undo / Redo | Ctrl-Z / Ctrl-Y | Unlimited stack |
 
 *Marker colours* — green (+SIL), blue, orange, red (–SIL).
 
 Batch buttons: **Remove all outliers**, **Update all MU filters**.  
-**Save** → `*_pyedited.mat` containing an `edition` structure (edited pulse trains & times).
+**Save** → `*_edited.mat` containing an `edition` structure (edited pulse trains & times).
 
 ---
 
@@ -298,6 +356,27 @@ Buttons: **Remove duplicates within grid** / **across grids**.
 * **Plot MU spike trains** — raster per grid  
 * **Plot MU firing rates** — 1 s Hanning-smoothed rate
 
+---
+
+## Algorithmic Detail (advanced users)  
+
+> For those who wish to extend or audit the pipeline.
+
+```
+import  → grid/muscle  → segment  → channel QC
+     ↓                   ↓
+filter (notch + BP)  →  extend + whiten
+     ↓
+FastICA (fixed_point_alg)
+     ↓
+K-means spike/noise  ↻  refine (min_cov_isi)
+     ↓
+SIL assessment  →  accept & peel-off  →  repeat until done
+```
+
+*Built with:* Python 3 · NumPy · SciPy · scikit-learn · Matplotlib/PyQtGraph · PyQt5
+
+---
 
 ### Troubleshooting
 
@@ -323,155 +402,5 @@ If you encounter issues:
    - Rebuild the Docker image after updating: `docker-compose build` or `docker build -t hdemg-analysis-tool .`
 
 ```
-*Prepared by **Team T09A-ALMOND**
+*Prepared by **Team W16A-CELERY** — UNSW Capstone 2025.*
 ```
-
-# UI Test
-## Test Case 1 — Launch Application and Perform Basic Operations
-
-### 📝 Preconditions
-- The application is not running.
-
----
-
-### 🔄 Test Steps & Expected Results
-
-1. **Action:** Navigate to the `src` folder and launch `main.py`.  
-   **Expected Result:** The GUI window appears.
-
-2. **Action:** Click the **MUEditing** button.  
-   **Expected Result:**  
-   - The interface switches to the **MUEditing** view.  
-   - The left sidebar expands to show the MUEditing control panel.  
-   - The MUEditing interface displays:  
-     <img src="image/t1s1.png"  width="50%">
-
-3. **Action:** Click the **Press here to select file** button.  
-   **Expected Result:** A **Select File** dialog opens.
-   - The MUEditing interface displays:  
-   <img src="image/t1s2.png"  width="50%">
-
-4. **Action:** In the `data` folder, select the file `matlab_output_trial1_40MVC.otb+_decomp.mat` and confirm.  
-   **Expected Result:**  
-   - The program begins loading the file.  
-   - After a short delay, the **PulseTrain Plot** and **Discharge Rate Plot** show curves and red dots.  
-   - The **Press here to select file** button text changes to the selected filename.
-   - The MUEditing interface displays:  
-   <img src="image/t1s3.png"  width="50%">
-
-5. **Action:** Click the **Delete Spikes** button.  
-   **Expected Result:**  
-   - The **Delete Spikes** button turns green.  
-   - All other action buttons turn grey and become disabled:
-
-   <img src="image/t1s4.png"  width="50%">
-
-6. **Action:** Move the mouse pointer over the **PulseTrain Plot**.  
-   **Expected Result:** The mouse cursor changes to a crosshair.
-
-7. **Action:** Use click‑and‑drag (marquee) selection or single click to select red dots to delete.  
-   **Expected Result:**  
-   - Selected red dots are removed.  
-   - The **Save** button in the top‑left corner becomes enabled and turns blue.
-
-   <img src="image/t1s6.png"  width="50%">
-
-8. **Action:** Click the **Delete Spikes** button again.  
-   **Expected Result:**  
-   - The **Delete Spikes** button turns blue.  
-   - All other action buttons turn blue and are re‑enabled.
-
-   <img src="image/t1s7.png"  width="50%">
-
-9. **Action:** Click the **Add Spikes** button.  
-   **Expected Result:**  
-   - The **Add Spikes** button turns green.  
-   - All other action buttons turn grey and become disabled.
-
-   <img src="image/t1s8.png"  width="50%">
-
-10. **Action:** Move the mouse pointer over the **PulseTrain Plot**.  
-    **Expected Result:** The mouse cursor changes to a crosshair.
-
-11. **Action:** Use click‑and‑drag (marquee) selection or single click to add spikes (red dots).  
-    **Expected Result:** Selected spike positions are marked with red dots.
-
-    <img src="image/t1s10.png"  width="50%">
-
-12. **Action:** Click the **Add Spikes** button again.  
-    **Expected Result:**  
-    - The **Add Spikes** button turns blue.  
-    - All other action buttons turn blue and are re‑enabled.
-
-     <img src="image/t1s7.png"  width="50%">
-
-13. **Action:** Click the **Save** button.  
-    **Expected Result:**  
-    - The **Save** button changes to an hourglass icon during save.  
-    - After saving, the **Save** button turns grey and is disabled.  
-    - The file selection button text updates to the newly created file:  
-      `matlab_output_trial1_40MVC.otb+_decomp_pyedited.mat`  
-    - The `data` folder contains the new file.
-
-    <img src="image/t1s12.png"  width="50%">
-    <img src="image/t1s13.png"  width="50%">
----
-
-## Test Case 2 — Modify While Saving
-
-### 📝 Preconditions
-- Test Case 1 has been performed at least once.
-- The application is in a state where the **Save** button is active (blue).
-
----
-
-### 🔄 Test Steps & Expected Results
-
-1. **Action:** Click the **Save** button.  
-   **Expected Result:**  
-   - The button changes to an hourglass icon.  
-   - File save operation begins.
-
-   <img src="image/t1s12.png"  width="50%">
-
-2. **Action:** While the save is in progress, continue modifying the data (e.g., adding or deleting spikes).  
-   **Expected Result:**  
-   - Modifications are accepted without error.  
-   - Saving continues in the background.
-
-   <img src="image/t1s12.png"  width="50%">
-
-3. **Action:** Wait for the save operation to complete.  
-   **Expected Result:**  
-   - The **Save** button returns to **blue and enabled** state (instead of grey/disabled).  
-   - The latest modifications remain in the UI and can be saved again if required.
-
-   <img src="image/t2s1.png"  width="50%">
----
-
-## Test Case 3 — Button State Change When Toggling ControlPanel Array1 MU2
-
-### 📝 Preconditions
-- The application is running with data already loaded (see Test Case 1 for initialization steps).
-- Either the **Add Spikes** or **Delete Spikes** button is currently active (green).
-
----
-
-### 🔄 Test Steps & Expected Results
-
-1. **Action:** In the **ControlPanel**, click **Array1 MU2**.  
-   **Expected Result:**  
-   - All Action Buttons, **except** the **Remove Outlier** button, turn black and become disabled.  
-   - The right‑side plot view switches to **multi‑MU view**, displaying the **PulseTrain** for both MUs.  
-   - No button (other than **Remove Outlier**) responds to clicks while in this state.
-
-   <img src="image/t3s1.png"  width="50%">
-
-2. **Action:** Click **Array1 MU2** in the **ControlPanel** again.  
-   **Expected Result:**  
-   - All Action Buttons return to their normal enabled state (blue).  
-   - The previously active mode (**Add Spikes** or **Delete Spikes**) is no longer active; all buttons are in their default state.
-   
-   <img src="image/t3s2.png"  width="50%">
----
-
