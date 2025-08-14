@@ -63,7 +63,7 @@ class duplicates_within_grids_worker(QThread):
 
                 self.progress_changed.emit(
                     percent,
-                    f"Processing Array #{array_idx + 1}: canculate unique MUs"
+                    f"Processing Array #{array_idx + 1}: calculate unique MUs"
                 )
                 # Remove duplicates
                 unique_discharge_times, unique_pulse_train, _ = remove_duplicates(
@@ -91,7 +91,7 @@ class duplicates_within_grids_worker(QThread):
 
                 self.progress_changed.emit(
                     percent,
-                    f"Processing Array #{array_idx + 1}: canculate new SIL"
+                    f"Processing Array #{array_idx + 1}: calculate new SIL"
                 )
                 # Update discharge times and SIL values
                 for mu_idx in range(unique_pulse_train.shape[0]):  # type:ignore
