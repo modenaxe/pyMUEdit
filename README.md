@@ -330,7 +330,7 @@ capstone-project-2025-11-25t1-3900-w16a-celery/
 ## Manual Editing  
 
 For the manual editing section, we provide detailed instructions for users: 
-[MU_editing_user_guide.pdf](MU_editing_user_guide.pdf)
+[MU_editing_user_guide.pdf](./docs/analysis_tab-documentation.pdf)
 
 ### ShortCuts
 
@@ -421,10 +421,16 @@ If you encounter issues:
 ## Analysis Tab Documentation
 The analysis tab aims to replicate features from the openHDEMG application [https://www.giacomovalli.com/openhdemg/]
 
-Documentation for the implemeneted features can be found in [analysis_tab-documentation.pdf]
+Documentation for the implemeneted features can be found in [analysis_tab-documentation.pdf](./docs/analysis_tab-documentation.pdf)
 
 *Note - currently the file upload function does not support output files from the decomposition and edit tabs, for testing purposes, please use [otb_testfile.mat]
 
+### Contributors
 
-*Prepared by **Team 25t1: W16A-CELERY, 25t2: T09A-ALMOND, T11A-BANANA, W18A-BANANA, ** — UNSW Capstone 2025.*
-```
+UNSW Capstone 2025 teams:
+
+- Team 25t1: W16A-CELERY (app prototype)
+- Teams 25t2:
+  - T11A-BANANA (import and decomposition tab)
+  - T09A-ALMOND (manual decomposition tab)
+  - W18A-BANANA (analysis tab)
