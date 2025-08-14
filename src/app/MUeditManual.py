@@ -320,6 +320,7 @@ class MUeditManual(QMainWindow):
             Qt.Key_Down:    self.zoom_slider.slider_decrease,
             "A":            self.add_spikes_btn.click,
             "D":            self.delete_spikes_btn.click,
+            "S":            self.delete_dr_btn.click,
             "R":            self.remove_outliers_single_btn.click,
             "Space":        self.update_mu_filter_btn.click,
             "L":            self.lock_spikes_btn.click,
@@ -327,6 +328,7 @@ class MUeditManual(QMainWindow):
             "Z":            self.undo_title_btn.click,
             "X":            self.redo_title_btn.click,
             "Esc":          self.exit_edit_mode,
+            Qt.Key_0:       self.exit_edit_mode,
         }
 
         for seq, slot in mapping.items():

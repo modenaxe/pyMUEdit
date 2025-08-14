@@ -327,23 +327,34 @@ capstone-project-2025-11-25t1-3900-w16a-celery/
 
 ---
 
-### Manual Editing  
+## Manual Editing  
+
+For the manual editing section, we provide detailed instructions for users: 
+[MU_editing_user_guide.pdf](MU_editing_user_guide.pdf)
+
+### ShortCuts
 
 | Action | Key | Effect |
 |--------|-----|--------|
 | Flag unit(s) | — | Mark unreliable trains |
 | Remove outliers | **r** | Delete spikes causing extreme ISI |
-| Add spikes | **a** | Box-select missed spikes |
-| Delete spikes | **d** | Box-select false positives |
+| Add spikes | **a** | Toggle mode to enable Click / Box-select addition of missed spikes |
+| Delete spikes | **d** | Toggle mode to enable Click / Box-select deletion of false positives |
+| Delete Discharge Rate (dr) | **S** | Toggle mode to enable Click / Box-select deletion of false positives |
 | Update filter | **Space** | Re-estimate separation vector (current window) |
 | Extend filter | **e** | Slide window (50 % overlap) across recording |
-| Lock spikes | **s** | Freeze current spikes before re-evaluation |
-| Undo / Redo | Ctrl-Z / Ctrl-Y | Unlimited stack |
+| Lock spikes | **l** | Freeze current spikes before re-evaluation |
+| Undo / Redo | **z** / **x** | Unlimited stack |
+| Save | **Ctrl+S** | Quick save files |
+| Undo / Redo | **z** / **x** | Unlimited stack |
+| Scroll Left / Right | **ArrowLeft** / **ArrowRight** | Scroll the plot view horizontally |
+| Zoom In / Out | **ArrowUp** / **ArrowDown** | Zoom in or out on the plot view |
+| Exit mode | **numpad 0** / **Esc** | Exit editing mode |
 
 *Marker colours* — green (+SIL), blue, orange, red (–SIL).
 
-Batch buttons: **Remove all outliers**, **Update all MU filters**.  
-**Save** → `*_edited.mat` containing an `edition` structure (edited pulse trains & times).
+Batch buttons: **Remove all outliers**, **Update all MU filters**, **Remove Duplicate within grids**, **Remove Duplicate between grids**.  
+**Save** → `*_pyedited.mat` containing an `edition` structure (edited pulse trains & discharge times).
 
 ---
 
@@ -353,9 +364,13 @@ Batch buttons: **Remove all outliers**, **Update all MU filters**.
 Buttons: **Remove duplicates within grid** / **across grids**.
 
 *Visualisation* tab  
-* **Plot MU spike trains** — raster per grid  
+* **Plot MU spike trains** — raster per grid
+
+<img src="src/public/Plot MU spike trains demo.png"  width="40%" />
+
 * **Plot MU firing rates** — 1 s Hanning-smoothed rate
 
+<img src="src/public/Plot MU firing rates demo.png"  width="40%" />
 ---
 
 ## Algorithmic Detail (advanced users)  
