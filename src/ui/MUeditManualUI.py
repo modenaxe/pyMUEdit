@@ -19,7 +19,7 @@ from PyQt5.QtWidgets import (
     QLayout,
     QToolButton,
 )
-from PyQt5.QtGui  import QIcon          # 图标
+from PyQt5.QtGui  import QIcon
 from PyQt5.QtCore import QSize, QTimer  
 from pathlib import Path
 
@@ -840,7 +840,7 @@ def create_plot_widget(main_window, y_label, x_label=""):
     # Add grid
     plot.showGrid(x=True, y=True, alpha=0.3)
 
-    #禁用右键plot option中的选项
+    # Disable plot option
     plot.setContextMenuActionVisible('Transforms',False)
     plot.setContextMenuActionVisible('Downsample',False)
     plot.setContextMenuActionVisible('Average',False)
@@ -858,8 +858,8 @@ def create_mu_checkbox(main_window, array_idx, mu_idx, text, sil_value, is_check
             color: {CleanTheme.TEXT_PRIMARY};
             font-size: 13px;
             font-family: "Segoe UI";
-            font-weight: normal;       /* 可选值：bold、normal */
-            font-style: normal;        /* 可选值：italic、normal */
+            font-weight: normal;
+            font-style: normal;
             padding: 2px 0;
         }}
         QCheckBox::indicator {{
