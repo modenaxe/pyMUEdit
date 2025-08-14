@@ -89,11 +89,6 @@ def setup_ui(main_window):
     
     # Set up keyboard shortcuts
     main_window.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-    
-    
-
-#   新增悬浮save块
-    # _add_floating_save_btn(main_window)
 
 from PyQt5.QtGui import QFont # alex
 # Apply Sil
@@ -159,9 +154,9 @@ def setup_control_panel(main_window):
 
     control_layout.addWidget(file_group)
 
-    file_group.setVisible(False) #隐藏原select组件
+    file_group.setVisible(False)
 
-    # Create tab widget for sections
+    # ===================== Tabs: MU Selection / Batch / Visualization =====================
     main_window.tabs = create_tab_widget()
 
     # Add the different tabs
@@ -196,20 +191,24 @@ def setup_control_panel(main_window):
     main_window.control_panel = scroll_area
 
 def attach_control_pannel_to_sidebar(main_window):
-    
+    """
+    Insert the MU-Editing subpanel (tabs + sub-buttons) into the app's left Sidebar,
+    right below the top app title/buttons.
+    """    
     sidebar = find_sidebar(main_window)
     if not sidebar:
         return
-
+    
+    # Subpanel holds the three sub-buttons and the tab stack
     subpanel = QWidget()
-    subpanel.setVisible(False)
+    subpanel.setVisible(False) # shown only when "MU Editing" is active
     sub_lay = QVBoxLayout(subpanel)
-    # sub_lay.setContentsMargins(12, 6, 12, 6)
     sub_lay.setSpacing(6)
 
     sub_btns = []
     
     def _switch(idx:int):    
+        """Switch the stacked tabs and update button active state."""
         main_window.tabs.setCurrentIndex(idx)
         for i, btn in enumerate(sub_btns):
             btn.setProperty("active", "true" if i == idx else "false")
@@ -217,12 +216,19 @@ def attach_control_pannel_to_sidebar(main_window):
             btn.style().polish(btn)
     
     def _sub_btn(text, idx):
+        """
+        Create a tab-like button:
+        - primary=False for light style
+        - tabs=True enables the special active-state stylesheet in ActionButtonedit
+        """
         b = ActionButtonedit(text, primary=False, tabs=True)
         b.setFixedHeight(28)
         b.clicked.connect(lambda _, i=idx: _switch(i))
         sub_lay.addWidget(b)
         sub_btns.append(b)
         return b    
+    
+    # Create the three sub-buttons and default to the first tab
     _sub_btn("MU Selection",    0).click()
     _sub_btn("Batch Processing",1)
     _sub_btn("Visualization",   2)
@@ -340,7 +346,8 @@ def create_batch_processing_tab(main_window):
     # Batch processing content
     batch_header = SectionHeader("Batch Processing")
     batch_layout.addWidget(batch_header)
-    
+
+    # Label, handler, attribute name for later access    
     action_batch_configs = [
     ("1 - Remove all the outliers", main_window.remove_all_outliers_button_pushed, "remove_outliers_all_btn"),
     ("2 - Update all MU filters", main_window.update_all_mu_filters_button_pushed, "update_mu_filter_all_btn"),
@@ -416,6 +423,7 @@ def create_visualization_tab(main_window):
     apply_lbl = QLabel("Apply SIL")                 
     set_standard_label_style(apply_lbl)
 
+    # SIL toggle (Apply SIL)
     main_window.sil_switch = ToggleSwitch()        
     main_window.sil_switch.toggled.connect(    
         main_window.sil_checkbox_value_changed)
@@ -460,6 +468,7 @@ def create_visualization_tab(main_window):
     
     button_panel.add_widget(row3)
     
+    # Spike plot order toggle (ascending recruitment)
     row4 = QWidget()
     row4_lay = QHBoxLayout(row4)
     row4_lay.setContentsMargins(0,0,0,0)
@@ -523,12 +532,12 @@ def setup_display_panel(main_window):
         main_window.select_file_button_pushed
     )
 
-    save_btn = ActionButtonedit("Save", primary=True)  #shr
+    save_btn = ActionButtonedit("Save", primary=True) 
     save_btn.setFixedHeight(40)
     save_btn.clicked.connect(main_window.save_button_pushed)
     main_window.floating_save_btn = save_btn
     
-    saveas_btn = ActionButtonedit("Save As", primary=True)  #shr
+    saveas_btn = ActionButtonedit("Save As", primary=True) 
     saveas_btn.setFixedHeight(40)
     saveas_btn.clicked.connect(main_window.saveas_button_pushed)
     main_window.floating_saveas_btn = saveas_btn
