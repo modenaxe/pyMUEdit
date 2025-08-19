@@ -1,4 +1,4 @@
-FROM debian:stable-slim
+FROM python:3.11-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -6,13 +6,12 @@ ENV PYTHONUNBUFFERED=1
 ENV DISPLAY=:1
 ENV HOME=/app
 ENV DEBIAN_FRONTEND=noninteractive
-ENV PYTHONPATH=/usr/lib/python3/dist-packages
 ENV QT_X11_NO_MITSHM=1
 ENV QT_QPA_PLATFORM=xcb
 ENV XDG_RUNTIME_DIR=/tmp
 ENV MPLBACKEND=Qt5Agg
 
-# Install system dependencies
+# Install system dependencies (no Python libs here)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     tini \
     supervisor \
@@ -32,21 +31,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libdbus-1-3 \
     ca-certificates \
-    dbus-x11 \
     fonts-liberation \
     net-tools \
     netcat-openbsd \
     git \
-    python3-matplotlib \
-    python3-numba \
-    python3-numpy \
-    python3-pandas \
-    python3-pyqt5 \
-    python3-pyqt5.qtsvg \
-    python3-pyqtgraph \
-    python3-sklearn \
-    python3-scipy \
-    python3-torch \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -62,8 +50,9 @@ WORKDIR /app
 # Copy requirements file
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --break-system-packages -r requirements.txt
+# Upgrade pip + install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir -r requirements.txt
 
 # Copy project files
 COPY . .

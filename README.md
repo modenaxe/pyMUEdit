@@ -22,8 +22,8 @@ https://drive.google.com/drive/folders/1nIpH1ksYWE-vQplEtilz843h2BuCuDmy
 1. Clone this repository:
 
    ```bash
-   git clone git@github.com:unsw-cse-comp99-3900/capstone-project-2025-t1-25t1-3900-w16a-celery.git
-   cd capstone-project-2025-11-25t1-3900-w16a-celery [TO BE REPLACED]
+   git clone git@github.com:modenaxe/pyMUEdit.git
+   cd pyMUEdit
    ```
 
 2. Ensure Python 3.13 or higher is installed
@@ -170,33 +170,27 @@ It provides you with the following features:
 <img src="./src/public/channel-viewer.jpg" alt="Manual Segment Selection" width="500" height="400">
 
 
-## Dockerized Application
+## Dockerized Application (CPU ONLY)
 
-This application has been dockerized to allow for easy deployment and use on any system with Docker installed, eliminating the need to install dependencies locally. The application runs entirely inside the container and is accessed through your web browser or a VNC client.
-
+This application has been dockerized to allow for easy deployment and use on any system with Docker installed, eliminating the need to install dependencies locally. The application runs entirely inside the container and is accessed through your web browser or a VNC client. In the current state, you cannot utilise GPU if you choose to install with docker - This is due to the requirement of needing to pass through the GPU with WSL2 + nVidia Toolkit. This is possible to implement in the future if needed.
+Therefore, do not use this method if you want to use Swarm Contrastive Decomposition with GPU.
 
 #### Manual Setup
 
 1. Clone this repository:
 
    ```bash
-   git clone git@github.com:unsw-cse-comp99-3900/capstone-project-2025-t1-25t1-3900-w16a-celery.git
-   cd capstone-project-2025-11-25t1-3900-w16a-celery
+   git clone git@github.com:modenaxe/pyMUEdit.git
+   cd pyMUEdit
    ```
 
-2. Create a data directory:
-
-   ```bash
-   mkdir -p data
-   ```
-
-3. Build and start the Docker container:
+2. Build and start the Docker container:
 
    ```bash
    # With Docker Compose (recommended)
-   docker-compose up -d
+   docker compose up -d
 
-   # Or with Docker only
+   # Or with Docker only (untested)
    docker build -t hdemg-analysis-tool .
    docker run -d --name hdemg-analysis-tool -p 5900:5900 -p 6080:6080 -v $(pwd)/data:/app/data hdemg-analysis-tool
    ```
@@ -227,7 +221,7 @@ The Docker setup mounts a `data` directory from your host machine to `/app/data`
 ### Project Structure
 
 ```
-capstone-project-2025-11-25t1-3900-w16a-celery/
+pyMUEdit/
 ├── data/                  # Data directory mounted into the container
 ├── docs/                  # Documentation
 ├── src/                   # Source code
@@ -257,7 +251,7 @@ capstone-project-2025-11-25t1-3900-w16a-celery/
 - **With Docker Compose**:
 
   ```bash
-  docker-compose down
+  docker compose down
   ```
 
 - **With Docker only**:
