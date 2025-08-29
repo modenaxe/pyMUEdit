@@ -34,7 +34,7 @@ jobs:
           nuitka-version: main
           script-name: your_script.py
           mode: standalone
-          enable-plugins: qt-plugins
+          enable-plugins: qt
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
