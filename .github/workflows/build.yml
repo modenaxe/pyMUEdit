@@ -1,4 +1,5 @@
-name: compile pyMUEdit
+# there is a good example https://github.com/ffreemt/nuitka-with-github-actions/blob/main/.github/workflows/pyqt5-windows.yml
+name: build_pyMUEdit
 
 on: [push, pull_request]
 
@@ -32,7 +33,7 @@ jobs:
         uses: Nuitka/Nuitka-Action@main
         with:
           nuitka-version: main
-          script-name: your_script.py
+          script-name: /src/main.py
           mode: standalone
           enable-plugins: pyside2
 
