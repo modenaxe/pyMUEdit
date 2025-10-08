@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel
 from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QWidget
 
 from .CleanTheme import CleanTheme
 

@@ -1,16 +1,15 @@
-from PyQt5.QtWidgets import (
-    QDialog, QLabel, QPushButton,
-    QVBoxLayout, QStyle
-)
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtCore import Qt
 import os
+
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QDialog, QLabel, QPushButton, QStyle, QVBoxLayout
+
 
 class SuccessDialog(QDialog):
     def __init__(self, title_label="Success!", text="Please change text."):
         super().__init__()
         self.setWindowTitle("Success")
-        #self.setFixedSize(350, 280)
+        # self.setFixedSize(350, 280)
         self.setMinimumWidth(350)
         self.setMaximumHeight(350)
         self.setWindowFlags(Qt.Dialog | Qt.MSWindowsFixedSizeDialogHint)
@@ -29,7 +28,12 @@ class SuccessDialog(QDialog):
             icon_label.setPixmap(icon.pixmap(48, 48))
             print("✅ Image not found")
         else:
-            icon_label.setPixmap(pixmap.scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            icon_label.setPixmap(
+                pixmap.scaled(
+                    64,
+                    64,
+                    Qt.KeepAspectRatio,
+                    Qt.SmoothTransformation))
         icon_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(icon_label)
 

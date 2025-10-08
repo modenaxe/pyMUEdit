@@ -1,6 +1,6 @@
+from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QCursor, QFont, QIcon
 from PyQt5.QtWidgets import QPushButton
-from PyQt5.QtGui import QFont, QIcon, QCursor
-from PyQt5.QtCore import Qt, QSize
 
 from .CleanTheme import CleanTheme
 

@@ -1,31 +1,16 @@
 import sys
-from PyQt5.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QLabel,
-    QProgressBar,
-    QScrollArea,
-    QApplication,
-    QStackedWidget,
-    QStackedLayout
-)
-from PyQt5.QtCore import Qt
+
 import pyqtgraph as pg
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QLabel, QProgressBar,
+                             QScrollArea, QStackedLayout, QStackedWidget,
+                             QVBoxLayout, QWidget)
+from torch import cuda
 
 # Import custom components
-from ui.components import (
-    CleanTheme,
-    ActionButton,
-    CollapsiblePanel,
-    VisualizationPanel,
-    FormDropdown,
-    FormSpinBox,
-    FormDoubleSpinBox,
-    SettingsGroup,
-    CleanScrollBar,
-)
-from torch import cuda
+from ui.components import (ActionButton, CleanScrollBar, CleanTheme,
+                           CollapsiblePanel, FormDoubleSpinBox, FormDropdown,
+                           FormSpinBox, SettingsGroup, VisualizationPanel)
 
 
 def setup_ui(main_window):
@@ -90,7 +75,9 @@ def setup_left_panel(main_window):
 
     # Algorithm Selection panel
     algo_panel = CollapsiblePanel("Algorithm Selection")
-    algo_field = FormDropdown("Algorithm", ["Fast ICA", "SCD", "Other Algorithm 2"])
+    algo_field = FormDropdown(
+        "Algorithm", [
+            "Fast ICA", "SCD", "Other Algorithm 2"])
     main_window.algo_combo = algo_field.dropdown
     main_window.algo_combo.setCurrentText("Fast ICA")  # Set initial value
     algo_panel.add_widget(algo_field)
@@ -99,9 +86,10 @@ def setup_left_panel(main_window):
     algo_options_stack_widget = QStackedWidget()
     main_window.algo_options_stack_widget = algo_options_stack_widget
 
-    main_window.algo_combo.currentIndexChanged.connect(algo_options_stack_widget.setCurrentIndex)
+    main_window.algo_combo.currentIndexChanged.connect(
+        algo_options_stack_widget.setCurrentIndex)
 
-    # ---------------------------------Fast ICA options---------------------------------
+    # ---------------------------------Fast ICA options-----------------------
     algo_fastICA_options_widget = QWidget()
     algo_fastICA_panels = QVBoxLayout(algo_fastICA_options_widget)
 
@@ -110,54 +98,66 @@ def setup_left_panel(main_window):
 
     check_emg_field = FormDropdown("Check EMG Quality", ["Yes", "No"])
     main_window.check_emg_dropdown = check_emg_field.dropdown
-    main_window.check_emg_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
+    main_window.check_emg_dropdown.setStyleSheet(
+        main_window.algo_combo.styleSheet())
     main_window.check_emg_dropdown.setCurrentText("Yes")  # Set initial value
     options_panel.add_widget(check_emg_field)
 
     cov_filter_field = FormDropdown("COV Filter", ["Yes", "No"])
     main_window.cov_filter_dropdown = cov_filter_field.dropdown
-    main_window.cov_filter_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
+    main_window.cov_filter_dropdown.setStyleSheet(
+        main_window.algo_combo.styleSheet())
     main_window.cov_filter_dropdown.setCurrentText("Yes")  # Set initial value
     options_panel.add_widget(cov_filter_field)
 
     reference_field = FormDropdown("Reference", ["EMG amplitude", "Target"])
     main_window.reference_dropdown = reference_field.dropdown
-    main_window.reference_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
-    main_window.reference_dropdown.setCurrentText("EMG amplitude")  # Set initial value
+    main_window.reference_dropdown.setStyleSheet(
+        main_window.algo_combo.styleSheet())
+    main_window.reference_dropdown.setCurrentText(
+        "EMG amplitude")  # Set initial value
     options_panel.add_widget(reference_field)
 
     algo_fastICA_panels.addWidget(options_panel)
-    #left_layout.addWidget(options_panel)
+    # left_layout.addWidget(options_panel)
 
     # Advanced Options panel
     advanced_panel = CollapsiblePanel("Advanced Options")
 
-    contrast_field = FormDropdown("Contrast Function", ["skew", "kurtosis", "logcosh"])
+    contrast_field = FormDropdown(
+        "Contrast Function", [
+            "skew", "kurtosis", "logcosh"])
     main_window.contrast_function_dropdown = contrast_field.dropdown
-    main_window.contrast_function_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
-    main_window.contrast_function_dropdown.setCurrentText("square")  # Set initial value
+    main_window.contrast_function_dropdown.setStyleSheet(
+        main_window.algo_combo.styleSheet())
+    main_window.contrast_function_dropdown.setCurrentText(
+        "square")  # Set initial value
     advanced_panel.add_widget(contrast_field)
 
     init_field = FormDropdown("Initialisation", ["EMG max", "Random"])
     main_window.initialisation_dropdown = init_field.dropdown
-    main_window.initialisation_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
-    main_window.initialisation_dropdown.setCurrentText("Random")  # Set initial value
+    main_window.initialisation_dropdown.setStyleSheet(
+        main_window.algo_combo.styleSheet())
+    main_window.initialisation_dropdown.setCurrentText(
+        "Random")  # Set initial value
     advanced_panel.add_widget(init_field)
 
     peel_field = FormDropdown("Peel Off", ["Yes", "No"])
     main_window.peeloff_dropdown = peel_field.dropdown
-    main_window.peeloff_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
+    main_window.peeloff_dropdown.setStyleSheet(
+        main_window.algo_combo.styleSheet())
     main_window.peeloff_dropdown.setCurrentText("Yes")  # Set initial value
     advanced_panel.add_widget(peel_field)
 
     refine_field = FormDropdown("Refine Motor Units", ["Yes", "No"])
     main_window.refine_mus_dropdown = refine_field.dropdown
-    main_window.refine_mus_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
+    main_window.refine_mus_dropdown.setStyleSheet(
+        main_window.algo_combo.styleSheet())
     main_window.refine_mus_dropdown.setCurrentText("Yes")  # Set initial value
     advanced_panel.add_widget(refine_field)
 
     algo_fastICA_panels.addWidget(advanced_panel)
-    #left_layout.addWidget(advanced_panel)
+    # left_layout.addWidget(advanced_panel)
 
     # Parameters panel
     params_panel = CollapsiblePanel("Parameters")
@@ -202,10 +202,12 @@ def setup_left_panel(main_window):
     options_panel = CollapsiblePanel("Processing Options")
 
     available_devices = ["CPU"]
-    if cuda.is_available(): available_devices.append("GPU")
+    if cuda.is_available():
+        available_devices.append("GPU")
     device_field = FormDropdown("Device", available_devices)
     main_window.device_dropdown = device_field.dropdown
-    main_window.device_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
+    main_window.device_dropdown.setStyleSheet(
+        main_window.algo_combo.styleSheet())
     main_window.device_dropdown.setCurrentText("CPU")  # Set initial value
     options_panel.add_widget(device_field)
 
@@ -216,20 +218,26 @@ def setup_left_panel(main_window):
 
     filt_harms_field = FormDropdown("Filter Harmonics", ["Yes", "No"])
     main_window.filt_harms_dropdown = filt_harms_field.dropdown
-    main_window.filt_harms_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
+    main_window.filt_harms_dropdown.setStyleSheet(
+        main_window.algo_combo.styleSheet())
     main_window.filt_harms_dropdown.setCurrentText("Yes")  # Set initial value
     advanced_panel.add_widget(filt_harms_field)
 
-    use_coeff_var_fitness_field = FormDropdown("Use Coeff. Var. Fitness", ["Yes", "No"])
+    use_coeff_var_fitness_field = FormDropdown(
+        "Use Coeff. Var. Fitness", ["Yes", "No"])
     main_window.use_coeff_var_fitness_dropdown = use_coeff_var_fitness_field.dropdown
-    main_window.use_coeff_var_fitness_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
-    main_window.use_coeff_var_fitness_dropdown.setCurrentText("Yes")  # Set initial value
+    main_window.use_coeff_var_fitness_dropdown.setStyleSheet(
+        main_window.algo_combo.styleSheet())
+    main_window.use_coeff_var_fitness_dropdown.setCurrentText(
+        "Yes")  # Set initial value
     advanced_panel.add_widget(use_coeff_var_fitness_field)
 
     remove_bad_fr_field = FormDropdown("Remove Bad Frequencies", ["Yes", "No"])
     main_window.remove_bad_fr_dropdown = remove_bad_fr_field.dropdown
-    main_window.remove_bad_fr_dropdown.setStyleSheet(main_window.algo_combo.styleSheet())
-    main_window.remove_bad_fr_dropdown.setCurrentText("Yes")  # Set initial value
+    main_window.remove_bad_fr_dropdown.setStyleSheet(
+        main_window.algo_combo.styleSheet())
+    main_window.remove_bad_fr_dropdown.setCurrentText(
+        "Yes")  # Set initial value
     advanced_panel.add_widget(remove_bad_fr_field)
 
     algo_SCD_panels.addWidget(advanced_panel)
@@ -241,7 +249,8 @@ def setup_left_panel(main_window):
     main_window.number_iterations_scd_field = iter_field_scd.spinbox
     params_panel.add_widget(iter_field_scd)
 
-    acceptance_silhouette_field = FormDoubleSpinBox("Acceptance Silhoutte", 0.85, 0, 1, 0.05)
+    acceptance_silhouette_field = FormDoubleSpinBox(
+        "Acceptance Silhoutte", 0.85, 0, 1, 0.05)
     main_window.acceptance_silhouette_field = acceptance_silhouette_field.spinbox
     params_panel.add_widget(acceptance_silhouette_field)
 
@@ -249,7 +258,11 @@ def setup_left_panel(main_window):
     main_window.extension_factor_field = extension_factor_field.spinbox
     params_panel.add_widget(extension_factor_field)
 
-    low_pass_cutoff_field = FormSpinBox("Low Pass Cutoff (hz)", value=1000, min_value=0, max_value=50000)
+    low_pass_cutoff_field = FormSpinBox(
+        "Low Pass Cutoff (hz)",
+        value=1000,
+        min_value=0,
+        max_value=50000)
     main_window.low_pass_cutoff_field = low_pass_cutoff_field.spinbox
     params_panel.add_widget(low_pass_cutoff_field)
 
@@ -257,17 +270,19 @@ def setup_left_panel(main_window):
     main_window.high_pass_cutoff_field = high_pass_cutoff_field.spinbox
     params_panel.add_widget(high_pass_cutoff_field)
 
-    powerline_frequency_field = FormSpinBox("Powerline Frequency", 50, 1, 50000)
+    powerline_frequency_field = FormSpinBox(
+        "Powerline Frequency", 50, 1, 50000)
     main_window.powerline_frequency_field = powerline_frequency_field.spinbox
     params_panel.add_widget(powerline_frequency_field)
 
-    peel_off_window_size_field = FormSpinBox("Peel Off Window Size (ms)", 20, 0, 10000)
+    peel_off_window_size_field = FormSpinBox(
+        "Peel Off Window Size (ms)", 20, 0, 10000)
     main_window.peel_off_window_size_field = peel_off_window_size_field.spinbox
     params_panel.add_widget(peel_off_window_size_field)
 
     bandwidth_field = FormDoubleSpinBox("Bandwidth", 1.0, 0, 10)
     main_window.bandwidth_field = bandwidth_field.spinbox
-    params_panel.add_widget(bandwidth_field)   
+    params_panel.add_widget(bandwidth_field)
 
     algo_SCD_panels.addWidget(params_panel)
 
@@ -297,7 +312,8 @@ def setup_center_panel(main_window, parent_layout):
     center_layout.setContentsMargins(0, 0, 0, 0)
     center_layout.setSpacing(20)
 
-    # Add error/edit field label (to display error messages and decomposition process)
+    # Add error/edit field label (to display error messages and decomposition
+    # process)
     main_window.edit_field = QLabel("Import data to begin")
     main_window.edit_field.setStyleSheet(
         f"""
@@ -319,12 +335,14 @@ def setup_center_panel(main_window, parent_layout):
 
     controls_title = QLabel("Decomposition Controls")
     controls_title.setFont(main_window.font())
-    controls_title.setStyleSheet(f"font-weight: bold; font-size: 14px; color: {CleanTheme.TEXT_PRIMARY};")
+    controls_title.setStyleSheet(
+        f"font-weight: bold; font-size: 14px; color: {CleanTheme.TEXT_PRIMARY};")
     controls_layout.addWidget(controls_title)
 
     controls_layout.addStretch(1)
 
-    main_window.start_button = ActionButton("▶ Start Decomposition", primary=True)
+    main_window.start_button = ActionButton(
+        "▶ Start Decomposition", primary=True)
     main_window.start_button.setEnabled(False)
     controls_layout.addWidget(main_window.start_button)
 
@@ -339,7 +357,9 @@ def setup_center_panel(main_window, parent_layout):
     main_window.ui_plot_reference.showGrid(x=True, y=True)
     main_window.ui_plot_reference.setMinimumHeight(250)
 
-    signal_panel = VisualizationPanel("Signal Processing Visualization", main_window.ui_plot_reference)
+    signal_panel = VisualizationPanel(
+        "Signal Processing Visualization",
+        main_window.ui_plot_reference)
     center_layout.addWidget(signal_panel, 3)  # Give it more stretch
 
     # Create and setup motor unit outputs visualization with PyQtGraph
@@ -350,10 +370,15 @@ def setup_center_panel(main_window, parent_layout):
     main_window.ui_plot_pulsetrain.showGrid(x=True, y=True)
     main_window.ui_plot_pulsetrain.setMinimumHeight(200)
 
-    motor_panel = VisualizationPanel("Motor Unit Outputs", main_window.ui_plot_pulsetrain)
-    center_layout.addWidget(motor_panel, 2)  # Give it slightly less stretch than the signal plot
+    motor_panel = VisualizationPanel(
+        "Motor Unit Outputs",
+        main_window.ui_plot_pulsetrain)
+    # Give it slightly less stretch than the signal plot
+    center_layout.addWidget(motor_panel, 2)
 
-    parent_layout.addWidget(center_panel, 4)  # Add with stretch to make it wider
+    # Add with stretch to make it wider
+    parent_layout.addWidget(center_panel, 4)
+
 
 def setup_right_panel(main_window, parent_layout):
     """Set up the right panel with status and results."""
@@ -402,19 +427,23 @@ def setup_right_panel(main_window, parent_layout):
     results_group = SettingsGroup("Analysis Results")
 
     main_window.motor_units_label = QLabel("Motor Units: --")
-    main_window.motor_units_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY}; font-weight: bold;")
+    main_window.motor_units_label.setStyleSheet(
+        f"color: {CleanTheme.TEXT_PRIMARY}; font-weight: bold;")
     results_group.add_field(main_window.motor_units_label)
 
     main_window.sil_value_label = QLabel("SIL: --")
-    main_window.sil_value_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+    main_window.sil_value_label.setStyleSheet(
+        f"color: {CleanTheme.TEXT_PRIMARY};")
     results_group.add_field(main_window.sil_value_label)
 
     main_window.cov_value_label = QLabel("CoV: --")
-    main_window.cov_value_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+    main_window.cov_value_label.setStyleSheet(
+        f"color: {CleanTheme.TEXT_PRIMARY};")
     results_group.add_field(main_window.cov_value_label)
 
     # Save Output button
-    main_window.save_output_button = ActionButton("💾 Save Output", primary=False)
+    main_window.save_output_button = ActionButton(
+        "💾 Save Output", primary=False)
     main_window.save_output_button.setEnabled(False)
     results_group.add_field(main_window.save_output_button)
 

@@ -1,17 +1,20 @@
 # app/gui/pages/VisualisationPage.py
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSizePolicy, QLabel, QPushButton
-from PyQt5.QtGui import QFont
+import math
+
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QSizePolicy,
+                             QVBoxLayout, QWidget)
 
 from ui.components import ActionButton
 from ui.components.CleanTheme import CleanTheme
 from ui.components.CollapsiblePanel import CollapsiblePanel
 from ui.components.FormDropdown import FormDropdown
 from ui.components.FormSpinBox import FormSpinBox
-from .VisualizationPanel import VisualizationPanel
-from .ChannelViewer import ChannelViewer
 
-import math
+from .ChannelViewer import ChannelViewer
+from .VisualizationPanel import VisualizationPanel
+
 
 class VisualisationPage(QWidget):
     def __init__(self, emg_obj, import_window, parent=None):
@@ -41,9 +44,12 @@ class VisualisationPage(QWidget):
 
         # signal range dropdown panel
         signal_range_group = CollapsiblePanel("Select Signal Range")
-        self.range_dropdown = FormDropdown("Select Reference Signal", self.generate_channel_groups())
+        self.range_dropdown = FormDropdown(
+            "Select Reference Signal",
+            self.generate_channel_groups())
         signal_range_group.add_widget(self.range_dropdown)
-        signal_range_group.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        signal_range_group.setSizePolicy(
+            QSizePolicy.Preferred, QSizePolicy.Fixed)
 
         # left and right buttons
         lrbuttons = QWidget()
@@ -59,7 +65,8 @@ class VisualisationPage(QWidget):
         signal_range_group.add_widget(lrbuttons)
 
         # number of signals dropdown panel
-        self.num_signals_input_box = FormSpinBox("Number of Signals to Display", 8, 1, 16)
+        self.num_signals_input_box = FormSpinBox(
+            "Number of Signals to Display", 8, 1, 16)
         signal_range_group.add_widget(self.num_signals_input_box)
 
         left_layout.addWidget(signal_range_group)
@@ -95,10 +102,13 @@ class VisualisationPage(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # connect the range input change to the channel_group_change function
-        self.range_dropdown.dropdown.currentIndexChanged.connect(self.channel_group_change)
+        self.range_dropdown.dropdown.currentIndexChanged.connect(
+            self.channel_group_change)
 
-        # connect the num signals input change to the num_signal_display_change function
-        self.num_signals_input_box.spinbox.valueChanged.connect(self.num_signal_display_change)
+        # connect the num signals input change to the num_signal_display_change
+        # function
+        self.num_signals_input_box.spinbox.valueChanged.connect(
+            self.num_signal_display_change)
 
         self.setFocus()
 
@@ -157,7 +167,8 @@ class VisualisationPage(QWidget):
         self.channel_group_change(max(self.channel_group_index - 1, 0))
 
     def rightClicked(self):
-        self.channel_group_change(min(self.channel_group_index + 1, self.max_index))
+        self.channel_group_change(
+            min(self.channel_group_index + 1, self.max_index))
 
     def doneClicked(self):
         # Update the omitted channels

@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QVBoxLayout
-from .CleanTheme import CleanTheme
+
 from .CleanCard import CleanCard
+from .CleanTheme import CleanTheme
 from .SectionHeader import SectionHeader
 
 
@@ -32,7 +33,7 @@ class VisualizationPanel(CleanCard):
         if title:
             self.header = SectionHeader(title)
             self.panel_layout.addWidget(self.header)
-            
+
         else:
             self.panel_layout.setContentsMargins(0, 10, 0, 0)
 
@@ -43,7 +44,8 @@ class VisualizationPanel(CleanCard):
 
         # Add to card content
         self.content_layout.addLayout(self.panel_layout)
-        self.content_widget.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
+        self.content_widget.setStyleSheet(
+            f"background-color: {CleanTheme.BG_CARD};")
 
     def set_plot_widget(self, plot_widget):
         """
