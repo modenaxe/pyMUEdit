@@ -1,15 +1,20 @@
-from PyQt5.QtWidgets import (
-    QDialog, QLabel, QPushButton, QVBoxLayout,
-    QHBoxLayout, QCheckBox, QToolButton, QStyle
-)
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap
 import os
 
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import (QCheckBox, QDialog, QHBoxLayout, QLabel,
+                             QPushButton, QStyle, QToolButton, QVBoxLayout)
+
+
 class MessageDialog(QDialog):
-    def __init__(self, title_label="Question", text="Do you want to continue? "
-                        , enableCheckBox=True, checkBoxText="Remember my choice\nand don't ask again. ",
-                        enableHelpButton=True, HelpButtonTip="Click for help"):
+    def __init__(
+            self,
+            title_label="Question",
+            text="Do you want to continue? ",
+            enableCheckBox=True,
+            checkBoxText="Remember my choice\nand don't ask again. ",
+            enableHelpButton=True,
+            HelpButtonTip="Click for help"):
         super().__init__()
         self.setWindowTitle("Question")
         self.setFixedSize(350, 290)
@@ -25,8 +30,8 @@ class MessageDialog(QDialog):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
 
-        #add help button
-        if(enableHelpButton):
+        # add help button
+        if (enableHelpButton):
             help_row = QHBoxLayout()
             help_row.addStretch()
             help_button = QToolButton()
@@ -58,7 +63,12 @@ class MessageDialog(QDialog):
             icon_label.setPixmap(icon.pixmap(48, 48))
             print("❓ Image not found")
         else:
-            icon_label.setPixmap(pixmap.scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            icon_label.setPixmap(
+                pixmap.scaled(
+                    48,
+                    48,
+                    Qt.KeepAspectRatio,
+                    Qt.SmoothTransformation))
 
         icon_label.setAlignment(Qt.AlignHCenter)
         layout.addWidget(icon_label)
@@ -79,16 +89,18 @@ class MessageDialog(QDialog):
         # Yes button
         yes_button = QPushButton("Yes")
         yes_button.setFixedHeight(30)
-        yes_button.setStyleSheet("background-color: #007aff; color: white; border-radius: 6px; font-weight: bold;")
+        yes_button.setStyleSheet(
+            "background-color: #007aff; color: white; border-radius: 6px; font-weight: bold;")
         yes_button.clicked.connect(self.handle_yes_clicked)
 
         # No button
         no_button = QPushButton("No")
         no_button.setFixedHeight(30)
-        no_button.setStyleSheet("background-color: #ccc; color: black; border-radius: 6px; font-weight: bold;")
+        no_button.setStyleSheet(
+            "background-color: #ccc; color: black; border-radius: 6px; font-weight: bold;")
         yes_button.setFixedWidth(120)
         no_button.clicked.connect(self.handle_no_clicked)
-        
+
         # Button layout
         button_row = QHBoxLayout()
         button_row.addStretch()
@@ -99,7 +111,7 @@ class MessageDialog(QDialog):
         layout.addLayout(button_row)
 
         # “Don't ask again” checkbox
-        if(enableCheckBox):
+        if (enableCheckBox):
             self.checkbox = QCheckBox(checkBoxText)
             self.checkbox.setStyleSheet("QCheckBox { font-size: 8pt; }")
             checkbox_layout = QHBoxLayout()
@@ -126,7 +138,3 @@ class MessageDialog(QDialog):
     def closeEvent(self, event):
         self.user_closed_window = True
         super().closeEvent(event)
-
-
-
-

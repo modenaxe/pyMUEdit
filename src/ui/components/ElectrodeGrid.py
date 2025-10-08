@@ -1,9 +1,11 @@
 import math
-from PyQt5.QtWidgets import QWidget, QGridLayout, QLayout, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QSizePolicy
-from PyQt5.QtGui import QColor, QPainter
-from PyQt5.QtCore import Qt, QSize
+
 import matplotlib.cm as cm
 import numpy as np
+from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QColor, QPainter
+from PyQt5.QtWidgets import (QGridLayout, QHBoxLayout, QLabel, QLayout,
+                             QPushButton, QSizePolicy, QVBoxLayout, QWidget)
 
 from ui.components.ActionButton import ActionButton
 
@@ -58,6 +60,7 @@ class SquareWidget(QWidget):
             self.current_color = self.color
             self.update()
 
+
 class ElectrodeGrid(QWidget):
     def __init__(self, emg_obj, channel_indices, change_index, parent=None):
         super().__init__(parent)
@@ -69,7 +72,7 @@ class ElectrodeGrid(QWidget):
             self.muscle_names = emg_obj.signal_dict["muscle"]
         else:
             return
-        
+
         self.electrode_index = 0
         self.square_map = {}
 
@@ -126,9 +129,12 @@ class ElectrodeGrid(QWidget):
                     qcolor = QColor("white")
                     interactive = False
                 elif j in self.channel_indices:
-                    r, g, b, a = colors[min(len(colors) - 1, j - min(self.channel_indices))]
-                    qcolor = QColor(int(r * 255), int(g * 255), int(b * 255), int(a * 255))
-                square = SquareWidget(qcolor, j, self.change_index, interactive)
+                    r, g, b, a = colors[min(
+                        len(colors) - 1, j - min(self.channel_indices))]
+                    qcolor = QColor(int(r * 255), int(g * 255),
+                                    int(b * 255), int(a * 255))
+                square = SquareWidget(
+                    qcolor, j, self.change_index, interactive)
                 if row != 0 or col != 0:
                     self.square_map[j] = square
                 self.grid_layout.addWidget(square, row, col)
@@ -172,8 +178,10 @@ class ElectrodeGrid(QWidget):
         colors = get_n_colours(len(self.channel_indices))
         for index, square in self.square_map.items():
             if modifier + index in self.channel_indices:
-                r, g, b, a = colors[min(len(colors) - 1, modifier + index - min(self.channel_indices))]
-                qcolor = QColor(int(r * 255), int(g * 255), int(b * 255), int(a * 255))
+                r, g, b, a = colors[min(
+                    len(colors) - 1, modifier + index - min(self.channel_indices))]
+                qcolor = QColor(int(r * 255), int(g * 255),
+                                int(b * 255), int(a * 255))
                 square.setColor(qcolor)
                 square.setIndex(index + modifier)
             else:
@@ -206,8 +214,10 @@ class ElectrodeGrid(QWidget):
                         [11, 12, 37, 38, 63],
                     ]
                 )
-                self.channel_maps[i] = np.squeeze(np.array(self.channel_maps[i]))
-                self.chans_per_electrode.append((np.shape(self.channel_maps[i])[0] * np.shape(self.channel_maps[i])[1]) - 1)
+                self.channel_maps[i] = np.squeeze(
+                    np.array(self.channel_maps[i]))
+                self.chans_per_electrode.append(
+                    (np.shape(self.channel_maps[i])[0] * np.shape(self.channel_maps[i])[1]) - 1)
 
             elif electrode_name == "ELSCH064NM2":
                 self.channel_maps.append(
@@ -227,8 +237,10 @@ class ElectrodeGrid(QWidget):
                         [56, 57, 58, 59, 60],
                     ]
                 )
-                self.channel_maps[i] = np.squeeze(np.array(self.channel_maps[i]))
-                self.chans_per_electrode.append((np.shape(self.channel_maps[i])[0] * np.shape(self.channel_maps[i])[1]) - 1)
+                self.channel_maps[i] = np.squeeze(
+                    np.array(self.channel_maps[i]))
+                self.chans_per_electrode.append(
+                    (np.shape(self.channel_maps[i])[0] * np.shape(self.channel_maps[i])[1]) - 1)
 
             elif electrode_name == "GR08MM1305":
                 self.channel_maps.append(
@@ -248,8 +260,10 @@ class ElectrodeGrid(QWidget):
                         [11, 12, 37, 38, 63],
                     ]
                 )
-                self.channel_maps[i] = np.squeeze(np.array(self.channel_maps[i]))
-                self.chans_per_electrode.append((np.shape(self.channel_maps[i])[0] * np.shape(self.channel_maps[i])[1]) - 1)
+                self.channel_maps[i] = np.squeeze(
+                    np.array(self.channel_maps[i]))
+                self.chans_per_electrode.append(
+                    (np.shape(self.channel_maps[i])[0] * np.shape(self.channel_maps[i])[1]) - 1)
 
             elif electrode_name == "GR10MM0808":
                 self.channel_maps.append(
@@ -264,8 +278,10 @@ class ElectrodeGrid(QWidget):
                         [0, 8, 16, 24, 32, 40, 48, 56],
                     ]
                 )
-                self.channel_maps[i] = np.squeeze(np.array(self.channel_maps[i]))
-                self.chans_per_electrode.append((np.shape(self.channel_maps[i])[0] * np.shape(self.channel_maps[i])[1]) - 1)
+                self.channel_maps[i] = np.squeeze(
+                    np.array(self.channel_maps[i]))
+                self.chans_per_electrode.append(
+                    (np.shape(self.channel_maps[i])[0] * np.shape(self.channel_maps[i])[1]) - 1)
 
             elif electrode_name == "other":
                 self.channel_maps.append(
@@ -285,8 +301,10 @@ class ElectrodeGrid(QWidget):
                         [11, 12, 37, 38, 63],
                     ]
                 )
-                self.channel_maps[i] = np.squeeze(np.array(self.channel_maps[i]))
-                self.chans_per_electrode.append((np.shape(self.channel_maps[i])[0] * np.shape(self.channel_maps[i])[1]) - 1)
+                self.channel_maps[i] = np.squeeze(
+                    np.array(self.channel_maps[i]))
+                self.chans_per_electrode.append(
+                    (np.shape(self.channel_maps[i])[0] * np.shape(self.channel_maps[i])[1]) - 1)
 
             elif electrode_name == "Thin film":
                 self.channel_maps.append(
@@ -303,13 +321,18 @@ class ElectrodeGrid(QWidget):
                         [9, 19, 29, 39],
                     ]
                 )
-                self.channel_maps[i] = np.squeeze(np.array(self.channel_maps[i]))
-                self.chans_per_electrode.append((np.shape(self.channel_maps[i])[0] * np.shape(self.channel_maps[i])[1]))
+                self.channel_maps[i] = np.squeeze(
+                    np.array(self.channel_maps[i]))
+                self.chans_per_electrode.append(
+                    (np.shape(self.channel_maps[i])[0] * np.shape(self.channel_maps[i])[1]))
 
             elif electrode_name == "4-wire needle":
-                self.channel_maps.append([[0, 8], [1, 9], [2, 10], [3, 11], [4, 12], [5, 13], [6, 14], [7, 15]])
-                self.channel_maps[i] = np.squeeze(np.array(self.channel_maps[i]))
-                self.chans_per_electrode.append((np.shape(self.channel_maps[i])[0] * np.shape(self.channel_maps[i])[1]))
+                self.channel_maps.append([[0, 8], [1, 9], [2, 10], [3, 11], [
+                                         4, 12], [5, 13], [6, 14], [7, 15]])
+                self.channel_maps[i] = np.squeeze(
+                    np.array(self.channel_maps[i]))
+                self.chans_per_electrode.append(
+                    (np.shape(self.channel_maps[i])[0] * np.shape(self.channel_maps[i])[1]))
 
             elif electrode_name == "Myomatrix Monopolar":
                 self.channel_maps.append(
@@ -324,14 +347,20 @@ class ElectrodeGrid(QWidget):
                         [7, 15, 23, 31],
                     ]
                 )
-                self.channel_maps[i] = np.squeeze(np.array(self.channel_maps[i]))
-                self.chans_per_electrode.append((np.shape(self.channel_maps[i])[0] * np.shape(self.channel_maps[i])[1]))
+                self.channel_maps[i] = np.squeeze(
+                    np.array(self.channel_maps[i]))
+                self.chans_per_electrode.append(
+                    (np.shape(self.channel_maps[i])[0] * np.shape(self.channel_maps[i])[1]))
 
             else:
                 # assume that it is some variation of an intramusuclar array
-                self.channel_maps.append([[0, 8], [1, 9], [2, 10], [3, 11], [4, 12], [5, 13], [6, 14], [7, 15]])
-                self.channel_maps[i] = np.squeeze(np.array(self.channel_maps[i]))
-                self.chans_per_electrode.append((np.shape(self.channel_maps[i])[0] * np.shape(self.channel_maps[i])[1]))
+                self.channel_maps.append([[0, 8], [1, 9], [2, 10], [3, 11], [
+                                         4, 12], [5, 13], [6, 14], [7, 15]])
+                self.channel_maps[i] = np.squeeze(
+                    np.array(self.channel_maps[i]))
+                self.chans_per_electrode.append(
+                    (np.shape(self.channel_maps[i])[0] * np.shape(self.channel_maps[i])[1]))
+
 
 def get_n_colours(n):
     cmap = cm.get_cmap('hsv')

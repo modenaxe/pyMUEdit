@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import QComboBox
+
 from .CleanTheme import CleanTheme
 from .FormField import FormField
 

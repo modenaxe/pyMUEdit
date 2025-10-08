@@ -1,7 +1,8 @@
-from PyQt5.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QLabel, QPushButton
-from PyQt5.QtGui import QFont, QCursor
-from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QCursor, QFont
+from PyQt5.QtSvg import QSvgWidget
+from PyQt5.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton,
+                             QVBoxLayout)
 
 from .CleanTheme import CleanTheme
 
@@ -22,7 +23,7 @@ class DatasetItem(QFrame):
         self.setObjectName("datasetItem")
         self.setFrameShape(QFrame.NoFrame)
         self.setMinimumHeight(50)
-        
+
         # Make the item clickable
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
@@ -60,7 +61,8 @@ class DatasetItem(QFrame):
         info_layout = QVBoxLayout()
         info_layout.setSpacing(2)
 
-        filename_label = QLabel(filename) if not in_sidebar else QLabel(self._truncate_text(filename, 18))
+        filename_label = QLabel(filename) if not in_sidebar else QLabel(
+            self._truncate_text(filename, 18))
         filename_label.setFont(QFont("Segoe UI", 9))
         filename_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
 
@@ -100,10 +102,10 @@ class DatasetItem(QFrame):
         # Store references to components for later access
         self.filename_label = filename_label
         self.metadata_label = metadata_label
-        
+
         # Store the filename for reference
         self.filename = filename
-        
+
         # Store original mousePressEvent method
         self._original_mouse_press = self.mousePressEvent
 
@@ -121,7 +123,7 @@ class DatasetItem(QFrame):
                         "pathname": self.property("pathname") or "",
                         "metadata": self.metadata_label.text()
                     }
-                    
+
                     # Call dashboard's handler
                     if hasattr(parent, 'open_dataset'):
                         parent.open_dataset(dataset)
@@ -131,9 +133,11 @@ class DatasetItem(QFrame):
                 # If we can't import HDEMGDashboard (likely due to circular imports)
                 # Just go up the parent chain
                 parent = parent.parent()
-                
+
         # Call original mousePressEvent if it exists
-        if hasattr(self, '_original_mouse_press') and callable(self._original_mouse_press):
+        if hasattr(
+                self, '_original_mouse_press') and callable(
+                self._original_mouse_press):
             self._original_mouse_press(event)
 
     def _truncate_text(self, text, max_length):
@@ -145,5 +149,5 @@ class DatasetItem(QFrame):
             max_length (int): Maximum length before truncation
         """
         if len(text) > max_length:
-            return text[: max_length - 10] + "..." + text[-10 :]
+            return text[: max_length - 10] + "..." + text[-10:]
         return text

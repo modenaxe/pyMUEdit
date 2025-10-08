@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QPushButton
 
+
 class CircleButton(QPushButton):
     def __init__(self, diameter=30):
         super().__init__()

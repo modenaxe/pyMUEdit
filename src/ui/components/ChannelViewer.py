@@ -1,11 +1,14 @@
 import math
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QCheckBox, QHBoxLayout
-from PyQt5.QtCore import Qt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
+
 import matplotlib.cm as cm
+from matplotlib.backends.backend_qt5agg import \
+    FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QCheckBox, QHBoxLayout, QVBoxLayout, QWidget
 
 from ui.components.ElectrodeGrid import ElectrodeGrid
+
 
 class ChannelViewer(QWidget):
     def __init__(self, emg_obj, channel_group_change, parent=None):
@@ -34,7 +37,10 @@ class ChannelViewer(QWidget):
         self.layout.addLayout(self.checkbox_layout)
 
         # Electrode grid
-        self.electrode_grid = ElectrodeGrid(self.emg_obj, self.channel_indices, self.set_channel_range_from_index)
+        self.electrode_grid = ElectrodeGrid(
+            self.emg_obj,
+            self.channel_indices,
+            self.set_channel_range_from_index)
         self.layout.addWidget(self.electrode_grid)
 
         self.setLayout(self.layout)
@@ -59,8 +65,16 @@ class ChannelViewer(QWidget):
         n = len(self.channel_indices)
         for i, index in enumerate(self.channel_indices):
             ax = self.figure.add_subplot(n, 1, i + 1)
-            ax.plot(self.entire_emg_data[index], linewidth=0.8, color=colours[i])
-            ax.set_ylabel(f"{index + 1}", fontsize=20, labelpad=25, rotation=0, va='center')
+            ax.plot(
+                self.entire_emg_data[index],
+                linewidth=0.8,
+                color=colours[i])
+            ax.set_ylabel(
+                f"{index + 1}",
+                fontsize=20,
+                labelpad=25,
+                rotation=0,
+                va='center')
             ax.grid(True)
             ax.set_yticklabels([])
             # Hide x-axis label (except for last plot)
@@ -69,7 +83,10 @@ class ChannelViewer(QWidget):
 
             # Add title for first plot only
             if i == 0:
-                ax.set_title(f"Channels {self.channel_indices[0] + 1}-{self.channel_indices[len(self.channel_indices) - 1] + 1}", fontsize=20, pad=15)
+                ax.set_title(
+                    f"Channels {self.channel_indices[0] + 1}-{self.channel_indices[len(self.channel_indices) - 1] + 1}",
+                    fontsize=20,
+                    pad=15)
 
             # Add a corresponding checkbox
             checkbox = QCheckBox()
@@ -79,13 +96,16 @@ class ChannelViewer(QWidget):
                                    "height: 40px;"
                                    "}")
 
-            # Handle persistance (if box was previously unchecked, remain unchecked)
+            # Handle persistance (if box was previously unchecked, remain
+            # unchecked)
             if index not in self.rejected_channels:
                 checkbox.setChecked(True)
             self.checkbox_layout.addWidget(checkbox)
             self.checkBoxList.append(checkbox)
             # Connect the checkbox state change to the checkbox_change function
-            checkbox.stateChanged.connect(lambda state, idx=index: self.checkbox_change(state, idx))
+            checkbox.stateChanged.connect(
+                lambda state, idx=index: self.checkbox_change(
+                    state, idx))
 
         ax.set_xlabel("Time", fontsize=20, labelpad=15)
         self.canvas.draw()
@@ -97,13 +117,15 @@ class ChannelViewer(QWidget):
         self.checkBoxList.clear()
 
     def checkbox_change(self, state, index):
-        # TODO ensure the rejected_channels gets reflected in the decomposition algorithm
+        # TODO ensure the rejected_channels gets reflected in the decomposition
+        # algorithm
         if state == Qt.Checked:
             if index in self.rejected_channels:
                 self.rejected_channels.remove(index)
         else:
             # Add the channel index to the rejected_channels array
             self.rejected_channels.append(index)
+
 
 def get_n_colours(n):
     cmap = cm.get_cmap('hsv')

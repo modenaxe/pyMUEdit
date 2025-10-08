@@ -1,6 +1,7 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout
-from .CleanTheme import CleanTheme
+from PyQt5.QtWidgets import QVBoxLayout, QWidget
+
 from .CleanCard import CleanCard
+from .CleanTheme import CleanTheme
 from .SectionHeader import SectionHeader
 
 
@@ -34,7 +35,8 @@ class SettingsGroup(CleanCard):
         # Add to card layout
         self.content_layout.addWidget(self.header)
         self.content_layout.addWidget(self.fields_container)
-        self.content_widget.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
+        self.content_widget.setStyleSheet(
+            f"background-color: {CleanTheme.BG_CARD};")
 
     def add_field(self, field):
         """
