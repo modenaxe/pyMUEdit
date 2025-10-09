@@ -54,7 +54,6 @@ class MUAnalysis(QWidget):
             "bg_main": "#f8f9fa",
             "bg_card": "#ffffff",
             "bg_sidebar": "#f8f9fa",
-            "bg_topbar": "#ffffff",
             "border_light": "#e9ecef",
             "shadow": QColor(0, 0, 0, 25),
             "text_primary": "#212529",
@@ -84,15 +83,9 @@ class MUAnalysis(QWidget):
             self.content_layout
         )  # Add main content below top bar
 
-    # legacy code
-    def request_return_to_dashboard(self):
-        """Emits a signal to tell the main window to switch views."""
-        print("Widget: Requesting return to dashboard")
-        self.return_to_dashboard_requested.emit()
-
     # --- UI Creation Methods ---
 
-    # legacy code
+    # heading for the page
     def _create_top_bar(self):
         top_bar = QFrame()
         top_bar.setObjectName("topBar")
@@ -100,62 +93,21 @@ class MUAnalysis(QWidget):
         top_bar.setStyleSheet(
             f"""
             #topBar {{
-                background-color: {self.colors['bg_topbar']};
-                border-bottom: 1px solid {self.colors['border_light']};
-            }}
-            #topBar > QPushButton {{
-                background-color: transparent;
+                background-color: #ececec;
                 border: none;
-                color: {self.colors['text_secondary']};
-                font-size: 9pt;
-                padding: 5px 10px;
             }}
-            #topBar > QPushButton:hover {{
-                color: {self.colors['text_primary']};
-            }}
-        """
+            """
         )
         top_bar_layout = QHBoxLayout(top_bar)
         top_bar_layout.setContentsMargins(15, 0, 15, 0)
         top_bar_layout.setSpacing(10)
-        icon_label = QLabel()
-        icon_pixmap = get_icon("SP_ComputerIcon").pixmap(QSize(24, 24))
-        icon_label.setPixmap(icon_pixmap)
-        icon_label.setFixedSize(QSize(28, 28))
         title_label = QLabel("Motor Unit Analysis")
-        title_label.setFont(QFont("Arial", 11, QFont.Bold))
+        title_label.setFont(QFont("Arial", 20, QFont.Bold))
         title_label.setStyleSheet(
             f"color: {self.colors['text_title']}; border: none;")
-        top_bar_layout.addWidget(icon_label)
+
         top_bar_layout.addWidget(title_label)
         top_bar_layout.addStretch(1)
-        dashboard_btn = QPushButton("Dashboard")
-        projects_btn = QPushButton("Projects")
-        settings_btn = QPushButton("Settings")
-        user_button = QPushButton()
-        user_button.setIcon(get_icon("SP_DialogOkButton"))
-        user_button.setIconSize(QSize(18, 18))
-        user_button.setFixedSize(30, 30)
-        user_button.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {self.colors['button_dark_bg']};
-                border-radius: 15px;
-                padding: 0px;
-            }}
-            QPushButton:hover {{
-                background-color: {self.colors['button_dark_hover']};
-            }}
-        """
-        )
-        top_bar_layout.addWidget(dashboard_btn)
-        top_bar_layout.addWidget(projects_btn)
-        top_bar_layout.addWidget(settings_btn)
-        top_bar_layout.addWidget(user_button)
-        if hasattr(self, "request_return_to_dashboard"):
-            dashboard_btn.clicked.connect(self.request_return_to_dashboard)
-        else:
-            print("ERROR: request_return_to_dashboard method missing!")
         return top_bar
 
     # dropdown order for matrix code
