@@ -216,8 +216,8 @@ def create_preview_section(import_window):
     # Create visualization panel to preview the data in a selected file
     import_window.preview_plot = pg.PlotWidget()
     import_window.preview_plot.setBackground("w")  # White background
-    import_window.preview_plot.setLabel("left", "Amplitude", **{"color": "black", "font-size": "12pt"}) # 12pt, black text
-    import_window.preview_plot.setLabel("bottom", "Time (s)", **{"color": "black", "font-size": "12pt"}) # 12pt, black text
+    import_window.preview_plot.setLabel("left", "Amplitude", **{"colour": "black", "font-size": "12pt"}) # 12pt, black text
+    import_window.preview_plot.setLabel("bottom", "Time (s)", **{"colour": "black", "font-size": "12pt"}) # 12pt, black text
     import_window.preview_plot.showGrid(x=True, y=True)
     import_window.preview_plot.setMinimumHeight(250)
 
