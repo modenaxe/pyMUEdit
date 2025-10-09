@@ -23,10 +23,10 @@ def main():
     """
     # Configure DPI scaling settings to prevent UI distortion under high-resolution displays || Modified by alex
     apply_qt_scaling()
-    
+
     # Create the application
     app = QApplication(sys.argv)
-    
+
     # Set application properties
     app.setApplicationName("HDEMG Analysis Tool")
     app.setOrganizationName("EMG Lab")
