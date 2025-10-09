@@ -1,8 +1,8 @@
-from PyQt5.QtGui import QFont  # alex
 from pathlib import Path
 
 import pyqtgraph as pg
 from PyQt5.QtCore import QSize, Qt, QTimer
+from PyQt5.QtGui import QFont  # alex
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QListView  # moy
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QFrame,
