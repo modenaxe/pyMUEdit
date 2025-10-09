@@ -223,12 +223,10 @@ def create_preview_section(import_window):
 
     # Ensures axis ticks are black & thicker
     left_axis = import_window.preview_plot.getAxis("left")
-    left_axis.setPen(pg.mkPen("black"))
-    left_axis.setTickPen(pg.mkPen("black", width=2))
+    left_axis.setPen(pg.mkPen("black", width=2))
 
     bottom_axis = import_window.preview_plot.getAxis("bottom")
-    bottom_axis.setPen(pg.mkPen("black"))
-    bottom_axis.setTickPen(pg.mkPen("black", width=2))
+    bottom_axis.setPen(pg.mkPen("black", width=2))
 
     signal_panel = VisualizationPanel(plot_widget=import_window.preview_plot)
     import_window.preview_stacked_frame.addWidget(signal_panel)
