@@ -10,7 +10,6 @@ from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
 from ui.components import (ActionButton, CleanCard, CleanTheme, SectionHeader,
                            Sidebar, VisualizationPanel)
 
-
 def setup_ui(import_window):
     """Set up the UI for the import data window using custom components."""
     # Set widget properties
@@ -94,7 +93,7 @@ def create_right_content(import_window):
 def create_dropzone_card(import_window):
     """Create a clean card for the file dropzone."""
     dropzone_card = CleanCard()
-    dropzone_card.setMinimumHeight(175)
+    dropzone_card.setMinimumHeight(190)
 
     # Create layout for content
     dropzone_layout = QVBoxLayout()
@@ -107,8 +106,8 @@ def create_dropzone_card(import_window):
     icon_layout = QHBoxLayout(icon_container)
     icon_layout.setContentsMargins(0, 0, 0, 0)
     icon_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-    cloud_icon = QSvgWidget("src/public/upload_icon.svg")
+    
+    cloud_icon = QSvgWidget("../public/upload_icon.svg")
     cloud_icon.setFixedSize(32, 22)
     cloud_icon.setStyleSheet("margin-bottom: 10px;")
 
