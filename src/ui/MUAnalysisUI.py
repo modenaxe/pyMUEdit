@@ -148,26 +148,25 @@ class MUAnalysis(QWidget):
         signal_editing = SignalEditing(self.mu, self.analysis_plot, parent=sidebar)
         mu_editing_layout.addWidget(remove_mu_section)
         mu_editing_layout.addWidget(signal_editing)
-        mu_editing_section = CollapsibleSection("MU Editing", mu_editing_widget, expanded=True)
+        mu_editing_section = CollapsibleSection("MU Editing", mu_editing_widget, expanded=False)
         sidebar_layout.addWidget(mu_editing_section)
 
         # force anaylsis
-        force_analysis = ForceAnalysisSection(
-            sidebar, self.analysis_plot
-        )
-        sidebar_layout.addWidget(force_analysis)
+        force_analysis = ForceAnalysisSection(sidebar, self.analysis_plot)
+        force_analysis_section = CollapsibleSection("Force Analysis", force_analysis, expanded=False)
+        sidebar_layout.addWidget(force_analysis_section)
 
         # motor unit properties
-        motor_unit_properties = MotorUnitPropertiesButton(
-            self.analysis_plot, parent=self
-        )
+        motor_unit_properties = MotorUnitPropertiesButton(self.analysis_plot, parent=self)
         motor_unit_properties.mvc_updated.connect(self.prop.set_mvc)
-        sidebar_layout.addWidget(motor_unit_properties)
+        mu_properties_section = CollapsibleSection("Motor Unit Properties", motor_unit_properties, expanded=False)
+        sidebar_layout.addWidget(mu_properties_section)
         self.motor_unit_properties = motor_unit_properties
 
         # plot emg button
         plot_emg_tools = PlotEMGButton(self.analysis_plot, parent=self)
-        sidebar_layout.addWidget(plot_emg_tools)
+        plot_emg_section = CollapsibleSection("Plot EMG", plot_emg_tools, expanded=False)
+        sidebar_layout.addWidget(plot_emg_section)
         self.plot_emg_tools = plot_emg_tools
 
         # advanced tools
