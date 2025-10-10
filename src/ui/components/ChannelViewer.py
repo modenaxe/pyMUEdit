@@ -23,6 +23,7 @@ class ChannelViewer(QWidget):
         self.channel_group_change = channel_group_change
 
         self.layout = QHBoxLayout()
+        self.layout.setContentsMargins(40, 0, 50, 30)
 
         # Matplotlib canvas for plotting
         self.figure = Figure(figsize=(8, 3), dpi=100)
