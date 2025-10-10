@@ -78,10 +78,10 @@ class ChannelViewer(QWidget):
             if i == 0:
                 ax.set_title(
                     f"Channels {self.channel_indices[0] + 1}-{self.channel_indices[len(self.channel_indices) - 1] + 1}",
-                    fontsize=20,
+                    fontsize=15,
                     pad=15)
 
-        ax.set_xlabel("Time", fontsize=20, labelpad=15)
+        ax.set_xlabel("Time", fontsize=15, labelpad=15)
         self.canvas.draw()
 
 def get_n_colours(n):
