@@ -78,23 +78,6 @@ class RemoveMUSection(QWidget):
             "Remove empty MUs", lambda: self.remove_empty_mus(), parent=self
         )
 
-        self.remove_empty_mus_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #ffffff;
-                color: #000000;
-                border: 1px solid #e5e5e5;
-                border-radius: 5px;
-                font-size: 1em;
-                height: 100px;
-                width: 200px;
-            }
-            QPushButton:hover {
-                background-color: #f5f5f5;
-            }
-            """
-        )
-
         container_layout.addWidget(self.remove_empty_mus_btn)
 
         container_layout.addLayout(remove_mu_layout)
