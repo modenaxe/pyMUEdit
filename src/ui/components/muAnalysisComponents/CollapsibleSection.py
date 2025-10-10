@@ -19,7 +19,6 @@ class CollapsibleSection(QWidget):
 
         # dropdown chevron icon and styling
         self.title_label = QLabel(title)
-        self.title_label.setStyleSheet("font-weight: bold;")
         self.chevron_btn = QToolButton()
         self.chevron_btn.setStyleSheet("border: none;")
         self.chevron_btn.setArrowType(Qt.DownArrow if self.expanded else Qt.RightArrow)

@@ -184,13 +184,6 @@ class MUAnalysis(QWidget):
         center.setObjectName("centerContent")
         center_layout = QVBoxLayout(center)
 
-        resize_file = Resize(self.mu, self.analysis_plot)
-        resize_btn = GeneralButton(
-            "Resize", lambda: resize_file.resize())
-        center_layout.addWidget(resize_btn)
-        self.analysis_plot.set_resize(resize_btn)
-        center_layout.addWidget(self.analysis_plot)
-
         return center
 
     # side bar with load file button
@@ -215,10 +208,18 @@ class MUAnalysis(QWidget):
         file_section.reset_btn.reset_requested.connect(
             lambda: self.mu.handle_reset_workflow(self.analysis_plot)
         )
+
+        # resize button
+        resize_file = Resize(self.mu, self.analysis_plot)
+        resize_btn = GeneralButton(
+            "Resize", lambda: resize_file.resize())
+        self.analysis_plot.set_resize(resize_btn)
+        sidebar_layout.addWidget(file_section, stretch=1)
+        sidebar_layout.addWidget(resize_btn)
+
         results_section = ResultsPanel(
             sidebar, self.result_combo, self.results_table)
 
-        sidebar_layout.addWidget(file_section, stretch=1)
         sidebar_layout.addWidget(results_section, stretch=15)
         sidebar_layout.addStretch(1)
         sidebar.setMaximumWidth(300)
