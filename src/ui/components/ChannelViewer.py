@@ -85,6 +85,7 @@ class ChannelViewer(QWidget):
         ax.set_xlabel("Time", fontsize=15, labelpad=15)
         self.canvas.draw()
 
+
 def get_n_colours(n):
     cmap = cm.get_cmap('hsv')
     return [cmap(i / n) for i in range(n)]
