@@ -4,7 +4,7 @@ from PyQt5.QtCore import QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
                              QMainWindow, QPushButton, QStyle, QVBoxLayout,
-                             QWidget)
+                             QWidget, QSizePolicy)
 
 from app.ExportResults import ExportResultsWindow
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
@@ -25,6 +25,7 @@ from ui.muanalysis.ResultSelection import ResultSelection
 from ui.muanalysis.ResultsPanel import ResultsPanel
 from ui.muanalysis.ResultsTable import ResultsTable
 from ui.muanalysis.SignalEditing import SignalEditing
+from ui.components.muAnalysisComponents.CollapsibleSection import CollapsibleSection
 
 
 # legacy code
@@ -138,17 +139,17 @@ class MUAnalysis(QWidget):
         title_div_layout.addWidget(title_label)
         sidebar_layout.addWidget(title_div)
 
-        # signal editing
-        # remove mu section
-        remove_mu_section = RemoveMUSection(
-            self.mu, self.analysis_plot, self.colors, parent=sidebar
-        )
-        sidebar_layout.addWidget(remove_mu_section)
-
-        # signal editing
-        signal_editing = SignalEditing(
-            self.mu, self.analysis_plot, parent=sidebar)
-        sidebar_layout.addWidget(signal_editing)
+        # signal editing + remove mu section
+        mu_editing_widget = QWidget()
+        mu_editing_layout = QVBoxLayout(mu_editing_widget)
+        mu_editing_layout.setContentsMargins(0,0,0,0)
+        mu_editing_layout.setSpacing(5)
+        remove_mu_section = RemoveMUSection(self.mu, self.analysis_plot, self.colors, parent=sidebar)
+        signal_editing = SignalEditing(self.mu, self.analysis_plot, parent=sidebar)
+        mu_editing_layout.addWidget(remove_mu_section)
+        mu_editing_layout.addWidget(signal_editing)
+        mu_editing_section = CollapsibleSection("MU Editing", mu_editing_widget, expanded=True)
+        sidebar_layout.addWidget(mu_editing_section)
 
         # force anaylsis
         force_analysis = ForceAnalysisSection(
