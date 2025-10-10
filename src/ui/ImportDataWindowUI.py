@@ -199,7 +199,7 @@ def create_preview_section(import_window):
         "No file selected. Import a file to see a preview.")
     import_window.preview_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
     import_window.preview_message.setStyleSheet(
-        f"color: {CleanTheme.TEXT_SECONDARY};")
+        f"color: {CleanTheme.TEXT_SECONDARY}; font-size: 14px; font-weight: bold;")
 
     # Add preview messages to stacked frame as an active widget
     import_window.preview_messages.addStretch()
