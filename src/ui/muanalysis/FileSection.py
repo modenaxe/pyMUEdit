@@ -29,4 +29,18 @@ class FileSection(QFrame):
                 analysis_plot, False))
         button_row.addWidget(browse_btn, stretch=1)
         self.reset_btn = ResetButton('Reset')
+        self.reset_btn.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #475058;
+                color: #fff;
+                border-radius: 5px;
+                font-size: 1em;
+                min-height: 40px;
+            }
+            QPushButton:hover {
+                background-color: #495057;
+            }
+            """
+        )
         button_row.addWidget(self.reset_btn, stretch=1)
