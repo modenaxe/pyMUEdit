@@ -293,7 +293,7 @@ class ImportDataWindow(QMainWindow):
         # Plot the average signal
         self.preview_plot.plot(t, mean_trace, pen=pg.mkPen(color="r", width=2))
 
-        self.preview_plot.setTitle(f"Electrode Grid: {selected_electrode_idx + 1} | Electrode Grid Name: {electrode_grid_name} | {len(valid_indices)} valid channels")
+        self.preview_plot.setTitle(f"Mean HD-EMG Signal Amplitude | Electrode Grid: {selected_electrode_idx + 1} | Electrode Grid Name: {electrode_grid_name} | {len(valid_indices)} valid channels")
 
     def get_n_chans_per_electrode(self):
         grid_names = self.emg_obj.signal_dict["gridname"]
