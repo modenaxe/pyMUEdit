@@ -1,5 +1,6 @@
 import sys
 import os
+from PyQt5.QtGui import QIcon
 
 # Fix matplotlib backend BEFORE importing any other modules
 import matplotlib
@@ -30,6 +31,9 @@ def main():
     # Set application properties
     app.setApplicationName("HDEMG Analysis Tool")
     app.setOrganizationName("EMG Lab")
+
+    # set application icon
+    app.setWindowIcon(QIcon("assets/pyMUEdit-icon.png"))
 
     # Create and show the main window
     window = HDEMGDashboard()
