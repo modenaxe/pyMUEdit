@@ -761,9 +761,9 @@ def setup_display_panel(main_window):
     action_button_configs = [
         ("Add spikes", main_window.add_spikes_button_pushed, "add_spikes_btn"),
         ("Delete spikes", main_window.delete_spikes_button_pushed, "delete_spikes_btn"),
+        ("Lock spikes", main_window.lock_spikes_button_pushed, "lock_spikes_btn"),
         ("Delete DR", main_window.delete_dr_button_pushed, "delete_dr_btn"),
         ("Remove outliers", main_window.remove_outliers_button_pushed, "remove_outliers_single_btn"),
-        ("Lock spikes", main_window.lock_spikes_button_pushed, "lock_spikes_btn"),
         ("Update MU filter", main_window.update_mu_filter_button_pushed, "update_mu_filter_btn"),
         ("Extend MU filter", main_window.extend_mu_filter_button_pushed, "extend_mu_filter_btn"),
     ]
