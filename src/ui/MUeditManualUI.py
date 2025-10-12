@@ -227,10 +227,16 @@ def create_side_panel_widget(main_window):
 
     # Subpanel holds the three sub-buttons and the tab stack
     subpanel = QWidget()
-    subpanel.setStyleSheet(f"background-color: {CleanTheme.BG_MAIN};")
+    subpanel.setStyleSheet(
+        f"""
+            background-color: {CleanTheme.BG_MAIN};
+            border-radius: 6px;
+        """
+    )
     subpanel.setVisible(False)  # shown only when "MU Editing" is active
-    # subpanel.setMaximumWidth(320)
-    subpanel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+    subpanel.setMinimumWidth(320)
+    subpanel.setMaximumWidth(320)
+    subpanel.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
     sub_lay = QVBoxLayout(subpanel)
     # sub_lay.setSpacing(20)
 
@@ -265,8 +271,8 @@ def create_tab_widget():
         }}
         """
     )
-    tabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.MinimumExpanding)
-    # tabs.setMaximumWidth(320)
+    # tabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.MinimumExpanding)
+    tabs.setMaximumWidth(320)
     return tabs
 
 
@@ -278,7 +284,7 @@ def create_mu_selection_tab(main_window):
             border-radius: 6px;
     """)
     mu_layout = QVBoxLayout(mu_tab)
-    mu_layout.setContentsMargins(10, 10, 10, 10)
+    mu_layout.setContentsMargins(0, 0, 0, 0)
     mu_layout.setSpacing(10)
 
     # # MU selection content
@@ -301,6 +307,8 @@ def create_mu_selection_tab(main_window):
 
     # Initially add a label indicating no MUs
     no_mu_label = QLabel("No MUs loaded")
+    no_mu_label.setContentsMargins(10, 10, 10, 10)
+    no_mu_label.setAlignment(Qt.AlignCenter)
     set_standard_label_style(no_mu_label, size=13, bold=False)
     main_window.mu_checkbox_layout.addWidget(no_mu_label)
     main_window.mu_checkbox_layout.addStretch(1)
@@ -510,6 +518,8 @@ def setup_display_panel(main_window):
         """
     )
     main_window.display_panel.setContentsMargins(10, 10, 10, 10)
+    # main_window.display_panel.setMinimumWidth(800)
+    main_window.display_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
     title_lbl = main_window.display_panel.title_label
     # main_window.display_panel.setStyleSheet("border: 1px solid red;")
 
