@@ -31,7 +31,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 
-from ui.MUeditManualUI import setup_ui, find_sidebar
+from ui.MUeditManualUI import setup_ui
 from core.utils.manual_editing.getsil import getsil
 from core.utils.manual_editing.refinesil import refinesil
 from core.utils.manual_editing.h5_import import h5py_convert
@@ -61,7 +61,7 @@ from ui.components import (
 )
 import json
 
-class MUeditManual(QWidget):
+class MUeditManual(QMainWindow):
     """
     Manual Motor Unit Editor for EMG Data
     Allows for viewing and editing motor unit discharge patterns.
@@ -3055,9 +3055,6 @@ class MUeditManual(QWidget):
     def showEvent(self, event):
         """Event triggered when the widget is shown."""
         self.sub_panel.show()
-        sidebar = find_sidebar(self)
-        sidebar.setFixedWidth(340)
-        self.window().left_sidebar_scroll_area.setFixedWidth(340)
 
         # Call the parent method
         super().showEvent(event)
@@ -3065,9 +3062,6 @@ class MUeditManual(QWidget):
     def hideEvent(self, event):
         """Event triggered when the widget is hidden."""
         self.sub_panel.hide()
-        sidebar = find_sidebar(self)
-        sidebar.setFixedWidth(180)
-        self.window().left_sidebar_scroll_area.setFixedWidth(180)
 
         # Call the parent method
         super().hideEvent(event)
