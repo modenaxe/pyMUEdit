@@ -44,8 +44,14 @@ def setup_ui(main_window):
     # Set window properties
     main_window.setWindowTitle("MUedit - Manual Editing")
     main_window.setGeometry(100, 100, 1200, 800)
-    # main_window.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
-    main_window.setStyleSheet(f"background-color: {CleanTheme.BG_MAIN};")
+    main_window.setObjectName("main_window")
+    main_window.setStyleSheet(
+        f"""
+            #main_window {{
+                background-color: {CleanTheme.BG_MAIN};
+            }}
+        """
+    )
 
     # Configure PyQtGraph globally
     pg.setConfigOption("background", "w")  # White background
@@ -100,7 +106,10 @@ def setup_control_panel(main_window):
     # Create the actual control panel container
     control_panel_widget = QWidget()
     # control_panel_widget.setStyleSheet(
-    #     f"background-color: {CleanTheme.BG_SIDEBAR};")
+    #     f"""
+    #         background-color: {CleanTheme.BG_MAIN};
+    #     """
+    # )
     control_layout = QVBoxLayout(control_panel_widget)
     control_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -186,9 +195,39 @@ def create_side_panel_buttons(main_window):
     """
 
     panel = QWidget()
-    panel.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
+    panel.setObjectName("side_panel_buttons")
+    panel.setStyleSheet(
+        f"""
+            #side_panel_buttons {{
+                background-color: {CleanTheme.BG_CARD};
+                border: 1px solid {CleanTheme.BORDER};
+                border-radius: 8px;
+            }}
+        """
+    )
     layout = QVBoxLayout(panel)
     layout.setSpacing(6)
+    layout.setContentsMargins(10, 10, 10, 10)
+
+    options_label = QLabel("Options")
+    options_label.setAlignment(Qt.AlignCenter)
+    options_label.setContentsMargins(0, 0, 0, 0)
+    options_label.setAlignment(Qt.AlignCenter)
+    set_standard_label_style(options_label, size=13, bold=True)
+    options_label.setStyleSheet(
+        f"""
+            color: {CleanTheme.TEXT_PRIMARY};
+            background-color: transparent;
+            border-bottom: 1px solid {CleanTheme.BORDER};
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            margin: 0px;
+            border-radius: 0px;
+            padding-bottom: 10px;
+        """
+    )
+    layout.addWidget(options_label)
 
     sub_btns = []
 
@@ -227,10 +266,13 @@ def create_side_panel_widget(main_window):
 
     # Subpanel holds the three sub-buttons and the tab stack
     subpanel = QWidget()
+    subpanel.setObjectName("subpanel")
     subpanel.setStyleSheet(
         f"""
-            background-color: {CleanTheme.BG_MAIN};
-            border-radius: 6px;
+            #subpanel {{
+                background-color: {CleanTheme.BG_MAIN};
+                border-radius: 8px;
+            }}
         """
     )
     subpanel.setVisible(False)  # shown only when "MU Editing" is active
@@ -238,7 +280,6 @@ def create_side_panel_widget(main_window):
     subpanel.setMaximumWidth(320)
     subpanel.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
     sub_lay = QVBoxLayout(subpanel)
-    # sub_lay.setSpacing(20)
 
     sub_lay.addWidget(create_side_panel_buttons(main_window))
     sub_lay.addWidget(main_window.control_panel)
@@ -253,6 +294,7 @@ def create_tab_widget():
         f"""
         QTabWidget::pane {{
             border-radius: 8px;
+            background-color: {CleanTheme.BG_MAIN};
         }}
         QTabBar::tab {{
             background-color: {CleanTheme.BG_MAIN};
@@ -271,7 +313,6 @@ def create_tab_widget():
         }}
         """
     )
-    # tabs.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.MinimumExpanding)
     tabs.setMaximumWidth(320)
     return tabs
 
@@ -279,12 +320,18 @@ def create_tab_widget():
 def create_mu_selection_tab(main_window):
     """Create the Motor Unit Selection tab."""
     mu_tab = QWidget()
-    mu_tab.setStyleSheet(f"""
-            background-color: {CleanTheme.BG_CARD};
-            border-radius: 6px;
-    """)
+    mu_tab.setObjectName("mu_tab")
+    mu_tab.setStyleSheet(
+        f"""
+            #mu_tab {{
+                background-color: {CleanTheme.BG_CARD};
+                border: 1px solid {CleanTheme.BORDER};
+                border-radius: 8px;
+            }}
+        """
+    )
     mu_layout = QVBoxLayout(mu_tab)
-    mu_layout.setContentsMargins(0, 0, 0, 0)
+    mu_layout.setContentsMargins(10, 10, 10, 10)
     mu_layout.setSpacing(10)
 
     # # MU selection content
@@ -295,6 +342,7 @@ def create_mu_selection_tab(main_window):
     mu_scroll_area = QScrollArea()
     mu_scroll_area.setWidgetResizable(True)
     mu_scroll_area.setFrameShape(QFrame.NoFrame)
+    mu_scroll_area.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
     CleanScrollBar.apply(mu_scroll_area)
 
     checkbox_container = QWidget()
@@ -307,7 +355,7 @@ def create_mu_selection_tab(main_window):
 
     # Initially add a label indicating no MUs
     no_mu_label = QLabel("No MUs loaded")
-    no_mu_label.setContentsMargins(10, 10, 10, 10)
+    no_mu_label.setContentsMargins(10, 0, 10, 0)
     no_mu_label.setAlignment(Qt.AlignCenter)
     set_standard_label_style(no_mu_label, size=13, bold=False)
     main_window.mu_checkbox_layout.addWidget(no_mu_label)
@@ -339,7 +387,8 @@ def create_batch_processing_tab(main_window):
     batch_tab = QWidget()
     batch_tab.setStyleSheet(f"""
             background-color: {CleanTheme.BG_CARD};
-            border-radius: 6px;
+            border-radius: 8px;
+            border: 1px solid {CleanTheme.BORDER};
         """)
     batch_layout = QVBoxLayout(batch_tab)
     batch_layout.setSpacing(10)
@@ -367,12 +416,12 @@ def create_batch_processing_tab(main_window):
     for label, handler, attr_name in action_batch_configs:
         btn = ActionButtonedit(label, primary=True)
         btn.clicked.connect(handler)
-        btn.setMinimumHeight(34)
-        btn.setMaximumHeight(34)
+        btn.setFixedHeight(34)
         batch_layout.addWidget(btn)
         setattr(main_window, attr_name, btn)
 
-    batch_layout.addStretch(1)
+    # TODO: make this not fixed?
+    batch_tab.setMaximumHeight(300)
 
     return batch_tab
 
@@ -380,7 +429,13 @@ def create_batch_processing_tab(main_window):
 def create_visualization_tab(main_window):
     """Create the Visualization tab."""
     viz_tab = QWidget()
-    viz_tab.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
+    viz_tab.setObjectName("viz_tab")
+    viz_tab.setStyleSheet(
+        f"""
+            #viz_tab {{ background-color: {CleanTheme.BG_MAIN}; }}
+            QWidget {{ background-color: {CleanTheme.BG_CARD}; }}
+        """
+    )
     viz_layout = QVBoxLayout(viz_tab)
     viz_layout.setSpacing(10)
     viz_layout.setContentsMargins(0, 0, 0, 0)
@@ -514,7 +569,7 @@ def setup_display_panel(main_window):
     main_window.display_panel.setStyleSheet(
         f"""
             background-color: {CleanTheme.BG_CARD};
-            border-radius: 6px;
+            border-radius: 8px;
         """
     )
     main_window.display_panel.setContentsMargins(10, 10, 10, 10)
@@ -741,7 +796,7 @@ def setup_display_panel(main_window):
             width: 150px;
             height: 4px;
             margin: -4px 0;
-            border-radius: 6px;
+            border-radius: 8px;
         }
 
         QSlider::groove:horizontal {
@@ -798,7 +853,7 @@ def setup_display_panel(main_window):
             QFrame#{frame.objectName()} {{
                 background-color: {CleanTheme.BG_CARD};
                 border: 1px solid {CleanTheme.BORDER};
-                border-radius: 6px;
+                border-radius: 8px;
             }}
         """)
         frame_layout = QVBoxLayout(frame)
