@@ -14,7 +14,7 @@ class ToggleSwitch(QWidget):
             parent=None,
             checked=False,
             bg_off="#d0d0d0",
-            bg_on="#3a7afe"):
+            bg_on="#333333"):
         """
         A minimalist iOS-style toggle switch with animated transitions
 
