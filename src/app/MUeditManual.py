@@ -61,7 +61,7 @@ from ui.components import (
 )
 import json
 
-class MUeditManual(QMainWindow):
+class MUeditManual(QWidget):
     """
     Manual Motor Unit Editor for EMG Data
     Allows for viewing and editing motor unit discharge patterns.
