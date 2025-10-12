@@ -6,7 +6,7 @@ from .CleanTheme import CleanTheme
 from .FormField import FormField
 
 # defining absolute path for icons
-ABS_PATH = Path(__file__).parent.parent.parent
+ABS_PATH = Path(__file__).parent.parent
 ICONS_PATH = ABS_PATH / "public"
 
 
@@ -37,9 +37,6 @@ class FormSpinBox(FormField):
         """
         super().__init__(label_text, parent)
 
-        up_arrow_path = ICONS_PATH / "up_arrow_icon.svg"
-        down_arrow_path = ICONS_PATH / "down_arrow_icon.svg"
-
         self.spinbox = QSpinBox()
         self.spinbox.setRange(min_value, max_value)
         self.spinbox.setValue(value)
@@ -65,12 +62,12 @@ class FormSpinBox(FormField):
                 border-bottom-right-radius: 3px;
             }}
             QSpinBox::up-arrow {{
-                image: url({up_arrow_path});
+                image: url(public/up_arrow_icon.svg);
                 width: 10px;
                 height: 10px;
             }}
             QSpinBox::down-arrow {{
-                image: url({down_arrow_path});
+                image: url(public/down_arrow_icon.svg);
                 width: 10px;
                 height: 10px;
             }}
