@@ -54,9 +54,9 @@ def setup_ui(main_window):
     pg.setConfigOption("antialias", False)
 
     # Create main widget and layout
-    main_window.central_widget = QWidget()
-    main_window.setCentralWidget(main_window.central_widget)
-    main_layout = QHBoxLayout(main_window.central_widget)
+    # main_window.central_widget = QWidget()
+    # main_window.setCentralWidget(main_window.central_widget)
+    main_layout = QHBoxLayout(main_window)
     main_layout.setContentsMargins(0, 0, 0, 0)
     main_layout.setSpacing(8)
 
@@ -67,9 +67,8 @@ def setup_ui(main_window):
 
     # Add panels to main layout
 
-    main_layout.addWidget(
-        main_window.display_panel,
-        1)  # The 1 is the stretch factor
+    main_layout.addWidget(main_window.sub_panel, 0)
+    main_layout.addWidget(main_window.display_panel, 1)  # The 1 is the stretch factor
 
     # Set up keyboard shortcuts
     main_window.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -225,7 +224,7 @@ def attach_control_pannel_to_sidebar(main_window):
 
     sub_lay.addWidget(main_window.control_panel)
 
-    sidebar.layout.insertWidget(2, subpanel, 999)
+    # sidebar.layout.insertWidget(2, subpanel, 999)
 
     main_window.sub_panel = subpanel
 
