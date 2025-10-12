@@ -536,21 +536,21 @@ def setup_display_panel(main_window):
     )
 
     main_window.select_file_title_btn = ActionButtonedit(
-        "Press here to select file", primary=True)
-    main_window.select_file_title_btn.set_blue()
-    main_window.select_file_title_btn.setFixedHeight(40)
+        "Press here to select file")
+    main_window.select_file_title_btn.setFixedHeight(35)
     select_btn = main_window.select_file_title_btn
     main_window.select_file_title_btn.clicked.connect(
         main_window.select_file_button_pushed
     )
 
-    save_btn = ActionButtonedit("Save", primary=True)
-    save_btn.setFixedHeight(40)
+    save_btn = ActionButtonedit("Save")
+    save_btn.setFixedHeight(30)
     save_btn.clicked.connect(main_window.save_button_pushed)
     main_window.floating_save_btn = save_btn
 
-    saveas_btn = ActionButtonedit("Save As", primary=True)
-    saveas_btn.setFixedHeight(40)
+    saveas_btn = ActionButtonedit("Save As")
+    saveas_btn.setFixedHeight(30)
+    saveas_btn.setFixedWidth(80)
     saveas_btn.clicked.connect(main_window.saveas_button_pushed)
     main_window.floating_saveas_btn = saveas_btn
 
@@ -780,11 +780,8 @@ def setup_display_panel(main_window):
         setattr(main_window, attr_name, btn)
         main_window.action_buttons[handler.__name__] = btn
         if text in {
-            "Add spikes",
-            "Delete spikes",
-            "Update MU filter",
-            "Extend MU filter",
-                "Lock spikes"}:
+            "Delete DR",
+            "Remove outliers"}:
             btn.set_blue()
         if text in {"Delete spikes", "Delete DR", "Remove outliers"}:
             spacer = QWidget()
