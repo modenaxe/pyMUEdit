@@ -216,10 +216,22 @@ def create_preview_section(import_window):
     # Create visualization panel to preview the data in a selected file
     import_window.preview_plot = pg.PlotWidget()
     import_window.preview_plot.setBackground("w")  # White background
-    import_window.preview_plot.setLabel("left", "Amplitude")
-    import_window.preview_plot.setLabel("bottom", "Time (s)")
+    import_window.preview_plot.setLabel(
+        "left", "Amplitude", **{"colour": "black", "font-size": "12pt"})  # 12pt, black text
+    import_window.preview_plot.setLabel("bottom",
+                                        "Time",
+                                        units="s",
+                                        **{"colour": "black",
+                                           "font-size": "12pt"})  # 12pt, black text
     import_window.preview_plot.showGrid(x=True, y=True)
     import_window.preview_plot.setMinimumHeight(250)
+
+    # Ensures axis ticks are black & thicker
+    left_axis = import_window.preview_plot.getAxis("left")
+    left_axis.setPen(pg.mkPen("black", width=2))
+
+    bottom_axis = import_window.preview_plot.getAxis("bottom")
+    bottom_axis.setPen(pg.mkPen("black", width=2))
 
     signal_panel = VisualizationPanel(plot_widget=import_window.preview_plot)
     import_window.preview_stacked_frame.addWidget(signal_panel)
