@@ -511,7 +511,7 @@ def setup_display_panel(main_window):
     )
     main_window.display_panel.setContentsMargins(10, 10, 10, 10)
     title_lbl = main_window.display_panel.title_label
-    main_window.display_panel.setStyleSheet("border: 1px solid red;")
+    # main_window.display_panel.setStyleSheet("border: 1px solid red;")
 
     font = title_lbl.font()
     font.setPointSize(20)
