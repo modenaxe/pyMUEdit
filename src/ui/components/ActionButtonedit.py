@@ -60,7 +60,7 @@ class ActionButtonedit(QPushButton):
             self.setStyleSheet(
                 f"""
                 QPushButton {{
-                    background-color: #666666;
+                    background-color: #333333;
                     color: white;
                     border: none;
                     border-radius: 4px;
@@ -102,12 +102,12 @@ class ActionButtonedit(QPushButton):
                 }}
 
                 QPushButton[active="true"] {{
-                    background-color: #555555;
-                    color: white;
+                    color: {CleanTheme.TEXT_PRIMARY};
+                    border: 1px solid {CleanTheme.BORDER};
                 }}
 
                 QPushButton[active="true"]:hover {{
-                    background-color: #6E6E6E;
+                    background-color: #f5f5f5;
                 }}
             """
             )
@@ -138,14 +138,14 @@ class ActionButtonedit(QPushButton):
                     background-color: #e0e0e0;
                 }}
                 QPushButton:disabled {{
-                    background-color: #f0f0f0;
+                    background-color: #888888;
                     color: #aaaaaa;
                     border: 1px solid #e0e0e0;
                 }}
                 QPushButton[active="true"] {{
-                    background-color: #c0ffc0;
-                    border: 1px solid green;
-                    color: darkgreen;
+                    background-color: #DEDEDE;
+                    border: 1px solid #C1C0C0;
+                    color: black;
                 }}
             """
             )
@@ -163,7 +163,7 @@ class ActionButtonedit(QPushButton):
         self.setStyleSheet(
             f"""
             QPushButton {{
-                background: #666666;
+                background: #333333;
                 color: #ffffff;
                 border: none;
                 border-radius: 4px;
@@ -179,15 +179,15 @@ class ActionButtonedit(QPushButton):
             }}
 
             QPushButton:disabled {{
-                background-color: #f0f0f0;
+                background-color: #888888;
                 color: #aaaaaa;
                 border: 1px solid #e0e0e0;
             }}
 
             QPushButton[active="true"] {{
-                background-color: #c0ffc0;
-                border: 1px solid green;
-                color: darkgreen;
+                background-color: #DEDEDE;
+                border: 1px solid #C1C0C0;
+                color: black;
             }}
             """
         )
