@@ -39,7 +39,7 @@ class FormDropdown(FormField):
                 border-left: 1px solid {CleanTheme.BORDER};
             }}
             QComboBox::down-arrow {{
-                image: url(src/public/down_arrow_icon.svg);
+                image: url(public/down_arrow_icon.svg);
                 width: 10px;
                 height: 10px;
             }}
