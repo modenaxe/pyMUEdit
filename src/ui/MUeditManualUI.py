@@ -306,7 +306,7 @@ def create_mu_selection_tab(main_window):
 
     # Initially add a label indicating no MUs
     no_mu_label = QLabel("No MUs loaded")
-    set_standard_label_style(no_mu_label, size=13, bold=False)
+    set_standard_label_style(no_mu_label, size=10, bold=False)
     main_window.mu_checkbox_layout.addWidget(no_mu_label)
     main_window.mu_checkbox_layout.addStretch()
 
@@ -513,17 +513,16 @@ def setup_display_panel(main_window):
     # main_window.display_panel.setStyleSheet("border: 1px solid red;")
 
     font = title_lbl.font()
-    font.setPointSize(20)
-    font.setBold(True)
+    font.setPointSize(12)
     title_lbl.setFont(font)
 
     main_window.help_button = QToolButton()
     main_window.help_button.setText("?")
-    main_window.help_button.setFixedSize(30, 30)
+    main_window.help_button.setFixedSize(15, 15)
     main_window.help_button.setStyleSheet("""
         QToolButton {
             font-weight: bold;
-            font-size: 22px;
+            font-size: 12px;
             border: 2px solid #f0f0f0;
             border-radius: 12px;
             background-color: white;

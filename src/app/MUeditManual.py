@@ -857,7 +857,7 @@ class MUeditManual(QMainWindow):
         # Add checkboxes for each MU
         if not self.MUedition or len(self.MUedition["edition"]["Pulsetrain"]) == 0:
             no_mu_label = QLabel("No MUs loaded")
-            no_mu_label.setStyleSheet("color: #333333; font-family: 'Poppins'; font-size: 16pt;")
+            no_mu_label.setStyleSheet("color: #333333; font-family: 'Poppins'; font-size: 10pt;")
             self.mu_checkbox_layout.addWidget(no_mu_label)
             # Add stretch to keep items at the top
             self.mu_checkbox_layout.addStretch(1)
