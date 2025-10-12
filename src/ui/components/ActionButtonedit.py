@@ -54,13 +54,13 @@ class ActionButtonedit(QPushButton):
         # Style based on primary or secondary
         if primary:
             font = QFont("Segoe UI")
-            font.setPointSize(11)
+            font.setPointSize(10)
             self.setFont(font)
 
             self.setStyleSheet(
                 f"""
                 QPushButton {{
-                    background-color: #333333;
+                    background-color: #666666;
                     color: white;
                     border: none;
                     border-radius: 4px;
@@ -84,7 +84,7 @@ class ActionButtonedit(QPushButton):
 
         elif tabs:
             font = QFont("Segoe UI")
-            font.setPointSize(12)
+            font.setPointSize(10)
             self.setFont(font)
             self.setStyleSheet(
                 f"""
@@ -102,25 +102,25 @@ class ActionButtonedit(QPushButton):
                 }}
 
                 QPushButton[active="true"] {{
-                    background-color: #0072ee;
+                    background-color: #555555;
                     color: white;
                 }}
 
                 QPushButton[active="true"]:hover {{
-                    background-color: #1565C0;
+                    background-color: #6E6E6E;
                 }}
             """
             )
 
         elif blue:
             font = QFont("Segoe UI")
-            font.setPointSize(11)
+            font.setPointSize(10)
             self.setFont(font)
             self.set_blue()
 
         else:
             font = QFont("Segoe UI")
-            font.setPointSize(11)
+            font.setPointSize(10)
             self.setFont(font)
 
             self.setStyleSheet(
@@ -163,14 +163,14 @@ class ActionButtonedit(QPushButton):
         self.setStyleSheet(
             f"""
             QPushButton {{
-                background: #0072ee;
+                background: #666666;
                 color: #ffffff;
                 border: none;
                 border-radius: 4px;
                 padding: 8px 0px;
             }}
             QPushButton:hover {{
-                background-color: #1565C0;
+                background-color: #555555;
                 color: #ffffff;
             }}
 
