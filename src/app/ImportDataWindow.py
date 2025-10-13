@@ -154,7 +154,7 @@ class ImportDataWindow(QMainWindow):
 
         # Load the file (passing the whole path)
         self.load_file(self.pathname, self.filename)
-        
+
         # Pass file size in original units (bytes)
         self.file_size_bytes = os.path.getsize(filename)
 
@@ -287,10 +287,13 @@ class ImportDataWindow(QMainWindow):
 
         mean_trace = np.nanmean(tmp, axis=0)
 
-        # Plot the average signal
-        self.preview_plot.plot(mean_trace, pen=pg.mkPen(color="r", width=2))
+        # Convert the time to seconds
+        t = np.arange(len(mean_trace)) / fsamp
 
-        self.preview_plot.setTitle(f"Electrode Grid {selected_electrode_idx + 1}, {electrode_grid_name} ({len(valid_indices)} valid channels)")
+        # Plot the average signal
+        self.preview_plot.plot(t, mean_trace, pen=pg.mkPen(color="r", width=2))
+
+        self.preview_plot.setTitle(f"Mean HD-EMG Signal Amplitude | Electrode Grid: {selected_electrode_idx + 1} | Electrode Grid Name: {electrode_grid_name} | {len(valid_indices)} valid channels")
 
     def get_n_chans_per_electrode(self):
         grid_names = self.emg_obj.signal_dict["gridname"]
