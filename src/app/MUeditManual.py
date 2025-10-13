@@ -192,7 +192,7 @@ class MUeditManual(QMainWindow):
         if save_flag:
             self.floating_save_btn.setEnabled(True)
             self.floating_save_btn.setStyleSheet("""
-                QPushButton{background:#0072ee;color:#fff;border:none;border-radius:4px;padding:8px 15px;}
+                QPushButton{background:#333333;color:#fff;border:none;border-radius:4px;padding:8px 15px;}
                 QPushButton:hover{background:#2383ff;}
             """)
             self.floating_save_btn.setText("Save")
@@ -857,7 +857,7 @@ class MUeditManual(QMainWindow):
         # Add checkboxes for each MU
         if not self.MUedition or len(self.MUedition["edition"]["Pulsetrain"]) == 0:
             no_mu_label = QLabel("No MUs loaded")
-            no_mu_label.setStyleSheet("color: #333333; font-family: 'Poppins'; font-size: 16pt;")
+            no_mu_label.setStyleSheet("color: #333333; font-family: 'Poppins'; font-size: 10pt;")
             self.mu_checkbox_layout.addWidget(no_mu_label)
             # Add stretch to keep items at the top
             self.mu_checkbox_layout.addStretch(1)
