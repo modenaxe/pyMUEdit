@@ -4,8 +4,7 @@ from PyQt5.QtCore import QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
                              QMainWindow, QPushButton, QStyle, QVBoxLayout,
-                             QWidget, QSizePolicy)
-
+                             QWidget, QSizePolicy, QScrollArea)
 from app.ExportResults import ExportResultsWindow
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
@@ -126,9 +125,17 @@ class MUAnalysis(QWidget):
 
         """
         )
-        sidebar_layout = QVBoxLayout(sidebar)
-        sidebar_layout.setContentsMargins(10, 10, 10, 10)
-        sidebar_layout.setSpacing(10)
+
+        # enables scrolling
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        scroll_content = QWidget()
+        scroll_layout = QVBoxLayout(scroll_content)
+        scroll_layout.setContentsMargins(10, 10, 10, 10)
+        scroll_layout.setSpacing(10)
 
         # title
         title_div = QWidget()  # creating layout for the margin spacing
@@ -137,7 +144,7 @@ class MUAnalysis(QWidget):
         title_div_layout.setContentsMargins(-1, -1, -1, 0)
         title_label = AnalysisText.create_major_title("Analysis")
         title_div_layout.addWidget(title_label)
-        sidebar_layout.addWidget(title_div)
+        scroll_layout.addWidget(title_div)
 
         # signal editing + remove mu section
         mu_editing_widget = QWidget()
@@ -149,31 +156,42 @@ class MUAnalysis(QWidget):
         mu_editing_layout.addWidget(remove_mu_section)
         mu_editing_layout.addWidget(signal_editing)
         mu_editing_section = CollapsibleSection("MU Editing", mu_editing_widget, expanded=False)
-        sidebar_layout.addWidget(mu_editing_section)
+        scroll_layout.addWidget(mu_editing_section)
 
         # force anaylsis
         force_analysis = ForceAnalysisSection(sidebar, self.analysis_plot)
         force_analysis_section = CollapsibleSection("Force Analysis", force_analysis, expanded=False)
-        sidebar_layout.addWidget(force_analysis_section)
+        scroll_layout.addWidget(force_analysis_section)
 
         # motor unit properties
         motor_unit_properties = MotorUnitPropertiesButton(self.analysis_plot, parent=self)
         motor_unit_properties.mvc_updated.connect(self.prop.set_mvc)
         mu_properties_section = CollapsibleSection("Motor Unit Properties", motor_unit_properties, expanded=False)
-        sidebar_layout.addWidget(mu_properties_section)
+        scroll_layout.addWidget(mu_properties_section)
         self.motor_unit_properties = motor_unit_properties
 
         # plot emg button
         plot_emg_tools = PlotEMGButton(self.analysis_plot, parent=self)
         plot_emg_section = CollapsibleSection("Plot EMG", plot_emg_tools, expanded=False)
-        sidebar_layout.addWidget(plot_emg_section)
+        scroll_layout.addWidget(plot_emg_section)
         self.plot_emg_tools = plot_emg_tools
 
         # advanced tools
         advanced_tools = AdvancedTools(parent=sidebar)
-        sidebar_layout.addWidget(advanced_tools)
+        scroll_layout.addWidget(advanced_tools)
+        scroll_layout.addStretch(1)
+        scroll_content.setLayout(scroll_layout)
+        scroll.setWidget(scroll_content)
 
-        sidebar_layout.addStretch(1)
+        # width of left sidebar
+        sidebar.setFixedWidth(300)
+        scroll.setMinimumWidth(280)
+        scroll_content.setMinimumWidth(260)
+
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setContentsMargins(0, 0, 0, 0)
+        sidebar_layout.addWidget(scroll)
+
         return sidebar
 
     # center area where graph is initally loaded
