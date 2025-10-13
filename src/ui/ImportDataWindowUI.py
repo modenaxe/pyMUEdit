@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+
 import pyqtgraph as pg
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
