@@ -1,5 +1,6 @@
 import sys
 import os
+from PyQt5.QtGui import QIcon
 
 # Fix matplotlib backend BEFORE importing any other modules
 import matplotlib
@@ -23,13 +24,16 @@ def main():
     """
     # Configure DPI scaling settings to prevent UI distortion under high-resolution displays || Modified by alex
     apply_qt_scaling()
-    
+
     # Create the application
     app = QApplication(sys.argv)
-    
+
     # Set application properties
     app.setApplicationName("HDEMG Analysis Tool")
     app.setOrganizationName("EMG Lab")
+
+    # set application icon
+    app.setWindowIcon(QIcon("assets/pyMUEdit-icon.png"))
 
     # Create and show the main window
     window = HDEMGDashboard()

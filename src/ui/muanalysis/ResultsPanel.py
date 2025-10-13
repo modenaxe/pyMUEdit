@@ -81,6 +81,20 @@ class ClearButton(GeneralRedButton):
     def __init__(self, parent=None):
         super().__init__("Clear Results", parent)
         self.clicked.connect(lambda: self.clear_results())
+        self.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #475058;
+                color: #fff;
+                border-radius: 5px;
+                font-size: 1em;
+                min-height: 40px;
+            }
+            QPushButton:hover {
+                background-color: #495057;
+            }
+            """
+        )
 
     def clear_results(self):
         if store.is_empty():
