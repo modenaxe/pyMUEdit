@@ -4,7 +4,7 @@ import math
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QSizePolicy,
-                             QVBoxLayout, QWidget)
+                             QVBoxLayout, QWidget, QFrame)
 
 from ui.components import ActionButton
 from ui.components.CleanTheme import CleanTheme
@@ -29,8 +29,16 @@ class VisualisationPage(QWidget):
 
         self.setMinimumSize(1024, 700)
 
+        # ==========================================================
+        # left_sidebar = QFrame()
+        # left_sidebar.setObjectName("leftSidebar")
+        # left_sidebar.setStyleSheet("background-color: blue")
+        # sidebar_layout = QVBoxLayout(left_sidebar)
+        # sidebar_layout.setContentsMargins(50, 50, 50, 50)
+        # sidebar_layout.setSpacing(10)
+
         # left panel
-        left_container = QWidget()
+        left_container = QFrame()
         left_container.setMinimumWidth(250)
         left_container.setMaximumWidth(300)
 
@@ -69,7 +77,7 @@ class VisualisationPage(QWidget):
             "Number of Signals to Display", 8, 1, 16)
         signal_range_group.add_widget(self.num_signals_input_box)
 
-        left_layout.addWidget(signal_range_group)
+        left_layout.addWidget(left_container)
 
         # add gap between controls and done button
         left_layout.addStretch()
