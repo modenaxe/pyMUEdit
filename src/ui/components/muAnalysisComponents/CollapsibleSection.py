@@ -1,5 +1,7 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QToolButton
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QToolButton, QVBoxLayout,
+                             QWidget)
+
 
 class CollapsibleSection(QWidget):
     def __init__(self, title, content_widget, parent=None, expanded=False):
@@ -21,7 +23,8 @@ class CollapsibleSection(QWidget):
         self.title_label = QLabel(title)
         self.chevron_btn = QToolButton()
         self.chevron_btn.setStyleSheet("border: none;")
-        self.chevron_btn.setArrowType(Qt.DownArrow if self.expanded else Qt.RightArrow)
+        self.chevron_btn.setArrowType(
+            Qt.DownArrow if self.expanded else Qt.RightArrow)
         self.chevron_btn.setToolButtonStyle(Qt.ToolButtonIconOnly)
         self.chevron_btn.setAutoRaise(True)
         self.chevron_btn.clicked.connect(self.toggle)
@@ -42,4 +45,5 @@ class CollapsibleSection(QWidget):
     def toggle(self, event=None):
         self.expanded = not self.expanded
         self.content_widget.setVisible(self.expanded)
-        self.chevron_btn.setArrowType(Qt.DownArrow if self.expanded else Qt.RightArrow)
+        self.chevron_btn.setArrowType(
+            Qt.DownArrow if self.expanded else Qt.RightArrow)

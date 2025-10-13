@@ -3,8 +3,9 @@ import sys
 from PyQt5.QtCore import QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
-                             QMainWindow, QPushButton, QStyle, QVBoxLayout,
-                             QWidget, QSizePolicy, QScrollArea)
+                             QMainWindow, QPushButton, QScrollArea,
+                             QSizePolicy, QStyle, QVBoxLayout, QWidget)
+
 from app.ExportResults import ExportResultsWindow
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
@@ -13,6 +14,8 @@ from core.muAnalysisCore.AnalysisResultsHist import store
 from ui.components.muAnalysisComponents.AnalysisPlot import AnalysisPlot
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.CollapsibleSection import \
+    CollapsibleSection
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.muanalysis.AdvancedTools import AdvancedTools
 from ui.muanalysis.FileSection import FileSection
@@ -24,7 +27,6 @@ from ui.muanalysis.ResultSelection import ResultSelection
 from ui.muanalysis.ResultsPanel import ResultsPanel
 from ui.muanalysis.ResultsTable import ResultsTable
 from ui.muanalysis.SignalEditing import SignalEditing
-from ui.components.muAnalysisComponents.CollapsibleSection import CollapsibleSection
 
 
 # legacy code
@@ -149,30 +151,37 @@ class MUAnalysis(QWidget):
         # signal editing + remove mu section
         mu_editing_widget = QWidget()
         mu_editing_layout = QVBoxLayout(mu_editing_widget)
-        mu_editing_layout.setContentsMargins(0,0,0,0)
+        mu_editing_layout.setContentsMargins(0, 0, 0, 0)
         mu_editing_layout.setSpacing(5)
-        remove_mu_section = RemoveMUSection(self.mu, self.analysis_plot, self.colors, parent=sidebar)
-        signal_editing = SignalEditing(self.mu, self.analysis_plot, parent=sidebar)
+        remove_mu_section = RemoveMUSection(
+            self.mu, self.analysis_plot, self.colors, parent=sidebar)
+        signal_editing = SignalEditing(
+            self.mu, self.analysis_plot, parent=sidebar)
         mu_editing_layout.addWidget(remove_mu_section)
         mu_editing_layout.addWidget(signal_editing)
-        mu_editing_section = CollapsibleSection("MU Editing", mu_editing_widget, expanded=False)
+        mu_editing_section = CollapsibleSection(
+            "MU Editing", mu_editing_widget, expanded=False)
         scroll_layout.addWidget(mu_editing_section)
 
         # force anaylsis
         force_analysis = ForceAnalysisSection(sidebar, self.analysis_plot)
-        force_analysis_section = CollapsibleSection("Force Analysis", force_analysis, expanded=False)
+        force_analysis_section = CollapsibleSection(
+            "Force Analysis", force_analysis, expanded=False)
         scroll_layout.addWidget(force_analysis_section)
 
         # motor unit properties
-        motor_unit_properties = MotorUnitPropertiesButton(self.analysis_plot, parent=self)
+        motor_unit_properties = MotorUnitPropertiesButton(
+            self.analysis_plot, parent=self)
         motor_unit_properties.mvc_updated.connect(self.prop.set_mvc)
-        mu_properties_section = CollapsibleSection("Motor Unit Properties", motor_unit_properties, expanded=False)
+        mu_properties_section = CollapsibleSection(
+            "Motor Unit Properties", motor_unit_properties, expanded=False)
         scroll_layout.addWidget(mu_properties_section)
         self.motor_unit_properties = motor_unit_properties
 
         # plot emg button
         plot_emg_tools = PlotEMGButton(self.analysis_plot, parent=self)
-        plot_emg_section = CollapsibleSection("Plot EMG", plot_emg_tools, expanded=False)
+        plot_emg_section = CollapsibleSection(
+            "Plot EMG", plot_emg_tools, expanded=False)
         scroll_layout.addWidget(plot_emg_section)
         self.plot_emg_tools = plot_emg_tools
 
