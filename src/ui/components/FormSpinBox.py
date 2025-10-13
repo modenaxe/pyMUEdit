@@ -7,6 +7,7 @@ from .FormField import FormField
 
 # defining absolute path for icons
 
+
 class FormSpinBox(FormField):
     """
     A styled integer spin box with a label
