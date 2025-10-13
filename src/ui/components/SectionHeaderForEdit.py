@@ -3,6 +3,11 @@ from PyQt5.QtWidgets import QHBoxLayout, QLabel, QWidget
 
 from .CleanTheme import CleanTheme
 
+"""
+TODO: remove this file and convert the part in edit to QHboxLayout
+with regular section header
+"""
+
 
 class SectionHeaderForEdit(QWidget):
     """A clean section header with title"""
@@ -17,12 +22,12 @@ class SectionHeaderForEdit(QWidget):
         """
         super().__init__(parent)
         self.layout = QHBoxLayout(self)  # type:ignore
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setContentsMargins(10, 10, 10, 10)
         self.layout.setSpacing(0)
 
         # Create title label
         self.title_label = QLabel(title)
-        self.title_label.setContentsMargins(30, 0, 0, 0)
+        self.title_label.setContentsMargins(30, 0, 20, 0)
         self.title_label.setFont(QFont("Segoe UI", 16, QFont.Normal))
         self.title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
 
