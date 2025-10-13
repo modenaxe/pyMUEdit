@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 import pyqtgraph as pg
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
@@ -9,6 +11,10 @@ from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
 # Import custom components
 from ui.components import (ActionButton, CleanCard, CleanTheme, SectionHeader,
                            Sidebar, VisualizationPanel)
+
+# defining absolute path to the public icons folder (same logic as Sidebar.py)
+ABS_PATH = Path(__file__).parent.parent
+ICONS_PATH = ABS_PATH / "public"
 
 
 def setup_ui(import_window):
@@ -108,7 +114,10 @@ def create_dropzone_card(import_window):
     icon_layout.setContentsMargins(0, 0, 0, 0)
     icon_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    cloud_icon = QSvgWidget("src/public/upload_icon.svg")
+    upload_icon_path = ICONS_PATH / "upload_icon.svg"
+    if not upload_icon_path.exists():
+        print(f"Warning: Icon {upload_icon_path} not found")
+    cloud_icon = QSvgWidget(str(upload_icon_path))
     cloud_icon.setFixedSize(32, 22)
     cloud_icon.setStyleSheet("margin-bottom: 10px;")
 
@@ -199,7 +208,7 @@ def create_preview_section(import_window):
         "No file selected. Import a file to see a preview.")
     import_window.preview_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
     import_window.preview_message.setStyleSheet(
-        f"color: {CleanTheme.TEXT_SECONDARY}; font-size: 14px; font-weight: bold;")
+        f"color: {CleanTheme.TEXT_SECONDARY};")
 
     # Add preview messages to stacked frame as an active widget
     import_window.preview_messages.addStretch()
@@ -216,10 +225,22 @@ def create_preview_section(import_window):
     # Create visualization panel to preview the data in a selected file
     import_window.preview_plot = pg.PlotWidget()
     import_window.preview_plot.setBackground("w")  # White background
-    import_window.preview_plot.setLabel("left", "Amplitude")
-    import_window.preview_plot.setLabel("bottom", "Time (s)")
+    import_window.preview_plot.setLabel(
+        "left", "Amplitude", **{"colour": "black", "font-size": "12pt"})  # 12pt, black text
+    import_window.preview_plot.setLabel("bottom",
+                                        "Time",
+                                        units="s",
+                                        **{"colour": "black",
+                                           "font-size": "12pt"})  # 12pt, black text
     import_window.preview_plot.showGrid(x=True, y=True)
     import_window.preview_plot.setMinimumHeight(250)
+
+    # Ensures axis ticks are black & thicker
+    left_axis = import_window.preview_plot.getAxis("left")
+    left_axis.setPen(pg.mkPen("black", width=2))
+
+    bottom_axis = import_window.preview_plot.getAxis("bottom")
+    bottom_axis.setPen(pg.mkPen("black", width=2))
 
     signal_panel = VisualizationPanel(plot_widget=import_window.preview_plot)
     import_window.preview_stacked_frame.addWidget(signal_panel)
