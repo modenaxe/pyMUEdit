@@ -68,7 +68,10 @@ def setup_left_panel(main_window):
 
     # Create the actual panel that will contain all controls
     left_panel = QWidget()
-    left_panel.setStyleSheet(f"background-color: {CleanTheme.BG_MAIN};")
+    left_panel.setObjectName("left_panel")
+    left_panel.setStyleSheet(f"""
+        background-color: {CleanTheme.BG_MAIN};
+    """)
     left_layout = QVBoxLayout(left_panel)
     left_layout.setContentsMargins(15, 15, 15, 15)
     left_layout.setSpacing(15)
@@ -84,6 +87,8 @@ def setup_left_panel(main_window):
     left_layout.addWidget(algo_panel)
 
     algo_options_stack_widget = QStackedWidget()
+    algo_options_stack_widget.setObjectName("algo_options_stack_widget")
+    algo_options_stack_widget.setContentsMargins(0, 0, 0, 0)
     main_window.algo_options_stack_widget = algo_options_stack_widget
 
     main_window.algo_combo.currentIndexChanged.connect(
@@ -92,6 +97,7 @@ def setup_left_panel(main_window):
     # ---------------------------------Fast ICA options-----------------------
     algo_fastICA_options_widget = QWidget()
     algo_fastICA_panels = QVBoxLayout(algo_fastICA_options_widget)
+    algo_fastICA_panels.setContentsMargins(0, 0, 0, 0)
 
     """
     processing options
@@ -199,12 +205,14 @@ def setup_left_panel(main_window):
     params_panel.add_widget(cov_field)
 
     algo_fastICA_panels.addWidget(params_panel)
+    algo_fastICA_panels.addStretch()
     # left_layout.addWidget(params_panel)
 
 # ---------------------------------SCD options---------------------------------
 
     algo_SCD_options_widget = QWidget()
     algo_SCD_panels = QVBoxLayout(algo_SCD_options_widget)
+    algo_SCD_panels.setContentsMargins(0, 0, 0, 0)
 
     """
     processing options
@@ -297,6 +305,7 @@ def setup_left_panel(main_window):
     params_panel.add_widget(bandwidth_field)
 
     algo_SCD_panels.addWidget(params_panel)
+    algo_SCD_panels.addStretch()
 
     # TODO: set up options for both algorithms
     algo_options_stack_widget.addWidget(algo_fastICA_options_widget)
