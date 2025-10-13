@@ -4,12 +4,11 @@ import pyqtgraph as pg
 from PyQt5.QtCore import QSize, Qt, QTimer
 from PyQt5.QtGui import QFont  # alex
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QListView, QGroupBox
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QFrame,
-                             QGraphicsSceneMouseEvent, QHBoxLayout, QLabel,
-                             QLayout, QLineEdit, QScrollArea, QSizePolicy,
-                             QSpacerItem, QTabWidget, QToolButton, QVBoxLayout,
-                             QWidget)
+                             QGraphicsSceneMouseEvent, QGroupBox, QHBoxLayout,
+                             QLabel, QLayout, QLineEdit, QListView,
+                             QScrollArea, QSizePolicy, QSpacerItem, QTabWidget,
+                             QToolButton, QVBoxLayout, QWidget)
 
 # Import custom components
 from ui.components import (ActionButton, CleanCard, CleanScrollBar, CleanTheme,
@@ -74,9 +73,10 @@ def setup_ui(main_window):
 
     # Add panels to main layout
 
-    main_layout.addWidget(main_window.display_panel, 1)  # The 1 is the stretch factor
+    main_layout.addWidget(
+        main_window.display_panel,
+        1)  # The 1 is the stretch factor
     main_layout.addWidget(main_window.sub_panel, 1)
-
 
     # Set up keyboard shortcuts
     main_window.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -189,6 +189,7 @@ def setup_control_panel(main_window):
     # Set the scroll area as the control panel
     main_window.control_panel = scroll_area
 
+
 def create_side_panel_buttons(main_window):
     """
     Create widget group for the control panel buttons.
@@ -258,6 +259,7 @@ def create_side_panel_buttons(main_window):
     _sub_btn("Visualization", 2)
 
     return panel
+
 
 def create_side_panel_widget(main_window):
     """
@@ -574,7 +576,8 @@ def setup_display_panel(main_window):
     )
     main_window.display_panel.setContentsMargins(10, 10, 10, 10)
     # main_window.display_panel.setMinimumWidth(800)
-    main_window.display_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+    main_window.display_panel.setSizePolicy(
+        QSizePolicy.Expanding, QSizePolicy.Expanding)
     title_lbl = main_window.display_panel.title_label
     # main_window.display_panel.setStyleSheet("border: 1px solid red;")
 
@@ -837,13 +840,21 @@ def setup_display_panel(main_window):
     ]
 
     misc_buttons = [
-        ("Delete DR", main_window.delete_dr_button_pushed, "delete_dr_btn"),
-        ("Remove outliers", main_window.remove_outliers_button_pushed, "remove_outliers_single_btn"),
+        ("Delete DR",
+         main_window.delete_dr_button_pushed,
+         "delete_dr_btn"),
+        ("Remove outliers",
+         main_window.remove_outliers_button_pushed,
+         "remove_outliers_single_btn"),
     ]
 
     mu_filter_buttons = [
-        ("Update MU filter", main_window.update_mu_filter_button_pushed, "update_mu_filter_btn"),
-        ("Extend MU filter", main_window.extend_mu_filter_button_pushed, "extend_mu_filter_btn"),
+        ("Update MU filter",
+         main_window.update_mu_filter_button_pushed,
+         "update_mu_filter_btn"),
+        ("Extend MU filter",
+         main_window.extend_mu_filter_button_pushed,
+         "extend_mu_filter_btn"),
     ]
 
     def add_buttons_group(main_window, title_name, buttons, groups_layout):
@@ -878,12 +889,15 @@ def setup_display_panel(main_window):
 
         buttons_container = QWidget()
         # Removes border from inner nest
-        buttons_container.setStyleSheet("background: transparent; border: none;")
+        buttons_container.setStyleSheet(
+            "background: transparent; border: none;")
         buttons_layout = QHBoxLayout(buttons_container)
         buttons_layout.setContentsMargins(0, 0, 0, 0)
         buttons_layout.setSpacing(6)
 
-        if not hasattr(main_window, "action_buttons") or main_window.action_buttons is None:
+        if not hasattr(
+                main_window,
+                "action_buttons") or main_window.action_buttons is None:
             main_window.action_buttons = {}
 
         for text, handler, attr_name in buttons:
@@ -895,7 +909,7 @@ def setup_display_panel(main_window):
             if text in {"Add spikes", "Delete spikes", "Lock spikes",
                         "Update MU filter", "Extend MU filter"}:
                 # btn.set_blue()
-                ... # placeholder before confirmation of colors
+                ...  # placeholder before confirmation of colors
 
             setattr(main_window, attr_name, btn)
             main_window.action_buttons[attr_name] = btn
@@ -904,7 +918,11 @@ def setup_display_panel(main_window):
 
         content_layout.addWidget(buttons_container)
 
-        if hasattr(card, "content_layout") and isinstance(card.content_layout, QLayout):
+        if hasattr(
+                card,
+                "content_layout") and isinstance(
+                card.content_layout,
+                QLayout):
             card.content_layout.addWidget(content)
 
         frame_layout.addWidget(card)
@@ -916,9 +934,21 @@ def setup_display_panel(main_window):
     groups_layout.setContentsMargins(0, 0, 0, 0)
     groups_layout.setSpacing(12)
 
-    add_buttons_group(main_window, "Spikes Actions", spikes_buttons, groups_layout)
-    add_buttons_group(main_window, "MU Filter Actions", mu_filter_buttons, groups_layout)
-    add_buttons_group(main_window, "Miscellaneous Actions", misc_buttons, groups_layout)
+    add_buttons_group(
+        main_window,
+        "Spikes Actions",
+        spikes_buttons,
+        groups_layout)
+    add_buttons_group(
+        main_window,
+        "MU Filter Actions",
+        mu_filter_buttons,
+        groups_layout)
+    add_buttons_group(
+        main_window,
+        "Miscellaneous Actions",
+        misc_buttons,
+        groups_layout)
 
     display_layout.addWidget(groups_container)
 

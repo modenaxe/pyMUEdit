@@ -9,6 +9,8 @@ from PyQt5.QtWidgets import (QCheckBox, QDialog, QHBoxLayout, QLabel,
 """
 TODO: does this file need to exist?
 """
+
+
 class WarningDialog(QDialog):
     def __init__(
         self,
