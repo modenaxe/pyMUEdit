@@ -4,7 +4,7 @@ import pyqtgraph as pg
 from PyQt5.QtCore import QSize, Qt, QTimer
 from PyQt5.QtGui import QFont  # alex
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QListView  # moy
+from PyQt5.QtWidgets import QListView, QGroupBox
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QFrame,
                              QGraphicsSceneMouseEvent, QHBoxLayout, QLabel,
                              QLayout, QLineEdit, QScrollArea, QSizePolicy,
@@ -43,8 +43,15 @@ def setup_ui(main_window):
 
     # Set window properties
     main_window.setWindowTitle("MUedit - Manual Editing")
-    main_window.setGeometry(100, 100, 1500, 850)
-    main_window.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
+    main_window.setGeometry(100, 100, 1200, 800)
+    main_window.setObjectName("main_window")
+    main_window.setStyleSheet(
+        f"""
+            #main_window {{
+                background-color: {CleanTheme.BG_MAIN};
+            }}
+        """
+    )
 
     # Configure PyQtGraph globally
     pg.setConfigOption("background", "w")  # White background
@@ -54,22 +61,22 @@ def setup_ui(main_window):
     pg.setConfigOption("antialias", False)
 
     # Create main widget and layout
-    main_window.central_widget = QWidget()
-    main_window.setCentralWidget(main_window.central_widget)
-    main_layout = QHBoxLayout(main_window.central_widget)
+    main_widget = QWidget()
+    main_window.setCentralWidget(main_widget)
+    main_layout = QHBoxLayout(main_widget)
     main_layout.setContentsMargins(0, 0, 0, 0)
-    main_layout.setSpacing(8)
+    main_layout.setSpacing(0)
 
     # Set up control panel and display panel
     setup_display_panel(main_window)
     setup_control_panel(main_window)
-    attach_control_pannel_to_sidebar(main_window)
+    create_side_panel_widget(main_window)
 
     # Add panels to main layout
 
-    main_layout.addWidget(
-        main_window.display_panel,
-        1)  # The 1 is the stretch factor
+    main_layout.addWidget(main_window.display_panel, 1)  # The 1 is the stretch factor
+    main_layout.addWidget(main_window.sub_panel, 1)
+
 
     # Set up keyboard shortcuts
     main_window.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -98,8 +105,11 @@ def setup_control_panel(main_window):
 
     # Create the actual control panel container
     control_panel_widget = QWidget()
-    control_panel_widget.setStyleSheet(
-        f"background-color: {CleanTheme.BG_SIDEBAR};")
+    # control_panel_widget.setStyleSheet(
+    #     f"""
+    #         background-color: {CleanTheme.BG_MAIN};
+    #     """
+    # )
     control_layout = QVBoxLayout(control_panel_widget)
     control_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -179,21 +189,45 @@ def setup_control_panel(main_window):
     # Set the scroll area as the control panel
     main_window.control_panel = scroll_area
 
-
-def attach_control_pannel_to_sidebar(main_window):
+def create_side_panel_buttons(main_window):
     """
-    Insert the MU-Editing subpanel (tabs + sub-buttons) into the app's left Sidebar,
-    right below the top app title/buttons.
+    Create widget group for the control panel buttons.
     """
-    sidebar = find_sidebar(main_window)
-    if not sidebar:
-        return
 
-    # Subpanel holds the three sub-buttons and the tab stack
-    subpanel = QWidget()
-    subpanel.setVisible(False)  # shown only when "MU Editing" is active
-    sub_lay = QVBoxLayout(subpanel)
-    sub_lay.setSpacing(6)
+    panel = QWidget()
+    panel.setObjectName("side_panel_buttons")
+    panel.setStyleSheet(
+        f"""
+            #side_panel_buttons {{
+                background-color: {CleanTheme.BG_CARD};
+                border: 1px solid {CleanTheme.BORDER};
+                border-radius: 8px;
+            }}
+        """
+    )
+    layout = QVBoxLayout(panel)
+    layout.setSpacing(6)
+    layout.setContentsMargins(10, 10, 10, 10)
+
+    options_label = QLabel("Options")
+    options_label.setAlignment(Qt.AlignCenter)
+    options_label.setContentsMargins(0, 0, 0, 0)
+    options_label.setAlignment(Qt.AlignCenter)
+    set_standard_label_style(options_label, size=13, bold=True)
+    options_label.setStyleSheet(
+        f"""
+            color: {CleanTheme.TEXT_PRIMARY};
+            background-color: transparent;
+            border-bottom: 1px solid {CleanTheme.BORDER};
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            margin: 0px;
+            border-radius: 0px;
+            padding-bottom: 10px;
+        """
+    )
+    layout.addWidget(options_label)
 
     sub_btns = []
 
@@ -214,7 +248,7 @@ def attach_control_pannel_to_sidebar(main_window):
         b = ActionButtonedit(text, primary=False, tabs=True)
         b.setFixedHeight(28)
         b.clicked.connect(lambda _, i=idx: _switch(i))
-        sub_lay.addWidget(b)
+        layout.addWidget(b)
         sub_btns.append(b)
         return b
 
@@ -223,29 +257,34 @@ def attach_control_pannel_to_sidebar(main_window):
     _sub_btn("Batch Processing", 1)
     _sub_btn("Visualization", 2)
 
+    return panel
+
+def create_side_panel_widget(main_window):
+    """
+    Insert the MU-Editing subpanel (tabs + sub-buttons) to the right of the main plot area.
+    """
+
+    # Subpanel holds the three sub-buttons and the tab stack
+    subpanel = QWidget()
+    subpanel.setObjectName("subpanel")
+    subpanel.setStyleSheet(
+        f"""
+            #subpanel {{
+                background-color: {CleanTheme.BG_MAIN};
+                border-radius: 8px;
+            }}
+        """
+    )
+    subpanel.setVisible(False)  # shown only when "MU Editing" is active
+    subpanel.setMinimumWidth(320)
+    subpanel.setMaximumWidth(320)
+    subpanel.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+    sub_lay = QVBoxLayout(subpanel)
+
+    sub_lay.addWidget(create_side_panel_buttons(main_window))
     sub_lay.addWidget(main_window.control_panel)
 
-    sidebar.layout.insertWidget(2, subpanel, 999)
-
     main_window.sub_panel = subpanel
-
-    def list_widgets(layout: QLayout, depth=0):
-        for i in range(layout.count()):
-            item = layout.itemAt(i)
-            prefix = "  " * depth
-            if item.widget():
-                w = item.widget()
-                name = w.objectName() or w.__class__.__name__
-                print(f"{prefix}- {name}")
-            elif item.layout():
-                print(f"{prefix}- SubLayout:")
-                list_widgets(item.layout(), depth + 1)
-        for i in range(sidebar.layout.count()):
-            item = sidebar.layout.itemAt(i)
-            w = item.widget()
-            name = w.objectName() if w else item.layout().__class__.__name__
-            factor = sidebar.layout.stretch(i)
-            print(f"index={i}, {name}, stretch={factor}")
 
 
 def create_tab_widget():
@@ -255,7 +294,7 @@ def create_tab_widget():
         f"""
         QTabWidget::pane {{
             border-radius: 8px;
-            background-color: {CleanTheme.BG_CARD};
+            background-color: {CleanTheme.BG_MAIN};
         }}
         QTabBar::tab {{
             background-color: {CleanTheme.BG_MAIN};
@@ -281,19 +320,29 @@ def create_tab_widget():
 def create_mu_selection_tab(main_window):
     """Create the Motor Unit Selection tab."""
     mu_tab = QWidget()
-    mu_tab.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
+    mu_tab.setObjectName("mu_tab")
+    mu_tab.setStyleSheet(
+        f"""
+            #mu_tab {{
+                background-color: {CleanTheme.BG_CARD};
+                border: 1px solid {CleanTheme.BORDER};
+                border-radius: 8px;
+            }}
+        """
+    )
     mu_layout = QVBoxLayout(mu_tab)
-    mu_layout.setContentsMargins(0, 0, 0, 0)
+    mu_layout.setContentsMargins(10, 10, 10, 10)
     mu_layout.setSpacing(10)
 
-    # MU selection content
-    mu_header = SectionHeader("Motor Unit Selection")
-    mu_layout.addWidget(mu_header)
+    # # MU selection content
+    # mu_header = SectionHeader("Motor Unit Selection")
+    # mu_layout.addWidget(mu_header)
 
     # Create a scroll area for MU checkboxes
     mu_scroll_area = QScrollArea()
     mu_scroll_area.setWidgetResizable(True)
     mu_scroll_area.setFrameShape(QFrame.NoFrame)
+    mu_scroll_area.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
     CleanScrollBar.apply(mu_scroll_area)
 
     checkbox_container = QWidget()
@@ -306,22 +355,24 @@ def create_mu_selection_tab(main_window):
 
     # Initially add a label indicating no MUs
     no_mu_label = QLabel("No MUs loaded")
+    no_mu_label.setContentsMargins(10, 0, 10, 0)
+    no_mu_label.setAlignment(Qt.AlignCenter)
     set_standard_label_style(no_mu_label, size=13, bold=False)
     main_window.mu_checkbox_layout.addWidget(no_mu_label)
-    main_window.mu_checkbox_layout.addStretch()
+    main_window.mu_checkbox_layout.addStretch(1)
 
     mu_scroll_area.setWidget(checkbox_container)
     mu_layout.addWidget(mu_scroll_area)
 
     # Add flag button in the MU selection tab
     main_window.flag_mu_btn = ActionButtonedit(
-        "Flag selected MU(s) for deletion", primary=False, blue=True)
+        "Flag selected MU(s) for deletion", primary=True)
     main_window.flag_mu_btn.clicked.connect(
         main_window.flag_mu_for_deletion_button_pushed)
 
     # Add unflag button in the MU selection tab
     main_window.unflag_mu_btn = ActionButtonedit(
-        "UnFlag selected MU(s) for deletion", primary=False, blue=True)
+        "UnFlag selected MU(s) for deletion", primary=True)
     main_window.unflag_mu_btn.clicked.connect(
         main_window.unflag_mu_for_deletion_button_pushed)
 
@@ -334,14 +385,14 @@ def create_mu_selection_tab(main_window):
 def create_batch_processing_tab(main_window):
     """Create the Batch Processing tab."""
     batch_tab = QWidget()
-    batch_tab.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
+    batch_tab.setStyleSheet(f"""
+            background-color: {CleanTheme.BG_CARD};
+            border-radius: 8px;
+            border: 1px solid {CleanTheme.BORDER};
+        """)
     batch_layout = QVBoxLayout(batch_tab)
     batch_layout.setSpacing(10)
-    batch_layout.setContentsMargins(0, 0, 0, 0)
-
-    # Batch processing content
-    batch_header = SectionHeader("Batch Processing")
-    batch_layout.addWidget(batch_header)
+    batch_layout.setContentsMargins(10, 10, 10, 10)
 
     # Label, handler, attribute name for later access
     action_batch_configs = [
@@ -363,14 +414,14 @@ def create_batch_processing_tab(main_window):
     ]
 
     for label, handler, attr_name in action_batch_configs:
-        btn = ActionButtonedit(label, primary=False)
+        btn = ActionButtonedit(label, primary=True)
         btn.clicked.connect(handler)
-        btn.setMinimumHeight(34)
-        btn.setMaximumHeight(34)
+        btn.setFixedHeight(34)
         batch_layout.addWidget(btn)
         setattr(main_window, attr_name, btn)
 
-    batch_layout.addStretch(1)
+    # TODO: make this not fixed?
+    batch_tab.setMaximumHeight(300)
 
     return batch_tab
 
@@ -378,14 +429,20 @@ def create_batch_processing_tab(main_window):
 def create_visualization_tab(main_window):
     """Create the Visualization tab."""
     viz_tab = QWidget()
-    viz_tab.setStyleSheet(f"background-color: {CleanTheme.BG_CARD};")
+    viz_tab.setObjectName("viz_tab")
+    viz_tab.setStyleSheet(
+        f"""
+            #viz_tab {{ background-color: {CleanTheme.BG_MAIN}; }}
+            QWidget {{ background-color: {CleanTheme.BG_CARD}; }}
+        """
+    )
     viz_layout = QVBoxLayout(viz_tab)
     viz_layout.setSpacing(10)
     viz_layout.setContentsMargins(0, 0, 0, 0)
 
-    # Visualization content
-    viz_header = SectionHeader("Visualization")
-    viz_layout.addWidget(viz_header)
+    # # Visualization content
+    # viz_header = SectionHeader("Visualization")
+    # viz_layout.addWidget(viz_header)
 
     # Reference selection - create a panel for this
     ref_panel = CollapsiblePanel("Reference Settings")
@@ -450,13 +507,13 @@ def create_visualization_tab(main_window):
 
     # Add plot buttons to the panel
     main_window.plot_spiketrains_btn = ActionButtonedit(
-        "Plot MU spike trains", primary=False, blue=True)
+        "Plot MU spike trains", primary=True)
     main_window.plot_spiketrains_btn.clicked.connect(
         main_window.plot_mu_spiketrains_button_pushed)
     button_panel.add_widget(main_window.plot_spiketrains_btn)
 
     main_window.plot_firingrates_btn = ActionButtonedit(
-        "Plot MU firing rates", primary=False, blue=True)
+        "Plot MU firing rates", primary=True)
     main_window.plot_firingrates_btn.clicked.connect(
         main_window.plot_mu_firingrates_button_pushed)
     button_panel.add_widget(main_window.plot_firingrates_btn)
@@ -509,21 +566,29 @@ def setup_display_panel(main_window):
     # Use a VisualizationPanelForEdit instead of a basic CleanCard for better semantics
     # main_window.setStyleSheet(f"border: 1px solid blue;")
     main_window.display_panel = VisualizationPanelForEdit("EMG Signal Edit")
+    main_window.display_panel.setStyleSheet(
+        f"""
+            background-color: {CleanTheme.BG_CARD};
+            border-radius: 8px;
+        """
+    )
+    main_window.display_panel.setContentsMargins(10, 10, 10, 10)
+    # main_window.display_panel.setMinimumWidth(800)
+    main_window.display_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
     title_lbl = main_window.display_panel.title_label
     # main_window.display_panel.setStyleSheet("border: 1px solid red;")
 
     font = title_lbl.font()
-    font.setPointSize(20)
-    font.setBold(True)
+    font.setPointSize(12)
     title_lbl.setFont(font)
 
     main_window.help_button = QToolButton()
     main_window.help_button.setText("?")
-    main_window.help_button.setFixedSize(30, 30)
+    main_window.help_button.setFixedSize(15, 15)
     main_window.help_button.setStyleSheet("""
         QToolButton {
             font-weight: bold;
-            font-size: 22px;
+            font-size: 12px;
             border: 2px solid #f0f0f0;
             border-radius: 12px;
             background-color: white;
@@ -537,21 +602,21 @@ def setup_display_panel(main_window):
     )
 
     main_window.select_file_title_btn = ActionButtonedit(
-        "Press here to select file", primary=True)
-    main_window.select_file_title_btn.set_blue()
-    main_window.select_file_title_btn.setFixedHeight(40)
+        "Press here to select file")
+    main_window.select_file_title_btn.setFixedHeight(35)
     select_btn = main_window.select_file_title_btn
     main_window.select_file_title_btn.clicked.connect(
         main_window.select_file_button_pushed
     )
 
-    save_btn = ActionButtonedit("Save", primary=True)
-    save_btn.setFixedHeight(40)
+    save_btn = ActionButtonedit("Save")
+    save_btn.setFixedHeight(30)
     save_btn.clicked.connect(main_window.save_button_pushed)
     main_window.floating_save_btn = save_btn
 
-    saveas_btn = ActionButtonedit("Save As", primary=True)
-    saveas_btn.setFixedHeight(40)
+    saveas_btn = ActionButtonedit("Save As")
+    saveas_btn.setFixedHeight(30)
+    saveas_btn.setFixedWidth(80)
     saveas_btn.clicked.connect(main_window.saveas_button_pushed)
     main_window.floating_saveas_btn = saveas_btn
 
@@ -559,6 +624,13 @@ def setup_display_panel(main_window):
     save_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
     saveas_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
+    """
+    TODO:
+    hdr = header
+    h_lay = header layout
+
+    to rename variables to something more meainingful
+    """
     hdr = QWidget()
     h_lay = QHBoxLayout(hdr)
     h_lay.setContentsMargins(0, 0, 15, 0)
@@ -724,7 +796,7 @@ def setup_display_panel(main_window):
             width: 150px;
             height: 4px;
             margin: -4px 0;
-            border-radius: 6px;
+            border-radius: 8px;
         }
 
         QSlider::groove:horizontal {
@@ -757,40 +829,98 @@ def setup_display_panel(main_window):
     action_layout.setContentsMargins(0, 0, 0, 0)
     action_layout.setSpacing(8)
 
-    # Define all action buttons
-    action_button_configs = [
+    # Group buttons based on functionality
+    spikes_buttons = [
         ("Add spikes", main_window.add_spikes_button_pushed, "add_spikes_btn"),
         ("Delete spikes", main_window.delete_spikes_button_pushed, "delete_spikes_btn"),
+        ("Lock spikes", main_window.lock_spikes_button_pushed, "lock_spikes_btn"),
+    ]
+
+    misc_buttons = [
         ("Delete DR", main_window.delete_dr_button_pushed, "delete_dr_btn"),
         ("Remove outliers", main_window.remove_outliers_button_pushed, "remove_outliers_single_btn"),
-        ("Lock spikes", main_window.lock_spikes_button_pushed, "lock_spikes_btn"),
+    ]
+
+    mu_filter_buttons = [
         ("Update MU filter", main_window.update_mu_filter_button_pushed, "update_mu_filter_btn"),
         ("Extend MU filter", main_window.extend_mu_filter_button_pushed, "extend_mu_filter_btn"),
     ]
 
-    # Create action buttons and store references
-    main_window.action_buttons = {}
-    for text, handler, attr_name in action_button_configs:
-        btn = ActionButtonedit(text, primary=False)
-        btn.setFocusPolicy(Qt.NoFocus)
-        btn.clicked.connect(handler)
-        btn.setMinimumHeight(36)
-        btn.setMaximumHeight(36)
-        action_layout.addWidget(btn)
-        # Store reference to button in main_window
-        setattr(main_window, attr_name, btn)
-        main_window.action_buttons[handler.__name__] = btn
-        if text in {
-            "Add spikes",
-            "Delete spikes",
-            "Update MU filter",
-            "Extend MU filter",
-                "Lock spikes"}:
-            btn.set_blue()
-        if text in {"Delete spikes", "Delete DR", "Remove outliers"}:
-            spacer = QWidget()
-            spacer.setFixedWidth(20)
-            action_layout.addWidget(spacer)
+    def add_buttons_group(main_window, title_name, buttons, groups_layout):
+        frame = QFrame()
+        frame.setObjectName(f"group_{title_name.replace(' ', '_')}")
+        frame.setStyleSheet(f"""
+            QFrame#{frame.objectName()} {{
+                background-color: {CleanTheme.BG_CARD};
+                border: 1px solid {CleanTheme.BORDER};
+                border-radius: 8px;
+            }}
+        """)
+        frame_layout = QVBoxLayout(frame)
+        frame_layout.setContentsMargins(8, 8, 8, 8)
+        frame_layout.setSpacing(6)
+
+        card = CleanCard()
+        # Removes border from inner nest
+        card.setStyleSheet("background: transparent; border: none;")
+
+        content = QWidget()
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(6)
+
+        title_label = QLabel(title_name)
+        title_label.setStyleSheet(
+            f"color: {CleanTheme.TEXT_PRIMARY}; font-size: 10pt; font-weight: bold; background: transparent; border: none;"
+        )
+        title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        content_layout.addWidget(title_label)
+
+        buttons_container = QWidget()
+        # Removes border from inner nest
+        buttons_container.setStyleSheet("background: transparent; border: none;")
+        buttons_layout = QHBoxLayout(buttons_container)
+        buttons_layout.setContentsMargins(0, 0, 0, 0)
+        buttons_layout.setSpacing(6)
+
+        if not hasattr(main_window, "action_buttons") or main_window.action_buttons is None:
+            main_window.action_buttons = {}
+
+        for text, handler, attr_name in buttons:
+            btn = ActionButtonedit(text, primary=False)
+            btn.setFocusPolicy(Qt.NoFocus)
+            btn.clicked.connect(handler)
+            btn.setFixedHeight(32)
+            btn.setFixedWidth(120)
+            if text in {"Add spikes", "Delete spikes", "Lock spikes",
+                        "Update MU filter", "Extend MU filter"}:
+                # btn.set_blue()
+                ... # placeholder before confirmation of colors
+
+            setattr(main_window, attr_name, btn)
+            main_window.action_buttons[attr_name] = btn
+            main_window.action_buttons[handler.__name__] = btn
+            buttons_layout.addWidget(btn)
+
+        content_layout.addWidget(buttons_container)
+
+        if hasattr(card, "content_layout") and isinstance(card.content_layout, QLayout):
+            card.content_layout.addWidget(content)
+
+        frame_layout.addWidget(card)
+        groups_layout.addWidget(frame)
+
+    # Add container for button groups
+    groups_container = QWidget()
+    groups_layout = QHBoxLayout(groups_container)
+    groups_layout.setContentsMargins(0, 0, 0, 0)
+    groups_layout.setSpacing(12)
+
+    add_buttons_group(main_window, "Spikes Actions", spikes_buttons, groups_layout)
+    add_buttons_group(main_window, "MU Filter Actions", mu_filter_buttons, groups_layout)
+    add_buttons_group(main_window, "Miscellaneous Actions", misc_buttons, groups_layout)
+
+    display_layout.addWidget(groups_container)
 
     action_card.content_layout.addWidget(action_container)
     display_layout.addWidget(action_card)
@@ -921,19 +1051,3 @@ def create_mu_checkbox(
     checkbox.stateChanged.connect(main_window.mu_checkbox_state_changed)
 
     return checkbox
-
-
-def find_sidebar(main_window):
-    """Find the sidebar component in the application hierarchy."""
-    # First try to find it in the parent (main window)
-    if main_window.parent():
-        sidebar = main_window.parent().findChild(Sidebar, "cleanSidebar")
-        if sidebar:
-            return sidebar
-
-    # If not found in parent, try to find it globally in the application
-    for widget in QApplication.topLevelWidgets():
-        sidebar = widget.findChild(Sidebar, "cleanSidebar")
-        if sidebar:
-            return sidebar
-    return None
