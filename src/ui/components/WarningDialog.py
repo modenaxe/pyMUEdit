@@ -6,7 +6,9 @@ from PyQt5.QtWidgets import (QCheckBox, QDialog, QHBoxLayout, QLabel,
                              QPushButton, QSizePolicy, QStyle, QToolButton,
                              QVBoxLayout)
 
-
+"""
+TODO: does this file need to exist?
+"""
 class WarningDialog(QDialog):
     def __init__(
         self,
@@ -88,13 +90,13 @@ class WarningDialog(QDialog):
         message.setAlignment(Qt.AlignHCenter)
         layout.addWidget(message)
 
-        # Yes button
-        yes_button = QPushButton("Yes")
-        yes_button.setFixedHeight(30)
-        yes_button.setStyleSheet(
+        # Ok button
+        ok_button = QPushButton("Ok")
+        ok_button.setFixedHeight(30)
+        ok_button.setStyleSheet(
             "background-color: #007aff; color: white; border-radius: 6px; font-weight: bold;")
-        yes_button.clicked.connect(self.handle_yes_clicked)
-        layout.addWidget(yes_button)
+        ok_button.clicked.connect(self.handle_ok_clicked)
+        layout.addWidget(ok_button)
 
         # “Don't ask again” checkbox
         if (enableCheckBox):
@@ -109,7 +111,7 @@ class WarningDialog(QDialog):
 
         self.exec_()
 
-    def handle_yes_clicked(self):
+    def handle_ok_clicked(self):
         if self.enableCheckBox and self.checkbox.isChecked():
             self.checkbox_selected = True
         else:
