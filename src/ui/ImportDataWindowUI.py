@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 import pyqtgraph as pg
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
@@ -9,6 +11,10 @@ from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
 # Import custom components
 from ui.components import (ActionButton, CleanCard, CleanTheme, SectionHeader,
                            Sidebar, VisualizationPanel)
+
+# defining absolute path to the public icons folder (same logic as Sidebar.py)
+ABS_PATH = Path(__file__).parent.parent
+ICONS_PATH = ABS_PATH / "public"
 
 
 def setup_ui(import_window):
@@ -108,7 +114,10 @@ def create_dropzone_card(import_window):
     icon_layout.setContentsMargins(0, 0, 0, 0)
     icon_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    cloud_icon = QSvgWidget("src/public/upload_icon.svg")
+    upload_icon_path = ICONS_PATH / "upload_icon.svg"
+    if not upload_icon_path.exists():
+        print(f"Warning: Icon {upload_icon_path} not found")
+    cloud_icon = QSvgWidget(str(upload_icon_path))
     cloud_icon.setFixedSize(32, 22)
     cloud_icon.setStyleSheet("margin-bottom: 10px;")
 
@@ -226,7 +235,6 @@ def create_preview_section(import_window):
                                         units="s",
                                         **{"colour": "black",
                                            "font-size": "12pt"})  # 12pt, black text
-
     import_window.preview_plot.showGrid(x=True, y=True)
     import_window.preview_plot.setMinimumHeight(250)
 
