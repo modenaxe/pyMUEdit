@@ -192,7 +192,7 @@ class MUeditManual(QMainWindow):
         if save_flag:
             self.floating_save_btn.setEnabled(True)
             self.floating_save_btn.setStyleSheet("""
-                QPushButton{background:#0072ee;color:#fff;border:none;border-radius:4px;padding:8px 15px;}
+                QPushButton{background:#333333;color:#fff;border:none;border-radius:4px;padding:8px 15px;}
                 QPushButton:hover{background:#2383ff;}
             """)
             self.floating_save_btn.setText("Save")
