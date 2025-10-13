@@ -51,7 +51,6 @@ class VisualizationPanelForEdit(QWidget):
 
         # Header
         self.header = SectionHeaderForEdit(title)
-        self.header.setStyleSheet(f"background-color: #f0f0f0;")
         card_layout.addWidget(self.header)
         self.title_label = self.header.title_label
 
