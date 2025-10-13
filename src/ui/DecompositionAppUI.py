@@ -74,7 +74,7 @@ def setup_left_panel(main_window):
     """)
     left_layout = QVBoxLayout(left_panel)
     left_layout.setContentsMargins(15, 15, 15, 15)
-    left_layout.setSpacing(15)
+    left_layout.setSpacing(5)
 
     # Algorithm Selection panel
     algo_panel = CollapsiblePanel("Algorithm Selection")
