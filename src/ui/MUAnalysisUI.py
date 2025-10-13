@@ -3,8 +3,8 @@ import sys
 from PyQt5.QtCore import QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
-                             QMainWindow, QPushButton, QStyle, QVBoxLayout,
-                             QWidget)
+                             QMainWindow, QPushButton, QScrollArea,
+                             QSizePolicy, QStyle, QVBoxLayout, QWidget)
 
 from app.ExportResults import ExportResultsWindow
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
@@ -14,6 +14,8 @@ from core.muAnalysisCore.AnalysisResultsHist import store
 from ui.components.muAnalysisComponents.AnalysisPlot import AnalysisPlot
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from ui.components.muAnalysisComponents.CollapsibleSection import \
+    CollapsibleSection
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.muanalysis.AdvancedTools import AdvancedTools
 from ui.muanalysis.FileSection import FileSection
@@ -125,9 +127,17 @@ class MUAnalysis(QWidget):
 
         """
         )
-        sidebar_layout = QVBoxLayout(sidebar)
-        sidebar_layout.setContentsMargins(10, 10, 10, 10)
-        sidebar_layout.setSpacing(10)
+
+        # enables scrolling
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        scroll_content = QWidget()
+        scroll_layout = QVBoxLayout(scroll_content)
+        scroll_layout.setContentsMargins(10, 10, 10, 10)
+        scroll_layout.setSpacing(10)
 
         # title
         title_div = QWidget()  # creating layout for the margin spacing
@@ -136,44 +146,61 @@ class MUAnalysis(QWidget):
         title_div_layout.setContentsMargins(-1, -1, -1, 0)
         title_label = AnalysisText.create_major_title("Analysis")
         title_div_layout.addWidget(title_label)
-        sidebar_layout.addWidget(title_div)
+        scroll_layout.addWidget(title_div)
 
-        # signal editing
-        # remove mu section
+        # signal editing + remove mu section
+        mu_editing_widget = QWidget()
+        mu_editing_layout = QVBoxLayout(mu_editing_widget)
+        mu_editing_layout.setContentsMargins(0, 0, 0, 0)
+        mu_editing_layout.setSpacing(5)
         remove_mu_section = RemoveMUSection(
-            self.mu, self.analysis_plot, self.colors, parent=sidebar
-        )
-        sidebar_layout.addWidget(remove_mu_section)
-
-        # signal editing
+            self.mu, self.analysis_plot, self.colors, parent=sidebar)
         signal_editing = SignalEditing(
             self.mu, self.analysis_plot, parent=sidebar)
-        sidebar_layout.addWidget(signal_editing)
+        mu_editing_layout.addWidget(remove_mu_section)
+        mu_editing_layout.addWidget(signal_editing)
+        mu_editing_section = CollapsibleSection(
+            "MU Editing", mu_editing_widget, expanded=False)
+        scroll_layout.addWidget(mu_editing_section)
 
         # force anaylsis
-        force_analysis = ForceAnalysisSection(
-            sidebar, self.analysis_plot
-        )
-        sidebar_layout.addWidget(force_analysis)
+        force_analysis = ForceAnalysisSection(sidebar, self.analysis_plot)
+        force_analysis_section = CollapsibleSection(
+            "Force Analysis", force_analysis, expanded=False)
+        scroll_layout.addWidget(force_analysis_section)
 
         # motor unit properties
         motor_unit_properties = MotorUnitPropertiesButton(
-            self.analysis_plot, parent=self
-        )
+            self.analysis_plot, parent=self)
         motor_unit_properties.mvc_updated.connect(self.prop.set_mvc)
-        sidebar_layout.addWidget(motor_unit_properties)
+        mu_properties_section = CollapsibleSection(
+            "Motor Unit Properties", motor_unit_properties, expanded=False)
+        scroll_layout.addWidget(mu_properties_section)
         self.motor_unit_properties = motor_unit_properties
 
         # plot emg button
         plot_emg_tools = PlotEMGButton(self.analysis_plot, parent=self)
-        sidebar_layout.addWidget(plot_emg_tools)
+        plot_emg_section = CollapsibleSection(
+            "Plot EMG", plot_emg_tools, expanded=False)
+        scroll_layout.addWidget(plot_emg_section)
         self.plot_emg_tools = plot_emg_tools
 
         # advanced tools
         advanced_tools = AdvancedTools(parent=sidebar)
-        sidebar_layout.addWidget(advanced_tools)
+        scroll_layout.addWidget(advanced_tools)
+        scroll_layout.addStretch(1)
+        scroll_content.setLayout(scroll_layout)
+        scroll.setWidget(scroll_content)
 
-        sidebar_layout.addStretch(1)
+        # width of left sidebar
+        sidebar.setFixedWidth(300)
+        scroll.setMinimumWidth(280)
+        scroll_content.setMinimumWidth(260)
+
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setContentsMargins(0, 0, 0, 0)
+        sidebar_layout.addWidget(scroll)
+
         return sidebar
 
     # center area where graph is initally loaded
@@ -183,14 +210,7 @@ class MUAnalysis(QWidget):
         center = QFrame()
         center.setObjectName("centerContent")
         center_layout = QVBoxLayout(center)
-
-        resize_file = Resize(self.mu, self.analysis_plot)
-        resize_btn = GeneralButton(
-            "Resize", lambda: resize_file.resize())
-        center_layout.addWidget(resize_btn)
-        self.analysis_plot.set_resize(resize_btn)
         center_layout.addWidget(self.analysis_plot)
-
         return center
 
     # side bar with load file button
@@ -215,10 +235,24 @@ class MUAnalysis(QWidget):
         file_section.reset_btn.reset_requested.connect(
             lambda: self.mu.handle_reset_workflow(self.analysis_plot)
         )
+
+        sidebar_layout.addWidget(file_section)
+
+        # resize button
+        resize_file = Resize(self.mu, self.analysis_plot)
+        resize_btn = GeneralButton(
+            "Resize", lambda: resize_file.resize())
+        resize_btn.setFixedWidth(250)
+        self.analysis_plot.set_resize(resize_btn)
+        resize_btn_row = QHBoxLayout()
+        resize_btn_row.addStretch(1)
+        resize_btn_row.addWidget(resize_btn)
+        resize_btn_row.addStretch(1)
+        sidebar_layout.addLayout(resize_btn_row)
+
         results_section = ResultsPanel(
             sidebar, self.result_combo, self.results_table)
 
-        sidebar_layout.addWidget(file_section, stretch=1)
         sidebar_layout.addWidget(results_section, stretch=15)
         sidebar_layout.addStretch(1)
         sidebar.setMaximumWidth(300)
