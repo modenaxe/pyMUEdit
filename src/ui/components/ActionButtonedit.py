@@ -54,7 +54,7 @@ class ActionButtonedit(QPushButton):
         # Style based on primary or secondary
         if primary:
             font = QFont("Segoe UI")
-            font.setPointSize(11)
+            font.setPointSize(10)
             self.setFont(font)
 
             self.setStyleSheet(
@@ -84,7 +84,7 @@ class ActionButtonedit(QPushButton):
 
         elif tabs:
             font = QFont("Segoe UI")
-            font.setPointSize(12)
+            font.setPointSize(10)
             self.setFont(font)
             self.setStyleSheet(
                 f"""
@@ -102,25 +102,25 @@ class ActionButtonedit(QPushButton):
                 }}
 
                 QPushButton[active="true"] {{
-                    background-color: #0072ee;
-                    color: white;
+                    color: {CleanTheme.TEXT_PRIMARY};
+                    border: 1px solid {CleanTheme.BORDER};
                 }}
 
                 QPushButton[active="true"]:hover {{
-                    background-color: #1565C0;
+                    background-color: #f5f5f5;
                 }}
             """
             )
 
         elif blue:
             font = QFont("Segoe UI")
-            font.setPointSize(11)
+            font.setPointSize(10)
             self.setFont(font)
             self.set_blue()
 
         else:
             font = QFont("Segoe UI")
-            font.setPointSize(11)
+            font.setPointSize(10)
             self.setFont(font)
 
             self.setStyleSheet(
@@ -138,14 +138,14 @@ class ActionButtonedit(QPushButton):
                     background-color: #e0e0e0;
                 }}
                 QPushButton:disabled {{
-                    background-color: #f0f0f0;
+                    background-color: #888888;
                     color: #aaaaaa;
                     border: 1px solid #e0e0e0;
                 }}
                 QPushButton[active="true"] {{
-                    background-color: #c0ffc0;
-                    border: 1px solid green;
-                    color: darkgreen;
+                    background-color: #DEDEDE;
+                    border: 1px solid #C1C0C0;
+                    color: black;
                 }}
             """
             )
@@ -163,14 +163,14 @@ class ActionButtonedit(QPushButton):
         self.setStyleSheet(
             f"""
             QPushButton {{
-                background: #0072ee;
+                background: #333333;
                 color: #ffffff;
                 border: none;
                 border-radius: 4px;
                 padding: 8px 0px;
             }}
             QPushButton:hover {{
-                background-color: #1565C0;
+                background-color: #555555;
                 color: #ffffff;
             }}
 
@@ -179,15 +179,15 @@ class ActionButtonedit(QPushButton):
             }}
 
             QPushButton:disabled {{
-                background-color: #f0f0f0;
+                background-color: #888888;
                 color: #aaaaaa;
                 border: 1px solid #e0e0e0;
             }}
 
             QPushButton[active="true"] {{
-                background-color: #c0ffc0;
-                border: 1px solid green;
-                color: darkgreen;
+                background-color: #DEDEDE;
+                border: 1px solid #C1C0C0;
+                color: black;
             }}
             """
         )
