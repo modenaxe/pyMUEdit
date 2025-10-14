@@ -35,6 +35,7 @@ def setup_ui(import_window):
     import_window.main_layout = QHBoxLayout(import_window.central_widget)
     import_window.main_layout.setContentsMargins(0, 0, 0, 0)
     import_window.main_layout.setSpacing(0)
+
     # Left sidebar
     import_window.sidebar_buttons = {}
     sidebar = _create_left_sidebar(import_window)
@@ -44,15 +45,14 @@ def setup_ui(import_window):
     CleanScrollBar.apply(left_scroll)
     left_scroll.setWidget(sidebar)
     sidebar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+
     import_window.left_sidebar_scroll_area = left_scroll
     import_window.main_layout.addWidget(left_scroll)
-    # Central stacked widget (single area for pages)
     import_window.central_stacked_widget = QStackedWidget()
     import_window.central_stacked_widget.setStyleSheet("background-color: transparent;")
-    # Create import page once and add to stacked widget
     import_window.import_data_page = _create_import_page(import_window)
     import_window.central_stacked_widget.addWidget(import_window.import_data_page)
-    # Add other pages to the stacked widget (or placeholders)
+
     if hasattr(import_window, "mu_analysis_page") and import_window.mu_analysis_page is not None:
         import_window.central_stacked_widget.addWidget(import_window.mu_analysis_page)
     if hasattr(import_window, "decomposition_page") and import_window.decomposition_page is not None:
@@ -60,117 +60,25 @@ def setup_ui(import_window):
     else:
         import_window.decomposition_page = create_placeholder_page("Decomposition Page", import_window)
         import_window.central_stacked_widget.addWidget(import_window.decomposition_page)
+
     import_window.manual_editing_page = create_placeholder_page("Manual Editing Page", import_window)
     import_window.central_stacked_widget.addWidget(import_window.manual_editing_page)
-    # Add the stacked widget (only) to the main layout as the right pane
     import_window.main_layout.addWidget(import_window.central_stacked_widget, 1)
-    # Sidebar helper references
     import_window.update_sidebar_with_recent_files = lambda: update_sidebar_with_recent_files(import_window)
     import_window.restore_sidebar = lambda: restore_sidebar(import_window)
 
-def create_right_content(import_window):
-    """Create the right content area with dropzone and preview."""
-    # Create scroll area for content
-    scroll_area = QScrollArea()
-    scroll_area.setWidgetResizable(True)
-    scroll_area.setFrameShape(QFrame.NoFrame)
-    scroll_area.setHorizontalScrollBarPolicy(
-        Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-    scroll_area.setStyleSheet("background: transparent; border: none;")
-    # Create container widget
-    right_content = QWidget()
-    right_layout = QVBoxLayout(right_content)
-    right_layout.setContentsMargins(25, 25, 25, 25)
-    right_layout.setSpacing(10)
-    # Add section header
-    header = SectionHeader("Import HDEMG Data")
-    right_layout.addWidget(header)
-    # Create visualisations section
-    preview_section = _create_visualizations_section(import_window)
-    right_layout.addWidget(preview_section)
-    # Create datasets section
-    datasets_section = _create_datasets_section(import_window)
-    right_layout.addWidget(datasets_section)
-    # Create dropzone card
-    dropzone_card = create_dropzone_card(import_window)
-    right_layout.addWidget(dropzone_card)
-    # Create preview section
-    preview_section = create_preview_section(import_window)
-    right_layout.addWidget(preview_section)
-    # Create configuration section
-    configuration_section = create_configuration_section(import_window)
-    right_layout.addLayout(configuration_section)
-    # Add stretch to push content to the top
-    right_layout.addStretch(1)
-    # Set the content widget to the scroll area
-    scroll_area.setWidget(right_content)
-    return scroll_area
-
-def create_dropzone_card(import_window):
-    """Create a clean card for the file dropzone."""
-    dropzone_card = CleanCard()
-    dropzone_card.setMinimumHeight(175)
-    # Create layout for content
-    dropzone_layout = QVBoxLayout()
-    dropzone_layout.setContentsMargins(10, 10, 10, 10)
-    dropzone_layout.setSpacing(10)
-    dropzone_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    # Add SVG icon
-    icon_container = QWidget()
-    icon_layout = QHBoxLayout(icon_container)
-    icon_layout.setContentsMargins(0, 0, 0, 0)
-    icon_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    upload_icon_path = ICONS_PATH / "upload_icon.svg"
-    if not upload_icon_path.exists():
-        print(f"Warning: Icon {upload_icon_path} not found")
-    cloud_icon = QSvgWidget(str(upload_icon_path))
-    cloud_icon.setFixedSize(32, 22)
-    cloud_icon.setStyleSheet("margin-bottom: 10px;")
-    icon_layout.addWidget(cloud_icon)
-    # Add descriptive text
-    drag_label = QLabel("Drag and drop your HDEMG files here")
-    drag_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    drag_label.setFont(QFont("Segoe UI", 12))
-    drag_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
-    # Add file info label (hidden initially)
-    import_window.file_info_label = QLabel("")
-    import_window.file_info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    import_window.file_info_label.setFont(QFont("Segoe UI", 11))
-    import_window.file_info_label.setStyleSheet(
-        f"color: #4CAF50; font-weight: bold;")
-    import_window.file_info_label.setVisible(False)
-    # Add "or" label
-    or_label = QLabel("or")
-    or_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    or_label.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
-    # Add browse button
-    browse_btn = ActionButton("Browse Files", primary=False)
-    browse_btn.clicked.connect(import_window.select_file)
-    # Add widgets to layout
-    dropzone_layout.addStretch()
-    dropzone_layout.addWidget(icon_container)
-    dropzone_layout.addWidget(drag_label)
-    dropzone_layout.addWidget(import_window.file_info_label)
-    dropzone_layout.addWidget(or_label)
-    dropzone_layout.addWidget(browse_btn, 0, Qt.AlignmentFlag.AlignCenter)
-    dropzone_layout.addStretch()
-    # Add layout to card
-    dropzone_card.content_layout.addLayout(dropzone_layout)
-    # Store reference to the dropzone for drag and drop events
-    import_window.dropzone = dropzone_card
-    # Setup drag and drop events later in ImportDataWindow.py
-    return dropzone_card
-
-# NOTE: Creates 'Signal Preview' window
-def create_preview_section(import_window):
-    """Create the signal preview section."""
+def create_import_preview_card(import_window):
+    """Create the signal preview section, now also serving as a dropzone."""
     preview_card = CleanCard()
-    # Give preview the ability to expand and take available vertical space
-    preview_card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-    preview_card.setMinimumHeight(200)
+    preview_card.setMinimumHeight(400)
+    preview_card.setAcceptDrops(True)  # Enable drop events
+
+    # Create layout for content
     preview_layout = QVBoxLayout()
     preview_layout.setContentsMargins(0, 0, 0, 0)
     preview_layout.setSpacing(5)
+
+    # Create preview frame
     preview_frame = QFrame()
     preview_frame.setObjectName("previewFrame")
     preview_frame.setStyleSheet(
@@ -181,40 +89,71 @@ def create_preview_section(import_window):
         }}
     """
     )
-    preview_frame.setMinimumHeight(260)
+    preview_frame.setMinimumHeight(220)
+
+    # Create stacked widget to display either the label or the visualisation
     import_window.preview_stacked_frame = QStackedWidget()
+
+    # Create preview messages layout
     import_window.preview_messages = QVBoxLayout()
+
+    # Add import failure message
     import_window.failure_message = QLabel("Error Loading Signal Preview")
-    import_window.failure_message.setStyleSheet(f"color: #FA0000; font-weight: bold;")
+    import_window.failure_message.setStyleSheet(
+        f"color: #FA0000; font-weight: bold;")
     import_window.failure_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
     import_window.failure_message.setVisible(False)
-    import_window.preview_message = QLabel("No file selected. Import a file to see a preview.")
+
+    # Add preview message / dropzone label
+    import_window.preview_message = QLabel(
+        "Drag and drop your HDEMG files here\nor click 'Browse Files' above.")
     import_window.preview_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    import_window.preview_message.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
+    import_window.preview_message.setFont(QFont("Segoe UI", 12))
+    import_window.preview_message.setStyleSheet(
+        f"color: {CleanTheme.TEXT_SECONDARY};")
+
+    # Add preview messages to stacked frame as an active widget
     import_window.preview_messages.addStretch()
     import_window.preview_messages.addWidget(import_window.failure_message)
-    import_window.preview_messages.addSpacing(20)
+    import_window.preview_messages.addSpacing(10)
     import_window.preview_messages.addWidget(import_window.preview_message)
     import_window.preview_messages.addStretch()
     import_window.preview_messages_widget = QWidget()
-    import_window.preview_messages_widget.setLayout(import_window.preview_messages)
-    import_window.preview_stacked_frame.addWidget(import_window.preview_messages_widget)
+    import_window.preview_messages_widget.setLayout(
+        import_window.preview_messages)
+    import_window.preview_stacked_frame.addWidget(
+        import_window.preview_messages_widget)
+
+    # Create visualization panel to preview the data in a selected file
     import_window.preview_plot = pg.PlotWidget()
-    import_window.preview_plot.setBackground("w")
-    import_window.preview_plot.setLabel("left", "Amplitude", units="µV", **{"colour": "black", "font-size": "12pt"})
-    import_window.preview_plot.setLabel("bottom", "Time", units="s", **{"colour": "black", "font-size": "12pt"})
+    import_window.preview_plot.setBackground("w")  # White background
+    import_window.preview_plot.setLabel("left",
+                                        "Amplitude",
+                                        units="µV",
+                                        **{"colour": "black",
+                                            "font-size": "12pt"})  # 12pt, black text
+    import_window.preview_plot.setLabel("bottom",
+                                        "Time",
+                                        units="s",
+                                        **{"colour": "black",
+                                           "font-size": "12pt"})  # 12pt, black text
     import_window.preview_plot.showGrid(x=True, y=True)
     import_window.preview_plot.setMinimumHeight(250)
+
     left_axis = import_window.preview_plot.getAxis("left")
     left_axis.setPen(pg.mkPen("black", width=2))
     bottom_axis = import_window.preview_plot.getAxis("bottom")
     bottom_axis.setPen(pg.mkPen("black", width=2))
+
     signal_panel = VisualizationPanel(plot_widget=import_window.preview_plot)
     import_window.preview_stacked_frame.addWidget(signal_panel)
     import_window.preview_stacked_frame.setCurrentIndex(0)
+
+    # Add stacked widget to preview frame
     preview_frame_layout = QVBoxLayout(preview_frame)
     preview_frame_layout.addWidget(import_window.preview_stacked_frame, stretch=3)
-    preview_layout.addWidget(preview_frame)
+
+    # Add left/right electrode buttons
     lrbuttons = QWidget()
     button_layout = QHBoxLayout()
     import_window.left_button = ActionButton("←", primary=False)
@@ -226,10 +165,18 @@ def create_preview_section(import_window):
     button_layout.addWidget(import_window.left_button)
     button_layout.addWidget(import_window.right_button)
     lrbuttons.setLayout(button_layout)
+    preview_layout.addWidget(preview_frame)
     preview_layout.addWidget(lrbuttons)
+
+    # Add layout to card
     preview_card.content_layout.addLayout(preview_layout)
+
+    # Store references
     import_window.preview_frame = preview_frame
+    import_window.dropzone = preview_card  # keep compatibility
+
     return preview_card
+
 
 def create_configuration_section(import_window):
     config_group = QHBoxLayout()
@@ -400,10 +347,6 @@ def _create_left_sidebar(import_window):
     return sidebar
 
 def _create_import_page(import_window):
-    """Create the right-hand import page container with a single scrollable content area
-    and a fixed footer. Preview remains inside the scroll area but has a strong minimum height
-    so it doesn't get squished.
-    """
     right_layout = QWidget()
     right_v = QVBoxLayout(right_layout)
     right_v.setContentsMargins(0, 0, 0, 0)
@@ -424,33 +367,43 @@ def _create_import_page(import_window):
     content_layout.addWidget(header)
 
     viz_section = _create_visualizations_section(import_window)
-    viz_section.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
-    viz_section.setMaximumHeight(260)
     content_layout.addWidget(viz_section)
 
     datasets_section = _create_datasets_section(import_window)
-    datasets_section.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
-    datasets_section.setMaximumHeight(260)
     content_layout.addWidget(datasets_section)
 
-    dropzone_card = create_dropzone_card(import_window)
-    dropzone_card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
-    dropzone_card.setMaximumHeight(240)
-    content_layout.addWidget(dropzone_card)
+    header_container = QWidget()
+    header_layout = QHBoxLayout(header_container)
+    header_layout.setContentsMargins(0, 0, 0, 0)
+    header_layout.setSpacing(10)
+    header_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
-    preview_section = create_preview_section(import_window)
-    preview_section.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-    preview_section.setMinimumHeight(360)
-    content_layout.addWidget(preview_section)
+    import_window.file_info_label = QLabel("No file selected")
+    import_window.file_info_label.setStyleSheet(f"""
+        color: {CleanTheme.TEXT_SECONDARY};
+        font-size: 12px;
+    """)
+
+    browse_btn = ActionButton("Browse Files", primary=True)
+    browse_btn.clicked.connect(import_window.select_file)
+    browse_btn.setFixedHeight(36)
+    browse_btn.setMinimumWidth(160)
+
+    header_layout.addWidget(import_window.file_info_label)
+    header_layout.addStretch(1)
+    header_layout.addWidget(browse_btn)
+
+    content_layout.addWidget(header_container)
+
+    dropzone_card = create_import_preview_card(import_window)
+    content_layout.addWidget(dropzone_card)
 
     configuration_section = create_configuration_section(import_window)
     content_layout.addLayout(configuration_section)
 
     content_layout.addStretch(1)
-
     scroll_area.setWidget(content_area)
 
-    # Add scroll area to the page
     right_v.addWidget(scroll_area, 1)
 
     footer = create_footer(import_window)
