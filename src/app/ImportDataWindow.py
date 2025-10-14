@@ -10,7 +10,7 @@ import pyqtgraph as pg
 
 # Import UI setup function
 from core.utils.config_and_input.filesize_formatter import filesize_formatter
-from ui.ImportDataWindowUI import setup_ui
+from ui.ImportDataWindowUI import setup_ui, update_sidebar_selection
 from ui.components.SegmentSessionPage import SegmentSessionPage
 from ui.components.VisualisationPage import VisualisationPage
 
@@ -88,9 +88,13 @@ class ImportDataWindow(QMainWindow):
         # Set up the UI using our improved UI setup
         setup_ui(self)
 
+         # Now create the manual editing view
+        self.create_manual_editing_view()
+
         # Connect signals for configration buttons
         self.connect_signals()
 
+        self.show_import_data_view()
         # Set up drag and drop events for the dropzone
         self.dropzone.setAcceptDrops(True)
         self.dropzone.dragEnterEvent = self.dragEnterEvent
@@ -448,6 +452,15 @@ class ImportDataWindow(QMainWindow):
         self.segment_session_button.clicked.connect(self.segment_session_button_pushed)
         self.channel_view_button.clicked.connect(self.open_channel_viewer)
 
+        # Connect sidebar buttons
+        self.sidebar_buttons["mu_analysis"].clicked.connect(self.show_mu_analysis_view)
+        self.sidebar_buttons["decomposition"].clicked.connect(self.show_decomposition_view)
+        self.sidebar_buttons["manual_edit"].clicked.connect(self.show_manual_editing_view)
+        self.sidebar_buttons["import"].clicked.connect(self.show_import_data_view)
+
+        if not MUAnalysis:
+            self.sidebar_buttons["mu_analysis"].setEnabled(False)
+
     def open_channel_viewer(self):
         """Open the Channel Viewer window with the current EMG data"""
         if not self.emg_obj or "data" not in self.emg_obj.signal_dict:
@@ -525,7 +538,7 @@ class ImportDataWindow(QMainWindow):
         # Initialize MU Analysis page
         if MUAnalysis:
             self.mu_analysis_page = MUAnalysis()
-            self.mu_analysis_page.return_to_dashboard_requested.connect(self.show_dashboard_view)
+            self.mu_analysis_page.return_to_dashboard_requested.connect(self.show_import_data_view)
             if hasattr(self.mu_analysis_page, "set_export_window_opener"):
                 self.mu_analysis_page.set_export_window_opener(self.open_export_results_window)
             else:
@@ -565,8 +578,6 @@ class ImportDataWindow(QMainWindow):
             # Set window flags to make it a widget instead of a window
             import_page.setWindowFlags(Qt.WindowType.Widget)
 
-            if hasattr(import_page, "return_to_dashboard_requested"):
-                import_page.return_to_dashboard_requested.connect(self.show_dashboard_view)
             # Connect the new signal for decomposition
             if hasattr(import_page, "decomposition_requested"):
                 import_page.decomposition_requested.connect(self.create_decomposition_view)
@@ -607,8 +618,8 @@ class ImportDataWindow(QMainWindow):
 
             self.mu_edit_tabs = manual_edit_app.tabs
             # Connect return signal if available
-            if hasattr(manual_edit_app, "return_to_dashboard_requested"):
-                manual_edit_app.return_to_dashboard_requested.connect(self.show_dashboard_view)
+            # if hasattr(manual_edit_app, "return_to_dashboard_requested"):
+            #     manual_edit_app.return_to_dashboard_requested.connect(self.show_dashboard_view)
 
             # Add to layout
             # wrapper_layout.addWidget(manual_edit_app)
@@ -708,37 +719,6 @@ class ImportDataWindow(QMainWindow):
 
     #     if new_viz_btn and ImportDataWindow:
     #         new_viz_btn.clicked.connect(self.show_import_data_view)
-
-    # Navigation methods
-    def show_dashboard_view(self):
-        """Switches the central widget to the dashboard page."""
-        print("Switching to Dashboard View")
-
-        # Store the current index of the dashboard page
-        old_dashboard = self.dashboard_page
-        old_index = self.central_stacked_widget.indexOf(old_dashboard)
-
-        # Create a new dashboard page
-        from ui.HDEMGDashboardUI import _create_dashboard_page
-        self.dashboard_page = _create_dashboard_page(self)
-
-        # Replace the old dashboard with the new one
-        if old_index >= 0:
-            self.central_stacked_widget.removeWidget(old_dashboard)
-            self.central_stacked_widget.insertWidget(old_index, self.dashboard_page)
-        else:
-            self.central_stacked_widget.addWidget(self.dashboard_page)
-
-        # Show the new dashboard
-        self.central_stacked_widget.setCurrentWidget(self.dashboard_page)
-
-        # Update sidebar selection
-        from ui.HDEMGDashboardUI import update_sidebar_selection
-        update_sidebar_selection(self, "dashboard")
-
-        # Schedule old dashboard for deletion to avoid memory leaks
-        if old_dashboard is not None and old_dashboard != self.dashboard_page:
-            old_dashboard.deleteLater()
 
     def show_mu_analysis_view(self):
         """Switches the central widget to the MU Analysis page."""
@@ -911,7 +891,7 @@ class ImportDataWindow(QMainWindow):
 
         # Update the UI if dashboard is visible
         if hasattr(self, 'central_stacked_widget') and self.central_stacked_widget.currentWidget() == self.dashboard_page:
-            self.show_dashboard_view()  # Refresh to show the new visualization
+            self.show_import_data_view()  # Refresh to show the new visualization
 
     def on_visualization_card_clicked(self, card_index):
         """
@@ -1317,7 +1297,7 @@ class ImportDataWindow(QMainWindow):
 
         # If dashboard is currently visible, refresh it
         if hasattr(self, 'central_stacked_widget') and self.central_stacked_widget.currentWidget() == self.dashboard_page:
-            self.show_dashboard_view()  # Refresh to show the new dataset
+            self.show_import_data_view()  # Refresh to show the new dataset
 
     def open_dataset(self, dataset):
         """
@@ -1351,7 +1331,7 @@ class ImportDataWindow(QMainWindow):
                     break
 
             # Refresh the dashboard view
-            self.show_dashboard_view()
+            self.show_import_data_view()
             return
 
         # Switch to import view and load the file
