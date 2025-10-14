@@ -1,20 +1,17 @@
 # app/gui/pages/VisualisationPage.py
-import math
-
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSizePolicy, QLabel, QPushButton, QFrame
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QSizePolicy,
-                             QVBoxLayout, QWidget, QFrame)
+from PyQt5.QtCore import Qt
 
 from ui.components import ActionButton
 from ui.components.CleanTheme import CleanTheme
 from ui.components.CollapsiblePanel import CollapsiblePanel
 from ui.components.FormDropdown import FormDropdown
 from ui.components.FormSpinBox import FormSpinBox
-
-from .ChannelViewer import ChannelViewer
 from .VisualizationPanel import VisualizationPanel
+from .ChannelViewer import ChannelViewer
 
+import math
 
 class VisualisationPage(QWidget):
     def __init__(self, emg_obj, import_window, parent=None):
@@ -29,35 +26,53 @@ class VisualisationPage(QWidget):
 
         self.setMinimumSize(1024, 700)
 
-        # ==========================================================
-        # left_sidebar = QFrame()
-        # left_sidebar.setObjectName("leftSidebar")
-        # left_sidebar.setStyleSheet("background-color: blue")
-        # sidebar_layout = QVBoxLayout(left_sidebar)
-        # sidebar_layout.setContentsMargins(50, 50, 50, 50)
-        # sidebar_layout.setSpacing(10)
+        # 
+        left_sidebar = QFrame()
+        left_sidebar.setStyleSheet("""
+            QFrame {
+                background-color: white;
+                border-radius: 10px;
+            }
+        """)
+        left_sidebar.setMinimumWidth(250)
+        left_sidebar.setMaximumWidth(300)
 
         # left panel
-        left_container = QFrame()
-        left_container.setMinimumWidth(250)
-        left_container.setMaximumWidth(300)
+        # left_container = QWidget()
+        # left_container.setMinimumWidth(250)
+        # left_container.setMaximumWidth(300)
 
-        left_layout = QVBoxLayout(left_container)
-        left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.setSpacing(15)
+        left_sidebar_layout = QVBoxLayout(left_sidebar) # prev sidebar
+        left_sidebar_layout.setContentsMargins(10, 10, 10, 10)
+        left_sidebar_layout.setSpacing(10)
+
+        # left_layout = QVBoxLayout(left_container)
+        # left_layout.setContentsMargins(0, 0, 0, 0)
+        # left_layout.setSpacing(15)
 
         # main panel (signal graphs)
         self.viewer = ChannelViewer(self.emg_obj, self.channel_group_change)
         self.viewer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+        # title
+        section_label = QLabel("Select Signal Range")
+        section_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        section_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+        left_sidebar_layout.addWidget(section_label)
+
+        # title_div = QWidget()  # creating layout for the margin spacing
+        # title_div_layout = QVBoxLayout(title_div)
+        # # tells it to keep left, top, right margins
+        # title_div_layout.setContentsMargins(-1, -1, -1, 0)
+        # title_label = AnalysisText.create_major_title("Select Signal Range")
+        # title_div_layout.addWidget(title_label)
+        # sidebar_layout.addWidget(title_div)
+
         # signal range dropdown panel
-        signal_range_group = CollapsiblePanel("Select Signal Range")
-        self.range_dropdown = FormDropdown(
-            "Select Reference Signal",
-            self.generate_channel_groups())
-        signal_range_group.add_widget(self.range_dropdown)
-        signal_range_group.setSizePolicy(
-            QSizePolicy.Preferred, QSizePolicy.Fixed)
+        # signal_range_group = CollapsiblePanel("Select Signal Range")
+        self.range_dropdown = FormDropdown("Select Reference Signal", self.generate_channel_groups())
+        left_sidebar_layout.addWidget(self.range_dropdown)
+        # left_sidebar_layout.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
         # left and right buttons
         lrbuttons = QWidget()
@@ -70,22 +85,21 @@ class VisualisationPage(QWidget):
         button_layout.addWidget(self.left_button)
         button_layout.addWidget(self.right_button)
         lrbuttons.setLayout(button_layout)
-        signal_range_group.add_widget(lrbuttons)
+        left_sidebar_layout.addWidget(lrbuttons)
 
         # number of signals dropdown panel
-        self.num_signals_input_box = FormSpinBox(
-            "Number of Signals to Display", 8, 1, 16)
-        signal_range_group.add_widget(self.num_signals_input_box)
-
-        left_layout.addWidget(left_container)
+        self.num_signals_input_box = FormSpinBox("Number of Signals to Display", 8, 1, 16)
+        left_sidebar_layout.addWidget(self.num_signals_input_box)
+    
+        # left_sidebar_layout.addWidget(signal_range_group) # prev left_layout
 
         # add gap between controls and done button
-        left_layout.addStretch()
+        left_sidebar_layout.addStretch() # prev left_layout
 
         # done button
         done_button = ActionButton("Done", primary=True)
         done_button.clicked.connect(self.doneClicked)
-        left_layout.addWidget(done_button)
+        left_sidebar_layout.addWidget(done_button) # prev left_layout
 
         vis_panel = VisualizationPanel(plot_widget=self.viewer)
         vis_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -103,20 +117,17 @@ class VisualisationPage(QWidget):
 
         # combine panels in layout
         content_layout = QHBoxLayout()
-        content_layout.addWidget(left_container, stretch=0)
+        content_layout.addWidget(left_sidebar, stretch=0) # previously left_container
         content_layout.addWidget(vis_panel, stretch=1)
         main_layout.addLayout(content_layout)
         self.setLayout(main_layout)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # connect the range input change to the channel_group_change function
-        self.range_dropdown.dropdown.currentIndexChanged.connect(
-            self.channel_group_change)
+        self.range_dropdown.dropdown.currentIndexChanged.connect(self.channel_group_change)
 
-        # connect the num signals input change to the num_signal_display_change
-        # function
-        self.num_signals_input_box.spinbox.valueChanged.connect(
-            self.num_signal_display_change)
+        # connect the num signals input change to the num_signal_display_change function
+        self.num_signals_input_box.spinbox.valueChanged.connect(self.num_signal_display_change)
 
         self.setFocus()
 
@@ -175,8 +186,7 @@ class VisualisationPage(QWidget):
         self.channel_group_change(max(self.channel_group_index - 1, 0))
 
     def rightClicked(self):
-        self.channel_group_change(
-            min(self.channel_group_index + 1, self.max_index))
+        self.channel_group_change(min(self.channel_group_index + 1, self.max_index))
 
     def doneClicked(self):
         # Update the omitted channels
