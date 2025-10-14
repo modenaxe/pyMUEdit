@@ -14,7 +14,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 from scipy.io import loadmat
-from core.utils.config_and_input.open_otb_plus import open_otb_plus
+from core.utils.io.open_otb_plus import open_otb_plus
 from core.utils.decomposition.notch_filter import notch_filter
 from core.utils.decomposition.bandpass_filter import bandpass_filter
 from core.utils.decomposition.extend_emg import extend_emg
