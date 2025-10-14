@@ -4,10 +4,10 @@ import os
 import scipy.io as sio
 from typing import TYPE_CHECKING, Dict, List, Tuple, Any, Optional, Union
 
-from core.utils.config_and_input.open_mat import open_mat
+from core.utils.io.open_mat import open_mat
 
-from .utils.config_and_input.open_otb_plus import open_otb_plus
-from .utils.config_and_input.electrode_formatter import electrode_formatter
+from .utils.io.open_otb_plus import open_otb_plus
+from .utils.data_processing.electrode_formatter import electrode_formatter
 from .utils.decomposition.notch_filter import notch_filter
 from .utils.decomposition.bandpass_filter import bandpass_filter
 from .utils.decomposition.extend_emg import extend_emg

@@ -9,7 +9,7 @@ import pandas as pd
 import pyqtgraph as pg
 
 # Import UI setup function
-from core.utils.config_and_input.filesize_formatter import filesize_formatter
+from core.utils.io.filesize_formatter import filesize_formatter
 from ui.ImportDataWindowUI import setup_ui
 from ui.components.SegmentSessionPage import SegmentSessionPage
 from ui.components.VisualisationPage import VisualisationPage
