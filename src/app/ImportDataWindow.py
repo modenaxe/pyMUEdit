@@ -904,7 +904,8 @@ class ImportDataWindow(QMainWindow):
         self.recent_visualizations = self.recent_visualizations[:5]
 
         # Update the UI if dashboard is visible
-        if hasattr(self, 'central_stacked_widget') and self.central_stacked_widget.currentWidget() == self.dashboard_page:
+        if hasattr(self, 'central_stacked_widget') and self.central_stacked_widget.currentWidget() == self.import_data_page:
+            print('yes')
             self.show_import_data_view()  # Refresh to show the new visualization
 
     def on_visualization_card_clicked(self, card_index):
@@ -1310,7 +1311,7 @@ class ImportDataWindow(QMainWindow):
         self.recent_datasets = self.recent_datasets[:5]
 
         # If dashboard is currently visible, refresh it
-        if hasattr(self, 'central_stacked_widget') and self.central_stacked_widget.currentWidget() == self.dashboard_page:
+        if hasattr(self, 'central_stacked_widget') and self.central_stacked_widget.currentWidget() == self.import_data_page:
             self.show_import_data_view()  # Refresh to show the new dataset
 
     def open_dataset(self, dataset):
