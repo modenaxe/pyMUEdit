@@ -108,7 +108,7 @@ class MUeditManual(QMainWindow):
         # Imports data (only if filename and pathname exist)
         if filename and pathname:
             self.file_path_field.setText(self.filename)
-            self.import_data()
+            import_data(self)
 
         # Add back button if needed when used in embedded mode
         if parent:
@@ -353,7 +353,7 @@ class MUeditManual(QMainWindow):
             self.file_path_field.setText(self.filename)
             self.select_file_title_btn.setText(self.filename)
 
-            self.import_data()
+            import_data(self)
                     
     def update_action_button_states(self):
         enabled = self.plot_display_mode == 0

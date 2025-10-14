@@ -23,7 +23,6 @@ from ui.components import (
 
 def import_data(self):
     """Import data from selected file."""
-
     if not self.filename or not self.pathname:
         return
 
@@ -75,9 +74,9 @@ def import_data(self):
 
         if not self.ish5:
             if "edition" in files:   #edited file, recover edition
-                self.import_edited_file(files)
+                import_edited_file(self, files)
             else:   #new file
-                self.import_decomposed_file(files)
+                import_decomposed_file(self, files)
         else:
             if "edition" in files:
                 arr = files['edition']['Dischargetimes']
@@ -85,11 +84,11 @@ def import_data(self):
                     WarningDialog(text="We detected that the edition section does not contain any Dischargetimes data; therefore, it has fallen back to the unedited version.",
                             enableHelpButton=False,
                             enableCheckBox=False)
-                    self.import_h5py_decomposed_file(files)
+                    import_h5py_decomposed_file(self, files)
                 else:
-                    self.import_h5py_edited_file(files)
+                    import_h5py_edited_file(self, files)
             else:
-                self.import_h5py_decomposed_file(files)
+                import_h5py_decomposed_file(self, files)
 
         print("File import complete")
 
@@ -152,11 +151,6 @@ def import_data(self):
         traceback.print_exc()
         QApplication.restoreOverrideCursor()
         ErrorDialog(title_label="Import Error", text=f"Failed to load the file:\n{str(e)}")
-
-
-
-
-
 
 def import_edited_file(self, files):
     """Import data from a previously edited file."""
