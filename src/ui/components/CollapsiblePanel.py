@@ -4,7 +4,7 @@ from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton,
-                             QVBoxLayout, QWidget)
+                             QVBoxLayout, QWidget, QSizePolicy)
 
 from .CleanTheme import CleanTheme
 
@@ -120,6 +120,11 @@ class CollapsiblePanel(QFrame):
         self.content_layout.setContentsMargins(15, 15, 15, 15)
         self.content_layout.setSpacing(10)
 
+        self.content_widget.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum
+        )
+        self.toggle_button.setIcon(QIcon(str(down_arrow_path)))
+
         # Add header and content to main layout
         self.main_layout.addWidget(self.header_widget)
         self.main_layout.addWidget(self.content_widget)
@@ -151,8 +156,17 @@ class CollapsiblePanel(QFrame):
         # Update the toggle button icon based on state
         if self.is_expanded:
             self.toggle_button.setIcon(QIcon(str(down_arrow_path)))
+            self.content_widget.setMaximumHeight(16777215)
+            self.content_widget.setMinimumHeight(0)
+
         else:
             self.toggle_button.setIcon(QIcon(str(up_arrow_path)))
+            self.content_widget.setMaximumHeight(0)
+            self.content_widget.setMinimumHeight(0)
 
         # Show/hide content
         self.content_widget.setVisible(self.is_expanded)
+        self.updateGeometry()
+        parent = self.parentWidget()
+        if parent:
+            parent.updateGeometry()
