@@ -15,7 +15,8 @@ from ui.components import (ActionButton, CleanCard, CleanScrollBar, CleanTheme,
                            CollapsiblePanel, GoodSlider, SectionHeader,
                            SettingsGroup, Sidebar, VisualizationPanelForEdit)
 from ui.components.ActionButtonedit import ActionButtonedit
-from app.muEditFunctions.muFilterActions import *
+from app.muEditFunctions.mu_filter_actions import *
+from app.muEditFunctions.batch_processing import *
 
 class FixedPopupComboBox(QComboBox):  # set a new class for dropout moy
     def __init__(self, *args, **kwargs):
@@ -395,23 +396,23 @@ def create_batch_processing_tab(main_window):
     batch_layout = QVBoxLayout(batch_tab)
     batch_layout.setSpacing(10)
     batch_layout.setContentsMargins(10, 10, 10, 10)
-
+# lambda: update_mu_filter_button_pushed(main_window)
     # Label, handler, attribute name for later access
     action_batch_configs = [
         ("1 - Remove all the outliers",
-         main_window.remove_all_outliers_button_pushed,
+         lambda: remove_all_outliers_button_pushed(main_window),
          "remove_outliers_all_btn"),
         ("2 - Update all MU filters",
-         main_window.update_all_mu_filters_button_pushed,
+         lambda: update_all_mu_filters_button_pushed(main_window),
          "update_mu_filter_all_btn"),
         ("3 - Remove flagged MU",
-         main_window.remove_flagged_mu_button_pushed,
+         lambda: remove_flagged_mu_button_pushed(main_window),
          "remove_flagged_mu_btn"),
         ("4 - Remove duplicates within grids",
-         main_window.remove_duplicates_within_grids_button_pushed,
+         lambda: remove_duplicates_within_grids_button_pushed(main_window),
          "remove_duplicates_within_btn"),
         ("5 - Remove duplicates between grids",
-         main_window.remove_duplicates_between_grids_button_pushed,
+         lambda: remove_duplicates_between_grids_button_pushed(main_window),
          "remove_duplicates_between_btn"),
     ]
 
