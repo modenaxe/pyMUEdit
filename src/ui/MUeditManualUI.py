@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QFrame,
                              QLabel, QLayout, QLineEdit, QListView,
                              QScrollArea, QSizePolicy, QSpacerItem, QTabWidget,
                              QToolButton, QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import QSlider
 
 # Import custom components
 from ui.components import (ActionButton, CleanCard, CleanScrollBar, CleanTheme,
@@ -18,6 +19,7 @@ from ui.components.ActionButtonedit import ActionButtonedit
 from app.muEditFunctions.mu_filter_actions import *
 from app.muEditFunctions.batch_processing import *
 from app.muEditFunctions.visualization import *
+from app.muEditFunctions.exporter import *
 
 class FixedPopupComboBox(QComboBox):  # set a new class for dropout moy
     def __init__(self, *args, **kwargs):
@@ -178,7 +180,7 @@ def setup_control_panel(main_window):
     save_group = SettingsGroup("Save the Edition")
 
     main_window.save_btn = ActionButtonedit("Save", primary=True)
-    main_window.save_btn.clicked.connect(main_window.save_button_pushed)
+    main_window.save_btn.clicked.connect(lambda: save_button_pushed(main_window))
 
     save_group.add_field(main_window.save_btn)
     control_layout.addWidget(save_group)
@@ -616,13 +618,13 @@ def setup_display_panel(main_window):
 
     save_btn = ActionButtonedit("Save")
     save_btn.setFixedHeight(30)
-    save_btn.clicked.connect(main_window.save_button_pushed)
+    save_btn.clicked.connect(lambda: save_button_pushed(main_window))
     main_window.floating_save_btn = save_btn
 
     saveas_btn = ActionButtonedit("Save As")
     saveas_btn.setFixedHeight(30)
     saveas_btn.setFixedWidth(80)
-    saveas_btn.clicked.connect(main_window.saveas_button_pushed)
+    saveas_btn.clicked.connect(lambda: saveas_button_pushed(main_window))
     main_window.floating_saveas_btn = saveas_btn
 
     select_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -788,7 +790,6 @@ def setup_display_panel(main_window):
 
     display_layout.addWidget(plots_scroll_area, 1)  # 1 is stretch factor
     # horizontal pan‑slider just below all plots moy
-    from PyQt5.QtWidgets import QSlider
     main_window.pan_slider = QSlider(Qt.Horizontal, parent=display_widget)
     # 0 = far left, 1000 = far right
     main_window.pan_slider.setRange(0, 1000)
