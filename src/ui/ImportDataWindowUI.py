@@ -32,7 +32,7 @@ ICONS_PATH = ABS_PATH / "public"
 
 def setup_ui(import_window):
     """Set up the UI for the import data window using custom components."""
-    # Set widget properties
+    # Window props
     import_window.setWindowTitle("HDEMG Analysis - Import Data")
     import_window.setGeometry(100, 100, 1200, 800)
     import_window.setStyleSheet(f"background-color: {CleanTheme.BG_MAIN};")
@@ -44,28 +44,44 @@ def setup_ui(import_window):
     import_window.main_layout.setContentsMargins(0, 0, 0, 0)
     import_window.main_layout.setSpacing(0)
 
-    # Create main content layout
-    content_widget = QWidget()
-    content_layout = QVBoxLayout(content_widget)
-    content_layout.setContentsMargins(0, 0, 0, 0)
-    content_layout.setSpacing(0)
+    # Left sidebar
+    import_window.sidebar_buttons = {}
+    sidebar = _create_left_sidebar(import_window)
+    left_scroll = QScrollArea()
+    left_scroll.setWidgetResizable(True)
+    left_scroll.setFixedWidth(180)
+    CleanScrollBar.apply(left_scroll)
+    left_scroll.setWidget(sidebar)
+    sidebar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+    import_window.left_sidebar_scroll_area = left_scroll
+    import_window.main_layout.addWidget(left_scroll)
 
-    # Create right content area
-    right_content = create_right_content(import_window)
-    content_layout.addWidget(right_content, 1)
+    # Central stacked widget (single area for pages)
+    import_window.central_stacked_widget = QStackedWidget()
+    import_window.central_stacked_widget.setStyleSheet("background-color: transparent;")
 
-    # Add content to main layout
-    content_layout.addLayout(content_layout, 1)
+    # Create import page once and add to stacked widget
+    import_window.import_data_page = _create_import_page(import_window)
+    import_window.central_stacked_widget.addWidget(import_window.import_data_page)
 
-    # Add footer
-    footer = create_footer(import_window)
-    content_layout.addWidget(footer)
+    # Add other pages to the stacked widget (or placeholders)
+    if hasattr(import_window, "mu_analysis_page") and import_window.mu_analysis_page is not None:
+        import_window.central_stacked_widget.addWidget(import_window.mu_analysis_page)
 
-    import_window.main_layout.addWidget(content_widget)
+    if hasattr(import_window, "decomposition_page") and import_window.decomposition_page is not None:
+        import_window.central_stacked_widget.addWidget(import_window.decomposition_page)
+    else:
+        import_window.decomposition_page = create_placeholder_page("Decomposition Page", import_window)
+        import_window.central_stacked_widget.addWidget(import_window.decomposition_page)
 
-    # Store references to functions for sidebar management
-    import_window.update_sidebar_with_recent_files = lambda: update_sidebar_with_recent_files(
-        import_window)
+    import_window.manual_editing_page = create_placeholder_page("Manual Editing Page", import_window)
+    import_window.central_stacked_widget.addWidget(import_window.manual_editing_page)
+
+    # Add the stacked widget (only) to the main layout as the right pane
+    import_window.main_layout.addWidget(import_window.central_stacked_widget, 1)
+
+    # Sidebar helper references
+    import_window.update_sidebar_with_recent_files = lambda: update_sidebar_with_recent_files(import_window)
     import_window.restore_sidebar = lambda: restore_sidebar(import_window)
 
 
@@ -407,7 +423,7 @@ def restore_sidebar(import_window):
     if sidebar and hasattr(sidebar, "clear_recent_files_section"):
         sidebar.clear_recent_files_section()
 
-def create_placeholder_page(title, main_window):
+def create_placeholder_page(title, import_window):
     """Creates a placeholder page with a title and back button."""
     page = QWidget()
     layout = QVBoxLayout(page)
@@ -435,8 +451,8 @@ def create_placeholder_page(title, main_window):
     layout.addWidget(message)
 
     # Back button
-    back_button = ActionButton("Back to Dashboard", primary=False)
-    back_button.clicked.connect(main_window.show_dashboard_view)
+    back_button = ActionButton("Back to Import View", primary=False)
+    back_button.clicked.connect(import_window.show_import_data_view)
 
     layout.addItem(
         QSpacerItem(
@@ -449,14 +465,13 @@ def create_placeholder_page(title, main_window):
     return page
 
 
-def _create_left_sidebar(main_window):
+def _create_left_sidebar(import_window):
     """Creates the improved left sidebar with SVG icons."""
     # Create sidebar with app title
     sidebar = Sidebar("HDEMG App")
 
     # Define icon names
     icons = {
-        "dashboard": "dashboard_icon",
         "import": "import_data_icon",
         "decomposition": "decomposition_icon",
         "manual_edit": "mu_editing_icon",
@@ -465,7 +480,6 @@ def _create_left_sidebar(main_window):
 
     # Menu items mapped to display names
     menu_items = {
-        "dashboard": "Dashboard",
         "import": "Import Data",
         "decomposition": "Decomposition",
         "manual_edit": "MU Editing",
@@ -475,96 +489,96 @@ def _create_left_sidebar(main_window):
     # Add buttons to sidebar and store references
     for key, display_name in menu_items.items():
         icon_name = icons.get(key)
-        is_selected = key == "dashboard"  # Dashboard is initially selected
+        is_selected = key == "import"  # Import is initially selected
         button = sidebar.add_button(key, display_name, icon_name, is_selected)
 
         # Store reference and connect signal
-        main_window.sidebar_buttons[key] = button
+        import_window.sidebar_buttons[key] = button
 
         # Connect button events based on key
-        if key == "dashboard":
-            button.clicked.connect(main_window.show_dashboard_view)
-        elif key == "import":
+        if key == "import":
             button.clicked.connect(
-                main_window.show_import_data_view if hasattr(
-                    main_window, "show_import_data_view") else lambda: None)
+                import_window.show_import_data_view if hasattr(
+                    import_window, "show_import_data_view") else lambda: None)
         elif key == "mu_analysis":
             button.clicked.connect(
-                main_window.show_mu_analysis_view if hasattr(
-                    main_window, "show_mu_analysis_view") else lambda: None)
+                import_window.show_mu_analysis_view if hasattr(
+                    import_window, "show_mu_analysis_view") else lambda: None)
         elif key == "decomposition":
             button.clicked.connect(
-                main_window.show_decomposition_view if hasattr(
-                    main_window, "show_decomposition_view") else lambda: None)
+                import_window.show_decomposition_view if hasattr(
+                    import_window, "show_decomposition_view") else lambda: None)
         elif key == "manual_edit":
             button.clicked.connect(
-                main_window.show_manual_editing_view
-                if hasattr(main_window, "show_manual_editing_view")
+                import_window.show_manual_editing_view
+                if hasattr(import_window, "show_manual_editing_view")
                 else lambda: None
             )
 
     return sidebar
 
+def _create_import_page(import_window):
+    """Create the right-hand import page container with a scrollable content area
+    and a fixed (non-scrollable) footer below it."""
+    # The container returned to setup_ui
+    right_layout = QWidget()
+    right_v = QVBoxLayout(right_layout)
+    right_v.setContentsMargins(0, 0, 0, 0)
+    right_v.setSpacing(0)
 
-def _create_dashboard_page(main_window):
-    """Creates the clean dashboard page."""
-    # Create a scrollable dashboard
-    dashboard_scroll_area = QScrollArea()
-    dashboard_scroll_area.setWidgetResizable(True)
-    dashboard_scroll_area.setFrameShape(QScrollArea.NoFrame)
-    dashboard_scroll_area.setHorizontalScrollBarPolicy(
-        Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-    dashboard_scroll_area.setStyleSheet(
-        "background-color: transparent; border: none;")
+    # Scroll area for page content
+    scroll_area = QScrollArea()
+    scroll_area.setWidgetResizable(True)
+    scroll_area.setFrameShape(QFrame.NoFrame)
+    scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    scroll_area.setStyleSheet("background: transparent; border: none;")
 
-    # Create content widget
+    # The scroll area content widget
     content_area = QWidget()
-    content_area.setObjectName("dashboardContentArea")
-    content_area.setStyleSheet("background-color: transparent;")
-
-    # Set up the main layout
     content_layout = QVBoxLayout(content_area)
-    content_layout.setContentsMargins(20, 20, 20, 20)
-    content_layout.setSpacing(20)
+    content_layout.setContentsMargins(25, 25, 25, 25)
+    content_layout.setSpacing(10)
 
-    # Add dashboard header section
-    header_layout = QHBoxLayout()
+    # Header
+    header = SectionHeader("Import HDEMG Data")
+    content_layout.addWidget(header)
 
-    # Dashboard title
-    dashboard_title = QLabel("Dashboard")
-    dashboard_title.setFont(QFont("Segoe UI", 20, QFont.Normal))
-    dashboard_title.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+    # Visualizations & Datasets sections
+    viz_section = _create_visualizations_section(import_window)
+    content_layout.addWidget(viz_section)
 
-    # New Visualization button
-    new_viz_btn = ActionButton("+ New Visualization", primary=True)
-    new_viz_btn.clicked.connect(
-        lambda: main_window.show_import_data_view() if hasattr(
-            main_window, "show_import_data_view") else None)
+    datasets_section = _create_datasets_section(import_window)
+    content_layout.addWidget(datasets_section)
 
-    header_layout.addWidget(dashboard_title)
-    header_layout.addStretch(1)
-    header_layout.addWidget(new_viz_btn)
+    # Dropzone & Preview
+    dropzone_card = create_dropzone_card(import_window)
+    content_layout.addWidget(dropzone_card)
 
-    content_layout.addLayout(header_layout)
+    preview_section = create_preview_section(import_window)
+    content_layout.addWidget(preview_section)
 
-    # Create visualizations section
-    visualizations_card = _create_visualizations_section(main_window)
-    content_layout.addWidget(visualizations_card)
+    # Configuration section (returns a QLayout)
+    configuration_section = create_configuration_section(import_window)
+    content_layout.addLayout(configuration_section)
 
-    # Create datasets section
-    datasets_card = _create_datasets_section(main_window)
-    content_layout.addWidget(datasets_card)
-
-    # Add stretch to push content to the top
+    # Spacer to push items to top
     content_layout.addStretch(1)
 
-    # Set the content widget to the scroll area
-    dashboard_scroll_area.setWidget(content_area)
+    # Set content_area as the scroll area widget
+    scroll_area.setWidget(content_area)
 
-    return dashboard_scroll_area
+    # Add scroll area to the right container with stretch so it grows/scrolls
+    right_v.addWidget(scroll_area, 1)
+
+    footer = create_footer(import_window)
+    footer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    footer.setFixedHeight(64)
+    right_v.addWidget(footer, 0)
+
+    return right_layout
 
 
-def _create_visualizations_section(main_window):
+def _create_visualizations_section(import_window):
     """Creates the Recent Visualizations section with cards."""
     # Create a card to hold the visualizations
     section_card = CleanCard()
@@ -585,10 +599,10 @@ def _create_visualizations_section(main_window):
 
     # Add visualization cards
     if hasattr(
-            main_window,
-            "recent_visualizations") and main_window.recent_visualizations:
+            import_window,
+            "recent_visualizations") and import_window.recent_visualizations:
         for i, viz_data in enumerate(
-                main_window.recent_visualizations[:3]):  # Show only first 3 cards
+                import_window.recent_visualizations[:3]):  # Show only first 3 cards
             # Create card for each visualization with index and state_path
             card = VisualizationCard(
                 title=viz_data["title"],
@@ -611,7 +625,7 @@ def _create_visualizations_section(main_window):
     return section_card
 
 
-def _create_datasets_section(main_window):
+def _create_datasets_section(import_window):
     """Creates the Recent Datasets section with clean list items."""
     # Create a card to hold the datasets
     section_card = CleanCard()
@@ -633,8 +647,8 @@ def _create_datasets_section(main_window):
     datasets_layout.setSpacing(0)  # No spacing between items
 
     # Add dataset items
-    if hasattr(main_window, "recent_datasets") and main_window.recent_datasets:
-        for dataset in main_window.recent_datasets:
+    if hasattr(import_window, "recent_datasets") and import_window.recent_datasets:
+        for dataset in import_window.recent_datasets:
             # Create dataset item that will open the file when clicked
             dataset_item = DatasetItem(
                 dataset["filename"], dataset["metadata"])
@@ -644,8 +658,8 @@ def _create_datasets_section(main_window):
                 dataset_item.setProperty("pathname", dataset["pathname"])
 
             # Connect the click event if applicable
-            if hasattr(main_window, "open_dataset"):
-                dataset_item.mousePressEvent = lambda event, d=dataset: main_window.open_dataset(
+            if hasattr(import_window, "open_dataset"):
+                dataset_item.mousePressEvent = lambda event, d=dataset: import_window.open_dataset(
                     d)
 
             datasets_layout.addWidget(dataset_item)
@@ -668,15 +682,15 @@ def _create_datasets_section(main_window):
     return section_card
 
 
-def update_sidebar_selection(main_window, selected_key):
+def update_sidebar_selection(import_window, selected_key):
     """Updates the visual state of sidebar buttons based on selection."""
     # Use the sidebar's built-in selection method
-    sidebar = main_window.findChild(Sidebar)
+    sidebar = import_window.findChild(Sidebar)
     if sidebar:
         sidebar.select_button(selected_key)
     else:
         # Fallback if sidebar isn't found
-        for key, button in main_window.sidebar_buttons.items():
+        for key, button in import_window.sidebar_buttons.items():
             if hasattr(button, "set_selected"):
                 button.set_selected(key == selected_key)
             else:
