@@ -13,10 +13,8 @@ from app.ImportDataWindow import ImportDataWindow
 from PyQt5.QtWidgets import QApplication
 from core.utils.scaling_config import apply_qt_scaling # Added for high DPI scaling attributes
 
-
 import warnings
 warnings.filterwarnings("ignore") #ignore warning
-
 
 def main():
     """
