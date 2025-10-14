@@ -147,16 +147,17 @@ class HDEMGDashboard(QMainWindow):
             print("Creating manual editing view")
 
             # Create a wrapper widget to hold the MUeditManual
-            wrapper = QWidget()
-            wrapper.setObjectName("manual_editing_wrapper")
-            wrapper_layout = QVBoxLayout(wrapper)
-            wrapper_layout.setContentsMargins(0, 0, 0, 0)
+            # wrapper = QWidget()
+            # wrapper.setObjectName("manual_editing_wrapper")
+            # wrapper_layout = QVBoxLayout(wrapper)
+            # wrapper_layout.setContentsMargins(0, 0, 0, 0)
+            # wrapper.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
 
             # Create MUeditManual instance
             manual_edit_app = MUeditManual()
 
             # Set window flags to make it a widget instead of a window
-            manual_edit_app.setWindowFlags(Qt.WindowType.Widget)
+            # manual_edit_app.setWindowFlags(Qt.WindowType.Widget)
 
             self.mu_edit_tabs = manual_edit_app.tabs
             # Connect return signal if available
@@ -164,13 +165,13 @@ class HDEMGDashboard(QMainWindow):
                 manual_edit_app.return_to_dashboard_requested.connect(self.show_dashboard_view)
 
             # Add to layout
-            wrapper_layout.addWidget(manual_edit_app)
+            # wrapper_layout.addWidget(manual_edit_app)
 
             # Replace the placeholder with our real manual editing view
-            self.manual_editing_page = wrapper
+            self.manual_editing_page = manual_edit_app
 
             # Add the wrapper to the stacked widget
-            self.central_stacked_widget.addWidget(wrapper)
+            self.central_stacked_widget.addWidget(manual_edit_app)
 
         except Exception as e:
             print(f"Error creating manual editing view: {e}")
