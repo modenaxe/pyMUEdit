@@ -4,6 +4,8 @@ import matplotlib.cm as cm
 from matplotlib.backends.backend_qt5agg import \
     FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+import numpy as np
+import pyqtgraph as pg
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
@@ -25,11 +27,19 @@ class ChannelViewer(QWidget):
         self.layout = QHBoxLayout()
         self.layout.setContentsMargins(40, 0, 50, 30)
 
+        # Use PyQt graph for plotting
+        self.plot_widget = pg.PlotWidget()
+        self.plot_widget.setBackground("w") 
+        self.plot_widget.setLabel("bottom", "Time")
+        self.plot_widget.showGrid(x=True, y=True)
+        self.plot_widget.hideAxis("left")
+        self.layout.addWidget(self.plot_widget, stretch=5)
+
         # Matplotlib canvas for plotting
-        self.figure = Figure(figsize=(8, 3), dpi=100)
-        self.canvas = FigureCanvas(self.figure)
-        self.figure.tight_layout()
-        self.layout.addWidget(self.canvas, stretch=5)
+        # self.figure = Figure(figsize=(8, 3), dpi=100)
+        # self.canvas = FigureCanvas(self.figure)
+        # self.figure.tight_layout()
+        # self.layout.addWidget(self.canvas, stretch=5)
 
         # Electrode grid
         self.electrode_grid = ElectrodeGrid(
@@ -52,13 +62,13 @@ class ChannelViewer(QWidget):
         self.channel_group_change(math.floor(index / self.num_indices))
 
     def update_plot(self):
-        self.figure.clear()
+        self.plot_widget.clear()
         colours = get_n_colours(self.num_indices)
 
         # Create one subplot for each channel in the index range
         n = len(self.channel_indices)
         for i, index in enumerate(self.channel_indices):
-            ax = self.figure.add_subplot(n, 1, i + 1)
+            ax = self.plot_widget.add_subplot(n, 1, i + 1)
             ax.plot(
                 self.entire_emg_data[index],
                 linewidth=0.8,
@@ -84,7 +94,6 @@ class ChannelViewer(QWidget):
 
         ax.set_xlabel("Time", fontsize=15, labelpad=15)
         self.canvas.draw()
-
 
 def get_n_colours(n):
     cmap = cm.get_cmap('hsv')
