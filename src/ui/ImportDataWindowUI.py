@@ -208,6 +208,7 @@ def create_footer(import_window):
     )
     footer_layout = QHBoxLayout(footer)
     footer_layout.setContentsMargins(20, 10, 20, 10)
+
     # Create file info labels
     import_window.footer_file_info = QLabel("No file selected")
     import_window.footer_file_info.setStyleSheet(
@@ -218,6 +219,7 @@ def create_footer(import_window):
     import_window.format_info = QLabel("Format: --")
     import_window.format_info.setStyleSheet(
         f"color: {CleanTheme.TEXT_SECONDARY};")
+
     # Add file info to layout
     footer_layout.addWidget(import_window.footer_file_info)
     footer_layout.addStretch(1)
@@ -225,27 +227,24 @@ def create_footer(import_window):
     footer_layout.addSpacing(10)
     footer_layout.addWidget(import_window.format_info)
     footer_layout.addSpacing(20)
+
     # Create navigation buttons
-    prev_btn = ActionButton("← Previous", primary=False)
-    prev_btn.clicked.connect(import_window.go_back)
     import_window.next_btn = ActionButton("Next →", primary=True)
     import_window.next_btn.clicked.connect(
         import_window.go_to_algorithm_screen)
     import_window.next_btn.setEnabled(False)
+
     # Add navigation buttons to layout
-    footer_layout.addWidget(prev_btn)
     footer_layout.addSpacing(10)
     footer_layout.addWidget(import_window.next_btn)
     return footer
 
 def find_sidebar(import_window):
     """Find the sidebar component in the application hierarchy."""
-    # First try to find it in the parent (main window)
     if import_window.parent():
         sidebar = import_window.parent().findChild(Sidebar, "cleanSidebar")
         if sidebar:
             return sidebar
-    # If not found in parent, try to find it globally in the application
     for widget in QApplication.topLevelWidgets():
         sidebar = widget.findChild(Sidebar, "cleanSidebar")
         if sidebar:
