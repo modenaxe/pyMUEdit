@@ -119,7 +119,17 @@ class MUAnalysis(QWidget):
         self.load_file_button.setText("Press here to select file")
         top_bar_layout.addWidget(self.load_file_button)
 
+        # save as button
+        self.save_as_btn = GeneralButton("Save As", lambda: self.handle_save_as())
+        top_bar_layout.addWidget(self.save_as_btn)
+
         return top_bar
+    
+    def handle_save_as(self):
+        if hasattr(self, "results_section"):
+            self.results_section.save_results()
+        else:
+            print("Save As: ResultsPanel not found.")
 
     # dropdown order for matrix code
     # the border on the right sidebar
@@ -257,10 +267,14 @@ class MUAnalysis(QWidget):
 
         file_container = QWidget()
         file_layout = QVBoxLayout(file_container)
-        file_layout.setContentsMargins(0, 0, 0, 0)
+        file_layout.setContentsMargins(0, 15, 0, 0)
         file_layout.setSpacing(8)
 
-        file_layout.addWidget(title_label)
+        title_layout = QHBoxLayout()
+        title_layout.setContentsMargins(15, 0, 0, 0)
+        title_layout.addWidget(title_label)
+        file_layout.addLayout(title_layout)
+
         file_layout.addSpacing(10)
 
         reset_row = QHBoxLayout()
@@ -285,6 +299,7 @@ class MUAnalysis(QWidget):
 
         results_section = ResultsPanel(
             sidebar, self.result_combo, self.results_table)
+        self.results_section = results_section
 
         sidebar_layout.addWidget(results_section, stretch=15)
         sidebar_layout.addStretch(1)
