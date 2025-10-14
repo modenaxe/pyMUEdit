@@ -15,7 +15,7 @@ from ui.components import (ActionButton, CleanCard, CleanScrollBar, CleanTheme,
                            CollapsiblePanel, GoodSlider, SectionHeader,
                            SettingsGroup, Sidebar, VisualizationPanelForEdit)
 from ui.components.ActionButtonedit import ActionButtonedit
-
+from app.muEditFunctions.muFilterActions import *
 
 class FixedPopupComboBox(QComboBox):  # set a new class for dropout moy
     def __init__(self, *args, **kwargs):
@@ -849,11 +849,9 @@ def setup_display_panel(main_window):
     ]
 
     mu_filter_buttons = [
-        ("Update MU filter",
-         main_window.update_mu_filter_button_pushed,
+        ("Update MU filter", lambda: update_mu_filter_button_pushed(main_window),
          "update_mu_filter_btn"),
-        ("Extend MU filter",
-         main_window.extend_mu_filter_button_pushed,
+        ("Extend MU filter", lambda: extend_mu_filter_button_pushed(main_window),
          "extend_mu_filter_btn"),
     ]
 
