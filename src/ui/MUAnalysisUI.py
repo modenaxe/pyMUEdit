@@ -103,6 +103,8 @@ class MUAnalysis(QWidget):
         top_bar_layout = QHBoxLayout(top_bar)
         top_bar_layout.setContentsMargins(15, 0, 15, 0)
         top_bar_layout.setSpacing(10)
+
+        # title
         title_label = QLabel("Motor Unit Analysis")
         title_label.setFont(QFont("Arial", 20, QFont.Bold))
         title_label.setStyleSheet(
@@ -110,6 +112,13 @@ class MUAnalysis(QWidget):
 
         top_bar_layout.addWidget(title_label)
         top_bar_layout.addStretch(1)
+
+        # load file button
+        file_section = FileSection(None, self.mu, self.analysis_plot)
+        self.load_file_button = file_section.load_btn
+        self.load_file_button.setText("Press here to select file")
+        top_bar_layout.addWidget(self.load_file_button)
+
         return top_bar
 
     # dropdown order for matrix code
@@ -230,13 +239,37 @@ class MUAnalysis(QWidget):
         sidebar_layout.setContentsMargins(10, 10, 10, 10)
         sidebar_layout.setSpacing(10)
 
-        file_section = FileSection(sidebar, self.mu, self.analysis_plot)
-        # Connect the reset button's signal to the MUAnalysisFunc method
-        file_section.reset_btn.reset_requested.connect(
-            lambda: self.mu.handle_reset_workflow(self.analysis_plot)
-        )
+        file_section = FileSection(None, self.mu, self.analysis_plot)
+        file_section.load_btn.setParent(None)
 
-        sidebar_layout.addWidget(file_section)
+        title_label = file_section.findChild(QLabel, "sidebarTitle")
+        if title_label is None:
+            title_label = AnalysisText.create_major_title("File")
+            title_label.setObjectName("sidebarTitle")
+        
+        if hasattr(file_section.reset_btn, "reset_requested"):
+            file_section.reset_btn.reset_requested.connect(
+                lambda: self.mu.handle_reset_workflow(self.analysis_plot)
+            )
+
+        file_section.reset_btn.setFixedWidth(250)
+        file_section.reset_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        file_container = QWidget()
+        file_layout = QVBoxLayout(file_container)
+        file_layout.setContentsMargins(0, 0, 0, 0)
+        file_layout.setSpacing(8)
+
+        file_layout.addWidget(title_label)
+        file_layout.addSpacing(10)
+
+        reset_row = QHBoxLayout()
+        reset_row.addStretch(1)
+        reset_row.addWidget(file_section.reset_btn)
+        reset_row.addStretch(1)
+
+        file_layout.addLayout(reset_row)
+        sidebar_layout.addWidget(file_container)
 
         # resize button
         resize_file = Resize(self.mu, self.analysis_plot)
