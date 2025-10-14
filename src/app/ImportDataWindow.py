@@ -76,6 +76,8 @@ class ImportDataWindow(QMainWindow):
 
         self.load_saved_states()
 
+        self.initialize_external_widgets()
+
         # Create EMG object using the appropriate class
         temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp")
         if not os.path.exists(temp_dir):
@@ -460,6 +462,8 @@ class ImportDataWindow(QMainWindow):
 
         if not MUAnalysis:
             self.sidebar_buttons["mu_analysis"].setEnabled(False)
+
+        self.decomposition_requested.connect(self.create_decomposition_view)
 
     def open_channel_viewer(self):
         """Open the Channel Viewer window with the current EMG data"""

@@ -224,7 +224,7 @@ def create_preview_section(import_window):
         }}
     """
     )
-    preview_frame.setMinimumHeight(220)
+    preview_frame.setMinimumHeight(260)
 
     # Create stacked widget to display either the label or the visualisation
     # of the file

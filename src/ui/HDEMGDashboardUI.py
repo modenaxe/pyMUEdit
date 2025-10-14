@@ -185,6 +185,7 @@ def _create_dashboard_page(main_window):
     dashboard_scroll_area.setFrameShape(QScrollArea.NoFrame)
     dashboard_scroll_area.setHorizontalScrollBarPolicy(
         Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    dashboard_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
     dashboard_scroll_area.setStyleSheet(
         "background-color: transparent; border: none;")
 
