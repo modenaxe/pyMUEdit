@@ -33,9 +33,6 @@ class ResultsPanel(QFrame):
         """
         )
 
-        # # save results button
-        # save_button = GeneralButton("Save As", lambda: self.save_results())
-
         # clear results button
         clear_button = ClearButton(self)
 

@@ -120,7 +120,7 @@ class MUAnalysis(QWidget):
         top_bar_layout.addWidget(self.load_file_button)
 
         # save as button
-        self.save_as_btn = GeneralButton("Save As", lambda: self.handle_save_as())
+        self.save_as_btn = GeneralButton("Save as", lambda: self.handle_save_as())
         top_bar_layout.addWidget(self.save_as_btn)
 
         return top_bar
@@ -129,7 +129,7 @@ class MUAnalysis(QWidget):
         if hasattr(self, "results_section"):
             self.results_section.save_results()
         else:
-            print("Save As: ResultsPanel not found.")
+            print("Save as: ResultsPanel not found")
 
     # dropdown order for matrix code
     # the border on the right sidebar
