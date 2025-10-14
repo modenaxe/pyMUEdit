@@ -154,7 +154,7 @@ class ImportDataWindow(QMainWindow):
 
         # Load the file (passing the whole path)
         self.load_file(self.pathname, self.filename)
-        
+
         # Pass file size in original units (bytes)
         self.file_size_bytes = os.path.getsize(filename)
 
@@ -165,8 +165,7 @@ class ImportDataWindow(QMainWindow):
 
         # Reset failure messages
         self.failure_message.setVisible(False)
-        self.file_info_label.setStyleSheet(f"color: #4CAF50; font-weight: bold;")
-
+        
         if ext == ".otb+" or ext == ".mat":
             try:
                 # Construct the full file path
@@ -235,6 +234,8 @@ class ImportDataWindow(QMainWindow):
                     self.set_configuration_button.setEnabled(False)
                 else:
                     self.set_configuration_button.setEnabled(True)
+                # Change file label to green if success
+                self.file_info_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
 
             except Exception as e:
                 self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
@@ -242,11 +243,14 @@ class ImportDataWindow(QMainWindow):
                 print(f"Error loading OTB+ file: {e}")
                 traceback.print_exc()
                 self.next_btn.setEnabled(False)
+                # Change file label to red if failure
+                self.file_info_label.setText(f"Failed uploading: {self.filename}")
+                self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
         else:
             self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
             self.preview_message.setText(f"File type {ext} not supported in this demo.\nPlease select an OTB+ file.")
             self.next_btn.setEnabled(False)
-            self.file_info_label.setText(f"Failed uploading {self.filename}")
+            self.file_info_label.setText(f"Failed uploading: {self.filename}")
             self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
             self.failure_message.setVisible(True)
 
@@ -287,10 +291,13 @@ class ImportDataWindow(QMainWindow):
 
         mean_trace = np.nanmean(tmp, axis=0)
 
-        # Plot the average signal
-        self.preview_plot.plot(mean_trace, pen=pg.mkPen(color="r", width=2))
+        # Convert the time to seconds
+        t = np.arange(len(mean_trace)) / fsamp
 
-        self.preview_plot.setTitle(f"Electrode Grid {selected_electrode_idx + 1}, {electrode_grid_name} ({len(valid_indices)} valid channels)")
+        # Plot the average signal
+        self.preview_plot.plot(t, mean_trace, pen=pg.mkPen(color="r", width=2))
+
+        self.preview_plot.setTitle(f"Mean HD-EMG Signal Amplitude | Electrode Grid: {selected_electrode_idx + 1} | Electrode Grid Name: {electrode_grid_name} | {len(valid_indices)} valid channels")
 
     def get_n_chans_per_electrode(self):
         grid_names = self.emg_obj.signal_dict["gridname"]
