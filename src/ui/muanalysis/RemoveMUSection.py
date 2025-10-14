@@ -77,6 +77,7 @@ class RemoveMUSection(QWidget):
         self.remove_empty_mus_btn = GeneralButton(
             "Remove empty MUs", lambda: self.remove_empty_mus(), parent=self
         )
+
         container_layout.addWidget(self.remove_empty_mus_btn)
 
         container_layout.addLayout(remove_mu_layout)
