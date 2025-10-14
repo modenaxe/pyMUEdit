@@ -101,7 +101,7 @@ def create_right_content(import_window):
 def create_dropzone_card(import_window):
     """Create a clean card for the file dropzone."""
     dropzone_card = CleanCard()
-    dropzone_card.setMinimumHeight(175)
+    dropzone_card.setMinimumHeight(190)
 
     # Create layout for content
     dropzone_layout = QVBoxLayout()
