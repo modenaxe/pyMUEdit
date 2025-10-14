@@ -34,7 +34,7 @@ class ResultsPanel(QFrame):
         )
 
         # save results button
-        save_button = GeneralButton("Save", lambda: self.save_results())
+        save_button = GeneralButton("Save As", lambda: self.save_results())
 
         # clear results button
         clear_button = ClearButton(self)
@@ -44,12 +44,8 @@ class ResultsPanel(QFrame):
         self.table_view = QTableView()
         self.table_view.setModel(self.model)
 
-        # title
-        title = AnalysisText.create_major_title("Results")
-
         # another layout
         self.layout = QVBoxLayout(self)
-        self.layout.addWidget(title)
         self.layout.addWidget(save_button)
         self.layout.addWidget(self.combo_box)
         self.layout.addWidget(self.table_view, stretch=5)
