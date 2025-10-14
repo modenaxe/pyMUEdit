@@ -22,7 +22,7 @@ from ui.DecompositionAppUI import setup_ui
 from workers.SaveMatWorker import SaveMatWorker
 from workers.DecompositionWorker import DecompositionWorker
 from core.scd.main import SCDDecompositionWorker
-from core.utils.config_and_input.prepare_parameters import prepare_parameters
+from core.utils.config.prepare_parameters import prepare_parameters
 from core.EmgDecomposition import format_results_2
 from MUeditManual import MUeditManual
 
