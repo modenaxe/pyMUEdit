@@ -17,6 +17,7 @@ from ui.components import (ActionButton, CleanCard, CleanScrollBar, CleanTheme,
 from ui.components.ActionButtonedit import ActionButtonedit
 from app.muEditFunctions.mu_filter_actions import *
 from app.muEditFunctions.batch_processing import *
+from app.muEditFunctions.visualization import *
 
 class FixedPopupComboBox(QComboBox):  # set a new class for dropout moy
     def __init__(self, *args, **kwargs):
@@ -512,13 +513,13 @@ def create_visualization_tab(main_window):
     main_window.plot_spiketrains_btn = ActionButtonedit(
         "Plot MU spike trains", primary=True)
     main_window.plot_spiketrains_btn.clicked.connect(
-        main_window.plot_mu_spiketrains_button_pushed)
+        lambda: plot_mu_spiketrains_button_pushed(main_window))
     button_panel.add_widget(main_window.plot_spiketrains_btn)
 
     main_window.plot_firingrates_btn = ActionButtonedit(
         "Plot MU firing rates", primary=True)
     main_window.plot_firingrates_btn.clicked.connect(
-        main_window.plot_mu_firingrates_button_pushed)
+        lambda: plot_mu_firingrates_button_pushed(main_window))
     button_panel.add_widget(main_window.plot_firingrates_btn)
 
     row3 = QWidget()
