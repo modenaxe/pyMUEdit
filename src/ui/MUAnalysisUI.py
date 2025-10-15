@@ -120,11 +120,12 @@ class MUAnalysis(QWidget):
         top_bar_layout.addWidget(self.load_file_button)
 
         # save as button
-        self.save_as_btn = GeneralButton("Save as", lambda: self.handle_save_as())
+        self.save_as_btn = GeneralButton(
+            "Save as", lambda: self.handle_save_as())
         top_bar_layout.addWidget(self.save_as_btn)
 
         return top_bar
-    
+
     def handle_save_as(self):
         if hasattr(self, "results_section"):
             self.results_section.save_results()
@@ -256,14 +257,15 @@ class MUAnalysis(QWidget):
         if title_label is None:
             title_label = AnalysisText.create_major_title("File")
             title_label.setObjectName("sidebarTitle")
-        
+
         if hasattr(file_section.reset_btn, "reset_requested"):
             file_section.reset_btn.reset_requested.connect(
                 lambda: self.mu.handle_reset_workflow(self.analysis_plot)
             )
 
         file_section.reset_btn.setFixedWidth(250)
-        file_section.reset_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        file_section.reset_btn.setSizePolicy(
+            QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         file_container = QWidget()
         file_layout = QVBoxLayout(file_container)
