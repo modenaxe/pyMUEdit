@@ -8,6 +8,7 @@ import numpy as np
 import pyqtgraph as pg
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+import colorsys
 
 from ui.components.ElectrodeGrid import ElectrodeGrid
 
@@ -63,38 +64,39 @@ class ChannelViewer(QWidget):
 
     def update_plot(self):
         self.plot_widget.clear()
-        colours = get_n_colours(self.num_indices)
 
-        # Create one subplot for each channel in the index range
         n = len(self.channel_indices)
+        colours = get_n_colours(n)
+        x = np.arange(self.entire_emg_data.shape[1])
+
         for i, index in enumerate(self.channel_indices):
-            ax = self.plot_widget.add_subplot(n, 1, i + 1)
-            ax.plot(
-                self.entire_emg_data[index],
-                linewidth=0.8,
-                color=colours[i])
-            ax.set_ylabel(
-                f"{index + 1}",
-                fontsize=20,
-                labelpad=25,
-                rotation=0,
-                va='center')
-            ax.grid(True)
-            ax.set_yticklabels([])
-            # Hide x-axis label (except for last plot)
-            if i < n - 1:
-                ax.set_xticklabels([])
+            signal = self.entire_emg_data[index]
+            # Scaling the signal for each channel
+            scaling_signal = signal / (np.max(np.abs(signal)))
+            spacing = 2.0
+            y_offset = -i * spacing
+            
+            # Plot the colours
+            curve = pg.PlotCurveItem(
+                x,
+                scaling_signal + y_offset,
+                pen=pg.mkPen(color=colours[i], width=1.2)
+            )
 
-            # Add title for first plot only
-            if i == 0:
-                ax.set_title(
-                    f"Channels {self.channel_indices[0] + 1}-{self.channel_indices[len(self.channel_indices) - 1] + 1}",
-                    fontsize=15,
-                    pad=15)
+            self.plot_widget.addItem(curve)
+                
+            text = pg.TextItem(text=f"{index + 1}", color="black", anchor=(1, 0.5))
+            text.setPos(x[0], y_offset)
+            self.plot_widget.addItem(text)
 
-        ax.set_xlabel("Time", fontsize=15, labelpad=15)
-        self.canvas.draw()
+        self.plot_widget.setTitle(
+            f"Channels {self.channel_indices[0] + 1}-{self.channel_indices[-1] + 1}",
+            fontsize=20,
+            pad=15
+        )
 
 def get_n_colours(n):
-    cmap = cm.get_cmap('hsv')
-    return [cmap(i / n) for i in range(n)]
+    return [
+        pg.mkColor(tuple(int(c * 255) for c in colorsys.hsv_to_rgb(i / n, 0.8, 0.9)))
+        for i in range(n)
+    ]
