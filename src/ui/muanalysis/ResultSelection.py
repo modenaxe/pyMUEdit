@@ -28,7 +28,8 @@ class ResultSelection(QWidget):
         store.data_changed.connect(self.update_combo_from_df)
         store.data_cleared.connect(self.combo.clear)
 
-        self.label = AnalysisText.create_major_title("Select results to view: ")
+        self.label = AnalysisText.create_major_title(
+            "Select results to view: ")
         layout.addWidget(self.label)
         layout.addWidget(self.combo)
         self.combo.setCurrentIndex(0)
