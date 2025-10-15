@@ -24,9 +24,9 @@ class AdvancedTools(QWidget):
         super().__init__(parent)
 
         adv_layout = QVBoxLayout(self)
-        adv_layout.setContentsMargins(10, 0, 10, 0)
+        adv_layout.setContentsMargins(10, 10, 10, 0)
         # the title
-        advanced_label = SubsectionTitle("ADVANCED TOOLS")
+        advanced_label = AnalysisText.create_major_title("Advanced Tools")
         adv_layout.addWidget(advanced_label)
 
         # declaring the dropdown options
