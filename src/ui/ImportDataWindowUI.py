@@ -181,7 +181,7 @@ def create_dropzone_card(import_window):
 def create_preview_section(import_window):
     """Create the signal preview section."""
     preview_card = CleanCard()
-    preview_card.setMinimumHeight(400)
+    preview_card.setMinimumHeight(500)
     preview_card.setAcceptDrops(True)  # Enable drop events
 
     # Create layout for content
