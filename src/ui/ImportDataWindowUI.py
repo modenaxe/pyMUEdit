@@ -67,8 +67,119 @@ def setup_ui(import_window):
     import_window.update_sidebar_with_recent_files = lambda: update_sidebar_with_recent_files(import_window)
     import_window.restore_sidebar = lambda: restore_sidebar(import_window)
 
-def create_import_preview_card(import_window):
-    """Create the signal preview section, now also serving as a dropzone."""
+
+def create_right_content(import_window):
+    """Create the right content area with dropzone and preview."""
+    # Create scroll area for content
+    scroll_area = QScrollArea()
+    scroll_area.setWidgetResizable(True)
+    scroll_area.setFrameShape(QFrame.NoFrame)
+    scroll_area.setHorizontalScrollBarPolicy(
+        Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    scroll_area.setStyleSheet("background: transparent; border: none;")
+
+    # Create container widget
+    right_content = QWidget()
+    right_layout = QVBoxLayout(right_content)
+    right_layout.setContentsMargins(25, 25, 25, 25)
+    right_layout.setSpacing(10)
+
+    # Add section header
+    header = SectionHeader("Import HDEMG Data")
+    right_layout.addWidget(header)
+
+    # Create dropzone card
+    dropzone_card = create_dropzone_card(import_window)
+    right_layout.addWidget(dropzone_card)
+
+    # Create preview section
+    preview_section = create_preview_section(import_window)
+    right_layout.addWidget(preview_section)
+
+    # Create configuration section
+    configuration_section = create_configuration_section(import_window)
+    right_layout.addLayout(configuration_section)
+
+    # Add stretch to push content to the top
+    right_layout.addStretch(1)
+
+    # Set the content widget to the scroll area
+    scroll_area.setWidget(right_content)
+
+    return scroll_area
+
+
+def create_dropzone_card(import_window):
+    """Create a clean card for the file dropzone."""
+    dropzone_card = CleanCard()
+    dropzone_card.setMinimumHeight(190)
+
+    # Create layout for content
+    dropzone_layout = QVBoxLayout()
+    dropzone_layout.setContentsMargins(10, 10, 10, 10)
+    dropzone_layout.setSpacing(10)
+    dropzone_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    # Add SVG icon
+    icon_container = QWidget()
+    icon_layout = QHBoxLayout(icon_container)
+    icon_layout.setContentsMargins(0, 0, 0, 0)
+    icon_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    upload_icon_path = ICONS_PATH / "upload_icon.svg"
+    if not upload_icon_path.exists():
+        print(f"Warning: Icon {upload_icon_path} not found")
+    cloud_icon = QSvgWidget(str(upload_icon_path))
+    cloud_icon.setFixedSize(32, 22)
+    cloud_icon.setStyleSheet("margin-bottom: 10px;")
+
+    icon_layout.addWidget(cloud_icon)
+
+    # Add descriptive text
+    drag_label = QLabel("Drag and drop your HDEMG files here")
+    drag_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    drag_label.setFont(QFont("Segoe UI", 12))
+    drag_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+
+    # Add file info label (hidden initially)
+    import_window.file_info_label = QLabel("")
+    import_window.file_info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    import_window.file_info_label.setFont(QFont("Segoe UI", 11))
+    import_window.file_info_label.setStyleSheet(
+        f"color: #4CAF50; font-weight: bold;")
+    import_window.file_info_label.setVisible(False)
+
+    # Add "or" label
+    or_label = QLabel("or")
+    or_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    or_label.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
+
+    # Add browse button
+    browse_btn = ActionButton("Browse Files", primary=False)
+    browse_btn.clicked.connect(import_window.select_file)
+
+    # Add widgets to layout
+    dropzone_layout.addStretch()
+    dropzone_layout.addWidget(icon_container)
+    dropzone_layout.addWidget(drag_label)
+    dropzone_layout.addWidget(import_window.file_info_label)
+    dropzone_layout.addWidget(or_label)
+    dropzone_layout.addWidget(browse_btn, 0, Qt.AlignmentFlag.AlignCenter)
+    dropzone_layout.addStretch()
+
+    # Add layout to card
+    dropzone_card.content_layout.addLayout(dropzone_layout)
+
+    # Store reference to the dropzone for drag and drop events
+    import_window.dropzone = dropzone_card
+
+    # Setup drag and drop events later in ImportDataWindow.py
+    return dropzone_card
+
+
+# NOTE: Creates 'Signal Preview' window
+def create_preview_section(import_window):
+    """Create the signal preview section."""
     preview_card = CleanCard()
     preview_card.setMinimumHeight(400)
     preview_card.setAcceptDrops(True)  # Enable drop events
@@ -394,7 +505,7 @@ def _create_import_page(import_window):
 
     content_layout.addWidget(header_container)
 
-    dropzone_card = create_import_preview_card(import_window)
+    dropzone_card = create_preview_section(import_window)
     content_layout.addWidget(dropzone_card)
 
     configuration_section = create_configuration_section(import_window)
