@@ -68,10 +68,13 @@ def setup_left_panel(main_window):
 
     # Create the actual panel that will contain all controls
     left_panel = QWidget()
-    left_panel.setStyleSheet(f"background-color: {CleanTheme.BG_MAIN};")
+    left_panel.setObjectName("left_panel")
+    left_panel.setStyleSheet(f"""
+        background-color: {CleanTheme.BG_MAIN};
+    """)
     left_layout = QVBoxLayout(left_panel)
     left_layout.setContentsMargins(15, 15, 15, 15)
-    left_layout.setSpacing(15)
+    left_layout.setSpacing(6)
 
     # Algorithm Selection panel
     algo_panel = CollapsiblePanel("Algorithm Selection")
@@ -84,6 +87,8 @@ def setup_left_panel(main_window):
     left_layout.addWidget(algo_panel)
 
     algo_options_stack_widget = QStackedWidget()
+    algo_options_stack_widget.setObjectName("algo_options_stack_widget")
+    algo_options_stack_widget.setContentsMargins(0, 0, 0, 0)
     main_window.algo_options_stack_widget = algo_options_stack_widget
 
     main_window.algo_combo.currentIndexChanged.connect(
@@ -92,34 +97,43 @@ def setup_left_panel(main_window):
     # ---------------------------------Fast ICA options-----------------------
     algo_fastICA_options_widget = QWidget()
     algo_fastICA_panels = QVBoxLayout(algo_fastICA_options_widget)
+    algo_fastICA_panels.setContentsMargins(0, 0, 0, 0)
 
-    # Processing Options panel
-    options_panel = CollapsiblePanel("Processing Options")
+    """
+    processing options
+    """
 
-    check_emg_field = FormDropdown("Check EMG Quality", ["Yes", "No"])
-    main_window.check_emg_dropdown = check_emg_field.dropdown
-    main_window.check_emg_dropdown.setStyleSheet(
-        main_window.algo_combo.styleSheet())
-    main_window.check_emg_dropdown.setCurrentText("Yes")  # Set initial value
-    options_panel.add_widget(check_emg_field)
+    # # Processing Options panel
+    # options_panel = CollapsiblePanel("Processing Options")
 
-    cov_filter_field = FormDropdown("COV Filter", ["Yes", "No"])
-    main_window.cov_filter_dropdown = cov_filter_field.dropdown
-    main_window.cov_filter_dropdown.setStyleSheet(
-        main_window.algo_combo.styleSheet())
-    main_window.cov_filter_dropdown.setCurrentText("Yes")  # Set initial value
-    options_panel.add_widget(cov_filter_field)
+    # check_emg_field = FormDropdown("Check EMG Quality", ["Yes", "No"])
+    # main_window.check_emg_dropdown = check_emg_field.dropdown
+    # main_window.check_emg_dropdown.setStyleSheet(
+    #     main_window.algo_combo.styleSheet())
+    # main_window.check_emg_dropdown.setCurrentText("Yes")  # Set initial value
+    # options_panel.add_widget(check_emg_field)
 
-    reference_field = FormDropdown("Reference", ["EMG amplitude", "Target"])
-    main_window.reference_dropdown = reference_field.dropdown
-    main_window.reference_dropdown.setStyleSheet(
-        main_window.algo_combo.styleSheet())
-    main_window.reference_dropdown.setCurrentText(
-        "EMG amplitude")  # Set initial value
-    options_panel.add_widget(reference_field)
+    # cov_filter_field = FormDropdown("COV Filter", ["Yes", "No"])
+    # main_window.cov_filter_dropdown = cov_filter_field.dropdown
+    # main_window.cov_filter_dropdown.setStyleSheet(
+    #     main_window.algo_combo.styleSheet())
+    # main_window.cov_filter_dropdown.setCurrentText("Yes")  # Set initial value
+    # options_panel.add_widget(cov_filter_field)
 
-    algo_fastICA_panels.addWidget(options_panel)
-    # left_layout.addWidget(options_panel)
+    # reference_field = FormDropdown("Reference", ["EMG amplitude", "Target"])
+    # main_window.reference_dropdown = reference_field.dropdown
+    # main_window.reference_dropdown.setStyleSheet(
+    #     main_window.algo_combo.styleSheet())
+    # main_window.reference_dropdown.setCurrentText(
+    #     "EMG amplitude")  # Set initial value
+    # options_panel.add_widget(reference_field)
+
+    # algo_fastICA_panels.addWidget(options_panel)
+    # # left_layout.addWidget(options_panel)
+
+    """
+    advanced options
+    """
 
     # Advanced Options panel
     advanced_panel = CollapsiblePanel("Advanced Options")
@@ -191,27 +205,33 @@ def setup_left_panel(main_window):
     params_panel.add_widget(cov_field)
 
     algo_fastICA_panels.addWidget(params_panel)
+    algo_fastICA_panels.addStretch()
     # left_layout.addWidget(params_panel)
 
 # ---------------------------------SCD options---------------------------------
 
     algo_SCD_options_widget = QWidget()
     algo_SCD_panels = QVBoxLayout(algo_SCD_options_widget)
+    algo_SCD_panels.setContentsMargins(0, 0, 0, 0)
 
-    # Options Panel
-    options_panel = CollapsiblePanel("Processing Options")
+    """
+    processing options
+    """
 
-    available_devices = ["CPU"]
-    if cuda.is_available():
-        available_devices.append("GPU")
-    device_field = FormDropdown("Device", available_devices)
-    main_window.device_dropdown = device_field.dropdown
-    main_window.device_dropdown.setStyleSheet(
-        main_window.algo_combo.styleSheet())
-    main_window.device_dropdown.setCurrentText("CPU")  # Set initial value
-    options_panel.add_widget(device_field)
+    # # Options Panel
+    # options_panel = CollapsiblePanel("Processing Options")
 
-    algo_SCD_panels.addWidget(options_panel)
+    # available_devices = ["CPU"]
+    # if cuda.is_available():
+    #     available_devices.append("GPU")
+    # device_field = FormDropdown("Device", available_devices)
+    # main_window.device_dropdown = device_field.dropdown
+    # main_window.device_dropdown.setStyleSheet(
+    #     main_window.algo_combo.styleSheet())
+    # main_window.device_dropdown.setCurrentText("CPU")  # Set initial value
+    # options_panel.add_widget(device_field)
+
+    # algo_SCD_panels.addWidget(options_panel)
 
     # Advanced Options panel
     advanced_panel = CollapsiblePanel("Advanced Options")
@@ -285,6 +305,7 @@ def setup_left_panel(main_window):
     params_panel.add_widget(bandwidth_field)
 
     algo_SCD_panels.addWidget(params_panel)
+    algo_SCD_panels.addStretch()
 
     # TODO: set up options for both algorithms
     algo_options_stack_widget.addWidget(algo_fastICA_options_widget)
@@ -293,7 +314,7 @@ def setup_left_panel(main_window):
     left_layout.addWidget(algo_options_stack_widget)
 
     # Add stretch to push everything to the top
-    left_layout.addStretch(1)
+    left_layout.addStretch()
 
     # Set the left panel as the scroll area's widget
     scroll_area.setWidget(left_panel)
