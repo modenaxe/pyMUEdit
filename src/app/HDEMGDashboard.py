@@ -410,7 +410,7 @@ class HDEMGDashboard(QMainWindow):
         Load saved decomposition states into recent visualizations.
         Called during initialization to populate the dashboard with saved visualizations.
         """
-        from core.utils.decomposition.decomposition_state import DecompositionState
+        from core.utils.postprocessing.decomposition_state import DecompositionState
 
         # Get saved states
         try:
@@ -490,7 +490,7 @@ class HDEMGDashboard(QMainWindow):
         Args:
             state_path: Path to the saved state file
         """
-        from core.utils.decomposition.decomposition_state import DecompositionState
+        from core.utils.postprocessing.decomposition_state import DecompositionState
         import pyqtgraph as pg
         from PyQt5.QtWidgets import QWidget, QVBoxLayout
         from core.EmgDecomposition import offline_EMG
