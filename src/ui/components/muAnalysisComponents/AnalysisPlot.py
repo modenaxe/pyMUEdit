@@ -37,7 +37,7 @@ class AnalysisPlot(QWidget):
         Returns: None
         """
         self.canvas = AnalysisText.create_prompt(
-            "Press Load File to View Data")
+            "Select a file to begin the analysis")
         self.layout.addWidget(self.canvas, alignment=Qt.AlignCenter)
 
     def set_resize(self, button):

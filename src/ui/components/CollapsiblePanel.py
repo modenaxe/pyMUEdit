@@ -4,7 +4,7 @@ from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton,
-                             QVBoxLayout, QWidget, QSizePolicy)
+                             QSizePolicy, QVBoxLayout, QWidget)
 
 from .CleanTheme import CleanTheme
 
