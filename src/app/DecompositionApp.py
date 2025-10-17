@@ -450,7 +450,7 @@ class DecompositionApp(QMainWindow):
         # Save the decomposition state
         try:
             # Import the DecompositionState class
-            from core.utils.decomposition.decomposition_state import DecompositionState
+            from core.utils.postprocessing.decomposition_state import DecompositionState
 
             # Save the state and get metadata
             state_meta = DecompositionState.save_state(self)
