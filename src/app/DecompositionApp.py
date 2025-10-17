@@ -106,36 +106,40 @@ class DecompositionApp(QMainWindow):
 
         self.file_info_display.setText(file_info)
 
+        """ reference dropdown signals update """
+
         # Update the reference dropdown with available signals
-        self.reference_dropdown.blockSignals(True)
-        self.reference_dropdown.clear()
+        # self.reference_dropdown.blockSignals(True)
+        # self.reference_dropdown.clear()
 
         signal = self.emg_obj.signal_dict
 
-        # Update the list of signals for reference
-        if "auxiliaryname" in signal:
-            self.reference_dropdown.addItem("EMG amplitude")
-            for name in signal["auxiliaryname"]:
-                self.reference_dropdown.addItem(name)
-        elif "target" in signal:
-            path_data = signal["path"]
-            target_data = signal["target"]
+        # # Update the list of signals for reference
+        # if "auxiliaryname" in signal:
+        #     self.reference_dropdown.addItem("EMG amplitude")
+        #     for name in signal["auxiliaryname"]:
+        #         self.reference_dropdown.addItem(name)
+        # elif "target" in signal:
+        #     path_data = signal["path"]
+        #     target_data = signal["target"]
 
-            if isinstance(path_data, np.ndarray) and isinstance(target_data, np.ndarray):
-                path_reshaped = path_data.reshape(1, -1) if path_data.ndim == 1 else path_data
-                target_reshaped = target_data.reshape(1, -1) if target_data.ndim == 1 else target_data
-                signal["auxiliary"] = np.vstack((path_reshaped, target_reshaped))
-            else:
-                signal["auxiliary"] = np.vstack((np.array([path_data]), np.array([target_data])))
+        #     if isinstance(path_data, np.ndarray) and isinstance(target_data, np.ndarray):
+        #         path_reshaped = path_data.reshape(1, -1) if path_data.ndim == 1 else path_data
+        #         target_reshaped = target_data.reshape(1, -1) if target_data.ndim == 1 else target_data
+        #         signal["auxiliary"] = np.vstack((path_reshaped, target_reshaped))
+        #     else:
+        #         signal["auxiliary"] = np.vstack((np.array([path_data]), np.array([target_data])))
 
-            signal["auxiliaryname"] = ["Path", "Target"]
-            self.reference_dropdown.addItem("EMG amplitude")
-            for name in signal["auxiliaryname"]:
-                self.reference_dropdown.addItem(name)
-        else:
-            self.reference_dropdown.addItem("EMG amplitude")
+        #     signal["auxiliaryname"] = ["Path", "Target"]
+        #     self.reference_dropdown.addItem("EMG amplitude")
+        #     for name in signal["auxiliaryname"]:
+        #         self.reference_dropdown.addItem(name)
+        # else:
+        #     self.reference_dropdown.addItem("EMG amplitude")
 
-        self.reference_dropdown.blockSignals(False)
+        # self.reference_dropdown.blockSignals(False)
+
+        """ --- """
 
         # Enable the start button and configuration
         self.start_button.setEnabled(True)
@@ -301,13 +305,13 @@ class DecompositionApp(QMainWindow):
         # Reset iteration counter at the start of a new decomposition
         self.iteration_counter = 0
         ui_params = {}
-        
+
         if algo_choice == "Fast ICA":
             # Get UI parameters
             ui_params = {
-                "check_emg": self.check_emg_dropdown.currentText(),
+                "check_emg": "Yes",   # self.check_emg_dropdown.currentText(),
                 "peeloff": self.peeloff_dropdown.currentText(),
-                "cov_filter": self.cov_filter_dropdown.currentText(),
+                "cov_filter": "Yes",    # self.cov_filter_dropdown.currentText(),
                 "initialization": self.initialisation_dropdown.currentText(),
                 "refine_mu": self.refine_mus_dropdown.currentText(),
                 "duplicates_bgrids": "Yes",  # Set default value
@@ -322,7 +326,7 @@ class DecompositionApp(QMainWindow):
             }
         elif algo_choice == "SCD":
             ui_params = {
-                "device": self.device_dropdown.currentText(),
+                "device": "CPU",  # "self.device_dropdown.currentText()",
                 "filt_harms": self.filt_harms_dropdown.currentText(),
                 "use_coeff_var_fitness": self.use_coeff_var_fitness_dropdown.currentText(),
                 "remove_bad_fr": self.remove_bad_fr_dropdown.currentText(),
@@ -348,7 +352,7 @@ class DecompositionApp(QMainWindow):
         if not self.emg_obj or not self.pathname or not self.filename:
             self.edit_field.setText("Please select and load a file first")
             return
-        
+
         # Disable the start button during processing
         self.start_button.setEnabled(False)
         self.edit_field.setText("Starting decomposition...")
@@ -416,7 +420,8 @@ class DecompositionApp(QMainWindow):
                 index = 0
                 # Plot selected auxiliary signal
                 for i, aux_name in enumerate(self.decomposition_result["auxiliaryname"][0]):
-                    if aux_name == self.reference_dropdown.currentText():
+                    # if aux_name == self.reference_dropdown.currentText():
+                    if aux_name == "EMG amplitude":
                         index = i
                         break
 
