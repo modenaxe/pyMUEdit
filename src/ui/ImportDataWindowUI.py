@@ -70,7 +70,7 @@ def setup_ui(import_window):
 def create_import_preview_card(import_window):
     """Create the signal preview section, now also serving as a dropzone."""
     preview_card = CleanCard()
-    preview_card.setMinimumHeight(400)
+    preview_card.setMinimumHeight(500)
     preview_card.setAcceptDrops(True)  # Enable drop events
 
     # Create layout for content
@@ -365,12 +365,6 @@ def _create_import_page(import_window):
     header = SectionHeader("Import HDEMG Data")
     content_layout.addWidget(header)
 
-    viz_section = _create_visualizations_section(import_window)
-    content_layout.addWidget(viz_section)
-
-    datasets_section = _create_datasets_section(import_window)
-    content_layout.addWidget(datasets_section)
-
     header_container = QWidget()
     header_layout = QHBoxLayout(header_container)
     header_layout.setContentsMargins(0, 0, 0, 0)
@@ -411,95 +405,6 @@ def _create_import_page(import_window):
     right_v.addWidget(footer, 0)
 
     return right_layout
-
-def _create_visualizations_section(import_window):
-    """Creates the Recent Visualizations section with cards."""
-    # Create a card to hold the visualizations
-    section_card = CleanCard()
-    section_card.setMinimumSize(200, 300)
-    section_layout = QVBoxLayout()
-    section_layout.setContentsMargins(0, 0, 0, 0)
-    section_layout.setSpacing(15)
-    # Add section title
-    section_title = QLabel("Recent Visualizations")
-    section_title.setFont(QFont("Segoe UI", 14, QFont.Bold))
-    section_title.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
-    section_layout.addWidget(section_title)
-    # Create horizontal layout for visualization cards
-    cards_layout = QHBoxLayout()
-    cards_layout.setSpacing(15)
-    # Add visualization cards
-    if hasattr(
-            import_window,
-            "recent_visualizations") and import_window.recent_visualizations:
-        for i, viz_data in enumerate(
-                import_window.recent_visualizations[:3]):  # Show only first 3 cards
-            # Create card for each visualization with index and state_path
-            card = VisualizationCard(
-                title=viz_data["title"],
-                date=viz_data["date"],
-                icon=viz_data.get("icon", "visualization_icon"),
-                state_path=viz_data.get("state_path"),
-                index=i  # Pass index to track which card was clicked
-            )
-            cards_layout.addWidget(card)
-    else:
-        # Create a placeholder card
-        empty_card = VisualizationCard(
-            title="No Visualizations",
-            date="Create your first visualization")
-        cards_layout.addWidget(empty_card)
-    section_layout.addLayout(cards_layout)
-    section_card.content_layout.addLayout(section_layout)
-    return section_card
-
-def _create_datasets_section(import_window):
-    """Creates the Recent Datasets section with clean list items."""
-    # Create a card to hold the datasets
-    section_card = CleanCard()
-    section_card.setMinimumSize(200, 200)
-    section_layout = QVBoxLayout()
-    section_layout.setContentsMargins(0, 0, 0, 5)
-    section_layout.setSpacing(15)
-    # Add section title
-    section_title = QLabel("Recent Datasets")
-    section_title.setFont(QFont("Segoe UI", 14, QFont.Bold))
-    section_title.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
-    section_layout.addWidget(section_title)
-    # Create datasets container
-    datasets_container = QWidget()
-    datasets_layout = QVBoxLayout(datasets_container)
-    datasets_layout.setContentsMargins(0, 0, 0, 0)
-    datasets_layout.setSpacing(0)  # No spacing between items
-    # Add dataset items
-    if hasattr(import_window, "recent_datasets") and import_window.recent_datasets:
-        for dataset in import_window.recent_datasets:
-            # Create dataset item that will open the file when clicked
-            dataset_item = DatasetItem(
-                dataset["filename"], dataset["metadata"])
-            # Store the full path for later use
-            if "pathname" in dataset:
-                dataset_item.setProperty("pathname", dataset["pathname"])
-            # Connect the click event if applicable
-            if hasattr(import_window, "open_dataset"):
-                dataset_item.mousePressEvent = lambda event, d=dataset: import_window.open_dataset(
-                    d)
-            datasets_layout.addWidget(dataset_item)
-    else:
-        # Create an empty state message
-        empty_label = QLabel("No recent datasets found")
-        empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        empty_label.setStyleSheet(
-            f"""
-            color: {CleanTheme.TEXT_SECONDARY};
-            padding: 20px;
-            font-size: 12px;
-        """
-        )
-        datasets_layout.addWidget(empty_label)
-    section_layout.addWidget(datasets_container)
-    section_card.content_layout.addLayout(section_layout)
-    return section_card
 
 def update_sidebar_selection(import_window, selected_key):
     """Updates the visual state of sidebar buttons based on selection."""
