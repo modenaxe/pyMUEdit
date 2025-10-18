@@ -83,8 +83,6 @@ class ChannelViewer(QWidget):
         first_plot = self.plot_items[0] 
         first_plot.setTitle(
             f"Channels {self.channel_indices[0] + 1}-{self.channel_indices[-1] + 1}",
-            fontsize=50,
-            pad=15
         )
 
 def get_n_colours(n):
