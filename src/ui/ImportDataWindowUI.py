@@ -1,25 +1,22 @@
-import os
 from pathlib import Path
 import pyqtgraph as pg
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtSvg import QSvgWidget
-from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
-                             QPushButton, QScrollArea, QStackedWidget,
-                             QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import (
+    QApplication, QFrame, QHBoxLayout, QLabel, QPushButton,
+    QScrollArea, QSizePolicy, QSpacerItem, QStackedWidget,
+    QVBoxLayout, QWidget
+)
+
 # Import custom components
-from ui.components import (ActionButton, CleanCard, CleanTheme, SectionHeader,
-                           Sidebar, VisualizationPanel)
-# copied from dashboardui
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QScrollArea, QSizePolicy,
-                             QSpacerItem, QStackedWidget, QVBoxLayout, QWidget)
-# Import all required components
-from ui.components import (ActionButton, CleanCard, CleanTheme, DatasetItem,
-                           SectionHeader, Sidebar, VisualizationCard)
+from ui.components import (
+    ActionButton, CleanCard, CleanTheme,
+    SectionHeader, Sidebar, VisualizationPanel
+)
 from ui.components.CleanScrollBar import CleanScrollBar
-# defining absolute path to the public icons folder (same logic as Sidebar.py)
+
+# Define absolute path to the public icons folder (same logic as Sidebar.py)
 ABS_PATH = Path(__file__).parent.parent
 ICONS_PATH = ABS_PATH / "public"
 
@@ -108,88 +105,16 @@ def create_right_content(import_window):
 
     return scroll_area
 
-
-def create_dropzone_card(import_window):
-    """Create a clean card for the file dropzone."""
-    dropzone_card = CleanCard()
-    dropzone_card.setMinimumHeight(190)
-
-    # Create layout for content
-    dropzone_layout = QVBoxLayout()
-    dropzone_layout.setContentsMargins(10, 10, 10, 10)
-    dropzone_layout.setSpacing(10)
-    dropzone_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-    # Add SVG icon
-    icon_container = QWidget()
-    icon_layout = QHBoxLayout(icon_container)
-    icon_layout.setContentsMargins(0, 0, 0, 0)
-    icon_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-    upload_icon_path = ICONS_PATH / "upload_icon.svg"
-    if not upload_icon_path.exists():
-        print(f"Warning: Icon {upload_icon_path} not found")
-    cloud_icon = QSvgWidget(str(upload_icon_path))
-    cloud_icon.setFixedSize(32, 22)
-    cloud_icon.setStyleSheet("margin-bottom: 10px;")
-
-    icon_layout.addWidget(cloud_icon)
-
-    # Add descriptive text
-    drag_label = QLabel("Drag and drop your HDEMG files here")
-    drag_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    drag_label.setFont(QFont("Segoe UI", 12))
-    drag_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
-
-    # Add file info label (hidden initially)
-    import_window.file_info_label = QLabel("")
-    import_window.file_info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    import_window.file_info_label.setFont(QFont("Segoe UI", 11))
-    import_window.file_info_label.setStyleSheet(
-        f"color: #4CAF50; font-weight: bold;")
-    import_window.file_info_label.setVisible(False)
-
-    # Add "or" label
-    or_label = QLabel("or")
-    or_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    or_label.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
-
-    # Add browse button
-    browse_btn = ActionButton("Browse Files", primary=False)
-    browse_btn.clicked.connect(import_window.select_file)
-
-    # Add widgets to layout
-    dropzone_layout.addStretch()
-    dropzone_layout.addWidget(icon_container)
-    dropzone_layout.addWidget(drag_label)
-    dropzone_layout.addWidget(import_window.file_info_label)
-    dropzone_layout.addWidget(or_label)
-    dropzone_layout.addWidget(browse_btn, 0, Qt.AlignmentFlag.AlignCenter)
-    dropzone_layout.addStretch()
-
-    # Add layout to card
-    dropzone_card.content_layout.addLayout(dropzone_layout)
-
-    # Store reference to the dropzone for drag and drop events
-    import_window.dropzone = dropzone_card
-
-    # Setup drag and drop events later in ImportDataWindow.py
-    return dropzone_card
-
-
 # NOTE: Creates 'Signal Preview' window
 def create_preview_section(import_window):
-    """Create the signal preview section."""
     preview_card = CleanCard()
     preview_card.setMinimumHeight(500)
     preview_card.setAcceptDrops(True)  # Enable drop events
 
-    # Create layout for content
     preview_layout = QVBoxLayout()
     preview_layout.setContentsMargins(0, 0, 0, 0)
     preview_layout.setSpacing(5)
 
-    # Create preview frame
     preview_frame = QFrame()
     preview_frame.setObjectName("previewFrame")
     preview_frame.setStyleSheet(
@@ -202,52 +127,62 @@ def create_preview_section(import_window):
     )
     preview_frame.setMinimumHeight(220)
 
-    # Create stacked widget to display either the label or the visualisation
     import_window.preview_stacked_frame = QStackedWidget()
 
-    # Create preview messages layout
     import_window.preview_messages = QVBoxLayout()
 
-    # Add import failure message
     import_window.failure_message = QLabel("Error Loading Signal Preview")
     import_window.failure_message.setStyleSheet(
-        f"color: #FA0000; font-weight: bold;")
-    import_window.failure_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        "color: #FA0000; font-weight: bold;"
+    )
+    import_window.failure_message.setAlignment(Qt.AlignCenter)
     import_window.failure_message.setVisible(False)
 
-    # Add preview message / dropzone label
+    icon_container = QWidget()
+    icon_layout = QHBoxLayout(icon_container)
+    icon_layout.setContentsMargins(0, 0, 0, 0)
+    icon_layout.setAlignment(Qt.AlignCenter)
+
+    upload_icon_path = ICONS_PATH / "upload_icon.svg"
+
+    if not upload_icon_path.exists():
+        print(f"Warning: Icon not found at {upload_icon_path}")
+    else:
+        cloud_icon = QSvgWidget(str(upload_icon_path))
+        cloud_icon.setStyleSheet("""
+            background: transparent;
+            margin-bottom: 8px;
+        """)
+        icon_layout.addWidget(cloud_icon)
+
     import_window.preview_message = QLabel(
-        "Drag and drop your HDEMG files here\nor click 'Browse Files' above.")
-    import_window.preview_message.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        "Drag and drop your HDEMG files here\nor click 'Browse Files' above."
+    )
+    import_window.preview_message.setAlignment(Qt.AlignCenter)
     import_window.preview_message.setFont(QFont("Segoe UI", 12))
     import_window.preview_message.setStyleSheet(
-        f"color: {CleanTheme.TEXT_SECONDARY};")
+        f"color: {CleanTheme.TEXT_SECONDARY};"
+    )
 
-    # Add preview messages to stacked frame as an active widget
+    msg_container = QWidget()
+    msg_layout = QVBoxLayout(msg_container)
+    msg_layout.setAlignment(Qt.AlignCenter)
+    msg_layout.addWidget(icon_container)
+    msg_layout.addWidget(import_window.preview_message)
+
     import_window.preview_messages.addStretch()
     import_window.preview_messages.addWidget(import_window.failure_message)
-    import_window.preview_messages.addSpacing(10)
-    import_window.preview_messages.addWidget(import_window.preview_message)
+    import_window.preview_messages.addWidget(msg_container)
     import_window.preview_messages.addStretch()
-    import_window.preview_messages_widget = QWidget()
-    import_window.preview_messages_widget.setLayout(
-        import_window.preview_messages)
-    import_window.preview_stacked_frame.addWidget(
-        import_window.preview_messages_widget)
 
-    # Create visualization panel to preview the data in a selected file
+    import_window.preview_messages_widget = QWidget()
+    import_window.preview_messages_widget.setLayout(import_window.preview_messages)
+    import_window.preview_stacked_frame.addWidget(import_window.preview_messages_widget)
+
     import_window.preview_plot = pg.PlotWidget()
-    import_window.preview_plot.setBackground("w")  # White background
-    import_window.preview_plot.setLabel("left",
-                                        "Amplitude",
-                                        units="µV",
-                                        **{"colour": "black",
-                                            "font-size": "12pt"})  # 12pt, black text
-    import_window.preview_plot.setLabel("bottom",
-                                        "Time",
-                                        units="s",
-                                        **{"colour": "black",
-                                           "font-size": "12pt"})  # 12pt, black text
+    import_window.preview_plot.setBackground("w")
+    import_window.preview_plot.setLabel("left", "Amplitude", units="µV")
+    import_window.preview_plot.setLabel("bottom", "Time", units="s")
     import_window.preview_plot.showGrid(x=True, y=True)
     import_window.preview_plot.setMinimumHeight(250)
 
@@ -260,31 +195,28 @@ def create_preview_section(import_window):
     import_window.preview_stacked_frame.addWidget(signal_panel)
     import_window.preview_stacked_frame.setCurrentIndex(0)
 
-    # Add stacked widget to preview frame
     preview_frame_layout = QVBoxLayout(preview_frame)
     preview_frame_layout.addWidget(import_window.preview_stacked_frame, stretch=3)
 
-    # Add left/right electrode buttons
     lrbuttons = QWidget()
     button_layout = QHBoxLayout()
     import_window.left_button = ActionButton("←", primary=False)
-    import_window.left_button.setEnabled(False)
     import_window.right_button = ActionButton("→", primary=False)
+    import_window.left_button.setEnabled(False)
     import_window.right_button.setEnabled(False)
     import_window.left_button.clicked.connect(import_window.leftClicked)
     import_window.right_button.clicked.connect(import_window.rightClicked)
     button_layout.addWidget(import_window.left_button)
     button_layout.addWidget(import_window.right_button)
     lrbuttons.setLayout(button_layout)
+
     preview_layout.addWidget(preview_frame)
     preview_layout.addWidget(lrbuttons)
 
-    # Add layout to card
     preview_card.content_layout.addLayout(preview_layout)
 
-    # Store references
     import_window.preview_frame = preview_frame
-    import_window.dropzone = preview_card  # keep compatibility
+    import_window.dropzone = preview_card
 
     return preview_card
 
