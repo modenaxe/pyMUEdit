@@ -7,3 +7,5 @@ data/*.mat
 tests/*.mat
 tests/*.otb+
 .DS_Store
+.vscode
+.idea

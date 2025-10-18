@@ -1,7 +1,11 @@
 # there is a good example https://github.com/ffreemt/nuitka-with-github-actions/blob/main/.github/workflows/pyqt5-windows.yml
 name: build_pyMUEdit
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ main, development ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
 
@@ -11,39 +15,42 @@ jobs:
         os: [windows-latest] # [macos-latest, ubuntu-latest, windows-latest]
 
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
 
     steps:
       - name: Check-out repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13' # Version range or exact version of a Python version to use, using SemVer's version range syntax
-          architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
-          cache: 'pip'
-          cache-dependency-path: |
-            requirements.txt
+      # - name: Setup Python
+      #   uses: actions/setup-python@v5
+      #   with:
+      #     python-version: '3.13' # Version range or exact version of a Python version to use, using SemVer's version range syntax
+      #     architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
+      #     cache: 'pip'
+      #     cache-dependency-path: |
+      #       requirements.txt
 
-      - name: Install Dependencies
-        run: |
-          pip install -r requirements.txt
+      # - name: Install Dependencies
+      #   run: |
+      #     pip install -r requirements.txt
 
-      - name: Build Executable
-        uses: Nuitka/Nuitka-Action@main
-        with:
-          nuitka-version: main
-          script-name: src/main.py
-          mode: standalone
-          enable-plugins: pyqt5
+      # - name: Build Executable
+      #   uses: Nuitka/Nuitka-Action@main
+      #   with:
+      #     nuitka-version: main
+      #     script-name: src/main.py
+      #     mode: standalone
+      #     low-memory: true
+      #     nofollow-import-to: numba
+      #     enable-plugins: pyqt5
 
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ runner.os }} Build
-          path: |
-            build/*.exe
-            build/*.bin
-            build/*.app/**/*
-            build/*.dist/**/*
-          include-hidden-files: true
+      # - name: Upload Artifacts
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: ${{ runner.os }} Build
+      #     path: |
+      #       build/*.exe
+      #       build/*.bin
+      #       build/*.app/**/*
+      #       build/*.dist/**/*
+      #     include-hidden-files: true
