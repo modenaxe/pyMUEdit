@@ -72,6 +72,12 @@ class ChannelViewer(QWidget):
             self.curves.append(curve)
             self.plot_items.append(p)
 
+            # Hide x axis labels for all but last plot
+            if i < n - 1:
+                p.getAxis("bottom").setStyle(showValues=False)
+            else:
+                p.setLabel('bottom', "Time", **{"color": "black", "font-size": "12pt"})
+
         # Place 'Channels Title' above the first plot
         first_plot = self.plot_items[0] 
         first_plot.setTitle(
