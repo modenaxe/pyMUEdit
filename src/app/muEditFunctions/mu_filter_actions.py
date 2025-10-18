@@ -7,7 +7,10 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
 from core.utils.manual_editing.extendfilter import extendfilter
 from app.muEditFunctions.plotting import update_spike_train_plot
-
+from app.muEditFunctions.mu_selection import (
+    calculate_silval,
+    update_display_mus 
+)
 
 def update_mu_filter_button_pushed(self):
     """Update the motor unit filter using the current discharge times."""
@@ -120,16 +123,14 @@ def update_mu_filter_button_pushed(self):
             self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = updated_discharge_times
 
         # Recalculate SIL values
-        self.calculate_silval(array_idx, mu_idx)
+        calculate_silval(self, array_idx, mu_idx)
 
         new_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
         # Update the display
-        if(new_sil >= old_sil):
-            # self.mu_checkbox_state_changed(pluse_train_color="#8ACD69")
-            self.update_display_mus(pluse_train_color="#8ACD69")
+        if (new_sil >= old_sil):
+            update_display_mus(self, pluse_train_color="#8ACD69")
         else:
-            # self.mu_checkbox_state_changed(pluse_train_color="#698CCD")
-            self.update_display_mus(pluse_train_color="#698CCD")
+            update_display_mus(self, pluse_train_color="#698CCD")
 
         QApplication.restoreOverrideCursor()
 
@@ -271,16 +272,14 @@ def extend_mu_filter_button_pushed(self):
                 QApplication.processEvents()
 
             # Recalculate SIL values
-            self.calculate_silval(array_idx, mu_idx)
+            calculate_silval(self, array_idx, mu_idx)
             new_sil = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
             # Final display update
 
             if(new_sil >= old_sil):
-                # self.mu_checkbox_state_changed(pluse_train_color="#8ACD69")
-                self.update_display_mus(pluse_train_color="#8ACD69")
+                update_display_mus(self, pluse_train_color="#8ACD69")
             else:
-                # self.mu_checkbox_state_changed(pluse_train_color="#698CCD")
-                self.update_display_mus(pluse_train_color="#698CCD")
+                update_display_mus(self, pluse_train_color="#698CCD")
 
             QApplication.processEvents()
 

@@ -20,6 +20,13 @@ from app.muEditFunctions.mu_filter_actions import *
 from app.muEditFunctions.batch_processing import *
 from app.muEditFunctions.visualization import *
 from app.muEditFunctions.exporter import *
+from app.muEditFunctions.edit_actions import (
+    add_spikes_button_pushed,
+    delete_dr_button_pushed,
+    delete_spikes_button_pushed,
+    lock_spikes_button_pushed,
+    remove_outliers_button_pushed
+)
 
 class FixedPopupComboBox(QComboBox):  # set a new class for dropout moy
     def __init__(self, *args, **kwargs):
@@ -837,17 +844,17 @@ def setup_display_panel(main_window):
 
     # Group buttons based on functionality
     spikes_buttons = [
-        ("Add spikes", main_window.add_spikes_button_pushed, "add_spikes_btn"),
-        ("Delete spikes", main_window.delete_spikes_button_pushed, "delete_spikes_btn"),
-        ("Lock spikes", main_window.lock_spikes_button_pushed, "lock_spikes_btn"),
+        ("Add spikes", add_spikes_button_pushed(main_window), "add_spikes_btn"),
+        ("Delete spikes", delete_spikes_button_pushed(main_window), "delete_spikes_btn"),
+        ("Lock spikes", lock_spikes_button_pushed(main_window), "lock_spikes_btn"),
     ]
 
     misc_buttons = [
         ("Delete DR",
-         main_window.delete_dr_button_pushed,
+         delete_dr_button_pushed(main_window),
          "delete_dr_btn"),
         ("Remove outliers",
-         main_window.remove_outliers_button_pushed,
+         remove_outliers_button_pushed(main_window),
          "remove_outliers_single_btn"),
     ]
 
