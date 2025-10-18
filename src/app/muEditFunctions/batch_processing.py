@@ -14,6 +14,11 @@ from ui.components import (
     WarningDialog,
 )
 
+from app.muEditFunctions.mu_selection import (
+    mu_checkbox_state_changed,
+    update_mu_checkboxes,
+    calculate_silval
+)
 # Batch processing
 def remove_all_outliers_button_pushed(self):
     """Remove outliers from all motor units."""
@@ -78,7 +83,7 @@ def remove_all_outliers_button_pushed(self):
                     self.MUedition["edition"]["Dischargetimes"][array_idx, mu_idx] = filtered_distime[0]
 
                 # Update SIL values
-                self.calculate_silval(array_idx, mu_idx)
+                calculate_silval(self, array_idx, mu_idx)
 
             processed_mus += 1
 
@@ -97,7 +102,7 @@ def remove_all_outliers_button_pushed(self):
     self.dirty_depth += 1
     self.update_save_button()
     # Update the current MU display
-    self.mu_checkbox_state_changed()
+    mu_checkbox_state_changed(self)
 
 def remove_outliers(self, pulse_trains, discharge_times, fsamp, mu_names=None):
     """
@@ -172,7 +177,7 @@ def update_all_mu_filters_button_pushed(self):
         progress.setValue(val), progress.setLabelText(text)
     ))
     # Update the current MU display
-    self._filterWorker.finished.connect(lambda: (progress.close(), self.update_save_button(), self.mu_checkbox_state_changed()))
+    self._filterWorker.finished.connect(lambda: (progress.close(), self.update_save_button(), mu_checkbox_state_changed(self)))
     self._filterWorker.error.connect(lambda msg: (progress.close(), print("Error:", msg)))
 
     progress.canceled.connect(self._filterWorker.cancel)
@@ -273,7 +278,7 @@ def remove_flagged_mu_button_pushed(self):
 
     self.update_save_button()
     # Update the MU checkboxes
-    self.update_mu_checkboxes()
+    update_mu_checkboxes(self)
 
 def remove_duplicates_within_grids_button_pushed(self):
     """Remove duplicate motor units within each grid."""
@@ -303,7 +308,7 @@ def remove_duplicates_within_grids_button_pushed(self):
         progress.setValue(val), progress.setLabelText(text)
     ))
     # Update the current MU display
-    self._duplicatesInGridsWorker.finished.connect(lambda: (progress.close(), self.update_save_button(), self.mu_checkbox_state_changed()))
+    self._duplicatesInGridsWorker.finished.connect(lambda: (progress.close(), self.update_save_button(), mu_checkbox_state_changed(self)))
     self._duplicatesInGridsWorker.error.connect(lambda msg: (progress.close(), print("Error:", msg)))
 
     progress.canceled.connect(self._duplicatesInGridsWorker.cancel)
@@ -343,7 +348,7 @@ def remove_duplicates_between_grids_button_pushed(self):
     ))
 
     # Update the current MU display
-    self._duplicatesWithGridsWorker.finished.connect(lambda: (progress.close(), self.update_save_button(), self.mu_checkbox_state_changed()))
+    self._duplicatesWithGridsWorker.finished.connect(lambda: (progress.close(), self.update_save_button(), mu_checkbox_state_changed(self)))
     self._duplicatesWithGridsWorker.error.connect(lambda msg: (progress.close(), print("Error:", msg)))
 
     progress.canceled.connect(self._duplicatesWithGridsWorker.cancel)
