@@ -24,10 +24,10 @@ class FileSection(QFrame):
         layout.addWidget(title_label)
         button_row = QHBoxLayout()
         layout.addLayout(button_row)
-        browse_btn = GeneralButton(
+        self.load_btn = GeneralButton(
             'Load File', lambda: mu.select_file_button_pushed(
                 analysis_plot, False))
-        button_row.addWidget(browse_btn, stretch=1)
+        button_row.addWidget(self.load_btn, stretch=1)
         self.reset_btn = ResetButton('Reset')
         self.reset_btn.setStyleSheet(
             """
