@@ -27,11 +27,8 @@ class ChannelViewer(QWidget):
         self.layout.setContentsMargins(40, 0, 50, 30)
 
         # Use PyQt graph for plotting
-        self.plot_widget = pg.PlotWidget()
+        self.plot_widget = pg.GraphicsLayoutWidget()
         self.plot_widget.setBackground("w") 
-        self.plot_widget.setLabel("bottom", "Time")
-        self.plot_widget.showGrid(x=True, y=True)
-        self.plot_widget.hideAxis("left")
         self.layout.addWidget(self.plot_widget, stretch=5)
 
         # Electrode grid
@@ -59,31 +56,27 @@ class ChannelViewer(QWidget):
 
         n = len(self.channel_indices)
         colours = get_n_colours(n)
-        x = np.arange(self.entire_emg_data.shape[1])
+
+        self.curves = [] 
+        self.plot_items = []
 
         for i, index in enumerate(self.channel_indices):
-            signal = self.entire_emg_data[index]
-            # Scaling the signal for each channel
-            scaling_signal = signal / (np.max(np.abs(signal)))
-            spacing = 2.0
-            y_offset = -i * spacing
-            
-            # Plot the colours
-            curve = pg.PlotCurveItem(
-                x,
-                scaling_signal + y_offset,
-                pen=pg.mkPen(color=colours[i], width=1.2)
-            )
+            p = self.plot_widget.addPlot(row=i, col=0)
+            p.showGrid(x=True, y=False, alpha=5.0) # Show x axis grid lines only 
+            p.getAxis("left").setStyle(showValues=False) # Hide y axis values
 
-            self.plot_widget.addItem(curve)
-                
-            text = pg.TextItem(text=f"{index + 1}", color="black", anchor=(1, 0.5))
-            text.setPos(x[0], y_offset)
-            self.plot_widget.addItem(text)
+            # Plot data
+            y = self.entire_emg_data[index]
+            x = np.arange(len(y))
+            curve = p.plot(x, y, pen=pg.mkPen(color=colours[i], width=1))
+            self.curves.append(curve)
+            self.plot_items.append(p)
 
-        self.plot_widget.setTitle(
+        # Place 'Channels Title' above the first plot
+        first_plot = self.plot_items[0] 
+        first_plot.setTitle(
             f"Channels {self.channel_indices[0] + 1}-{self.channel_indices[-1] + 1}",
-            fontsize=20,
+            fontsize=50,
             pad=15
         )
 
