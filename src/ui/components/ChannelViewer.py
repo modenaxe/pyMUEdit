@@ -63,7 +63,7 @@ class ChannelViewer(QWidget):
         for i, index in enumerate(self.channel_indices):
             p = self.plot_widget.addPlot(row=i, col=0)
             p.showGrid(x=True, y=False, alpha=5.0) # Show x axis grid lines only 
-            p.getAxis("left").setStyle(showValues=False) # Hide y axis values
+            p.showAxis("left", False) # Hide y axis values
 
             # Plot data
             y = self.entire_emg_data[index]
