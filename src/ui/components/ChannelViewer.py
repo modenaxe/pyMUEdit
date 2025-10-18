@@ -3,12 +3,10 @@ import math
 import matplotlib.cm as cm
 from matplotlib.backends.backend_qt5agg import \
     FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
 import numpy as np
 import pyqtgraph as pg
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-import colorsys
 
 from ui.components.ElectrodeGrid import ElectrodeGrid
 
@@ -35,12 +33,6 @@ class ChannelViewer(QWidget):
         self.plot_widget.showGrid(x=True, y=True)
         self.plot_widget.hideAxis("left")
         self.layout.addWidget(self.plot_widget, stretch=5)
-
-        # Matplotlib canvas for plotting
-        # self.figure = Figure(figsize=(8, 3), dpi=100)
-        # self.canvas = FigureCanvas(self.figure)
-        # self.figure.tight_layout()
-        # self.layout.addWidget(self.canvas, stretch=5)
 
         # Electrode grid
         self.electrode_grid = ElectrodeGrid(
