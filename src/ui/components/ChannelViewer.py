@@ -88,7 +88,5 @@ class ChannelViewer(QWidget):
         )
 
 def get_n_colours(n):
-    return [
-        pg.mkColor(tuple(int(c * 255) for c in colorsys.hsv_to_rgb(i / n, 0.8, 0.9)))
-        for i in range(n)
-    ]
+    cmap = pg.colormap.get("hsv", source="matplotlib")
+    return [cmap.map(i / n)[:3] for i in range(n)]
