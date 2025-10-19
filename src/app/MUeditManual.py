@@ -24,6 +24,7 @@ from PyQt5.QtWidgets import (
     QShortcut,
 )
 from PyQt5.QtGui import QKeySequence
+from types import MethodType
 
 import h5py
 
@@ -51,6 +52,14 @@ from core.utils.manual_editing.duplicates_between_grids_worker import duplicates
 
 from app.muEditFunctions.importer import import_data
 from app.muEditFunctions.plotting import *
+from app.muEditFunctions.mu_selection import (
+    mu_checkbox_state_changed,
+    calculate_silval
+)
+from app.muEditFunctions.edit_actions import (
+    delete_spikes_button_pushed,
+    add_spikes_button_pushed
+)
 # Import custom components
 from ui.components import (
     WarningDialog,
@@ -61,6 +70,7 @@ from ui.components import (
     PlotDialog,
     CleanTheme
 )
+
 import json
 
 class MUeditManual(QMainWindow):
@@ -296,12 +306,12 @@ class MUeditManual(QMainWindow):
 
         if hasattr(self, "add_spikes_btn") and self.add_spikes_btn.get_active():
             print("ESC: deactivating add_spikes button")
-            self.add_spikes_button_pushed()
+            add_spikes_button_pushed(self)
             return
 
         elif hasattr(self, "delete_spikes_btn") and self.delete_spikes_btn.get_active():
             print("ESC: deactivating delete_spikes button")
-            self.delete_spikes_button_pushed()
+            delete_spikes_button_pushed(self)
             return
 
         if hasattr(self, "selection_tool") and self.selection_tool:
@@ -365,7 +375,7 @@ class MUeditManual(QMainWindow):
         self.update_mu_filter_btn.setEnabled(enabled)
         self.extend_mu_filter_btn.setEnabled(enabled)
         self.lock_spikes_btn.setEnabled(enabled)
-        self.action_buttons["lock_spikes_button_pushed"].set_active(self.Backup["lock"] == 1 and enabled)
+        self.action_buttons["lock_spikes_btn"].set_active(self.Backup["lock"] == 1 and enabled)
         self.sil_switch.setEnabled(enabled)
 
         if hasattr(self, "selection_tool"): self.selection_tool.disable()
@@ -431,7 +441,7 @@ class MUeditManual(QMainWindow):
         for checkbox in self.mu_checkboxes:
             checkbox.blockSignals(False)
 
-        self.mu_checkbox_state_changed()
+        mu_checkbox_state_changed(self)
 
         # Update the display based on selection
         # self.display_selected_mus([cb.objectName() for cb in self.mu_checkboxes if cb.isChecked()])
@@ -462,14 +472,14 @@ class MUeditManual(QMainWindow):
             self.MUedition["signal"]["target"] = auxiliary_data
 
             # Update the current view based on checkboxes
-            self.mu_checkbox_state_changed()
+            mu_checkbox_state_changed(self)
         except Exception as e:
             print(f"Error setting reference: {e}")
 
     def sil_checkbox_value_changed(self):
         """Toggle SIL plot visibility."""
         # Update the plots (visibility of SIL plot will be handled in display_selected_mus)
-        self.mu_checkbox_state_changed()
+        mu_checkbox_state_changed(self)
 
     def aa_checkbox_value_changed(self, checked):
         """Toggle plot anti-aliasing."""
@@ -746,8 +756,8 @@ class MUeditManual(QMainWindow):
         self.MUedition["edition"]["Dischargetimes"][(a, m)] = last["times"]
 
         # Refresh Display
-        self.calculate_silval(a, m)
-        self.mu_checkbox_state_changed(update_act_btn=False)
+        calculate_silval(self, a, m)
+        mu_checkbox_state_changed(self, update_act_btn=False)
         if self.dirty_depth > 0:
             self.dirty_depth -= 1
         self.update_save_button()
@@ -776,11 +786,11 @@ class MUeditManual(QMainWindow):
         self.MUedition["edition"]["Dischargetimes"][(a, m)] = action["times"]
 
         # Refresh Display
-        self.calculate_silval(a, m)
-        self.mu_checkbox_state_changed(update_act_btn=False)
+        calculate_silval(self, a, m)
+        mu_checkbox_state_changed(self, update_act_btn=False)
         self.dirty_depth += 1
         self.update_save_button()
-
+    
     def flag_mu_for_deletion_button_pushed(self):
         """Flag the selected motor units for deletion."""
         if not self.MUedition:
@@ -824,7 +834,7 @@ class MUeditManual(QMainWindow):
 
         self.update_save_button()
         # Update the display
-        self.mu_checkbox_state_changed()
+        mu_checkbox_state_changed(self)
 
     def unflag_mu_for_deletion_button_pushed(self):
         """UnFlag the selected motor units for deletion."""
@@ -869,7 +879,7 @@ class MUeditManual(QMainWindow):
 
         # Update the display
         self.update_save_button()
-        self.mu_checkbox_state_changed()
+        mu_checkbox_state_changed(self)
 
     def clear_layout(self, layout):
         while layout.count():
@@ -894,6 +904,56 @@ class MUeditManual(QMainWindow):
 
         # Call the parent method
         super().hideEvent(event)
+        
+    def calculate_silval(self, array_idx, mu_idx):
+        """Calculate silhouette value for a motor unit."""
+        if not self.MUedition:
+            return
+
+        if "silval" not in self.MUedition["edition"]:
+            self.MUedition["edition"]["silval"] = {}
+
+        if "silvalcon" not in self.MUedition["edition"]:
+            self.MUedition["edition"]["silvalcon"] = {}
+
+        # Calculate SIL value
+        discharge_times = self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
+
+        # Store it back
+        self.MUedition["edition"]["Dischargetimes"][(array_idx, mu_idx)] = discharge_times
+
+        if len(discharge_times) > 2:
+            try:
+                if self.MUedition["signal"]["fsamp"].ndim > 1:
+                    fsamp = float(self.MUedition["signal"]["fsamp"][0][0])
+                else:
+                    fsamp = float(self.MUedition["signal"]["fsamp"][0])
+
+                # Calculate silhouette value
+                self.MUedition["edition"]["silval"][(array_idx, mu_idx)] = getsil(
+                    self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :], fsamp
+                )
+
+                # Calculate continuous silhouette values
+                self.MUedition["edition"]["silvalcon"][(array_idx, mu_idx)] = refinesil(
+                    self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :], discharge_times, fsamp
+                )
+
+            except Exception as e:
+                print(f"Error calculating SIL for array {array_idx}, MU {mu_idx}: {e}")
+                self.MUedition["edition"]["silval"][(array_idx, mu_idx)] = 0
+                self.MUedition["edition"]["silvalcon"][(array_idx, mu_idx)] = np.zeros((1, 2))
+        else:
+            self.MUedition["edition"]["silval"][(array_idx, mu_idx)] = 0
+            self.MUedition["edition"]["silvalcon"][(array_idx, mu_idx)] = np.zeros((1, 2))
+
+        # Update the checkbox text if it exists
+        for checkbox in self.mu_checkboxes:
+            if checkbox.objectName() == f"Array_{array_idx+1}_MU_{mu_idx+1}":
+                sil_value = self.MUedition["edition"]["silval"].get((array_idx, mu_idx), 0)
+                checkbox.setText(f"MU_{mu_idx+1} (SIL: {sil_value:.4f})")
+                break
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

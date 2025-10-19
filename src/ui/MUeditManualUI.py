@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QFrame,
                              QScrollArea, QSizePolicy, QSpacerItem, QTabWidget,
                              QToolButton, QVBoxLayout, QWidget)
 from PyQt5.QtWidgets import QSlider
+from functools import partial
 
 # Import custom components
 from ui.components import (ActionButton, CleanCard, CleanScrollBar, CleanTheme,
@@ -410,19 +411,19 @@ def create_batch_processing_tab(main_window):
     # Label, handler, attribute name for later access
     action_batch_configs = [
         ("1 - Remove all the outliers",
-         lambda: remove_all_outliers_button_pushed(main_window),
+         remove_all_outliers_button_pushed,
          "remove_outliers_all_btn"),
         ("2 - Update all MU filters",
-         lambda: update_all_mu_filters_button_pushed(main_window),
+         update_all_mu_filters_button_pushed,
          "update_mu_filter_all_btn"),
         ("3 - Remove flagged MU",
-         lambda: remove_flagged_mu_button_pushed(main_window),
+         remove_flagged_mu_button_pushed,
          "remove_flagged_mu_btn"),
         ("4 - Remove duplicates within grids",
-         lambda: remove_duplicates_within_grids_button_pushed(main_window),
+         remove_duplicates_within_grids_button_pushed,
          "remove_duplicates_within_btn"),
         ("5 - Remove duplicates between grids",
-         lambda: remove_duplicates_between_grids_button_pushed(main_window),
+         remove_duplicates_between_grids_button_pushed,
          "remove_duplicates_between_btn"),
     ]
 
@@ -844,24 +845,24 @@ def setup_display_panel(main_window):
 
     # Group buttons based on functionality
     spikes_buttons = [
-        ("Add spikes", add_spikes_button_pushed(main_window), "add_spikes_btn"),
-        ("Delete spikes", delete_spikes_button_pushed(main_window), "delete_spikes_btn"),
-        ("Lock spikes", lock_spikes_button_pushed(main_window), "lock_spikes_btn"),
+        ("Add spikes", add_spikes_button_pushed, "add_spikes_btn"),
+        ("Delete spikes", delete_spikes_button_pushed, "delete_spikes_btn"),
+        ("Lock spikes", lock_spikes_button_pushed, "lock_spikes_btn"),
     ]
 
     misc_buttons = [
         ("Delete DR",
-         delete_dr_button_pushed(main_window),
+         delete_dr_button_pushed,
          "delete_dr_btn"),
         ("Remove outliers",
-         remove_outliers_button_pushed(main_window),
+         remove_outliers_button_pushed,
          "remove_outliers_single_btn"),
     ]
 
     mu_filter_buttons = [
-        ("Update MU filter", lambda: update_mu_filter_button_pushed(main_window),
+        ("Update MU filter", update_mu_filter_button_pushed,
          "update_mu_filter_btn"),
-        ("Extend MU filter", lambda: extend_mu_filter_button_pushed(main_window),
+        ("Extend MU filter", extend_mu_filter_button_pushed,
          "extend_mu_filter_btn"),
     ]
 
@@ -911,7 +912,7 @@ def setup_display_panel(main_window):
         for text, handler, attr_name in buttons:
             btn = ActionButtonedit(text, primary=False)
             btn.setFocusPolicy(Qt.NoFocus)
-            btn.clicked.connect(handler)
+            btn.clicked.connect(partial(handler, main_window))
             btn.setFixedHeight(32)
             btn.setFixedWidth(120)
             if text in {"Add spikes", "Delete spikes", "Lock spikes",
@@ -1086,6 +1087,7 @@ def create_mu_checkbox(
     )
     checkbox.setObjectName(f"Array_{array_idx+1}_MU_{mu_idx+1}")
     checkbox.setChecked(is_checked)
-    checkbox.stateChanged.connect(main_window.mu_checkbox_state_changed)
+    checkbox.stateChanged.connect(lambda state: mu_checkbox_state_changed(main_window, state))
+
 
     return checkbox

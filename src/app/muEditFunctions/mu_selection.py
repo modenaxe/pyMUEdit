@@ -80,7 +80,9 @@ def update_mu_checkboxes(self):
             "color: #333333; font-family: 'Segoe UI'; font-size: 13pt; font-weight: normal;"
         )
         check_all_checkbox.setProperty("array_idx", array_idx)
-        check_all_checkbox.stateChanged.connect(lambda state, cb=self: array_checkbox_state_changed(cb, state))
+        check_all_checkbox.stateChanged.connect(
+            lambda state: array_checkbox_state_changed(self, state)
+        )
         self.array_checkboxes.append(check_all_checkbox)
         checkbox_layout.addWidget(check_all_checkbox)
 
@@ -108,8 +110,9 @@ def update_mu_checkboxes(self):
             checkbox.setStyleSheet("color: #333333; font-family: 'Segoe UI'; font-size: 12pt;")
             checkbox.setObjectName(mu_identifier)  # Keep the full identifier in objectName
             checkbox.setProperty("array_idx", array_idx)  # Store array index for check all functionality
-            checkbox.stateChanged.connect(lambda state, cb=self: mu_checkbox_state_changed(cb, state))
-
+            checkbox.stateChanged.connect(
+                lambda state: mu_checkbox_state_changed(self, state)
+            )
             self.mu_checkboxes.append(checkbox)
             checkbox_layout.addWidget(checkbox)
 
