@@ -3,8 +3,8 @@ import math
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QSizePolicy,
-                             QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton,
+                             QSizePolicy, QVBoxLayout, QWidget)
 
 from ui.components import ActionButton
 from ui.components.CleanTheme import CleanTheme
@@ -29,27 +29,36 @@ class VisualisationPage(QWidget):
 
         self.setMinimumSize(1024, 700)
 
-        # left panel
-        left_container = QWidget()
-        left_container.setMinimumWidth(250)
-        left_container.setMaximumWidth(300)
+        # define left sidebar
+        left_sidebar = QFrame()
+        left_sidebar.setStyleSheet("""
+            QFrame {
+                background-color: white;
+                border-radius: 10px;
+            }
+        """)
+        left_sidebar.setMinimumWidth(250)
+        left_sidebar.setMaximumWidth(300)
 
-        left_layout = QVBoxLayout(left_container)
-        left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.setSpacing(15)
+        left_sidebar_layout = QVBoxLayout(left_sidebar)
+        left_sidebar_layout.setContentsMargins(10, 10, 10, 10)
+        left_sidebar_layout.setSpacing(10)
 
         # main panel (signal graphs)
         self.viewer = ChannelViewer(self.emg_obj, self.channel_group_change)
         self.viewer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+        # left sidebar title
+        left_sidebar_title = QLabel("Select Signal Range")
+        left_sidebar_title.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        left_sidebar_title.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+        left_sidebar_layout.addWidget(left_sidebar_title)
+
         # signal range dropdown panel
-        signal_range_group = CollapsiblePanel("Select Signal Range")
         self.range_dropdown = FormDropdown(
             "Select Reference Signal",
             self.generate_channel_groups())
-        signal_range_group.add_widget(self.range_dropdown)
-        signal_range_group.setSizePolicy(
-            QSizePolicy.Preferred, QSizePolicy.Fixed)
+        left_sidebar_layout.addWidget(self.range_dropdown)
 
         # left and right buttons
         lrbuttons = QWidget()
@@ -62,22 +71,20 @@ class VisualisationPage(QWidget):
         button_layout.addWidget(self.left_button)
         button_layout.addWidget(self.right_button)
         lrbuttons.setLayout(button_layout)
-        signal_range_group.add_widget(lrbuttons)
+        left_sidebar_layout.addWidget(lrbuttons)
 
         # number of signals dropdown panel
         self.num_signals_input_box = FormSpinBox(
             "Number of Signals to Display", 8, 1, 16)
-        signal_range_group.add_widget(self.num_signals_input_box)
-
-        left_layout.addWidget(signal_range_group)
+        left_sidebar_layout.addWidget(self.num_signals_input_box)
 
         # add gap between controls and done button
-        left_layout.addStretch()
+        left_sidebar_layout.addStretch()
 
         # done button
         done_button = ActionButton("Done", primary=True)
         done_button.clicked.connect(self.doneClicked)
-        left_layout.addWidget(done_button)
+        left_sidebar_layout.addWidget(done_button)
 
         vis_panel = VisualizationPanel(plot_widget=self.viewer)
         vis_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -95,7 +102,8 @@ class VisualisationPage(QWidget):
 
         # combine panels in layout
         content_layout = QHBoxLayout()
-        content_layout.addWidget(left_container, stretch=0)
+        # previously left_container
+        content_layout.addWidget(left_sidebar, stretch=0)
         content_layout.addWidget(vis_panel, stretch=1)
         main_layout.addLayout(content_layout)
         self.setLayout(main_layout)
