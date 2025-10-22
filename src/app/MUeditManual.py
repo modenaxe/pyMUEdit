@@ -24,6 +24,7 @@ from PyQt5.QtWidgets import (
     QShortcut,
 )
 from PyQt5.QtGui import QKeySequence
+from core.logger import logger
 
 import h5py
 
@@ -381,8 +382,7 @@ class MUeditManual(QMainWindow):
                     files = h5py_convert().h5py_to_dict(f)
                     print("h5py File convert complete")
                 except Exception:
-                    import traceback
-                    traceback.print_exc()
+                    logger.exception(f"Error loading or converting h5py file: {filepath}")
                 # f.close()
 
             if not self.ish5:
@@ -480,8 +480,7 @@ class MUeditManual(QMainWindow):
             import traceback
             traceback.print_exc()
         except Exception as e:
-            import traceback
-            traceback.print_exc()
+            logger.exception("Failed to load the file.")
             QApplication.restoreOverrideCursor()
             ErrorDialog(title_label="Import Error", text=f"Failed to load the file:\n{str(e)}")
 
@@ -526,7 +525,7 @@ class MUeditManual(QMainWindow):
                             new_dict[idx] = v
                     self.MUedition["edition"][field] = new_dict
                 except Exception as e:
-                    print(f"Error loading field {field}: {e}")
+                    logger.exception(f"Error loading field {field}: {e}")
                     self.MUedition["edition"][field] = {}
 
             # Process pulsetrain
@@ -1029,7 +1028,7 @@ class MUeditManual(QMainWindow):
                 )
 
             except Exception as e:
-                print(f"Error calculating SIL for array {array_idx}, MU {mu_idx}: {e}")
+                logger.exception(f"Error calculating SIL for array {array_idx}, MU {mu_idx}: {e}")
                 self.MUedition["edition"]["silval"][(array_idx, mu_idx)] = 0
                 self.MUedition["edition"]["silvalcon"][(array_idx, mu_idx)] = np.zeros((1, 2))
         else:
@@ -1412,7 +1411,7 @@ class MUeditManual(QMainWindow):
             # Update the current view based on checkboxes
             self.mu_checkbox_state_changed()
         except Exception as e:
-            print(f"Error setting reference: {e}")
+            logger.exception(f"Error setting reference: {e}")
 
     def sil_checkbox_value_changed(self):
         """Toggle SIL plot visibility."""
@@ -1968,10 +1967,8 @@ class MUeditManual(QMainWindow):
             self.show_tip("Update filter successfully! Green means SIL improve. Blue means SIL decrease.", duration_ms=4000)
             #SuccessDialog(text="Update filter successfully!\nGreen means SIL improve. Blue means SIL decrease.")
         except Exception as e:
-            import traceback
-            traceback.print_exc()
             QApplication.restoreOverrideCursor()
-            print(e)
+            logger.exception(e)
             ErrorDialog(text="Fail to update filter.")
         self.update_save_button()
 
@@ -2124,7 +2121,7 @@ class MUeditManual(QMainWindow):
             #SuccessDialog(text="extend filter successfully!\nGreen means SIL improve. Blue means SIL decrease.")
         except Exception as e:
             QApplication.restoreOverrideCursor()
-            print(e)
+            logger.exception(e)
             ErrorDialog(text="Fail to extend filter.")
         self.update_save_button()
 

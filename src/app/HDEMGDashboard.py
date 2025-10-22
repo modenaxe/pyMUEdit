@@ -4,7 +4,7 @@ import os
 import datetime
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QPushButton, QWidget, QVBoxLayout
 from PyQt5.QtCore import Qt
-import logging
+from core.logger import logger
 
 # Import UI setup function
 from ui.HDEMGDashboardUI import setup_ui, update_sidebar_selection
@@ -139,8 +139,7 @@ class HDEMGDashboard(QMainWindow):
             self.central_stacked_widget.addWidget(wrapper)
 
         except Exception as e:
-            print(f"Error creating import view: {e}")
-            traceback.print_exc()
+            logger.exception(f"Error creating import view: {e}")
 
     def create_manual_editing_view(self):
         """Creates a manual editing view and adds it to the stacked widget."""
@@ -175,8 +174,7 @@ class HDEMGDashboard(QMainWindow):
             self.central_stacked_widget.addWidget(manual_edit_app)
 
         except Exception as e:
-            print(f"Error creating manual editing view: {e}")
-            traceback.print_exc()
+            logger.exception(f"Error creating manual editing view: {e}")
 
     def create_decomposition_view(self, emg_obj, filename, pathname, imported_signal, config):
         """Creates a decomposition view with the provided data and adds it to the stacked widget."""
@@ -229,8 +227,7 @@ class HDEMGDashboard(QMainWindow):
             self.show_decomposition_view()
 
         except Exception as e:
-            print(f"Error creating decomposition view: {e}")
-            traceback.print_exc()
+            logger.exception(f"Error creating decomposition view: {e}")
 
     def connect_signals(self):
         """Connect UI signals to slot methods."""
@@ -365,7 +362,7 @@ class HDEMGDashboard(QMainWindow):
                 self.export_results_window = None
                 window_exists = False
             except Exception as e:  # Catch other potential issues
-                print(f">>> Main Window: Error checking existing window ({type(e).__name__}); will create new.")
+                logger.exception(f">>> Main Window: Error checking existing window ({type(e).__name__}); will create new.")
                 self.export_results_window = None
                 window_exists = False
 
@@ -383,8 +380,7 @@ class HDEMGDashboard(QMainWindow):
                 self.export_results_window.setGeometry(new_x, new_y, width, height)
                 print(f">>> Set geometry for new window to ({new_x}, {new_y}, {width}, {height})")
             except Exception as e:
-                print(f"FATAL ERROR during ExportResultsWindow creation: {e}")
-                traceback.print_exc()
+                logger.exception(f"FATAL ERROR during ExportResultsWindow creation: {e}")
                 self.export_results_window = None  # Ensure it's None if creation failed
                 return  # Stop execution here
 
@@ -401,8 +397,7 @@ class HDEMGDashboard(QMainWindow):
                 print(">>> Error: ExportResultsWindow was deleted before it could be shown.")
                 self.export_results_window = None
             except Exception as e:
-                print(f"Error displaying/activating ExportResultsWindow: {e}")
-                traceback.print_exc()
+                logger.exception(f"Error displaying/activating ExportResultsWindow: {e}")
         else:
             print("ERROR - self.export_results_window is None even after creation attempt.")
 
@@ -432,9 +427,7 @@ class HDEMGDashboard(QMainWindow):
                     'motor_units_count': state.get('motor_units_count', '?'),
                 })
         except Exception as e:
-            print(f"Error loading saved states: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.exception(f"Error loading saved states: {e}")
             self.recent_visualizations = []
 
     def add_recent_visualization(self, state_meta):
@@ -524,7 +517,7 @@ class HDEMGDashboard(QMainWindow):
                     }
                     print(f"Restored EMG data for channel viewer: shape={emg_data['data'].shape}")
                 except Exception as e:
-                    print(f"Warning: Failed to restore EMG object: {e}")
+                    logger.exception(f"Warning: Failed to restore EMG object: {e}")
 
             # Update file info display
             if hasattr(decomp_app, 'update_ui_with_loaded_data'):
@@ -591,9 +584,7 @@ class HDEMGDashboard(QMainWindow):
 
             print(f"Successfully loaded visualization from {state_path}")
         except Exception as e:
-            print(f"Error loading visualization: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.exception(f"Error loading visualization: {e}")
 
     def _reconstruct_plot(self, plot_widget, plot_data):
         """
@@ -643,7 +634,7 @@ class HDEMGDashboard(QMainWindow):
                         if pen_data.get('style') == 'dash':
                             pen.setStyle(Qt.PenStyle.DashLine)
                     except Exception as e:
-                        print(f"Error creating pen, using default black: {e}")
+                        logger.exception(f"Error creating pen, using default black: {e}")
                         # Default to simple black pen
                         pen = pg.mkPen(color='k', width=1)
 
@@ -671,7 +662,7 @@ class HDEMGDashboard(QMainWindow):
 
                         pen = pg.mkPen(color=color, width=width)
                     except Exception as e:
-                        print(f"Error creating pen, using default: {e}")
+                        logger.exception(f"Error creating pen, using default: {e}")
                         pen = pg.mkPen(color='r', width=2)  # Default to simple red pen
 
                     # Create the line
@@ -697,7 +688,7 @@ class HDEMGDashboard(QMainWindow):
                             brush=pg.mkBrush(brush_color)
                         )
                     except Exception as e:
-                        print(f"Error creating scatter plot, using simplified version: {e}")
+                        logger.exception(f"Error creating scatter plot, using simplified version: {e}")
                         # Fallback to simpler construction
                         scatter = pg.ScatterPlotItem(pos=list(zip(x_data, y_data)))
                     plot_widget.addItem(scatter)
@@ -757,7 +748,7 @@ class HDEMGDashboard(QMainWindow):
                         if pen_data.get('style') == 'dash':
                             pen.setStyle(Qt.PenStyle.DashLine)
                     except Exception as e:
-                        print(f"Error creating pen, using default black: {e}")
+                        logger.exception(f"Error creating pen, using default black: {e}")
                         # Default to simple black pen
                         pen = pg.mkPen(color='k', width=1)
 
@@ -785,7 +776,7 @@ class HDEMGDashboard(QMainWindow):
 
                         pen = pg.mkPen(color=color, width=width)
                     except Exception as e:
-                        print(f"Error creating pen, using default: {e}")
+                        logger.exception(f"Error creating pen, using default: {e}")
                         pen = pg.mkPen(color='r', width=2)  # Default to simple red pen
 
                     # Create the line
@@ -811,7 +802,7 @@ class HDEMGDashboard(QMainWindow):
                             brush=pg.mkBrush(brush_color)
                         )
                     except Exception as e:
-                        print(f"Error creating scatter plot, using simplified version: {e}")
+                        logger.exception(f"Error creating scatter plot, using simplified version: {e}")
                         # Fallback to simpler construction
                         scatter = pg.ScatterPlotItem(pos=list(zip(x_data, y_data)))
                     plot_widget.addItem(scatter)
@@ -955,9 +946,7 @@ class HDEMGDashboard(QMainWindow):
                 self.import_data_page.load_file(pathname, filename)
 
             except Exception as e:
-                print(f"Error loading file: {e}")
-                import traceback
-                traceback.print_exc()
+                logger.exception(f"Error loading file: {e}")
 
                 # Show error in preview
                 self.import_data_page.preview_message.setText(f"Error loading file: {str(e)}")

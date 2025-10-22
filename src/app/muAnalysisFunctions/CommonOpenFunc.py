@@ -26,31 +26,35 @@ class CommonOpenFunc():
         Params (relevant for us): file
         Returns: idr
         """
-        if isinstance(emgfile["MUPULSES"], list):
-            idr = {x: np.nan**2 for x in range(emgfile["NUMBER_OF_MUS"])}
-            for mu in range(emgfile["NUMBER_OF_MUS"]):
-                df = pd.DataFrame(
-                    emgfile["MUPULSES"][mu]
-                    if emgfile["NUMBER_OF_MUS"] > 1
-                    else np.transpose(np.array(emgfile["MUPULSES"]))
+        try:
+            if isinstance(emgfile["MUPULSES"], list):
+                idr = {x: np.nan**2 for x in range(emgfile["NUMBER_OF_MUS"])}
+                for mu in range(emgfile["NUMBER_OF_MUS"]):
+                    df = pd.DataFrame(
+                        emgfile["MUPULSES"][mu]
+                        if emgfile["NUMBER_OF_MUS"] > 1
+                        else np.transpose(np.array(emgfile["MUPULSES"]))
+                    )
+                    df[1] = df[0].diff()
+                    df[2] = df[0] / emgfile["FSAMP"]
+                    df[3] = emgfile["FSAMP"] / df[1]
+                    df = df.rename(
+                        columns={
+                            0: "mupulses",
+                            1: "diff_mupulses",
+                            2: "timesec",
+                            3: "idr",
+                        },
+                    )
+                    idr[mu] = df
+                return idr
+            else:
+                raise ValueError(
+                    "MUPULSES is probably absent or it is not contained in a list"
                 )
-                df[1] = df[0].diff()
-                df[2] = df[0] / emgfile["FSAMP"]
-                df[3] = emgfile["FSAMP"] / df[1]
-                df = df.rename(
-                    columns={
-                        0: "mupulses",
-                        1: "diff_mupulses",
-                        2: "timesec",
-                        3: "idr",
-                    },
-                )
-                idr[mu] = df
-            return idr
-        else:
-            raise Exception(
-                "MUPULSES is probably absent or it is not contained in a list"
-            )
+        except Exception as e:
+            logger.exception("Failed to compute IDR for EMG file")
+            raise
 
     def min_max_scaling(self, data=None, series_or_df=None, col_by_col=False):
         """From openHDEMG normalises given data

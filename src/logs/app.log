@@ -1,25 +1,7 @@
-2025-10-22 17:15:09,403 [ERROR] core: Error loading OTB+ file: Please use HDF reader for matlab v7.3 files, e.g. h5py
+
+2025-10-22 21:13:36,438 [ERROR] core: Error loading OTB+ file: Please use HDF reader for matlab v7.3 files, e.g. h5py
 Traceback (most recent call last):
-  File "C:\Users\Jason\Stuff\Coding\COMP3900\capstone-project-25t3-3900-w14b-banana\src\app\ImportDataWindow.py", line 196, in load_file
-    self.emg_obj.open_mat(full_path)
-    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
-  File "C:\Users\Jason\Stuff\Coding\COMP3900\capstone-project-25t3-3900-w14b-banana\src\core\EmgDecomposition.py", line 210, in open_mat
-    self.signal_dict = open_mat(inputfile)
-                       ~~~~~~~~^^^^^^^^^^^
-  File "C:\Users\Jason\Stuff\Coding\COMP3900\capstone-project-25t3-3900-w14b-banana\src\core\utils\io\open_mat.py", line 40, in open_mat
-    loaded_mat = loadmat(inputfile)
-  File "C:\Users\Jason\Stuff\Coding\COMP3900\capstone-project-25t3-3900-w14b-banana\src\core\utils\io\open_mat.py", line 13, in loadmat
-    data = sio.loadmat(filename, struct_as_record=False, squeeze_me=True)
-  File "C:\Users\Jason\Stuff\Coding\COMP3900\capstone-project-25t3-3900-w14b-banana\.venv\Lib\site-packages\scipy\io\matlab\_mio.py", line 234, in loadmat
-    MR, _ = mat_reader_factory(f, **kwargs)
-            ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
-  File "C:\Users\Jason\Stuff\Coding\COMP3900\capstone-project-25t3-3900-w14b-banana\.venv\Lib\site-packages\scipy\io\matlab\_mio.py", line 80, in mat_reader_factory
-    raise NotImplementedError('Please use HDF reader for matlab v7.3 '
-                              'files, e.g. h5py')
-NotImplementedError: Please use HDF reader for matlab v7.3 files, e.g. h5py
-2025-10-22 17:15:22,919 [ERROR] core: Error loading OTB+ file: Please use HDF reader for matlab v7.3 files, e.g. h5py
-Traceback (most recent call last):
-  File "C:\Users\Jason\Stuff\Coding\COMP3900\capstone-project-25t3-3900-w14b-banana\src\app\ImportDataWindow.py", line 196, in load_file
+  File "C:\Users\Jason\Stuff\Coding\COMP3900\capstone-project-25t3-3900-w14b-banana\src\app\ImportDataWindow.py", line 195, in load_file
     self.emg_obj.open_mat(full_path)
     ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
   File "C:\Users\Jason\Stuff\Coding\COMP3900\capstone-project-25t3-3900-w14b-banana\src\core\EmgDecomposition.py", line 210, in open_mat

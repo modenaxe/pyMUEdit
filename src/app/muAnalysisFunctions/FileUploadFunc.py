@@ -22,7 +22,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
-
+from core.logger import logger
 
 class FileUploadFunc:
     """Methods for handling the emgFile and its intital display to centre"""
@@ -203,11 +203,10 @@ class FileUploadFunc:
             )
             try:
                 accuracy.columns = accuracy.columns.astype(int)
-            except Exception:
+            except Exception as e:
                 accuracy.columns = [*range(len(accuracy.columns))]
-                warnings.warn(
-                    "Error while loading accuracy, check or recalculate accuracy"
-                )
+                logger.exception("Error while loading accuracy — check or recalculate accuracy.")
+                warnings.warn("Error while loading accuracy, check or recalculate accuracy")
             accuracy.index = accuracy.index.astype(int)
             accuracy.sort_index(inplace=True)
             ipts = pd.read_json(StringIO(jsonemgfile["IPTS"]), orient="split")

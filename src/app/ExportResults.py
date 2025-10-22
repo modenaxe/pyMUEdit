@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (
     QPushButton,
 )
 from PyQt5.QtCore import Qt
+from core.logger import logger
 
 # Import UI setup function
 from ui.ExportResultsUI import setup_ui, create_export_setup_widget, get_icon
@@ -193,7 +194,7 @@ class ExportResultsWindow(QWidget):
                 self.show_complete_view(filePath, file_size)
 
             except Exception as e:
-                print(f"!!!!! ERROR during file save: {e}")
+                logger.exception(f"!!!!! ERROR during file save: {e}")
                 traceback.print_exc()
                 QMessageBox.critical(self, "Export Error", f"Could not save file to:\n{filePath}\n\nError: {e}")
         else:

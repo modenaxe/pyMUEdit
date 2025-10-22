@@ -445,7 +445,7 @@ class DecompositionApp(QMainWindow):
             else:
                 print("No reference signal found to plot.")
         except Exception as e:
-            print(f"Error plotting reference signal after decomposition: {e}")
+            logger.exception(f"Error plotting reference signal after decomposition: {e}")
 
         # Save the decomposition state
         try:
@@ -466,9 +466,7 @@ class DecompositionApp(QMainWindow):
             else:
                 print("No parent available to add visualization to dashboard")
         except Exception as e:
-            print(f"Error saving decomposition state: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.exception(f"Error saving decomposition state: {e}")
 
         if hasattr(self, "decomp_worker") and self.decomp_worker in self.threads:
             self.threads.remove(self.decomp_worker)
@@ -542,11 +540,10 @@ class DecompositionApp(QMainWindow):
                         self.ui_plot_pulsetrain.setTitle(title)
 
                 except Exception as e:
-                    print(f"Warning: Error plotting decomposition results: {e}")
-                    traceback.print_exc()
+                    logger.exception(f"Warning: Error plotting decomposition results: {e}")
 
         except Exception as e:
-            print(f"Error in update_plots: {e}")
+            logger.exception(f"Error in update_plots: {e}")
             traceback.print_exc()
 
     def save_output_to_location(self):
