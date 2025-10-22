@@ -25,7 +25,7 @@ from core.scd.main import SCDDecompositionWorker
 from core.utils.config.prepare_parameters import prepare_parameters
 from core.EmgDecomposition import format_results_2
 from MUeditManual import MUeditManual
-
+from core.logger import logger
 
 class DecompositionApp(QMainWindow):
     def __init__(self, emg_obj=None, filename=None, pathname=None, imported_signal=None, config=None, parent=None):
@@ -172,7 +172,7 @@ class DecompositionApp(QMainWindow):
 
                 self.ui_plot_reference.setTitle(f"Signal Preview ({num_actual_channels} channels)")
             except Exception as e:
-                print(f"Error creating preview plot: {e}")
+                logger.exception(f"Error creating preview plot: {e}")
 
     def open_editing_mode(self):
         """Open the MUeditManual window for editing motor units"""
@@ -269,7 +269,7 @@ class DecompositionApp(QMainWindow):
 
         except Exception as e:
             self.edit_field.setText(f"Error opening editing mode: {str(e)}")
-            traceback.print_exc()
+            logger.exception("Error opening editing mode")
 
     # Event handlers
     def save_mat_in_background(self, filename, data, compression=True, onFinished=None):

@@ -4,6 +4,7 @@ import os
 import datetime
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QPushButton, QWidget, QVBoxLayout
 from PyQt5.QtCore import Qt
+import logging
 
 # Import UI setup function
 from ui.HDEMGDashboardUI import setup_ui, update_sidebar_selection
@@ -96,7 +97,7 @@ class HDEMGDashboard(QMainWindow):
         """
         Handle the fileImported signal from the ImportDataWindow
         """
-        print(f"Dashboard received fileImported signal for {file_info.get('filename')}")
+        print(f"Dashboard received file\\Imported signal for {file_info.get('filename')}")
         # Extract information from the signal
         filename = file_info.get("filename", "Unknown file")
         pathname = file_info.get("pathname", "")

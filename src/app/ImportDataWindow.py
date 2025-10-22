@@ -8,6 +8,9 @@ import numpy as np
 import pandas as pd
 import pyqtgraph as pg
 
+# import logging
+from core.logger import logger
+
 # Import UI setup function
 from core.utils.io.filesize_formatter import filesize_formatter
 from ui.ImportDataWindowUI import setup_ui
@@ -203,7 +206,7 @@ class ImportDataWindow(QMainWindow):
                         self.update_preview_plot()
                         self.update_buttons()
                     except Exception as e:
-                        print(f"Error creating preview plot: {e}")
+                        logger.exception(f"Error creating preview plot: {e}")
                 else:
                     print("Error cannot display data")
 
@@ -240,12 +243,11 @@ class ImportDataWindow(QMainWindow):
             except Exception as e:
                 self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
                 self.preview_message.setText(f"Error loading file: {str(e)}")
-                print(f"Error loading OTB+ file: {e}")
-                traceback.print_exc()
                 self.next_btn.setEnabled(False)
                 # Change file label to red if failure
                 self.file_info_label.setText(f"Failed uploading: {self.filename}")
                 self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
+                logger.exception(f"Error loading OTB+ file: {e}")
         else:
             self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
             self.preview_message.setText(f"File type {ext} not supported in this demo.\nPlease select an OTB+ file.")
@@ -401,8 +403,7 @@ class ImportDataWindow(QMainWindow):
             self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, self.config)
 
         except Exception as e:
-            print(f"Error requesting decomposition view: {e}")
-            traceback.print_exc()
+            logger.exception(f"Error requesting decomposition view: {e}")
 
     def showEvent(self, event):
         """Event triggered when the widget is shown."""
@@ -444,7 +445,7 @@ class ImportDataWindow(QMainWindow):
                 self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj, import_window=self)
                 self.visualisation_page.show()
         except Exception as e:
-            print(f"Failed to load channel viewer: {e}")
+            logger.exception(f"Failed to load channel viewer: {e}")
 
     def config_callback(self, signal):
         if self.pathname and self.filename and self.emg_obj:
@@ -468,8 +469,7 @@ class ImportDataWindow(QMainWindow):
                 # Show the dialog
                 self.config_panel.show()
             except Exception as e:
-                print(f"Error showing configuration dialog: {e}")
-                traceback.print_exc()
+                logger.exception(f"Error showing configuration dialog: {e}")
         else:
             print("No configuration dialog available")
 
@@ -485,6 +485,7 @@ class ImportDataWindow(QMainWindow):
                 self.segment_session.show()
         except Exception as e:
             self.edit_field.setText(f"Failed to load segment session: {e}")
+            logger.exception(f"Failed to load segment session: {e}")
 
     def add_file_to_recent_files(self, filename):
         if filename not in self.recent_files:
