@@ -22,7 +22,7 @@ from ui.DecompositionAppUI import setup_ui
 from workers.SaveMatWorker import SaveMatWorker
 from workers.DecompositionWorker import DecompositionWorker
 from core.scd.main import SCDDecompositionWorker
-from core.utils.config_and_input.prepare_parameters import prepare_parameters
+from core.utils.config.prepare_parameters import prepare_parameters
 from core.EmgDecomposition import format_results_2
 from MUeditManual import MUeditManual
 
@@ -450,7 +450,7 @@ class DecompositionApp(QMainWindow):
         # Save the decomposition state
         try:
             # Import the DecompositionState class
-            from core.utils.decomposition_state import DecompositionState
+            from core.utils.postprocessing.decomposition_state import DecompositionState
 
             # Save the state and get metadata
             state_meta = DecompositionState.save_state(self)
