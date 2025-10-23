@@ -1,10 +1,10 @@
 import math
 
 import matplotlib.cm as cm
-from matplotlib.backends.backend_qt5agg import \
-    FigureCanvasQTAgg as FigureCanvas
 import numpy as np
 import pyqtgraph as pg
+from matplotlib.backends.backend_qt5agg import \
+    FigureCanvasQTAgg as FigureCanvas
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
@@ -28,7 +28,7 @@ class ChannelViewer(QWidget):
 
         # Use PyQt graph for plotting
         self.plot_widget = pg.GraphicsLayoutWidget()
-        self.plot_widget.setBackground("w") 
+        self.plot_widget.setBackground("w")
         self.layout.addWidget(self.plot_widget, stretch=5)
 
         # Electrode grid
@@ -57,13 +57,16 @@ class ChannelViewer(QWidget):
         n = len(self.channel_indices)
         colours = get_n_colours(n)
 
-        self.curves = [] 
+        self.curves = []
         self.plot_items = []
 
         for i, index in enumerate(self.channel_indices):
             p = self.plot_widget.addPlot(row=i, col=0)
-            p.showGrid(x=True, y=False, alpha=5.0) # Show x axis grid lines only 
-            p.setLabel('left', f"{index + 1}", **{"color": "black", "font-size": "12pt"}) # Channel numbers as y axis label
+            # Show x axis grid lines only
+            p.showGrid(x=True, y=False, alpha=5.0)
+            # Channel numbers as y axis label
+            p.setLabel('left', f"{index + 1}", **
+                       {"color": "black", "font-size": "12pt"})
             p.getAxis('left').setTicks([])  # Hide y axis ticks
 
             # Plot data
@@ -77,13 +80,14 @@ class ChannelViewer(QWidget):
             if i < n - 1:
                 p.getAxis("bottom").setStyle(showValues=False)
             else:
-                p.setLabel('bottom', "Time", **{"color": "black", "font-size": "12pt"})
+                p.setLabel('bottom', "Time", **
+                           {"color": "black", "font-size": "12pt"})
 
         # Place 'Channels Title' above the first plot
-        first_plot = self.plot_items[0] 
+        first_plot = self.plot_items[0]
         first_plot.setTitle(
-            f"Channels {self.channel_indices[0] + 1}-{self.channel_indices[-1] + 1}",
-        )
+            f"Channels {self.channel_indices[0] + 1}-{self.channel_indices[-1] + 1}", )
+
 
 def get_n_colours(n):
     cmap = pg.colormap.get("hsv", source="matplotlib")
