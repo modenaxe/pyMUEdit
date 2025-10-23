@@ -3,7 +3,8 @@ import math
 import matplotlib.cm as cm
 from matplotlib.backends.backend_qt5agg import \
     FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
+import numpy as np
+import pyqtgraph as pg
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
@@ -25,11 +26,10 @@ class ChannelViewer(QWidget):
         self.layout = QHBoxLayout()
         self.layout.setContentsMargins(40, 0, 50, 30)
 
-        # Matplotlib canvas for plotting
-        self.figure = Figure(figsize=(8, 3), dpi=100)
-        self.canvas = FigureCanvas(self.figure)
-        self.figure.tight_layout()
-        self.layout.addWidget(self.canvas, stretch=5)
+        # Use PyQt graph for plotting
+        self.plot_widget = pg.GraphicsLayoutWidget()
+        self.plot_widget.setBackground("w") 
+        self.layout.addWidget(self.plot_widget, stretch=5)
 
         # Electrode grid
         self.electrode_grid = ElectrodeGrid(
@@ -52,40 +52,39 @@ class ChannelViewer(QWidget):
         self.channel_group_change(math.floor(index / self.num_indices))
 
     def update_plot(self):
-        self.figure.clear()
-        colours = get_n_colours(self.num_indices)
+        self.plot_widget.clear()
 
-        # Create one subplot for each channel in the index range
         n = len(self.channel_indices)
+        colours = get_n_colours(n)
+
+        self.curves = [] 
+        self.plot_items = []
+
         for i, index in enumerate(self.channel_indices):
-            ax = self.figure.add_subplot(n, 1, i + 1)
-            ax.plot(
-                self.entire_emg_data[index],
-                linewidth=0.8,
-                color=colours[i])
-            ax.set_ylabel(
-                f"{index + 1}",
-                fontsize=20,
-                labelpad=25,
-                rotation=0,
-                va='center')
-            ax.grid(True)
-            ax.set_yticklabels([])
-            # Hide x-axis label (except for last plot)
+            p = self.plot_widget.addPlot(row=i, col=0)
+            p.showGrid(x=True, y=False, alpha=5.0) # Show x axis grid lines only 
+            p.setLabel('left', f"{index + 1}", **{"color": "black", "font-size": "12pt"}) # Channel numbers as y axis label
+            p.getAxis('left').setTicks([])  # Hide y axis ticks
+
+            # Plot data
+            y = self.entire_emg_data[index]
+            x = np.arange(len(y))
+            curve = p.plot(x, y, pen=pg.mkPen(color=colours[i], width=1))
+            self.curves.append(curve)
+            self.plot_items.append(p)
+
+            # Hide x axis labels for all but last plot
             if i < n - 1:
-                ax.set_xticklabels([])
+                p.getAxis("bottom").setStyle(showValues=False)
+            else:
+                p.setLabel('bottom', "Time", **{"color": "black", "font-size": "12pt"})
 
-            # Add title for first plot only
-            if i == 0:
-                ax.set_title(
-                    f"Channels {self.channel_indices[0] + 1}-{self.channel_indices[len(self.channel_indices) - 1] + 1}",
-                    fontsize=15,
-                    pad=15)
-
-        ax.set_xlabel("Time", fontsize=15, labelpad=15)
-        self.canvas.draw()
-
+        # Place 'Channels Title' above the first plot
+        first_plot = self.plot_items[0] 
+        first_plot.setTitle(
+            f"Channels {self.channel_indices[0] + 1}-{self.channel_indices[-1] + 1}",
+        )
 
 def get_n_colours(n):
-    cmap = cm.get_cmap('hsv')
-    return [cmap(i / n) for i in range(n)]
+    cmap = pg.colormap.get("hsv", source="matplotlib")
+    return [cmap.map(i / n)[:3] for i in range(n)]
