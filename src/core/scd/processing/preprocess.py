@@ -115,6 +115,7 @@ def whiten(x: torch.Tensor, method: str = "zca") -> torch.Tensor:
         corr = v_inv_sqrt.matmul(cov).matmul(v_inv_sqrt)
         u, s, _ = torch.linalg.svd(corr)
     else:
+        logger.error(f"Invalid whitening method specified: {method}", exc_info=True)
         raise Exception("Specified method not in list.")
 
     if method == "chol":

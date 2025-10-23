@@ -7,7 +7,6 @@ from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QFrame, QHBoxLayout,
                              QLabel, QPushButton, QVBoxLayout, QWidget)
-from core.logger import logger
 
 # legacy code
 class SaveablePlot(QWidget):

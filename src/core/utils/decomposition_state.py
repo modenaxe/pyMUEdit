@@ -23,12 +23,12 @@ class DecompositionState:
                 os.makedirs(STATES_DIR)
                 print(f"Created states directory at {STATES_DIR}")
             except Exception as e:
-                print(f"Error creating states directory: {e}")
+                logger.exception(f"Error creating states directory: {e}")
                 # Fallback to temp directory if home directory is not writable
                 STATES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "saved_states")
                 if not os.path.exists(STATES_DIR):
                     os.makedirs(STATES_DIR)
-                print(f"Using fallback states directory: {STATES_DIR}")
+                logger.exception(f"Using fallback states directory: {STATES_DIR}")
     
     @staticmethod
     def save_state(decomp_app, state_name=None):
@@ -130,7 +130,7 @@ class DecompositionState:
                     }
                     print(f"EMG data extracted for channel viewer: {state['emg_data']['data'].shape if state['emg_data']['data'] is not None else 'None'}")
         except Exception as e:
-            print(f"Warning: Failed to extract EMG data for channel viewer: {e}")
+            logger.exception(f"Warning: Failed to extract EMG data for channel viewer: {e}")
             # This is not critical, so continue with saving anyway
         
         # Create a special object for storing NumPy arrays
@@ -144,7 +144,7 @@ class DecompositionState:
                 pickle.dump(serializable_state, f)
             print(f"Successfully saved state with {total_mus} motor units")
         except Exception as e:
-            print(f"Error saving state: {e}")
+            logger.exception(f"Error saving state: {e}")
             import traceback
             traceback.print_exc()
         
@@ -278,7 +278,7 @@ class DecompositionState:
                         'brush': brush,
                     }
                 except Exception as e:
-                    print(f"Error extracting scatter plot data: {e}")
+                    logger.exception(f"Error extracting scatter plot data: {e}")
                     # Create a minimal scatter item entry that won't cause problems
                     item_data = {
                         'type': 'scatter',
@@ -340,7 +340,7 @@ class DecompositionState:
                         states.append(metadata)
                     except Exception as e:
                         # Skip corrupted state files
-                        print(f"Error reading state file {filename}: {e}")
+                        logger.exception(f"Error reading state file {filename}: {e}")
                         continue
         
         # Sort by timestamp, newest first
@@ -356,7 +356,7 @@ class DecompositionState:
                 print(f"Deleted state file: {state_path}")
                 return True
             except Exception as e:
-                print(f"Error deleting state file {state_path}: {e}")
+                logger.exception(f"Error deleting state file {state_path}: {e}")
         return False
     
     @staticmethod

@@ -344,13 +344,13 @@ class Quattrodlg(QMainWindow):
                 self.file["signal"]["muscle"][0, 0] = muscle_obj
 
             except Exception as e:
-                print(f"Error with specific case, trying general solution: {e}")
+                logger.exception(f"Error with specific case, trying general solution: {e}")
                 try:
                     # Just replace the entire field
                     self.file["signal"]["gridname"] = np.array([gridname_array])
                     self.file["signal"]["muscle"] = np.array([muscle_array])
                 except Exception as e:
-                    print(f"All update attempts failed: {e}")
+                    logger.exception(f"All update attempts failed: {e}")
                     raise
 
             # Save the updated file
@@ -359,5 +359,4 @@ class Quattrodlg(QMainWindow):
             self.close()
 
         except Exception as e:
-            print(f"Error in OK button handler: {e}")
-            traceback.print_exc()
+            logger.exception(f"Error in OK button handler: {e}")

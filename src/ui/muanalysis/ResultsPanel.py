@@ -64,7 +64,7 @@ class ResultsPanel(QFrame):
 
                 print(f"Data saved to {file_path}")
             except Exception as e:
-                print(f"Error saving file: {e}")
+                logger.exception(f"Error saving file: {e}")
 
     def clear_results(self):
         store.clear_results()

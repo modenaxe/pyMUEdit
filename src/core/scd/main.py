@@ -115,8 +115,7 @@ class SCDDecompositionWorker(QThread):
             self.finished.emit(result)
 
         except Exception as e:
-            print(f"Exception in SCDDecompositionWorker: {str(e)}")
-            traceback.print_exc()
+            logger.exception(f"Exception in SCDDecompositionWorker: {str(e)}")
             self.error.emit(str(e))
     
     def send_plot_update(self, fICA_source, spikes, time2, sil, cov):

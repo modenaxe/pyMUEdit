@@ -36,6 +36,7 @@ from .utils.decomposition.mathematical_functions import (
     dot_exp,
     dot_logcosh,
 )
+from core.logger import logger
 
 if TYPE_CHECKING:
     from app.ImportDataWindow import ImportDataWindow
@@ -178,7 +179,7 @@ class offline_EMG(EMG):
             sio.savemat(filepath, data, do_compression=True)
             print(f"Saved intermediate output to {filepath}")
         except Exception as e:
-            print(f"Error saving intermediate output to {filepath}: {str(e)}")
+            logger.exception(f"Error saving intermediate output to {filepath}: {str(e)}")
 
         return filepath
 

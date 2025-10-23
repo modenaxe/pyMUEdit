@@ -66,6 +66,7 @@ class batch_filter_worker(QThread):
             self.finished.emit()
 
         except Exception as e:
+            logger.exception("MU processing failed")
             self.error.emit(str(e))
 
     def process_single_mu(self, emg_data, array_idx, mu_idx, discharge_times):

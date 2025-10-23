@@ -301,6 +301,7 @@ class PlotEMGToolDialog(QDialog):
         emgfile = FileUploadFunc.file
 
         if emgfile is None:
+            logger.error('No file has been loaded')
             ErrorDialog('No file has been loaded', 'Error').exec_()
             return
 
@@ -325,8 +326,10 @@ class PlotEMGToolDialog(QDialog):
             self.analysis_plot.display_fig(canvas)
             plt.close(fig)
         except ValueError as e:
+            logger.exception('Invalid channel input')
             ErrorDialog('Invalid channel input', 'Error').exec_()
         except Exception as e:
+            logger.exception()
             ErrorDialog('Error plotting EMG', 'Error').exec_()
 
     def handle_refsig_clicked(self):
@@ -337,6 +340,7 @@ class PlotEMGToolDialog(QDialog):
         """
         emgfile = FileUploadFunc.file
         if emgfile is None:
+            logger.error('No file has been loaded')
             ErrorDialog('No file has been loaded', 'Error').exec_()
             return
         try:
@@ -349,6 +353,7 @@ class PlotEMGToolDialog(QDialog):
             self.analysis_plot.display_fig(canvas)
             plt.close(fig)
         except Exception as e:
+            logger.exception('Error plotting REFsig')
             ErrorDialog('Error plotting REFsig', 'Error').exec_()
 
     def handle_idr_clicked(self):
@@ -359,12 +364,14 @@ class PlotEMGToolDialog(QDialog):
         """
         emgfile = FileUploadFunc.file
         if emgfile is None:
+            logger.error('No file has been loaded')
             ErrorDialog('No file has been loaded', 'Error').exec_()
             return
         mu_text = self.mu_input.get()
         try:
             munumber = self.parse_mu_input(mu_text)
         except Exception:
+            logger.exception('invalid plot inputs')
             ErrorDialog('invalid plot inputs', 'Error').exec_()
             return
         try:
@@ -379,6 +386,7 @@ class PlotEMGToolDialog(QDialog):
             self.analysis_plot.display_fig(canvas)
             plt.close(fig)
         except Exception as e:
+            logger.exception('Error plotting IDR')
             ErrorDialog('Error plotting IDR', 'Error').exec_()
 
     def handle_mupulses_clicked(self):
@@ -389,6 +397,7 @@ class PlotEMGToolDialog(QDialog):
         """
         emgfile = FileUploadFunc.file
         if emgfile is None:
+            logger.error('No file has been loaded')
             ErrorDialog('No file has been loaded', 'Error').exec_()
             return
         lw_text = self.linewidth_input.get()
@@ -397,6 +406,7 @@ class PlotEMGToolDialog(QDialog):
             if linewidth <= 0:
                 raise ValueError()
         except Exception:
+            logger.exception('invalid plot inputs')
             ErrorDialog('invalid plot inputs', 'Error').exec_()
             return
         try:
@@ -412,6 +422,7 @@ class PlotEMGToolDialog(QDialog):
             self.analysis_plot.display_fig(canvas)
             plt.close(fig)
         except Exception as e:
+            logger.exception('Error plotting MUPulses')
             ErrorDialog('Error plotting MUPulses', 'Error').exec_()
 
     def parse_mu_input(self, raw_text):
@@ -430,6 +441,7 @@ class PlotEMGToolDialog(QDialog):
         mus = []
         raw_text = raw_text.strip()
         if not raw_text:
+            logger.error("Empty input")
             raise ValueError("Empty input")
         parts = raw_text.split(',')
         for part in parts:
@@ -437,11 +449,13 @@ class PlotEMGToolDialog(QDialog):
             if '-' in part:
                 start_end = part.split('-')
                 if len(start_end) != 2:
+                    logger.error("Invalid range format")
                     raise ValueError("Invalid range format")
                 start, end = start_end
                 start = int(start)
                 end = int(end)
                 if start > end:
+                    logger.error("Range start must be <= end")
                     raise ValueError("Range start must be <= end")
                 mus.extend(range(start, end + 1))
             else:
@@ -456,12 +470,14 @@ class PlotEMGToolDialog(QDialog):
         """
         emgfile = FileUploadFunc.file
         if emgfile is None:
+            logger.error('No file has been loaded')
             ErrorDialog('No file has been loaded', 'Error').exec_()
             return
         mu_text = self.source_mu_input.get()
         try:
             munumber = self.parse_mu_input(mu_text)
         except Exception:
+            logger.error('invalid plot inputs')
             ErrorDialog('invalid plot inputs', 'Error').exec_()
             return
         try:
@@ -476,6 +492,7 @@ class PlotEMGToolDialog(QDialog):
             self.analysis_plot.display_fig(canvas)
             plt.close(fig)
         except Exception as e:
+            logger.exception('Error plotting Source')
             ErrorDialog('Error plotting Source', 'Error').exec_()
 
     def handle_derivation_clicked(self):
@@ -487,17 +504,20 @@ class PlotEMGToolDialog(QDialog):
         emgfile = FileUploadFunc.file
 
         if emgfile is None:
+            logger.error('No file has been loaded')
             ErrorDialog('No file has been loaded', 'Error').exec_()
             return
 
         matrix_col_text = self.matrix_col_input.get().strip()
         if self.derivation_config_dropdown.currentIndex() < 0:
+            logger.error('invalid plot inputs (no differential selected)')
             ErrorDialog(
                 'invalid plot inputs (no differential selected)',
                 'Error').exec_()
             return
 
         if matrix_col_text == "":
+            logger.error('invalid plot inputs (no column name given)')
             ErrorDialog(
                 'invalid plot inputs (no column name given)',
                 'Error').exec_()
@@ -512,6 +532,7 @@ class PlotEMGToolDialog(QDialog):
             else:
                 column_name = matrix_col_text
         except Exception:
+            logger.exception('invalid plot inputs (invalid column input)')
             ErrorDialog(
                 'invalid plot inputs (invalid column input)',
                 'Error').exec_()
@@ -541,6 +562,7 @@ class PlotEMGToolDialog(QDialog):
             elif derivation_type == "double_differential":
                 differential_data = double_diff(sorted_rawemg=sorted_rawemg)
             else:
+                logger.error('Invalid derivation type selected')
                 ErrorDialog(
                     'Invalid derivation type selected',
                     'Error').exec_()
@@ -563,9 +585,8 @@ class PlotEMGToolDialog(QDialog):
         except Exception as e:
             print("Full traceback:")
             traceback.print_exc()
-            ErrorDialog(
-                f'Error plotting Derivation:\n{str(e)}',
-                'Error').exec_()
+            logger.exception(f'Error plotting Derivation:\n{str(e)}')
+            ErrorDialog(f'Error plotting Derivation:\n{str(e)}', 'Error').exec_()
 
     def plot_muaps(self):
         """Function that plots MUAPs as long as the correct inputs are defined
@@ -579,12 +600,15 @@ class PlotEMGToolDialog(QDialog):
                 mu_num = int(self.mu_number_input.get())
 
                 if (mu_num < 0 or mu_num >= max_mu):
+                    logger.error("Invalid mu number")
                     raise ValueError()
             except ValueError as e:
+                logger.error("Please enter a valid MU number from 0 to " + str(max_mu - 1))
                 ErrorDialog(
                     "Please enter a valid MU number from 0 to " + str(max_mu - 1)).exec_()
                 return
             except KeyError as e:
+                logger.error("Your file isn't formatted properly. Include the NUMBER_OF_MUS")
                 ErrorDialog(
                     "Your file isn't formatted properly. Include the NUMBER_OF_MUS").exec_()
                 return
@@ -604,10 +628,12 @@ class PlotEMGToolDialog(QDialog):
                     )
                 except ValueError as e:
                     if (self.matrix_code_dropdown.currentText() == ""):
+                        logger.error("Please select a matrix code")
                         ErrorDialog(
                             "Please select a matrix code",
                             "Invalid Input").exec_()
                     elif (self.orientation_dropdown.currentText() == ""):
+                        logger.error("Please select an orientation")
                         ErrorDialog(
                             "Please select an orientation",
                             "Invalid Input").exec_()
@@ -633,18 +659,22 @@ class PlotEMGToolDialog(QDialog):
                 muaps_from_sta(self.analysis_plot, sta_dict[mu_num])
         except ValueError as e:
             if (self.configuration_dropdown.currentText() == ""):
+                logger.error("Please select a muap configuration")
                 ErrorDialog(
                     "Please select a muap configuration",
                     "Invalid Input").exec_()
             elif (self.timewindow_dropdown.currentText() == ""):
+                logger.error("Please select a timewindow")
                 ErrorDialog(
                     "Please select a timewindow",
                     "Invalid Input").exec_()
         except UnboundLocalError as e:
+            logger.error("Please enter a valid configuration")
             ErrorDialog(
                 "Please enter a valid configuration",
                 "Invalid Input").exec_()
         except KeyError as e:
+            logger.error("Please enter a valid Matrix Column")
             ErrorDialog(
                 "Please enter a valid Matrix Column",
                 "Invalid Input").exec_()
@@ -697,6 +727,7 @@ class PlotEMGButton(QWidget):
 
     def open_plot_emg_btn(self):
         if FileUploadFunc.file is None:
+            logger.error("No file has been loaded")
             ErrorDialog("No file has been loaded", "Error").exec_()
             return
 

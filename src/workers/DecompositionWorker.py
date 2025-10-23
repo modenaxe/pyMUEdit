@@ -179,7 +179,7 @@ class DecompositionWorker(QThread):
             self.finished.emit(result)
 
         except Exception as e:
-            print(f"Exception in DecompositionWorker: {str(e)}")
+            logger.exception(f"Exception in DecompositionWorker: {str(e)}")
             traceback.print_exc()
             self.error.emit(str(e))
 

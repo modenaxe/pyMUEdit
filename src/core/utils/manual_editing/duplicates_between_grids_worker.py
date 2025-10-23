@@ -130,4 +130,5 @@ class duplicates_between_grids_worker(QThread):
             self.finished.emit()
 
         except Exception as e:
+            logger.exception("Error while removing duplicates between arrays.")
             self.error.emit(str(e))

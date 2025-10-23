@@ -155,6 +155,7 @@ class MotorUnitPropertiesDialog(QDialog):
             ErrorDialog(
                 f"Error computing discharge rate: {str(e)}",
                 "Error").exec_()
+            logger.exception(f"Error computing discharge rate: {str(e)}")
             return
         # Append result to results panel (top of history)
         store.append_analysis_hist(

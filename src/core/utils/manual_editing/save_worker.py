@@ -35,6 +35,7 @@ class Save_worker(QThread):
             # do_compression=True enables compression
             sio.savemat(self.filepath, self.data, do_compression=True)
         except Exception as e:
+            logger.exception("save worker failed")
             self.error.emit(str(e))
         else:
             self.finished.emit()

@@ -71,8 +71,8 @@ class SaveablePlot(QWidget):
             return QApplication.style().standardIcon(
                 QApplication.style().SP_DialogSaveButton
             )
-        except BaseException:
-            # Fallback to text if icon not available
+        except Exception as e:
+            logger.warning(f"Failed to load save icon: {e}")
             return QIcon()
 
     def set_figure(self, figure):
@@ -181,5 +181,5 @@ class SaveablePlot(QWidget):
                 )
                 print(f"Plot saved successfully to: {file_path}")
             except Exception as e:
-                print(f"Error saving plot: {e}")
+                logger.exception(f"Error saving plot: {e}")
                 # Could add a proper error dialog here
