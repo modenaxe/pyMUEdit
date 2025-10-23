@@ -1,7 +1,7 @@
 """Functions to postprocess the results of the model."""
 
 import pickle as pkl
-
+from core.logger import logger
 
 def save_results(output_datafile, dictionary_result):
     """

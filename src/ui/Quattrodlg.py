@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import (
     QGroupBox,
     QSpinBox,
 )
-
+from core.logger import logger
 
 class ColoredCircle(QWidget):
     def __init__(self, color="red", parent=None):

@@ -20,6 +20,7 @@ from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from app.muAnalysisFunctions.electrode_layouts import get_electrode_grid
 from scipy.signal import correlate2d
+from core.logger import logger
 
 def load_otb_data(filepath):
     file_handler = FileUploadFunc()
@@ -230,6 +231,7 @@ class MotorUnitTrackingDialog(QDialog):
             try:
                 self.file1 = load_otb_data(file_path)
             except Exception as e:
+                logger.exception(f"Failed to load File 1: {e}")
                 ErrorDialog(f"Failed to load File 1:\n{str(e)}", 'Error').exec_()
                 
 
@@ -249,6 +251,7 @@ class MotorUnitTrackingDialog(QDialog):
             try:
                 self.file2 = load_otb_data(file_path)
             except Exception as e:
+                logger.exception(f"Failed to load File 2: {e}")
                 ErrorDialog(f"Failed to load File 2:\n{str(e)}", 'Error').exec_()
     def load_json1(self):
         """
@@ -272,6 +275,7 @@ class MotorUnitTrackingDialog(QDialog):
                     raise ValueError("Failed to load JSON file")
                 self.file1 = FileUploadFunc.file
             except Exception as e:
+                logger.exception(f"Failed to load JSON File 1:\n{str(e)}")
                 ErrorDialog(f"Failed to load JSON File 1:\n{str(e)}", 'Error').exec_()
 
     def load_json2(self):
@@ -296,6 +300,7 @@ class MotorUnitTrackingDialog(QDialog):
                     raise ValueError("Failed to load JSON file")
                 self.file2 = FileUploadFunc.file
             except Exception as e:
+                logger.exception(f"Failed to load JSON File 2:\n{str(e)}")
                 ErrorDialog(f"Failed to load JSON File 2:\n{str(e)}", 'Error').exec_()
     def on_track(self):
         """
@@ -755,6 +760,7 @@ class MotorUnitTrackingDialog(QDialog):
             mu1 = int(mu1_str)
             mu2 = int(mu2_str)
         except Exception:
+            logger.exception("Invalid Motor unit provided")
             ErrorDialog("Invalid Motor unit provided", 'Error').exec_()
             return
         # Find the index in results

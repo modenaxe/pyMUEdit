@@ -12,7 +12,7 @@ from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.GeneralRedButton import \
     GeneralRedButton
-
+from core.logger import logger
 
 class ResultsPanel(QFrame):
 

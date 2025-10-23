@@ -5,6 +5,7 @@ import scipy.io as sio
 from typing import TYPE_CHECKING, Dict, List, Tuple, Any, Optional, Union
 
 from core.utils.io.open_mat import open_mat
+from core.logger import logger
 
 from .utils.io.open_otb_plus import open_otb_plus
 from .utils.data_processing.electrode_formatter import electrode_formatter

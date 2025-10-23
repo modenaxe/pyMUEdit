@@ -3,6 +3,7 @@ import pickle
 import numpy as np
 import time
 import copy
+from core.logger import logger
 
 # Path for saving decomposition states - Fixed to create in user home directory
 HOME_DIR = os.path.expanduser("~")

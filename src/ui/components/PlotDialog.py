@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import (QCheckBox, QDialog, QFileDialog, QHBoxLayout,
 
 from ui.components.ActionButtonedit import ActionButtonedit
 from ui.components.ErrorDialog import ErrorDialog
-
+from core.logger import logger
 
 class PlotDialog(QDialog):
     def __init__(self, title):

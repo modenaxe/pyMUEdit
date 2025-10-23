@@ -23,7 +23,7 @@ from ui.components.muAnalysisComponents.PropertiesInnerDialogText import \
     PropertiesInnerDialogText
 from ui.components.muAnalysisComponents.SubsectionTitle import SubsectionTitle
 from ui.muanalysis.ComputeThresholdSection import ComputeThresholdSection
-
+from core.logger import logger
 
 class MotorUnitPropertiesDialog(QDialog):
 

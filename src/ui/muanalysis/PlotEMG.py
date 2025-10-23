@@ -36,7 +36,7 @@ from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import \
     PropertiesInnerDialogButton
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
 from ui.components.muAnalysisComponents.SubsectionTitle import SubsectionTitle
-
+from core.logger import logger
 
 class PlotEMGToolDialog(QDialog):
 

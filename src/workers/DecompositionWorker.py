@@ -3,7 +3,7 @@ import numpy as np
 import traceback
 import os
 import time
-
+from core.logger import logger
 
 class DecompositionWorker(QThread):
     """

@@ -2,6 +2,7 @@ from PyQt5.QtCore import QThread, pyqtSignal, QObject
 from core.utils.decomposition.extend_emg import extend_emg
 from core.utils.decomposition.whiten_emg import whiten_emg
 import numpy as np
+from core.logger import logger
 
 class batch_filter_worker(QThread):
     progress_changed = pyqtSignal(int, str) 

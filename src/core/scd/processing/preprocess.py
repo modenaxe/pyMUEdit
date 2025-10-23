@@ -3,6 +3,7 @@
 import torch
 from scipy.signal import butter, filtfilt
 from numba import jit, njit
+from core.logger import logger
 
 from ..config.structures import set_random_seed
 

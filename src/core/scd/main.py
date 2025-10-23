@@ -7,7 +7,7 @@ from .config.structures import set_random_seed, Config
 from .models.scd import SwarmContrastiveDecomposition
 from .processing.postprocess import save_results
 from PyQt5.QtCore import QThread, pyqtSignal
-
+from core.logger import logger
 
 set_random_seed(seed=42)
 

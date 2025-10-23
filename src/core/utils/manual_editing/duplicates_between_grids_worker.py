@@ -1,6 +1,7 @@
 from PyQt5.QtCore import QThread, pyqtSignal, QObject
 from core.utils.decomposition.remove_duplicates_between_arrays import remove_duplicates_between_arrays
 import numpy as np
+from core.logger import logger
 
 class duplicates_between_grids_worker(QThread):
     progress_changed = pyqtSignal(int, str) 

@@ -1,5 +1,6 @@
 from PyQt5.QtCore import QThread, pyqtSignal
 import scipy.io as sio
+from core.logger import logger
 
 class Save_worker(QThread):
     """
