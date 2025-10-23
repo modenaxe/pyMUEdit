@@ -7,7 +7,7 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout,
                              QWidget)
 
-from core.utils.config_and_input.segmenttargets import segmenttargets
+from core.utils.data_processing.segmenttargets import segmenttargets
 from ui.components import ActionButton
 from ui.components.CleanTheme import CleanTheme
 from ui.components.CollapsiblePanel import CollapsiblePanel

@@ -66,7 +66,7 @@ class GoodSlider(QWidget):
                 margin: 0 -3px;
             }
             QSlider::sub-page:horizontal {
-                background: #007bff;
+                background: #555555;
                 border-radius: 4px;
             }
             QSlider::add-page:horizontal {
