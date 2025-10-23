@@ -825,7 +825,7 @@ def setup_display_panel(main_window):
     action_card.setStyleSheet(
         f"background-color: {CleanTheme.BG_CARD};border: none;")  # moy
 
-        # Add button container
+    # Add button container
     action_container = QWidget()
     action_container.setMaximumHeight(60)
     action_layout = QHBoxLayout(action_container)
@@ -855,7 +855,12 @@ def setup_display_panel(main_window):
         # Store reference to button in main_window
         setattr(main_window, attr_name, btn)
         main_window.action_buttons[handler.__name__] = btn
-        if text in {"Add spikes", "Delete spikes", "Update MU filter", "Extend MU filter", "Lock spikes"}:
+        if text in {
+            "Add spikes",
+            "Delete spikes",
+            "Update MU filter",
+            "Extend MU filter",
+                "Lock spikes"}:
             btn.set_blue()
         if text in {"Delete spikes", "Delete DR", "Remove outliers"}:
             spacer = QWidget()
