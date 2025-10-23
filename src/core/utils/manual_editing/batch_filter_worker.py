@@ -1,6 +1,6 @@
 from PyQt5.QtCore import QThread, pyqtSignal, QObject
-from core.utils.decomposition.extend_emg import extend_emg
-from core.utils.decomposition.whiten_emg import whiten_emg
+from core.utils.preprocessing.extend_emg import extend_emg
+from core.utils.preprocessing.whiten_emg import whiten_emg
 import numpy as np
 
 class batch_filter_worker(QThread):

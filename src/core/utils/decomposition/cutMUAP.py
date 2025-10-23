@@ -1,5 +1,5 @@
 import numpy as np
-from core.utils.decomposition.gausswin import gausswin
+from core.utils.preprocessing.gausswin import gausswin
 
 
 def cutMUAP(MUPulses, length, Y):
