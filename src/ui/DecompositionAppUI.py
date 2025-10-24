@@ -468,9 +468,9 @@ def setup_right_panel(main_window, parent_layout):
     main_window.save_output_button.setEnabled(False)
     results_group.add_field(main_window.save_output_button)
 
-    # main_window.next_button = ActionButton("Next", primary=True)
-    # main_window.next_button.setEnabled(False)
-    # results_group.add_field(main_window.next_button)
+    main_window.next_button = ActionButton("Next", primary=True)
+    main_window.next_button.setEnabled(False)
+    results_group.add_field(main_window.next_button)
 
     right_layout.addWidget(results_group)
 
