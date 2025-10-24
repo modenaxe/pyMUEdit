@@ -1,16 +1,17 @@
 import sys
 import os
 import traceback
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent
+from PyQt5.QtMultimedia import QSound
 import numpy as np
 import pandas as pd
 import pyqtgraph as pg
 
 # Import UI setup function
 from core.utils.io.filesize_formatter import filesize_formatter
-from ui.ImportDataWindowUI import setup_ui
+from ui.ImportDataWindowUI import setup_ui, update_sidebar_selection
 from ui.components.SegmentSessionPage import SegmentSessionPage
 from ui.components.VisualisationPage import VisualisationPage
 
@@ -24,6 +25,20 @@ sys.path.append(current_dir)
 from core.EmgDecomposition import offline_EMG as EMG_offline_EMG
 from workers.SaveMatWorker import SaveMatWorker
 from enum import Enum
+
+####import from dashboard.py
+import sys
+import traceback
+import os
+import datetime
+from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QPushButton, QWidget, QVBoxLayout
+from PyQt5.QtCore import Qt
+
+# Import for external windows/widgets
+from app.ExportResults import ExportResultsWindow
+from app.DecompositionApp import DecompositionApp
+from ui.MUAnalysisUI import MUAnalysis
+from MUeditManual import MUeditManual  # Import MUeditManual class
 
 class PreviewElement(Enum):
     LABEL = 0
@@ -57,6 +72,11 @@ class ImportDataWindow(QMainWindow):
         self.segment_session = None
         self.config_panel = None
 
+        self.recent_visualizations = []
+        self.recent_datasets = []
+
+        self.initialize_external_widgets()
+
         # Create EMG object using the appropriate class
         temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp")
         if not os.path.exists(temp_dir):
@@ -69,9 +89,13 @@ class ImportDataWindow(QMainWindow):
         # Set up the UI using our improved UI setup
         setup_ui(self)
 
+         # Now create the manual editing view
+        self.create_manual_editing_view()
+
         # Connect signals for configration buttons
         self.connect_signals()
 
+        self.show_import_data_view()
         # Set up drag and drop events for the dropzone
         self.dropzone.setAcceptDrops(True)
         self.dropzone.dragEnterEvent = self.dragEnterEvent
@@ -158,6 +182,13 @@ class ImportDataWindow(QMainWindow):
         # Pass file size in original units (bytes)
         self.file_size_bytes = os.path.getsize(filename)
 
+    def play_error_popup(self, title, message):
+        try:
+            QApplication.beep()
+        except Exception:
+            pass
+        QMessageBox.critical(self, title, message, QMessageBox.Ok)
+
     def load_file(self, path, file):
         """Load and process a file."""
         self.preview_message.setText("Loading file...")
@@ -165,7 +196,7 @@ class ImportDataWindow(QMainWindow):
 
         # Reset failure messages
         self.failure_message.setVisible(False)
-        
+
         if ext == ".otb+" or ext == ".mat":
             try:
                 # Construct the full file path
@@ -240,6 +271,7 @@ class ImportDataWindow(QMainWindow):
             except Exception as e:
                 self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
                 self.preview_message.setText(f"Error loading file: {str(e)}")
+                self.play_error_popup("Error loading file", str(e))
                 print(f"Error loading OTB+ file: {e}")
                 traceback.print_exc()
                 self.next_btn.setEnabled(False)
@@ -249,6 +281,7 @@ class ImportDataWindow(QMainWindow):
         else:
             self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
             self.preview_message.setText(f"File type {ext} not supported in this demo.\nPlease select an OTB+ file.")
+            self.play_error_popup(f"File type error", f"File type {ext} not supported in this demo.\nPlease select an OTB+ file.")
             self.next_btn.setEnabled(False)
             self.file_info_label.setText(f"Failed uploading: {self.filename}")
             self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
@@ -429,6 +462,17 @@ class ImportDataWindow(QMainWindow):
         self.segment_session_button.clicked.connect(self.segment_session_button_pushed)
         self.channel_view_button.clicked.connect(self.open_channel_viewer)
 
+        # Connect sidebar buttons
+        self.sidebar_buttons["mu_analysis"].clicked.connect(self.show_mu_analysis_view)
+        self.sidebar_buttons["decomposition"].clicked.connect(self.show_decomposition_view)
+        self.sidebar_buttons["manual_edit"].clicked.connect(self.show_manual_editing_view)
+        self.sidebar_buttons["import"].clicked.connect(self.show_import_data_view)
+
+        if not MUAnalysis:
+            self.sidebar_buttons["mu_analysis"].setEnabled(False)
+
+        self.decomposition_requested.connect(self.create_decomposition_view)
+
     def open_channel_viewer(self):
         """Open the Channel Viewer window with the current EMG data"""
         if not self.emg_obj or "data" not in self.emg_obj.signal_dict:
@@ -497,6 +541,266 @@ class ImportDataWindow(QMainWindow):
         if hasattr(self, "update_sidebar_with_recent_files"):
             self.update_sidebar_with_recent_files()
 
+    def select_mu_edit_subpage(self, index:int):
+        if hasattr(self, "mu_edit_stack"):
+            self.mu_edit_stack.setCurrentIndex(index)
+
+    def initialize_external_widgets(self):
+        """Initialize external widgets if their modules are available."""
+        # Initialize MU Analysis page
+        if MUAnalysis:
+            self.mu_analysis_page = MUAnalysis()
+            self.mu_analysis_page.return_to_dashboard_requested.connect(self.show_import_data_view)
+            if hasattr(self.mu_analysis_page, "set_export_window_opener"):
+                self.mu_analysis_page.set_export_window_opener(self.open_export_results_window)
+            else:
+                print("WARNING: MotorUnitAnalysisWidget does not have 'set_export_window_opener' method.")
+
+        if DecompositionApp:
+            self.decomposition_page = DecompositionApp()
+            self.decomposition_page.setWindowFlags(getattr(Qt.WindowType, "Widget"))
+
+
+        # Note: Manual Editing page is now created after setup_ui in __init__
+
+    def handle_file_imported(self, file_info):
+        """
+        Handle the fileImported signal from the ImportDataWindow
+        """
+        print(f"Dashboard received fileImported signal for {file_info.get('filename')}")
+        # Extract information from the signal
+        filename = file_info.get("filename", "Unknown file")
+        pathname = file_info.get("pathname", "")
+        filesize = file_info.get("filesize", None)
+
+        # Add to recent datasets
+        self.add_recent_dataset(filename, pathname, filesize)
+
+    def create_import_view(self):
+        try:
+            # Create a wrapper widget to hold the import view
+            wrapper = QWidget()
+            wrapper.setObjectName("import_data_page_wrapper")
+            wrapper_layout = QVBoxLayout(wrapper)
+            wrapper_layout.setContentsMargins(0, 0, 0, 0)
+
+            # Initialize Import Data page
+            import_page = ImportDataWindow(parent=self)
+
+            # Set window flags to make it a widget instead of a window
+            import_page.setWindowFlags(Qt.WindowType.Widget)
+
+            # Connect the new signal for decomposition
+            if hasattr(import_page, "decomposition_requested"):
+                import_page.decomposition_requested.connect(self.create_decomposition_view)
+            # Connect the fileImported signal to our recent datasets function
+            if hasattr(import_page, "fileImported"):
+                import_page.fileImported.connect(self.handle_file_imported)
+
+            # Add to layout
+            wrapper_layout.addWidget(import_page)
+
+            # Replace the placeholder with our real import view
+            self.import_data_page = wrapper
+
+            # Add the wrapper to the stacked widget
+            self.central_stacked_widget.addWidget(wrapper)
+
+        except Exception as e:
+            print(f"Error creating import view: {e}")
+            traceback.print_exc()
+
+    def create_manual_editing_view(self):
+        """Creates a manual editing view and adds it to the stacked widget."""
+        try:
+            print("Creating manual editing view")
+
+            # Create a wrapper widget to hold the MUeditManual
+            # wrapper = QWidget()
+            # wrapper.setObjectName("manual_editing_wrapper")
+            # wrapper_layout = QVBoxLayout(wrapper)
+            # wrapper_layout.setContentsMargins(0, 0, 0, 0)
+            # wrapper.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
+
+            # Create MUeditManual instance
+            manual_edit_app = MUeditManual()
+
+            # Set window flags to make it a widget instead of a window
+            # manual_edit_app.setWindowFlags(Qt.WindowType.Widget)
+
+            self.mu_edit_tabs = manual_edit_app.tabs
+            # Connect return signal if available
+            # if hasattr(manual_edit_app, "return_to_dashboard_requested"):
+            #     manual_edit_app.return_to_dashboard_requested.connect(self.show_dashboard_view)
+
+            # Add to layout
+            # wrapper_layout.addWidget(manual_edit_app)
+
+            # Replace the placeholder with our real manual editing view
+            self.manual_editing_page = manual_edit_app
+
+            # Add the wrapper to the stacked widget
+            self.central_stacked_widget.addWidget(manual_edit_app)
+
+        except Exception as e:
+            print(f"Error creating manual editing view: {e}")
+            traceback.print_exc()
+
+    def create_decomposition_view(self, emg_obj, filename, pathname, imported_signal, config):
+        """Creates a decomposition view with the provided data and adds it to the stacked widget."""
+        try:
+            print("Creating decomposition view with provided data")
+
+            # Create a wrapper widget to hold the DecompositionApp
+            wrapper = QWidget()
+            wrapper.setObjectName("decomposition_wrapper")
+            wrapper_layout = QVBoxLayout(wrapper)
+            wrapper_layout.setContentsMargins(0, 0, 0, 0)
+
+            # Create DecompositionApp instance
+            self.decomp_app = DecompositionApp(
+                emg_obj=emg_obj,
+                filename=filename,
+                pathname=pathname,
+                imported_signal=imported_signal,
+                config=config,
+                parent=self,  # Set parent for proper widget hierarchy
+            )
+
+            # Set window flags to make it a widget instead of a window
+            self.decomp_app.setWindowFlags(Qt.WindowType.Widget)
+
+            # Add to layout
+            wrapper_layout.addWidget(self.decomp_app)
+
+            # Connect back button to show import view
+            if hasattr(self.decomp_app, "back_to_import_btn"):
+                self.decomp_app.back_to_import_btn.clicked.connect(self.show_import_data_view)
+
+            # Replace the placeholder with our real decomposition view
+            self.decomposition_page = wrapper
+
+            # Remove the old placeholder if it exists
+            for i in range(self.central_stacked_widget.count()):
+                widget = self.central_stacked_widget.widget(i)
+                if widget and (
+                    widget.objectName() == "decomposition_placeholder"
+                    or (hasattr(widget, "objectName") and widget.objectName() == "decomposition_placeholder")
+                ):
+                    self.central_stacked_widget.removeWidget(widget)
+                    break
+
+            # Add the wrapper to the stacked widget
+            self.central_stacked_widget.addWidget(wrapper)
+
+            # Show the decomposition view
+            self.show_decomposition_view()
+
+        except Exception as e:
+            print(f"Error creating decomposition view: {e}")
+            traceback.print_exc()
+
+    def show_mu_analysis_view(self):
+        """Switches the central widget to the MU Analysis page."""
+        if hasattr(self, "mu_analysis_page") and self.mu_analysis_page:
+            print("Switching to MU Analysis View")
+            self.central_stacked_widget.setCurrentWidget(self.mu_analysis_page)
+            update_sidebar_selection(self, "mu_analysis")
+        else:
+            print("MU Analysis view is not available.")
+
+    def show_import_data_view(self):
+        """Switches the central widget to the Import Data page."""
+        print("Switching to Import Data view")
+        if hasattr(self, "import_data_page") and self.import_data_page:
+            self.central_stacked_widget.setCurrentWidget(self.import_data_page)
+            update_sidebar_selection(self, "import")
+        else:
+            print("ImportDataWindow not available.")
+
+    def show_manual_editing_view(self):
+        """Switches to Manual Editing view."""
+        print("Switching to Manual Editing View")
+        if hasattr(self, "manual_editing_page") and self.manual_editing_page:
+            self.central_stacked_widget.setCurrentWidget(self.manual_editing_page)
+            update_sidebar_selection(self, "manual_edit")
+        else:
+            print("Manual Editing view widget not found.")
+
+    def show_decomposition_view(self):
+        """Switches to Decomposition view."""
+        print("Switching to Decomposition View")
+        if hasattr(self, "decomposition_page") and self.decomposition_page:
+            self.central_stacked_widget.setCurrentWidget(self.decomposition_page)
+            update_sidebar_selection(self, "decomposition")
+        else:
+            print("Decomposition view widget not found.")
+
+    def open_export_results_window(self):
+        """Opens the Export Results window, creating it if necessary."""
+        print(">>> Main Window: Request received to open Export Results window.")
+        if ExportResultsWindow is None:
+            print("ERROR: ExportResultsWindow class is not available (check import).")
+            return
+
+        window_exists = False
+        if self.export_results_window:
+            try:
+                # Check if the window still exists and hasn't been closed/deleted
+                if self.export_results_window.isVisible() or not self.export_results_window.isHidden():
+                    window_exists = True
+                    print(">>> Main Window: Existing ExportResultsWindow instance seems valid.")
+                else:
+                    print(
+                        ">>> Main Window: Existing window reference present but window is hidden/closed; will create new."
+                    )
+                    self.export_results_window = None  # Force recreation
+                    window_exists = False
+            except RuntimeError:  # Window was likely deleted
+                print(">>> Main Window: Existing window reference invalid (RuntimeError); will create new.")
+                self.export_results_window = None
+                window_exists = False
+            except Exception as e:  # Catch other potential issues
+                print(f">>> Main Window: Error checking existing window ({type(e).__name__}); will create new.")
+                self.export_results_window = None
+                window_exists = False
+
+        if not window_exists:
+            try:
+                print(">>> Main Window: Creating NEW ExportResultsWindow instance.")
+                # Ensure it's created as a top-level window (parent=None)
+                self.export_results_window = ExportResultsWindow(parent=None)
+                # Position it relative to the main window for convenience
+                main_geo = self.geometry()
+                new_x = main_geo.x() + 100
+                new_y = main_geo.y() + 100
+                width = 600  # Define desired size
+                height = 550
+                self.export_results_window.setGeometry(new_x, new_y, width, height)
+                print(f">>> Set geometry for new window to ({new_x}, {new_y}, {width}, {height})")
+            except Exception as e:
+                print(f"FATAL ERROR during ExportResultsWindow creation: {e}")
+                traceback.print_exc()
+                self.export_results_window = None  # Ensure it's None if creation failed
+                return  # Stop execution here
+
+        # After potentially creating or confirming existence, try to show/activate
+        if self.export_results_window:
+            try:
+                print(">>> Main Window: Attempting to show and activate ExportResultsWindow.")
+                self.export_results_window.show()
+                self.export_results_window.raise_()  # Bring to front
+                self.export_results_window.activateWindow()  # Give focus
+                QApplication.processEvents()  # Ensure UI updates
+                print(">>> ExportResultsWindow shown and activated.")
+            except RuntimeError:  # Catch if window was deleted between check and show
+                print(">>> Error: ExportResultsWindow was deleted before it could be shown.")
+                self.export_results_window = None
+            except Exception as e:
+                print(f"Error displaying/activating ExportResultsWindow: {e}")
+                traceback.print_exc()
+        else:
+            print("ERROR - self.export_results_window is None even after creation attempt.")
 
 # For testing the window independently
 if __name__ == "__main__":
