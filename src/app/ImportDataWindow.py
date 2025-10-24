@@ -191,6 +191,29 @@ class ImportDataWindow(QMainWindow):
         except Exception:
             pass
         QMessageBox.critical(self, title, message, QMessageBox.Ok)
+    
+    def update_decomposition_tab_data(self, data_dict):
+        """update decomposiiton tab with data from import data tab"""
+        try:
+            print(f"Received data for decomposition tab: {data_dict.keys()}")
+            print(f"EMG object exists: {data_dict.get('emg_obj') is not None}")
+            print(f"Filename: {data_dict.get('filename')}")
+            
+            # create decomposition view with the imported data
+            self.create_decomposition_view(
+                emg_obj=data_dict['emg_obj'],
+                filename=data_dict['filename'],
+                pathname=data_dict['pathname'],
+                imported_signal=data_dict.get('imported_signal'),
+                config=data_dict.get('config')
+            )
+            
+            print("Decomposition tab updated with imported data")
+            
+        except Exception as e:
+            print(f"Error updating decomposition tab: {e}")
+            import traceback
+            traceback.print_exc()
 
     def load_file(self, path, file):
         """Load and process a file."""
@@ -486,6 +509,9 @@ class ImportDataWindow(QMainWindow):
 
         self.decomposition_requested.connect(self.create_decomposition_view)
 
+        # automatic decomposition update
+        self.data_imported_successfully.connect(self.update_decomposition_tab_data)
+
     def open_channel_viewer(self):
         """Open the Channel Viewer window with the current EMG data"""
         if not self.emg_obj or "data" not in self.emg_obj.signal_dict:
@@ -701,13 +727,27 @@ class ImportDataWindow(QMainWindow):
                     or (hasattr(widget, "objectName") and widget.objectName() == "decomposition_placeholder")
                 ):
                     self.central_stacked_widget.removeWidget(widget)
+                    widget.deleteLater()
                     break
+            
+            # store wrapper as decomposition page
+            self.decomposition_page = wrapper
 
             # Add the wrapper to the stacked widget
             self.central_stacked_widget.addWidget(wrapper)
 
-            # Show the decomposition view
-            self.show_decomposition_view()
+            # update ui if there is import data
+            if emg_obj and filename:
+                if hasattr(self.decomp_app, 'edit_field'):
+                    self.decomp_app.edit_field.setText(f"Data loaded: {filename}")
+                    self.decomp_app.edit_field.setStyleSheet(
+                        "color: #4CAF50; font-weight: bold; background-color: #f0f8ff; padding: 8px; border-radius: 4px;"
+                    )
+                
+                if hasattr(self.decomp_app, 'start_button'):
+                    self.decomp_app.start_button.setEnabled(True)
+
+            print("Decomposition view created successfully")
 
         except Exception as e:
             print(f"Error creating decomposition view: {e}")
