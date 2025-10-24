@@ -40,6 +40,9 @@ class ImportDataWindow(QMainWindow):
     # Signal to notify other windows when a file is imported (if needed)
     fileImported = pyqtSignal(dict)
 
+    # signal for automatic data transfer
+    data_imported_successfully = pyqtSignal(dict)
+
     def __init__(self, emg_obj=None, filename=None, pathname=None, imported_signal=None, parent=None):
         super().__init__()
 
@@ -202,6 +205,16 @@ class ImportDataWindow(QMainWindow):
                         # Plot channels for previews
                         self.update_preview_plot()
                         self.update_buttons()
+
+                        # data for decomposition tab
+                        self.data_imported_successfully.emit({
+                            'emg_obj': self.emg_obj,
+                            'filename': self.filename,
+                            'pathname': self.pathname,
+                            'imported_signal': self.imported_signal,
+                            'config': self.config
+                        })
+
                     except Exception as e:
                         print(f"Error creating preview plot: {e}")
                 else:
