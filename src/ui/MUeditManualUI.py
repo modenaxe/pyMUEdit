@@ -429,7 +429,7 @@ def create_batch_processing_tab(main_window):
 
     for label, handler, attr_name in action_batch_configs:
         btn = ActionButtonedit(label, primary=True)
-        btn.clicked.connect(handler)
+        btn.clicked.connect(partial(handler, main_window))
         btn.setFixedHeight(34)
         batch_layout.addWidget(btn)
         setattr(main_window, attr_name, btn)
