@@ -70,28 +70,8 @@ class HDEMGDashboard(QMainWindow):
         # Start on dashboard view
         self.show_dashboard_view()
     
-    # def update_decomposition_tab_data(self, data_dict):
-    #     """update decomposition tab with data from import data tab"""
-    #     try:
-    #         # update decomposition tab with new data
-    #         if hasattr(self, 'decomp_app') and self.decomp_app:
-    #             self.decomp_app.emg_obj = data_dict['emg_obj']
-    #             self.decomp_app.filename = data_dict['filename']
-    #             self.decomp_app.pathname = data_dict['pathname']
-    #             self.decomp_app.imported_signal = data_dict['imported_signal']
-    #             self.decomp_app.config = data_dict['config']
-
-    #             # update ui
-    #             if hasattr(self.decomp_app, 'update_data_status'):
-    #                 self.decomp_app.update_data_status("data loaded from import data tab")
-            
-    #         print("decomposition tab updated with imported data")
-        
-    #     except Exception as e:
-    #         print(f"error updating decomposition tab: {e}")
-
     def update_decomposition_tab_data(self, data_dict):
-        """Update decomposition tab with data from import data tab"""
+        """update decomposition tab with data from import data tab"""
         try:
             print(f"Received data for decomposition tab: {data_dict.keys()}")
             print(f"EMG object exists: {data_dict.get('emg_obj') is not None}")
@@ -106,10 +86,10 @@ class HDEMGDashboard(QMainWindow):
                 config=data_dict.get('config')
             )
             
-            print("Decomposition tab updated with imported data")
+            print("decomposition tab updated with imported data")
             
         except Exception as e:
-            print(f"Error updating decomposition tab: {e}")
+            print(f"error updating decomposition tab: {e}")
             import traceback
             traceback.print_exc()
 
