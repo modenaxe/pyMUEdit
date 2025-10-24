@@ -465,9 +465,17 @@ class ImportDataWindow(QMainWindow):
             if self.pathname and self.filename:
                 savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
                 self.save_mat_in_background(savename, {"signal": self.imported_signal}, True)
+            
+            self.update_decomposition_tab_data({
+                'emg_obj': self.emg_obj,
+                'filename': self.filename,
+                'pathname': self.pathname,
+                'imported_signal': self.imported_signal,
+                'config': self.config
+            })
 
-            # Emit signal to request showing decomposition view
-            self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, self.config)
+            # switch to decomposition tab
+            self.show_decomposition_view()
 
         except Exception as e:
             print(f"Error requesting decomposition view: {e}")
