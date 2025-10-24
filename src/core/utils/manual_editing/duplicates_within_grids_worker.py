@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QThread, pyqtSignal, QObject
-from core.utils.decomposition.remove_duplicates import remove_duplicates
+from core.utils.postprocessing.remove_duplicates import remove_duplicates
 import numpy as np
 
 class duplicates_within_grids_worker(QThread):

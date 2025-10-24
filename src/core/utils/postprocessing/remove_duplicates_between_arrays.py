@@ -1,13 +1,13 @@
 import numpy as np
-from core.utils.decomposition.xcorr import xcorr
+from core.utils.preprocessing.xcorr import xcorr
 
 
-def remove_duplicates(pulse_trains, discharge_times, discharge_times2, mu_filters, maxlag, jitter_val, tol, fsamp):
+def remove_duplicates_between_arrays(pulse_trains, discharge_times, muscle, maxlag, jitter_val, tol, fsamp):
     """
-    Identifies and removes duplicate motor units.
+    Identifies and removes duplicate motor units across different electrode arrays.
 
-    Uses cross-correlation to detect motor units that likely represent the same physical unit,
-    keeping only the one with the most regular firing pattern (lowest CoV).
+    Similar to remove_duplicates, but specifically handles detection of the same
+    motor unit appearing in multiple electrode arrays.
     """
 
     jitter_thr = int(np.round(jitter_val * fsamp))
@@ -16,26 +16,24 @@ def remove_duplicates(pulse_trains, discharge_times, discharge_times2, mu_filter
     discharge_jits = []
     discharge_times_new = []
     pulse_trains_new = []
+    muscle_new = []
 
     # generating binary spike trains for each MU extracted so far
     for i in range(np.shape(pulse_trains)[0]):
         spike_trains[i, discharge_times[i]] = 1
-        discharge_jits.append([])  # append an empty list to be extended with jitters
+        discharge_jits.append([])
 
-        # adding jitter
+        # Convert NumPy arrays to lists before using extend()
         for j in range(jitter_thr):
-            discharge_jits[i].extend((discharge_times2[i] - j).tolist())
-            discharge_jits[i].extend((discharge_times2[i] + j).tolist())
+            discharge_jits[i].extend((discharge_times[i] - j).tolist())
+            discharge_jits[i].extend((discharge_times[i] + j).tolist())
 
-        discharge_jits[i].extend(discharge_times2[i].tolist())
+        discharge_jits[i].extend(discharge_times[i].tolist())
 
-    # With the binary trains generated above, you can readily identify duplicate MUs
     i = 1
     while discharge_jits:
         discharge_temp = []
         for mu_candidate in range(len(discharge_jits)):
-
-            # calculating the cross correlation between the firings of two candidate MUs
             corr, lags = xcorr(spike_trains[0, :], spike_trains[mu_candidate, :], int(maxlag))
             ind_max = np.argmax(corr)
             corr_max = np.real(corr[ind_max])
@@ -48,45 +46,59 @@ def remove_duplicates(pulse_trains, discharge_times, discharge_times2, mu_filter
         # Now, we count the common discharge times
         comdis = np.zeros(np.shape(pulse_trains)[0])
 
-        for j in range(1, np.shape(pulse_trains)[0]):  # skip the first since it is used for the baseline comparison
+        for j in range(1, np.shape(pulse_trains)[0]):
             com = np.intersect1d(discharge_jits[0], discharge_temp[j])
-            if len(com) > 0:
-                com = com[np.insert(np.diff(com) != 1, 0, False)]
-            comdis[j] = len(com) / max(len(discharge_times[0]), len(discharge_times[j]))
+
+            if com.size > 1:
+                # Find indices where diff != 1, but handle empty arrays
+                diff_mask = np.diff(com) != 1
+                keep_indices = np.insert(diff_mask, 0, False)
+                com = com[keep_indices]
+            elif com.size == 0:
+                pass
+
+            # Calculate common discharge ratio
+            if len(discharge_times[0]) > 0 and len(discharge_times[j]) > 0:
+                comdis[j] = len(com) / max(len(discharge_times[0]), len(discharge_times[j]))
+            else:
+                comdis[j] = 0
+
+            # Clear com to free memory
             com = None
 
-        # use this establish the duplicate MUs, and keep only the MU that has the most stable, regular firing behaviour
         duplicates = np.where(comdis >= tol)[0]
         duplicates = np.insert(duplicates, 0, 0)
         CoV = np.zeros(len(duplicates))
 
         for j in range(len(duplicates)):
             ISI = np.diff(discharge_times[duplicates[j]])
-            CoV[j] = np.std(ISI) / np.mean(ISI)
+            if ISI.size > 0:
+                CoV[j] = np.std(ISI) / np.mean(ISI)
+            else:
+                CoV[j] = float("inf")  # Set high CoV for empty arrays
 
-        survivor = np.argmin(CoV)  # the surviving MU has the lowest CoV
+        survivor = np.argmin(CoV)
 
         # delete all duplicates, but save the surviving MU
         discharge_times_new.append(discharge_times[duplicates[survivor]])
         pulse_trains_new.append(pulse_trains[duplicates[survivor]])
+        muscle_new.append(muscle[duplicates[survivor]])
 
         # update firings and discharge times
         for j in range(len(duplicates)):
-            # THE FIX IS HERE: Use np.array([]) to maintain NumPy array consistency
             discharge_times[duplicates[-(j + 1)]] = np.array([])
-            discharge_times2[duplicates[-(j + 1)]] = np.array([])
             discharge_jits[duplicates[-(j + 1)]] = []
 
-        # if it is not empty, assign it back to the list, otherwise remove the empty element
         discharge_times = [mu for mu in discharge_times if mu.size > 0]
-        discharge_times2 = [mu for mu in discharge_times2 if mu.size > 0]
         discharge_jits = [mu for mu in discharge_jits if len(mu) > 0]
 
-        # Clean the spike and pulse train arrays based on identified duplicates
+        # Clean the spike and pulse train arrays
         spike_trains = np.delete(spike_trains, duplicates, axis=0)
         pulse_trains = np.delete(pulse_trains, duplicates, axis=0)
-        mu_filters = np.delete(mu_filters, duplicates, axis=0)
+        muscle = np.delete(muscle, duplicates, axis=0)
 
         i += 1
 
-    return discharge_times_new, pulse_trains_new, mu_filters
+    muscle_new = np.array(muscle_new)
+    pulse_trains_new = np.array(pulse_trains_new)
+    return discharge_times_new, pulse_trains_new, muscle_new
