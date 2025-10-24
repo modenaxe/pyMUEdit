@@ -1,24 +1,22 @@
 from pathlib import Path
+
 import pyqtgraph as pg
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtSvg import QSvgWidget
-from PyQt5.QtWidgets import (
-    QApplication, QFrame, QHBoxLayout, QLabel, QPushButton,
-    QScrollArea, QSizePolicy, QSpacerItem, QStackedWidget,
-    QVBoxLayout, QWidget
-)
+from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
+                             QPushButton, QScrollArea, QSizePolicy,
+                             QSpacerItem, QStackedWidget, QVBoxLayout, QWidget)
 
 # Import custom components
-from ui.components import (
-    ActionButton, CleanCard, CleanTheme,
-    SectionHeader, Sidebar, VisualizationPanel
-)
+from ui.components import (ActionButton, CleanCard, CleanTheme, SectionHeader,
+                           Sidebar, VisualizationPanel)
 from ui.components.CleanScrollBar import CleanScrollBar
 
 # Define absolute path to the public icons folder (same logic as Sidebar.py)
 ABS_PATH = Path(__file__).parent.parent
 ICONS_PATH = ABS_PATH / "public"
+
 
 def setup_ui(import_window):
     """Set up the UI for the import data window using custom components."""
@@ -46,22 +44,36 @@ def setup_ui(import_window):
     import_window.left_sidebar_scroll_area = left_scroll
     import_window.main_layout.addWidget(left_scroll)
     import_window.central_stacked_widget = QStackedWidget()
-    import_window.central_stacked_widget.setStyleSheet("background-color: transparent;")
+    import_window.central_stacked_widget.setStyleSheet(
+        "background-color: transparent;")
     import_window.import_data_page = _create_import_page(import_window)
-    import_window.central_stacked_widget.addWidget(import_window.import_data_page)
+    import_window.central_stacked_widget.addWidget(
+        import_window.import_data_page)
 
-    if hasattr(import_window, "mu_analysis_page") and import_window.mu_analysis_page is not None:
-        import_window.central_stacked_widget.addWidget(import_window.mu_analysis_page)
-    if hasattr(import_window, "decomposition_page") and import_window.decomposition_page is not None:
-        import_window.central_stacked_widget.addWidget(import_window.decomposition_page)
+    if hasattr(
+            import_window,
+            "mu_analysis_page") and import_window.mu_analysis_page is not None:
+        import_window.central_stacked_widget.addWidget(
+            import_window.mu_analysis_page)
+    if hasattr(
+            import_window,
+            "decomposition_page") and import_window.decomposition_page is not None:
+        import_window.central_stacked_widget.addWidget(
+            import_window.decomposition_page)
     else:
-        import_window.decomposition_page = create_placeholder_page("Decomposition Page", import_window)
-        import_window.central_stacked_widget.addWidget(import_window.decomposition_page)
+        import_window.decomposition_page = create_placeholder_page(
+            "Decomposition Page", import_window)
+        import_window.central_stacked_widget.addWidget(
+            import_window.decomposition_page)
 
-    import_window.manual_editing_page = create_placeholder_page("Manual Editing Page", import_window)
-    import_window.central_stacked_widget.addWidget(import_window.manual_editing_page)
-    import_window.main_layout.addWidget(import_window.central_stacked_widget, 1)
-    import_window.update_sidebar_with_recent_files = lambda: update_sidebar_with_recent_files(import_window)
+    import_window.manual_editing_page = create_placeholder_page(
+        "Manual Editing Page", import_window)
+    import_window.central_stacked_widget.addWidget(
+        import_window.manual_editing_page)
+    import_window.main_layout.addWidget(
+        import_window.central_stacked_widget, 1)
+    import_window.update_sidebar_with_recent_files = lambda: update_sidebar_with_recent_files(
+        import_window)
     import_window.restore_sidebar = lambda: restore_sidebar(import_window)
 
 
@@ -106,6 +118,8 @@ def create_right_content(import_window):
     return scroll_area
 
 # NOTE: Creates 'Signal Preview' window
+
+
 def create_preview_section(import_window):
     preview_card = CleanCard()
     preview_card.setMinimumHeight(500)
@@ -176,8 +190,10 @@ def create_preview_section(import_window):
     import_window.preview_messages.addStretch()
 
     import_window.preview_messages_widget = QWidget()
-    import_window.preview_messages_widget.setLayout(import_window.preview_messages)
-    import_window.preview_stacked_frame.addWidget(import_window.preview_messages_widget)
+    import_window.preview_messages_widget.setLayout(
+        import_window.preview_messages)
+    import_window.preview_stacked_frame.addWidget(
+        import_window.preview_messages_widget)
 
     import_window.preview_plot = pg.PlotWidget()
     import_window.preview_plot.setBackground("w")
@@ -196,7 +212,8 @@ def create_preview_section(import_window):
     import_window.preview_stacked_frame.setCurrentIndex(0)
 
     preview_frame_layout = QVBoxLayout(preview_frame)
-    preview_frame_layout.addWidget(import_window.preview_stacked_frame, stretch=3)
+    preview_frame_layout.addWidget(
+        import_window.preview_stacked_frame, stretch=3)
 
     lrbuttons = QWidget()
     button_layout = QHBoxLayout()
@@ -236,6 +253,7 @@ def create_configuration_section(import_window):
     import_window.channel_view_button.setEnabled(False)
     config_group.addWidget(import_window.channel_view_button)
     return config_group
+
 
 def create_footer(import_window):
     """Create the footer with file info and navigation buttons."""
@@ -282,6 +300,7 @@ def create_footer(import_window):
     footer_layout.addWidget(import_window.next_btn)
     return footer
 
+
 def find_sidebar(import_window):
     """Find the sidebar component in the application hierarchy."""
     if import_window.parent():
@@ -294,6 +313,7 @@ def find_sidebar(import_window):
             return sidebar
     return None
 
+
 def update_sidebar_with_recent_files(import_window):
     """Update the sidebar to show recent files."""
     sidebar = find_sidebar(import_window)
@@ -302,11 +322,14 @@ def update_sidebar_with_recent_files(import_window):
             import_window.recent_files,
             import_window.load_recent_file)
 
+
 def restore_sidebar(import_window):
     """Restore the sidebar to its default state."""
     sidebar = find_sidebar(import_window)
     if sidebar and hasattr(sidebar, "clear_recent_files_section"):
         sidebar.clear_recent_files_section()
+
+
 def create_placeholder_page(title, import_window):
     """Creates a placeholder page with a title and back button."""
     page = QWidget()
@@ -341,6 +364,7 @@ def create_placeholder_page(title, import_window):
             QSizePolicy.Expanding))
     layout.addWidget(back_button, 0, Qt.AlignmentFlag.AlignLeft)
     return page
+
 
 def _create_left_sidebar(import_window):
     """Creates the improved left sidebar with SVG icons."""
@@ -379,7 +403,8 @@ def _create_left_sidebar(import_window):
         elif key == "decomposition":
             button.clicked.connect(
                 import_window.show_decomposition_view if hasattr(
-                    import_window, "show_decomposition_view") else lambda: None)
+                    import_window,
+                    "show_decomposition_view") else lambda: None)
         elif key == "manual_edit":
             button.clicked.connect(
                 import_window.show_manual_editing_view
@@ -387,6 +412,7 @@ def _create_left_sidebar(import_window):
                 else lambda: None
             )
     return sidebar
+
 
 def _create_import_page(import_window):
     right_layout = QWidget()
@@ -397,7 +423,8 @@ def _create_import_page(import_window):
     scroll_area = QScrollArea()
     scroll_area.setWidgetResizable(True)
     scroll_area.setFrameShape(QFrame.NoFrame)
-    scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    scroll_area.setHorizontalScrollBarPolicy(
+        Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
     scroll_area.setStyleSheet("background: transparent; border: none;")
 
     content_area = QWidget()
@@ -448,6 +475,7 @@ def _create_import_page(import_window):
     right_v.addWidget(footer, 0)
 
     return right_layout
+
 
 def update_sidebar_selection(import_window, selected_key):
     """Updates the visual state of sidebar buttons based on selection."""
