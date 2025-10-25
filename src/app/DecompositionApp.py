@@ -3,7 +3,7 @@ import os
 import traceback
 import numpy as np
 import scipy.io as sio
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox
 
 import pyqtgraph as pg
 
@@ -59,10 +59,17 @@ class DecompositionApp(QMainWindow):
         if self.emg_obj and self.filename:
             self.update_ui_with_loaded_data()
 
+        # track decomposition state
+        self.decomposition_state = "idle"
+        self.current_worker = None
+
     def connect_signals(self):
         """Connect all UI signals to their handlers."""
         # Center panel connections
         self.start_button.clicked.connect(self.start_button_pushed)
+        self.stop_button.clicked.connect(self.stop_decomposition)
+        # self.continue_button.clicked.connect(self.continue_decomposition)
+        # self.restart_button.clicked.connect(self.restart_decomposition)
 
         # Right panel connections
         self.save_output_button.clicked.connect(self.save_output_to_location)
@@ -144,6 +151,8 @@ class DecompositionApp(QMainWindow):
         # Enable the start button and configuration
         self.start_button.setEnabled(True)
 
+        self.show_start_stop_buttons(start_enabled=True, stop_enabled=False)
+
         # Update status text
         self.edit_field.setText(f"Loaded {self.filename}")
         self.status_text.setText("Ready to start decomposition")
@@ -173,6 +182,50 @@ class DecompositionApp(QMainWindow):
                 self.ui_plot_reference.setTitle(f"Signal Preview ({num_actual_channels} channels)")
             except Exception as e:
                 print(f"Error creating preview plot: {e}")
+    
+    def show_start_stop_buttons(self, start_enabled=False, stop_enabled=False):
+        """Show start and stop buttons with specified enabled states"""
+        # clear current layout
+        for i in reversed(range(self.button_layout.count())):
+            child = self.button_layout.itemAt(i).widget()
+            if child:
+                child.setParent(None)
+        
+        # add start and stop buttons
+        self.button_layout.addWidget(self.start_button)
+        self.button_layout.addWidget(self.stop_button)
+        
+        # set initial states
+        self.start_button.setEnabled(start_enabled)
+        self.stop_button.setEnabled(stop_enabled)
+
+        self.start_button.show()
+        self.stop_button.show()
+        
+        # hide continue/restart buttons
+        self.continue_button.hide()
+        self.restart_button.hide()
+
+    def stop_decomposition(self):
+        """Stop the current decomposition"""
+        try:
+            if hasattr(self, 'decomp_worker') and self.decomp_worker:
+                # stop the worker thread
+                self.decomp_worker.terminate()
+                self.decomp_worker.wait()
+
+                # clean up
+                if self.decomp_worker in self.threads:
+                    self.threads.remove(self.decomp_worker)
+            
+            self.decomposition_state = "stopped"
+            self.show_continue_restart_buttons()
+            self.edit_field.setText("Decomposition stopped by user")
+            self.status_text.setText("Stopped")
+            
+        except Exception as e:
+            print(f"Error stopping decomposition: {e}")
+            self.edit_field.setText(f"Error stopping decomposition: {e}")
 
     def open_editing_mode(self):
         """Open the MUeditManual window for editing motor units"""
@@ -300,6 +353,9 @@ class DecompositionApp(QMainWindow):
             self.threads.remove(worker)
 
     def start_button_pushed(self):
+        self.decomposition_state = "running"
+        self.show_start_stop_buttons(start_enabled=False, stop_enabled=True)
+
         algo_choice = self.algo_combo.currentText()
         print(f"Algorithm chosen: {algo_choice}")
         # Reset iteration counter at the start of a new decomposition
@@ -382,6 +438,10 @@ class DecompositionApp(QMainWindow):
 
     def on_decomposition_complete(self, result):
         """Handle successful completion of decomposition"""
+
+        self.decomposition_state = "idle"
+        self.show_start_stop_buttons(start_enabled=True, stop_enabled=False)
+
         if self.pathname and self.filename:
             savename = os.path.join(self.pathname, self.filename + "_output_decomp.mat")
 
@@ -475,6 +535,8 @@ class DecompositionApp(QMainWindow):
 
     def on_decomposition_error(self, error_msg):
         """Handle errors during decomposition"""
+        self.decomposition_state = "idle"
+        self.show_start_stop_buttons(start_enabled=True, stop_enabled=False)
         self.edit_field.setText(f"Error in decomposition: {error_msg}")
         self.status_text.setText("Error")
         self.status_progress.setValue(0)
