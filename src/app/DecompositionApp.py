@@ -4,6 +4,7 @@ import traceback
 import numpy as np
 import scipy.io as sio
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox
+from core.utils.config.prepare_parameters import prepare_parameters
 
 import pyqtgraph as pg
 
@@ -68,8 +69,8 @@ class DecompositionApp(QMainWindow):
         # Center panel connections
         self.start_button.clicked.connect(self.start_button_pushed)
         self.stop_button.clicked.connect(self.stop_decomposition)
-        # self.continue_button.clicked.connect(self.continue_decomposition)
-        # self.restart_button.clicked.connect(self.restart_decomposition)
+        self.continue_button.clicked.connect(self.continue_decomposition)
+        self.restart_button.clicked.connect(self.restart_decomposition)
 
         # Right panel connections
         self.save_output_button.clicked.connect(self.save_output_to_location)
@@ -209,23 +210,107 @@ class DecompositionApp(QMainWindow):
     def stop_decomposition(self):
         """Stop the current decomposition"""
         try:
-            if hasattr(self, 'decomp_worker') and self.decomp_worker:
-                # stop the worker thread
-                self.decomp_worker.terminate()
-                self.decomp_worker.wait()
-
-                # clean up
-                if self.decomp_worker in self.threads:
-                    self.threads.remove(self.decomp_worker)
+            print("Stop button clicked!")
             
+            if hasattr(self, 'decomp_worker') and self.decomp_worker:
+                print("Setting stop flag for decomposition worker...")
+                
+                # set the stop flag
+                if hasattr(self.decomp_worker, 'stop'):
+                    self.decomp_worker.stop()
+                
+                # dont force terminate
+                print("Stop flag set, updating UI...")
+            
+            # update ui
             self.decomposition_state = "stopped"
             self.show_continue_restart_buttons()
             self.edit_field.setText("Decomposition stopped by user")
             self.status_text.setText("Stopped")
+            self.status_progress.setValue(0)
+            
+            print("UI updated to stopped state")
             
         except Exception as e:
             print(f"Error stopping decomposition: {e}")
-            self.edit_field.setText(f"Error stopping decomposition: {e}")
+            import traceback
+            traceback.print_exc()
+            # still update ui even if there was an error
+            self.decomposition_state = "stopped"
+            self.show_continue_restart_buttons()
+            self.edit_field.setText("Decomposition stopped")
+            self.status_text.setText("Stopped")
+
+    def continue_decomposition(self):
+        """Continue the stopped decomposition"""
+        try:
+            # restart the decomposition using the start button method
+            self.decomposition_state = "running"
+            self.show_start_stop_buttons(start_enabled=False, stop_enabled=True)
+            
+            # call the start button method directly
+            self.start_button_pushed()
+            
+            self.edit_field.setText("Decomposition restarted...")
+            
+        except Exception as e:
+            print(f"Error continuing decomposition: {e}")
+            import traceback
+            traceback.print_exc()
+            self.edit_field.setText(f"Error continuing decomposition: {e}")
+            self.show_continue_restart_buttons()
+
+    def restart_decomposition(self):
+        """Show confirmation dialog and restart decomposition if confirmed"""
+        reply = QMessageBox.question(
+            self,
+            'Restart Decomposition',
+            'Are you sure you want to restart the decomposition?\n\nAll current progress will be lost.',
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+
+        if reply == QMessageBox.Yes:
+            # reset decomposition state
+            self.decomposition_state = "idle"
+            self.current_worker = None
+
+            # reset ui to initial state
+            self.show_start_stop_buttons(start_enabled=True, stop_enabled=False)
+            self.edit_field.setText("Ready to start decomposition")
+
+            # reset progress and results
+            self.status_progress.setValue(0)
+            self.status_text.setText("Ready")
+            self.motor_units_label.setText("Motor Units: --")
+            self.sil_value_label.setText("SIL: --")
+            self.cov_value_label.setText("CoV: --")
+
+            # clear plots
+            self.ui_plot_reference.clear()
+            self.ui_plot_pulsetrain.clear()
+            
+            # reset iteration counter
+            self.iteration_counter = 0
+
+    def show_continue_restart_buttons(self):
+        """Show continue and restart buttons"""
+        # clear current layout
+        for i in reversed(range(self.button_layout.count())):
+            child = self.button_layout.itemAt(i).widget()
+            if child:
+                child.setParent(None)
+        
+        # add continue and restart buttons
+        self.button_layout.addWidget(self.continue_button)
+        self.button_layout.addWidget(self.restart_button)
+
+        self.continue_button.show()
+        self.restart_button.show()
+
+        # hide start/stop buttons
+        self.start_button.hide()
+        self.stop_button.hide()
 
     def open_editing_mode(self):
         """Open the MUeditManual window for editing motor units"""
