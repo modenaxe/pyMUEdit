@@ -9,3 +9,4 @@ tests/*.otb+
 .DS_Store
 .vscode
 .idea
+database.db
