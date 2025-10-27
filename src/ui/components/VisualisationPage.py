@@ -59,6 +59,12 @@ class VisualisationPage(QWidget):
         "Number of Signals to Display", 8, 1, 16)
         left_sidebar_layout.addWidget(self.num_signals_input_box)
 
+        signals_limit_label = QLabel("(Max: 16)")
+        signals_limit_label.setStyleSheet("color: gray; font-size: 11px;")
+        left_sidebar_layout.addWidget(signals_limit_label)
+        
+        left_sidebar_layout.addSpacing(5)
+
         # signal range dropdown panel
         self.range_dropdown = FormDropdown(
             "Select Reference Signal",
