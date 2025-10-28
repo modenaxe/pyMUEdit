@@ -8,16 +8,8 @@
 -- Stages: Static reference table
 -- Readin -> Processed -> Decomposition -> Edit 
 CREATE TABLE IF NOT EXISTS stages (
-    stageid INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT
-);
-
--- Files: Import data file
-CREATE TABLE IF NOT EXISTS files (
-    fileid INTEGER PRIMARY KEY AUTOINCREMENT,
-    filename TEXT,
-    filepath TEXT UNIQUE NOT NULL,
-    last_opened INTEGER
+    stageid INTEGER PRIMARY KEY,
+    name TEXT 
 );
 
 -- Sessions: A group of file versions in one workflow
@@ -26,23 +18,42 @@ CREATE TABLE IF NOT EXISTS sessions (
     created_at INTEGER
 );
 
--- Versions: A file through its various stages
-CREATE TABLE IF NOT EXISTS versions (
-    versionid INTEGER PRIMARY KEY AUTOINCREMENT,
-    stageid INTEGER NOT NULL,
-    fileid INTEGER NOT NULL,
+-- Files: Import data file
+CREATE TABLE IF NOT EXISTS files (
+    fileid INTEGER PRIMARY KEY AUTOINCREMENT,
     sessionid INTEGER NOT NULL,
-    log TEXT,    -- JSON blob: logs file changes
+    filename TEXT,
+    filepath TEXT UNIQUE NOT NULL,
+    created_at INTEGER,
 
+    FOREIGN KEY (sessionid) references sessions(sessionid)
+);
+
+-- Versions: A file through its various stages
+CREATE TABLE IF NOT EXISTS file_versions (
+    versionid INTEGER PRIMARY KEY AUTOINCREMENT,
+    fileid INTEGER NOT NULL,
+    stageid INTEGER NOT NULL,
+    filepath TEXT UNIQUE NOT NULL,
+    last_opened INTEGER,
+    
     FOREIGN KEY (stageid) REFERENCES stages(stageid),
-    FOREIGN KEY (fileid) REFERENCES files(fileid),
-    FOREIGN KEY (sessionid) REFERENCES sessions(sessionid)
+    FOREIGN KEY (fileid) REFERENCES files(fileid)
+);
+
+CREATE TABLE IF NOT EXISTS logs (
+    logid INTEGER PRIMARY KEY AUTOINCREMENT, 
+    versionid INTEGER NOT NULL,
+    actions TEXT,    -- JSON blob of user changes to file
+    config TEXT,    -- JSON blob of file parameters/config
+
+    FOREIGN KEY (versionid) REFERENCES file_versions(versionid)
 );
 
 -- Inserts stage values once 
-INSERT OR IGNORE INTO stages (name)
+INSERT OR IGNORE INTO stages (stageid, name)
 VALUES 
-    ('readin'),
-    ('processed'),
-    ('decomposed'),
-    ('edited');
+    (1, 'readin'),
+    (2, 'processed'),
+    (3, 'decomposed'),
+    (4, 'edited');
