@@ -17,11 +17,11 @@ class DecompositionState:
     def ensure_state_directory():
         """Ensures that the states directory exists."""
         global STATES_DIR 
-        
+        logger.debug(f"Ensuring state directory exists at: {STATES_DIR}")
         if not os.path.exists(STATES_DIR):
             try:
                 os.makedirs(STATES_DIR)
-                print(f"Created states directory at {STATES_DIR}")
+                logger.info(f"Created states directory at {STATES_DIR}")
             except Exception as e:
                 logger.exception(f"Error creating states directory: {e}")
                 # Fallback to temp directory if home directory is not writable
@@ -39,13 +39,15 @@ class DecompositionState:
             decomp_app: The DecompositionApp instance
             state_name: Optional name for the state, defaults to timestamp + filename
         """
+        logger.debug("Starting save_state()")
         DecompositionState.ensure_state_directory()
         
         # Generate default state name if none provided
         if not state_name:
             timestamp = time.strftime("%Y%m%d_%H%M%S")
             state_name = f"{timestamp}_{decomp_app.filename}"
-        
+            logger.debug(f"Generated default state name: {state_name}")
+        logger.debug(f"Preparing state for file: {decomp_app.filename}")
         # Count total motor units
         total_mus = 0
         if hasattr(decomp_app, 'decomposition_result') and decomp_app.decomposition_result:
@@ -86,6 +88,12 @@ class DecompositionState:
         if hasattr(decomp_app, 'ui_plot_pulsetrain'):
             plot_data['pulsetrain'] = DecompositionState._extract_plot_data(decomp_app.ui_plot_pulsetrain)
         
+        logger.info(f"Detected {total_mus} motor units")
+        if sil_value is None:
+            logger.warning("SIL value missing in decomposition app")
+        if cov_value is None:
+            logger.warning("CoV value missing in decomposition app")
+
         # Create a dictionary with all the important state information
         state = {
             # Basic metadata
@@ -128,7 +136,7 @@ class DecompositionState:
                         'fsamp': decomp_app.emg_obj.signal_dict.get('fsamp', None),
                         'nChan': decomp_app.emg_obj.signal_dict.get('nChan', None)
                     }
-                    print(f"EMG data extracted for channel viewer: {state['emg_data']['data'].shape if state['emg_data']['data'] is not None else 'None'}")
+                    logger.info(f"EMG data extracted for channel viewer: {state['emg_data']['data'].shape if state['emg_data']['data'] is not None else 'None'}")
         except Exception as e:
             logger.exception(f"Warning: Failed to extract EMG data for channel viewer: {e}")
             # This is not critical, so continue with saving anyway
@@ -138,15 +146,13 @@ class DecompositionState:
         
         # Save the state
         state_path = os.path.join(STATES_DIR, f"{state_name}.decomp")
-        print(f"Saving state to {state_path}")
+        logger.debug(f"Saving serialized state to {state_path}")
         try:
             with open(state_path, 'wb') as f:
                 pickle.dump(serializable_state, f)
-            print(f"Successfully saved state with {total_mus} motor units")
+            logger.info(f"State saved successfully to {state_path}")
         except Exception as e:
             logger.exception(f"Error saving state: {e}")
-            import traceback
-            traceback.print_exc()
         
         # Return metadata for the saved state
         return {
@@ -353,7 +359,7 @@ class DecompositionState:
         if os.path.exists(state_path):
             try:
                 os.remove(state_path)
-                print(f"Deleted state file: {state_path}")
+                logger.debug(f"Deleted state file: {state_path}")
                 return True
             except Exception as e:
                 logger.exception(f"Error deleting state file {state_path}: {e}")
