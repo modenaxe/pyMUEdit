@@ -1,19 +1,17 @@
 import sys
 
-from PyQt5.QtCore import QSize, Qt, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
-                             QMainWindow, QPushButton, QScrollArea,
+                             QMainWindow, QScrollArea,
                              QSizePolicy, QStyle, QVBoxLayout, QWidget)
 
-from app.ExportResults import ExportResultsWindow
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
 from app.muAnalysisFunctions.ResizeFunc import Resize
 from core.muAnalysisCore.AnalysisResultsHist import store
 from ui.components.muAnalysisComponents.AnalysisPlot import AnalysisPlot
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.CollapsibleSection import \
     CollapsibleSection
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
