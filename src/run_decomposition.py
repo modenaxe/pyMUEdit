@@ -85,7 +85,7 @@ def run_decomposition(input_file, output_dir=None, save_intermediate=True):
             logger.debug("Using target for batching")
             emg.batch_w_target()
         else:
-            print("No target found, using automatic batching")
+            logger.debug("No target found, using automatic batching")
             emg.batch_wo_target()
 
         # Initialize arrays for decomposition

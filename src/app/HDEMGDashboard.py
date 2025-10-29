@@ -84,7 +84,7 @@ class HDEMGDashboard(QMainWindow):
             if hasattr(self.mu_analysis_page, "set_export_window_opener"):
                 self.mu_analysis_page.set_export_window_opener(self.open_export_results_window)
             else:
-                print("WARNING: MotorUnitAnalysisWidget does not have 'set_export_window_opener' method.")
+                logger.warning("MotorUnitAnalysisWidget does not have 'set_export_window_opener' method.")
 
         if DecompositionApp:
             self.decomposition_page = DecompositionApp()
@@ -97,7 +97,7 @@ class HDEMGDashboard(QMainWindow):
         """
         Handle the fileImported signal from the ImportDataWindow
         """
-        print(f"Dashboard received file\\Imported signal for {file_info.get('filename')}")
+        logger.debug(f"Dashboard received file\\Imported signal for {file_info.get('filename')}")
         # Extract information from the signal
         filename = file_info.get("filename", "Unknown file")
         pathname = file_info.get("pathname", "")
@@ -144,7 +144,7 @@ class HDEMGDashboard(QMainWindow):
     def create_manual_editing_view(self):
         """Creates a manual editing view and adds it to the stacked widget."""
         try:
-            print("Creating manual editing view")
+            logger.debug("Creating manual editing view")
 
             # Create a wrapper widget to hold the MUeditManual
             # wrapper = QWidget()
@@ -179,7 +179,7 @@ class HDEMGDashboard(QMainWindow):
     def create_decomposition_view(self, emg_obj, filename, pathname, imported_signal, config):
         """Creates a decomposition view with the provided data and adds it to the stacked widget."""
         try:
-            print("Creating decomposition view with provided data")
+            logger.debug("Creating decomposition view with provided data")
 
             # Create a wrapper widget to hold the DecompositionApp
             wrapper = QWidget()
@@ -264,7 +264,7 @@ class HDEMGDashboard(QMainWindow):
     # Navigation methods
     def show_dashboard_view(self):
         """Switches the central widget to the dashboard page."""
-        print("Switching to Dashboard View")
+        logger.debug("Switching to Dashboard View")
 
         # Store the current index of the dashboard page
         old_dashboard = self.dashboard_page
@@ -295,53 +295,53 @@ class HDEMGDashboard(QMainWindow):
     def show_mu_analysis_view(self):
         """Switches the central widget to the MU Analysis page."""
         if hasattr(self, "mu_analysis_page") and self.mu_analysis_page:
-            print("Switching to MU Analysis View")
+            logger.debug("Switching to MU Analysis View")
             self.central_stacked_widget.setCurrentWidget(self.mu_analysis_page)
             update_sidebar_selection(self, "mu_analysis")
         else:
-            print("MU Analysis view is not available.")
+            logger.debug("MU Analysis view is not available.")
 
     def show_import_data_view(self):
         """Switches the central widget to the Import Data page."""
-        print("Switching to Import Data view")
+        logger.debug("Switching to Import Data view")
         if hasattr(self, "import_data_page") and self.import_data_page:
             self.central_stacked_widget.setCurrentWidget(self.import_data_page)
             update_sidebar_selection(self, "import")
         else:
-            print("ImportDataWindow not available.")
+            logger.debug("ImportDataWindow not available.")
 
     def show_manual_editing_view(self):
         """Switches to Manual Editing view."""
-        print("Switching to Manual Editing View")
+        logger.debug("Switching to Manual Editing View")
         if hasattr(self, "manual_editing_page") and self.manual_editing_page:
             self.central_stacked_widget.setCurrentWidget(self.manual_editing_page)
             update_sidebar_selection(self, "manual_edit")
         else:
-            print("Manual Editing view widget not found.")
+            logger.debug("Manual Editing view widget not found.")
 
     def show_decomposition_view(self):
         """Switches to Decomposition view."""
-        print("Switching to Decomposition View")
+        logger.debug("Switching to Decomposition View")
         if hasattr(self, "decomposition_page") and self.decomposition_page:
             self.central_stacked_widget.setCurrentWidget(self.decomposition_page)
             update_sidebar_selection(self, "decomposition")
         else:
-            print("Decomposition view widget not found.")
+            logger.debug("Decomposition view widget not found.")
 
     def open_visualization(self, title):
         """Handles clicks on visualization cards."""
-        print(f"Clicked visualization/analysis card: {title}")
+        logger.debug(f"Clicked visualization/analysis card: {title}")
         # Map visualization titles to corresponding views
         if "HDEMG Analysis" in title and hasattr(self, "mu_analysis_page") and self.mu_analysis_page:
             self.show_mu_analysis_view()
         else:
-            print(f"No specific action defined for card '{title}'. Staying on Dashboard.")
+            logger.debug(f"No specific action defined for card '{title}'. Staying on Dashboard.")
 
     def open_export_results_window(self):
         """Opens the Export Results window, creating it if necessary."""
-        print(">>> Main Window: Request received to open Export Results window.")
+        logger.debug(">>> Main Window: Request received to open Export Results window.")
         if ExportResultsWindow is None:
-            print("ERROR: ExportResultsWindow class is not available (check import).")
+            logger.error("ExportResultsWindow class is not available (check import).")
             return
 
         window_exists = False
@@ -350,15 +350,15 @@ class HDEMGDashboard(QMainWindow):
                 # Check if the window still exists and hasn't been closed/deleted
                 if self.export_results_window.isVisible() or not self.export_results_window.isHidden():
                     window_exists = True
-                    print(">>> Main Window: Existing ExportResultsWindow instance seems valid.")
+                    logger.debug(">>> Main Window: Existing ExportResultsWindow instance seems valid.")
                 else:
-                    print(
+                    logger.debug(
                         ">>> Main Window: Existing window reference present but window is hidden/closed; will create new."
                     )
                     self.export_results_window = None  # Force recreation
                     window_exists = False
             except RuntimeError:  # Window was likely deleted
-                print(">>> Main Window: Existing window reference invalid (RuntimeError); will create new.")
+                logger.error(">>> Main Window: Existing window reference invalid (RuntimeError); will create new.")
                 self.export_results_window = None
                 window_exists = False
             except Exception as e:  # Catch other potential issues
@@ -368,7 +368,7 @@ class HDEMGDashboard(QMainWindow):
 
         if not window_exists:
             try:
-                print(">>> Main Window: Creating NEW ExportResultsWindow instance.")
+                logger.debug(">>> Main Window: Creating NEW ExportResultsWindow instance.")
                 # Ensure it's created as a top-level window (parent=None)
                 self.export_results_window = ExportResultsWindow(parent=None)
                 # Position it relative to the main window for convenience
@@ -378,7 +378,7 @@ class HDEMGDashboard(QMainWindow):
                 width = 600  # Define desired size
                 height = 550
                 self.export_results_window.setGeometry(new_x, new_y, width, height)
-                print(f">>> Set geometry for new window to ({new_x}, {new_y}, {width}, {height})")
+                logger.debug(f">>> Set geometry for new window to ({new_x}, {new_y}, {width}, {height})")
             except Exception as e:
                 logger.exception(f"FATAL ERROR during ExportResultsWindow creation: {e}")
                 self.export_results_window = None  # Ensure it's None if creation failed
@@ -387,19 +387,19 @@ class HDEMGDashboard(QMainWindow):
         # After potentially creating or confirming existence, try to show/activate
         if self.export_results_window:
             try:
-                print(">>> Main Window: Attempting to show and activate ExportResultsWindow.")
+                logger.debug(">>> Main Window: Attempting to show and activate ExportResultsWindow.")
                 self.export_results_window.show()
                 self.export_results_window.raise_()  # Bring to front
                 self.export_results_window.activateWindow()  # Give focus
                 QApplication.processEvents()  # Ensure UI updates
-                print(">>> ExportResultsWindow shown and activated.")
+                logger.debug(">>> ExportResultsWindow shown and activated.")
             except RuntimeError:  # Catch if window was deleted between check and show
-                print(">>> Error: ExportResultsWindow was deleted before it could be shown.")
+                logger.error("ExportResultsWindow was deleted before it could be shown.")
                 self.export_results_window = None
             except Exception as e:
                 logger.exception(f"Error displaying/activating ExportResultsWindow: {e}")
         else:
-            print("ERROR - self.export_results_window is None even after creation attempt.")
+            logger.error("self.export_results_window is None even after creation attempt.")
 
     def load_saved_states(self):
         """
@@ -468,7 +468,7 @@ class HDEMGDashboard(QMainWindow):
         Args:
             card_index: Index of the clicked card in recent_visualizations list
         """
-        print(f"Visualization card clicked: index={card_index}")
+        logger.debug(f"Visualization card clicked: index={card_index}")
         if hasattr(self, 'recent_visualizations') and 0 <= card_index < len(self.recent_visualizations):
             viz_data = self.recent_visualizations[card_index]
             if 'state_path' in viz_data and os.path.exists(viz_data['state_path']):
@@ -515,7 +515,7 @@ class HDEMGDashboard(QMainWindow):
                         'nChan': emg_data['nChan'],
                         'electrodes': emg_data['electrodes'],
                     }
-                    print(f"Restored EMG data for channel viewer: shape={emg_data['data'].shape}")
+                    logger.debug(f"Restored EMG data for channel viewer: shape={emg_data['data'].shape}")
                 except Exception as e:
                     logger.exception(f"Warning: Failed to restore EMG object: {e}")
 
@@ -582,7 +582,7 @@ class HDEMGDashboard(QMainWindow):
                 # Switch to it
                 self.show_decomposition_view()
 
-            print(f"Successfully loaded visualization from {state_path}")
+            logger.debug(f"Successfully loaded visualization from {state_path}")
         except Exception as e:
             logger.exception(f"Error loading visualization: {e}")
 
@@ -872,7 +872,7 @@ class HDEMGDashboard(QMainWindow):
         Args:
             dataset: Dictionary with dataset information
         """
-        print(f"Opening dataset: {dataset['filename']}")
+        logger.debug(f"Opening dataset: {dataset['filename']}")
 
         # Extract file information
         filename = dataset.get("filename")

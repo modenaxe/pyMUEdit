@@ -5,7 +5,7 @@ from PyQt5.QtCore import pyqtSignal
 
 # Import the UI setup function
 from ui.DownloadConfirmationUI import setup_ui
-
+from core.logger import logger
 
 class DownloadConfirmation(QWidget):
     """
@@ -49,20 +49,20 @@ class DownloadConfirmation(QWidget):
     # --- Internal Handlers Emitting Signals ---
     def handle_return(self):
         """Emits signal to return to previous view or dashboard."""
-        print("Complete Widget: Emitting return_requested")
+        logger.debug("Complete Widget: Emitting return_requested")
         self.return_requested.emit()
 
     def handle_main_download(self):
         """Emits signal to download the file that was just exported."""
         if self._main_download_filename:
-            print(f"Complete Widget: Emitting download_requested for {self._main_download_filename}")
+            logger.debug(f"Complete Widget: Emitting download_requested for {self._main_download_filename}")
             self.download_requested.emit(self._main_download_filename)
         else:
-            print("Complete Widget: Error - Main download filename not set.")
+            logger.debug("Complete Widget: Error - Main download filename not set.")
 
     def handle_recent_download(self, filename):
         """Emits signal to download a file from the recent list."""
-        print(f"Complete Widget: Emitting recent_download_requested for {filename}")
+        logger.debug(f"Complete Widget: Emitting recent_download_requested for {filename}")
         self.recent_download_requested.emit(filename)
 
 
@@ -81,9 +81,9 @@ if __name__ == "__main__":
     test_win.resize(700, 550)
 
     # Example connecting signals
-    complete_widget.return_requested.connect(lambda: print("TEST: Return Requested!"))
-    complete_widget.download_requested.connect(lambda fn: print(f"TEST: Main Download Requested: {fn}"))
-    complete_widget.recent_download_requested.connect(lambda fn: print(f"TEST: Recent Download Requested: {fn}"))
+    complete_widget.return_requested.connect(lambda: logger.debug("TEST: Return Requested!"))
+    complete_widget.download_requested.connect(lambda fn: logger.debug(f"TEST: Main Download Requested: {fn}"))
+    complete_widget.recent_download_requested.connect(lambda fn: logger.debug(f"TEST: Recent Download Requested: {fn}"))
 
     test_win.show()
     sys.exit(app.exec_())

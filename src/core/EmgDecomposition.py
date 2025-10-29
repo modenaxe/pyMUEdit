@@ -851,7 +851,7 @@ class offline_EMG(EMG):
             # Create an empty array with proper dimensions to avoid errors later
             empty_array = np.zeros((np.shape(self.decomp_dict["whitened_obvs"][interval])[0], 0))
             self.decomp_dict["masked_mu_filters"].append(empty_array)
-            logger.warning("WARNING: No motor units met the threshold criteria")
+            logger.warning("No motor units met the threshold criteria")
 
             # Save empty array
             if self.save_intermediate:

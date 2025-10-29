@@ -301,7 +301,7 @@ class DecompositionApp(QMainWindow):
 
     def start_button_pushed(self):
         algo_choice = self.algo_combo.currentText()
-        print(f"Algorithm chosen: {algo_choice}")
+        logger.debug(f"Algorithm chosen: {algo_choice}")
         # Reset iteration counter at the start of a new decomposition
         self.iteration_counter = 0
         ui_params = {}
@@ -346,7 +346,7 @@ class DecompositionApp(QMainWindow):
 
         # Convert UI parameters to algorithm parameters
         parameters = prepare_parameters(ui_params, algo_choice)
-        print(parameters)
+        logger.debug(parameters)
 
         # Check if we have a file and EMG object
         if not self.emg_obj or not self.pathname or not self.filename:
@@ -443,7 +443,7 @@ class DecompositionApp(QMainWindow):
                 else:
                     self.ui_plot_reference.setTitle("Reference Signal")
             else:
-                print("No reference signal found to plot.")
+                logger.debug("No reference signal found to plot.")
         except Exception as e:
             logger.exception(f"Error plotting reference signal after decomposition: {e}")
 
@@ -460,11 +460,11 @@ class DecompositionApp(QMainWindow):
                 parent = self.parent()
                 if parent is not None and hasattr(parent, 'add_recent_visualization'):
                     parent.add_recent_visualization(state_meta)
-                    print(f"Successfully added visualization to dashboard: {state_meta['title']}")
+                    logger.debug(f"Successfully added visualization to dashboard: {state_meta['title']}")
                 else:
-                    print("Parent exists but does not have add_recent_visualization method")
+                    logger.debug("Parent exists but does not have add_recent_visualization method")
             else:
-                print("No parent available to add visualization to dashboard")
+                logger.debug("No parent available to add visualization to dashboard")
         except Exception as e:
             logger.exception(f"Error saving decomposition state: {e}")
 
@@ -512,7 +512,7 @@ class DecompositionApp(QMainWindow):
                     if time2 is None or (
                         isinstance(time2, np.ndarray) and (time2.size == 1 or time2.shape != icasig.shape)
                     ):
-                        print(f"Creating synthetic time2 array to match icasig shape {icasig.shape}")
+                        logger.debug(f"Creating synthetic time2 array to match icasig shape {icasig.shape}")
                         time2 = np.arange(len(icasig))
                     elif isinstance(time2, np.ndarray) and time2.ndim > 1:
                         time2 = time2.flatten()
@@ -544,7 +544,6 @@ class DecompositionApp(QMainWindow):
 
         except Exception as e:
             logger.exception(f"Error in update_plots: {e}")
-            traceback.print_exc()
 
     def save_output_to_location(self):
         """Save decomposition results to a user-specified location"""
