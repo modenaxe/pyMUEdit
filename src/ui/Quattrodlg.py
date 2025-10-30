@@ -1,9 +1,11 @@
 import os
 import traceback
+
 import numpy as np
 import scipy.io as sio
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QPixmap
+<<<<<<< HEAD
 from PyQt5.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -18,6 +20,12 @@ from PyQt5.QtWidgets import (
     QSpinBox,
 )
 from core.logger import logger
+=======
+from PyQt5.QtWidgets import (QCheckBox, QComboBox, QGroupBox, QHBoxLayout,
+                             QLabel, QLineEdit, QMainWindow, QPushButton,
+                             QSpinBox, QVBoxLayout, QWidget)
+
+>>>>>>> development
 
 class ColoredCircle(QWidget):
     def __init__(self, color="red", parent=None):
@@ -27,7 +35,7 @@ class ColoredCircle(QWidget):
         self.setMaximumSize(20, 20)
 
     def paintEvent(self, event):
-        from PyQt5.QtGui import QPainter, QBrush
+        from PyQt5.QtGui import QBrush, QPainter
 
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
@@ -90,7 +98,8 @@ class Quattrodlg(QMainWindow):
 
         # Channels count
         channels_label = QLabel("Channels")
-        channels_label.setStyleSheet("color: #f0f0f0; font-family: 'Poppins'; font-size: 10pt;")
+        channels_label.setStyleSheet(
+            "color: #f0f0f0; font-family: 'Poppins'; font-size: 10pt;")
         self.edit_field_nchan = QSpinBox()
 
         self.edit_field_nchan.setValue(128)
@@ -190,13 +199,15 @@ class Quattrodlg(QMainWindow):
 
     def create_panel(self, title, code):
         panel = QGroupBox(title)
-        panel.setStyleSheet("QGroupBox { color: #f0f0f0; font-family: 'Poppins'; font-size: 14pt; font-weight: bold; }")
+        panel.setStyleSheet(
+            "QGroupBox { color: #f0f0f0; font-family: 'Poppins'; font-size: 14pt; font-weight: bold; }")
         layout = QVBoxLayout(panel)
 
         # Array type label
         array_type_label = QLabel("Array type")
         array_type_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        array_type_label.setStyleSheet("color: #f0f0f0; font-family: 'Poppins';")
+        array_type_label.setStyleSheet(
+            "color: #f0f0f0; font-family: 'Poppins';")
         layout.addWidget(array_type_label)
 
         # Dropdown for array type
@@ -215,18 +226,21 @@ class Quattrodlg(QMainWindow):
                 "MYOMNP-1x32",
             ]
         )
-        dropdown.setStyleSheet("color: #f0f0f0; background-color: #262626; font-family: 'Poppins'; font-size: 10pt;")
+        dropdown.setStyleSheet(
+            "color: #f0f0f0; background-color: #262626; font-family: 'Poppins'; font-size: 10pt;")
         layout.addWidget(dropdown)
 
         # Muscle name label
         muscle_name_label = QLabel("Muscle name")
         muscle_name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        muscle_name_label.setStyleSheet("color: #f0f0f0; font-family: 'Poppins';")
+        muscle_name_label.setStyleSheet(
+            "color: #f0f0f0; font-family: 'Poppins';")
         layout.addWidget(muscle_name_label)
 
         # Text field for muscle name
         edit_field = QLineEdit()
-        edit_field.setStyleSheet("color: #f0f0f0; background-color: #262626; font-family: 'Poppins'; font-size: 10pt;")
+        edit_field.setStyleSheet(
+            "color: #f0f0f0; background-color: #262626; font-family: 'Poppins'; font-size: 10pt;")
         layout.addWidget(edit_field)
 
         # Store references to components
@@ -326,8 +340,10 @@ class Quattrodlg(QMainWindow):
             idxports = np.where(ports == 1)[0]
 
             # Create new arrays for gridname and muscle
-            gridname_array = np.array([grid[i] for i in idxports], dtype=object)
-            muscle_array = np.array([muscle[i] for i in idxports], dtype=object)
+            gridname_array = np.array([grid[i]
+                                      for i in idxports], dtype=object)
+            muscle_array = np.array([muscle[i]
+                                    for i in idxports], dtype=object)
 
             try:
                 # Create a new object array
@@ -344,10 +360,16 @@ class Quattrodlg(QMainWindow):
                 self.file["signal"]["muscle"][0, 0] = muscle_obj
 
             except Exception as e:
+<<<<<<< HEAD
                 logger.exception(f"Error with specific case, trying general solution: {e}")
+=======
+                print(
+                    f"Error with specific case, trying general solution: {e}")
+>>>>>>> development
                 try:
                     # Just replace the entire field
-                    self.file["signal"]["gridname"] = np.array([gridname_array])
+                    self.file["signal"]["gridname"] = np.array(
+                        [gridname_array])
                     self.file["signal"]["muscle"] = np.array([muscle_array])
                 except Exception as e:
                     logger.exception(f"All update attempts failed: {e}")
@@ -355,7 +377,11 @@ class Quattrodlg(QMainWindow):
 
             # Save the updated file
             signal = self.file["signal"]
-            sio.savemat(self.pathname.text(), {"signal": signal}, appendmat=False, do_compression=True, format="5")
+            sio.savemat(self.pathname.text(),
+                        {"signal": signal},
+                        appendmat=False,
+                        do_compression=True,
+                        format="5")
             self.close()
 
         except Exception as e:

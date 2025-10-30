@@ -40,10 +40,10 @@ from core.utils.manual_editing.save_worker import Save_worker
 from core.utils.manual_editing.extendfilter import extendfilter
 from core.utils.manual_editing.selection_tools import SelectionTool, process_selection
 
-from core.utils.decomposition.remove_duplicates import remove_duplicates
-from core.utils.decomposition.remove_duplicates_between_arrays import remove_duplicates_between_arrays
-from core.utils.decomposition.extend_emg import extend_emg
-from core.utils.decomposition.whiten_emg import whiten_emg
+from core.utils.postprocessing.remove_duplicates import remove_duplicates
+from core.utils.postprocessing.remove_duplicates_between_arrays import remove_duplicates_between_arrays
+from core.utils.preprocessing.extend_emg import extend_emg
+from core.utils.preprocessing.whiten_emg import whiten_emg
 
 from core.utils.manual_editing.smart_button_pushed import smart_button_pushed
 from core.utils.manual_editing.batch_filter_worker import batch_filter_worker

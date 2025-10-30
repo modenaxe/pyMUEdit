@@ -1,7 +1,7 @@
 # type:ignore
 import numpy as np
 from sklearn.cluster import KMeans
-from core.utils.decomposition.extend_emg import extend_emg
+from core.utils.preprocessing.extend_emg import extend_emg
 from core.utils.decomposition.get_spikes import maxk
 
 
