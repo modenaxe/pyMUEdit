@@ -297,7 +297,7 @@ class FileUploadFunc:
             A new EMG file dictionary with all MU-related fields sorted according
             to the order of their first pulses.
         """
-        
+
         if emgfile["NUMBER_OF_MUS"] <= 1:
             return emgfile
 
@@ -354,7 +354,3 @@ class FileUploadFunc:
             sorted_emgfile["MUPULSES"][origpos] = emgfile["MUPULSES"][newpos]
 
         return sorted_emgfile
-
-    def updateEMGFile(self, emgfile):
-        print(f"updating original file")
-        self.file = emgfile
