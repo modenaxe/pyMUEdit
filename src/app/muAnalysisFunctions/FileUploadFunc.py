@@ -1,25 +1,19 @@
-import sys
 import matplotlib
 
 matplotlib.use("Qt5Agg")
-from PyQt5.QtWidgets import QFileDialog, QLabel, QMessageBox, QDialog
+from PyQt5.QtWidgets import QFileDialog, QMessageBox, QDialog
 from scipy.io import loadmat
 import pandas as pd
 import numpy as np
-from scipy.spatial.distance import cdist
 import matplotlib.pyplot as plt
 import warnings
 import os
 import copy
-import itertools
 import json
 import gzip
 from io import StringIO
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from ui.components.muAnalysisComponents.ConfirmationDialog import ConfirmationDialog
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
 from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 

@@ -1,26 +1,16 @@
-import sys
-from PyQt5.QtWidgets import (
-    QFileDialog,
-    QLabel,
-    QMessageBox
-)
-from scipy.io import loadmat
 import pandas as pd
 import numpy as np
 from scipy.spatial.distance import cdist
-import matplotlib.pyplot as plt
 import warnings
-import os
 import copy
-import itertools
 
 class CommonOpenFunc():
-    
+
     """Holds commonly used functions from openHDEMG"""
 
     def __init__(self):
         pass
-    
+
     def compute_idr(self, emgfile):
         """From openHDEMG computes IDR
         Params (relevant for us): file
@@ -113,7 +103,7 @@ class CommonOpenFunc():
                 "data must be one of pd.series, pd.dataframe or np.ndarray. " +
                 f"{type(data)} was passed instead."
             )
-            
+
     def compute_sil(self, ipts, mupulses, ignore_negative_ipts=False):
         """From openHDEMG computes sil
         Params (relevant for us): None
