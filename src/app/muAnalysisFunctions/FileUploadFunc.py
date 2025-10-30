@@ -182,6 +182,8 @@ class FileUploadFunc:
     def handle_reset_workflow(self, analysis_plot):
         """
         Handles the full workflow for resetting analysis data, including confirmation.
+        Params: analysis_plot: centre plot instance
+        Returns: None
         """
         # Check if there's a file loaded to reset
         if self.original_file_path is None:
@@ -198,6 +200,8 @@ class FileUploadFunc:
     def reset_analysis_data(self, analysis_plot):
         """
         Resets the analysis data by reloading the original file, clearing any transformations.
+        Params: analysis_plot: centre plot instance
+        Returns: None
         """
         if self.original_file_path is None:
             print("No original file path stored. Cannot reset.")
