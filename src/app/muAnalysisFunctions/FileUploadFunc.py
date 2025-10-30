@@ -1,16 +1,10 @@
 import matplotlib
 matplotlib.use("Qt5Agg")
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QDialog
-from scipy.io import loadmat
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import warnings
-import os
 import copy
-import json
-import gzip
-from io import StringIO
 from ui.components.muAnalysisComponents.ConfirmationDialog import ConfirmationDialog
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
 from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
