@@ -23,10 +23,9 @@ class FileUploadFunc:
         Params: None
         Returns: class instance
         """
-        self.original_file_path = None
+        self.file_path = None
         self.coords = []
         self.cid = None
-        self.error = 1
         self.mvc_value = None
         self.json = False
         self.unsortedFile = None  # store unsorted file version here
@@ -45,7 +44,6 @@ class FileUploadFunc:
         Returns: None
         """
         file_dialog = QFileDialog()
-        self.error = 1
         if json:
             self.json = True
             file_path, _ = file_dialog.getOpenFileName(
@@ -63,6 +61,8 @@ class FileUploadFunc:
         Params: filepath, analysis_plot: centre plot instance, json: if to be loaded from json
         Returns: None
         """
+        error = 0
+
         emgfile = None
         if json:
             emgfile = emg.emg_from_json(file_path)
@@ -74,12 +74,16 @@ class FileUploadFunc:
                     f"{e}",
                     "NotImplementedError",
                 ).exec_()
+                error = 1
             except:
                 self.import_data(None, None)
+                error = 1
 
         self.file = self.sort_MUs(emgfile)
-        self.original_file_path = file_path
+        self.file_path = file_path
         self.import_data(analysis_plot, self.file)
+
+        return error
 
     def import_data(self, analysis_plot, emgfile):
         """Plots files in centre if the file is valid
@@ -186,7 +190,7 @@ class FileUploadFunc:
         Returns: None
         """
         # Check if there's a file loaded to reset
-        if self.original_file_path is None:
+        if self.file_path is None:
             print("No file loaded to reset.")
             return
 
@@ -203,7 +207,7 @@ class FileUploadFunc:
         Params: analysis_plot: centre plot instance
         Returns: None
         """
-        if self.original_file_path is None:
+        if self.file_path is None:
             print("No original file path stored. Cannot reset.")
             return
 
@@ -214,13 +218,8 @@ class FileUploadFunc:
         # Add any other transformation data clearing logic here
 
         # Reload the original file to reset any transformations
-        if self.json:
-            valid = self.emg_from_json(self.original_file_path)
-        else:
-            valid = self.emg_from_otb(self.original_file_path)
-        if valid:
-            # Re-import the data to refresh the display
-            self.import_data(analysis_plot, valid)
+        error = self.load_file(analysis_plot, self.file_path, self.json)
+        if error == 0:
             print("File successfully reloaded, transformations cleared.")
         else:
             print("Error reloading file during reset.")
