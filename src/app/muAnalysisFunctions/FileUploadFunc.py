@@ -40,7 +40,7 @@ class FileUploadFunc:
         return self.file is not None
 
     def select_file_button_pushed(self, analysis_plot, json):
-        """Method trigged on file uplaod button, allowing only valid files and importing the data from a file dialog
+        """Method triggered on file uplaod button, allowing only valid files and importing the data from a file dialog
         Params: analysis_plot: centre plot instance, json: make true for testing with json files
         Returns: None
         """
@@ -56,78 +56,40 @@ class FileUploadFunc:
                 None, "Select file", "", "MAT Files (*.mat);;All Files (*.*)"
             )
         if file_path:
-            emgfile = None
-            if json:
-                emgfile = emg.emg_from_json(file_path)
-            else:
-                try:
-                    emgfile = emg.emg_from_otb(file_path)
-                except NotImplementedError as e:
-                    ErrorDialog(
-                        f"{e}",
-                        "NotImplementedError",
-                    ).exec_()
-                except:
-                    self.import_data(None, None)
+            self.load_file(analysis_plot, file_path, json)
 
-            self.file = self.sort_MUs(emgfile)
-            self.original_file_path = file_path
-            self.import_data(analysis_plot, self.file)
+    def load_file(self, analysis_plot, file_path, json):
+        """Load EMG file from specified path and plot the data
+        Params: filepath, analysis_plot: centre plot instance, json: if to be loaded from json
+        Returns: None
+        """
+        emgfile = None
+        if json:
+            emgfile = emg.emg_from_json(file_path)
+        else:
+            try:
+                emgfile = emg.emg_from_otb(file_path)
+            except NotImplementedError as e:
+                ErrorDialog(
+                    f"{e}",
+                    "NotImplementedError",
+                ).exec_()
+            except:
+                self.import_data(None, None)
+
+        self.file = self.sort_MUs(emgfile)
+        self.original_file_path = file_path
+        self.import_data(analysis_plot, self.file)
 
     def import_data(self, analysis_plot, emgfile):
         """Plots files in centre if the file is valid
-        Params: filepath, analysis_plot: centre plot instance, valid: if an error should be displayed instead
+        Params: filepath, analysis_plot: centre plot instance, emgfile
         Returns: None
         """
         if emgfile:
             self.plot_idr(self.file, analysis_plot)
         elif self.error:
             ErrorDialog("Loaded File has errors", "Error").exec_()
-
-    def mupulses_from_binary(self, binarymusfiring):
-        """from openHDEMG to get mu pulses
-        Params (relevant to us): None
-        Returns: Extra data
-        """
-        numberofMUs = len(binarymusfiring.columns)
-        MUPULSES = [[] for _ in range(numberofMUs)]
-        for mu in binarymusfiring:
-            my_ndarray = []
-            for idx, x in binarymusfiring[mu].items():
-                if x > 0:
-                    my_ndarray.append(idx)
-            MUPULSES[mu] = np.array(my_ndarray)
-        return MUPULSES
-
-    # def emg_from_otb(
-    #     self,
-    #     filepath,
-    #     ext_factor=8,
-    #     refsig=[True, "fullsampled"],
-    #     version="1.5.9.3",
-    #     extras=None,
-    #     ignore_negative_ipts=False,
-    # ):
-    #     """
-    #     use openHDEMG function to load emgfile, then sort and store file (this is for otb files).
-    #     error on bad mat files.
-
-    #     Params (relevant to us): filepath
-    #     Returns: 1 on success
-    #     """
-    #     try:
-
-    #         emgfile = emg.emg_from_otb(filepath, ext_factor, refsig, version, extras, ignore_negative_ipts)
-
-    #         """--- TODO: remove??? ---"""
-
-    #         self.unsortedFile = emgfile
-
-    #         """ ----------------------"""
-    #         self.file = self.sort_MUs(emgfile)  # sort imported MUs by recruitment order by default
-    #         return 1
-    #     except:
-    #         return None
 
     def plot_idr(
         self,
