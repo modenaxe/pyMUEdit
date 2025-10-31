@@ -6,7 +6,7 @@
 
 
 -- Stages: Static reference table
--- Readin -> Processed -> Decomposition -> Edit 
+-- Readin -> Segmented -> Decomposition -> Edit -> Processed
 CREATE TABLE IF NOT EXISTS stages (
     stageid INTEGER PRIMARY KEY,
     name TEXT 
@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS logs (
 INSERT OR IGNORE INTO stages (stageid, name)
 VALUES 
     (1, 'readin'),
-    (2, 'processed'),
+    (2, 'segmented'),
     (3, 'decomposed'),
-    (4, 'edited');
+    (4, 'edited'),
+    (5, 'processed');
