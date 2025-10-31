@@ -290,12 +290,16 @@ def create_footer(import_window):
     footer_layout.addSpacing(20)
 
     # Create navigation buttons
+    # prev_btn = ActionButton("← Previous", primary=False)
+    # prev_btn.clicked.connect(import_window.go_back)
+
     import_window.next_btn = ActionButton("Next →", primary=True)
     import_window.next_btn.clicked.connect(
         import_window.go_to_algorithm_screen)
     import_window.next_btn.setEnabled(False)
 
     # Add navigation buttons to layout
+    # footer_layout.addWidget(prev_btn)
     footer_layout.addSpacing(10)
     footer_layout.addWidget(import_window.next_btn)
     return footer
