@@ -569,6 +569,24 @@ def create_visualization_tab(main_window):
 
     button_panel.add_widget(row4)
 
+    # Overlay Decomposition Toggle
+    row5 = QWidget()
+    row5_lay = QHBoxLayout(row5)
+    row5_lay.setContentsMargins(0, 0, 0, 0)
+    row5_lay.setSpacing(6)
+
+    overlay_lbl = QLabel("Overlay Benchmark Decomposition")
+    set_standard_label_style(overlay_lbl)
+    row5_lay.addWidget(overlay_lbl)
+
+    main_window.overlay_switch = ToggleSwitch()
+    # main_window.overlay_switch.toggled.connect(
+    #     overlay_file_button_pushed
+    # )
+    row5_lay.addWidget(main_window.overlay_switch)
+
+    button_panel.add_widget(row5)
+
     viz_layout.addWidget(button_panel)
     viz_layout.addStretch()
 
