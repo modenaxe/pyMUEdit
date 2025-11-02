@@ -594,6 +594,12 @@ class offline_EMG(EMG):
 
         for i in range(self.its):
 
+            # stop flag check
+            if hasattr(self, 'should_stop') and self.should_stop:
+                print(f"FastICA stopped at iteration {i+1}/{self.its} due to stop flag")
+                print(f"Decomposition stoppped before FastICA at electrode {g+1}, interval {interval+1}")
+                return
+
             #################### FIXED POINT ALGORITHM #################################
             if self.initialisation:
                 # generate a random vector
@@ -777,6 +783,12 @@ class offline_EMG(EMG):
                         self.decomp_dict["SILs"][interval, i],
                         self.decomp_dict["CoVs"][interval, i],
                     )
+
+                # stop check
+                if hasattr(self, 'should_stop') and self.should_stop:
+                    print(f"FastICA stopped during iteration {i+1}/{self.its} after plot callback")
+                    print(f"Decomposition stoppped before FastICA at electrode {g+1}, interval {interval+1}")
+                    return
 
             else:
                 print(f"Electrode #{g+1} - Iteration #{i+1} - less than 10 spikes")
