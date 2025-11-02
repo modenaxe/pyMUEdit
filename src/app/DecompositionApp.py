@@ -215,19 +215,25 @@ class DecompositionApp(QMainWindow):
             if hasattr(self, 'decomp_worker') and self.decomp_worker:
                 print("Setting stop flag for decomposition worker...")
                 
-                # set the stop flag
+                # Set the stop flag on worker
                 if hasattr(self.decomp_worker, 'stop'):
                     self.decomp_worker.stop()
+                    print("Stop flag set for decomposition worker")
                 
-                # dont force terminate
-                print("Stop flag set, updating UI...")
+                # CRITICAL: Set stop flag on EMG object for FastICA to detect
+                if hasattr(self.decomp_worker, 'emg_obj'):
+                    setattr(self.decomp_worker.emg_obj, 'should_stop', True)
+                    print("Stop flag set on EMG object")
+                    
+                # Also set should_stop directly on the worker
+                setattr(self.decomp_worker, 'should_stop', True)
+                print("Stop flag set directly on worker")
             
-            # update ui
+            # Update UI immediately
             self.decomposition_state = "stopped"
             self.show_continue_restart_buttons()
-            self.edit_field.setText("Decomposition stopped by user")
-            self.status_text.setText("Stopped")
-            self.status_progress.setValue(0)
+            self.edit_field.setText("Stopping decomposition...")
+            self.status_text.setText("Stopping...")
             
             print("UI updated to stopped state")
             
@@ -235,7 +241,7 @@ class DecompositionApp(QMainWindow):
             print(f"Error stopping decomposition: {e}")
             import traceback
             traceback.print_exc()
-            # still update ui even if there was an error
+            # Still update UI even if there was an error
             self.decomposition_state = "stopped"
             self.show_continue_restart_buttons()
             self.edit_field.setText("Decomposition stopped")
@@ -244,14 +250,38 @@ class DecompositionApp(QMainWindow):
     def continue_decomposition(self):
         """Continue the stopped decomposition"""
         try:
-            # restart the decomposition using the start button method
+            print("Continue button clicked")
+            
+            # check if we have the necessary data to continue
+            if not self.emg_obj or not self.pathname or not self.filename:
+                self.edit_field.setText("Cannot continue - no file data available")
+                return
+            
+            # check if we have previous UI parameters
+            if not hasattr(self, 'ui_params') or not self.ui_params:
+                self.edit_field.setText("Cannot continue - no previous parameters available")
+                return
+            
+            if not hasattr(self, 'algo_choice') or not self.algo_choice:
+                self.edit_field.setText("Cannot continue - no algorithm choice available")
+                return
+            
+            # update state and UI
             self.decomposition_state = "running"
             self.show_start_stop_buttons(start_enabled=False, stop_enabled=True)
             
-            # call the start button method directly
-            self.start_button_pushed()
+            print("Continuing decomposition with previous parameters...")
             
-            self.edit_field.setText("Decomposition restarted...")
+            # clear any existing stop flags before continuing
+            if hasattr(self, 'decomp_worker') and self.decomp_worker:
+                if hasattr(self.decomp_worker, 'emg_obj'):
+                    setattr(self.decomp_worker.emg_obj, 'should_stop', False)
+                setattr(self.decomp_worker, 'should_stop', False)
+            
+            self.start_decomposition_with_params(self.ui_params, self.algo_choice)
+            
+            self.edit_field.setText("Decomposition continued...")
+            self.status_text.setText("Continuing...")
             
         except Exception as e:
             print(f"Error continuing decomposition: {e}")
@@ -271,6 +301,16 @@ class DecompositionApp(QMainWindow):
         )
 
         if reply == QMessageBox.Yes:
+            print("User confirmed restart")
+            
+            # clear any existing workers
+            if hasattr(self, 'decomp_worker') and self.decomp_worker:
+                if hasattr(self.decomp_worker, 'stop'):
+                    self.decomp_worker.stop()
+                if self.decomp_worker in self.threads:
+                    self.threads.remove(self.decomp_worker)
+                self.decomp_worker = None
+            
             # reset decomposition state
             self.decomposition_state = "idle"
             self.current_worker = None
@@ -290,8 +330,13 @@ class DecompositionApp(QMainWindow):
             self.ui_plot_reference.clear()
             self.ui_plot_pulsetrain.clear()
             
-            # reset iteration counter
+            # reset iteration counter and results
             self.iteration_counter = 0
+            self.decomposition_result = None
+            
+            print("Decomposition reset complete")
+        else:
+            print("User cancelled restart - staying in stopped state")
 
     def show_continue_restart_buttons(self):
         """Show continue and restart buttons"""
@@ -311,6 +356,65 @@ class DecompositionApp(QMainWindow):
         # hide start/stop buttons
         self.start_button.hide()
         self.stop_button.hide()
+
+    def start_decomposition_with_params(self, ui_params, algo_choice):
+        """Start decomposition with specific parameters (used for continuation)"""
+        try:
+            self.ui_params = ui_params
+            self.algo_choice = algo_choice
+            
+            # only reset iteration counter for true restart, not for continuation
+            if not hasattr(self, 'iteration_counter'):
+                self.iteration_counter = 0
+            
+            # convert ui parameters to algorithm parameters
+            parameters = prepare_parameters(ui_params, algo_choice)
+            print(f"Starting decomposition with algorithm: {algo_choice}")
+            print(f"Parameters: {parameters}")
+
+            # Update UI
+            self.edit_field.setText("Starting decomposition...")
+            self.status_text.setText("Processing...")
+            self.status_progress.setValue(10)
+
+            # clear any existing workers first
+            if hasattr(self, 'decomp_worker') and self.decomp_worker:
+                if hasattr(self.decomp_worker, 'stop'):
+                    self.decomp_worker.stop()
+                if self.decomp_worker in self.threads:
+                    self.threads.remove(self.decomp_worker)
+
+            decomp_obj = None
+            if algo_choice == "Fast ICA":
+                decomp_obj = DecompositionWorker
+            elif algo_choice == "SCD":
+                decomp_obj = SCDDecompositionWorker
+            else:
+                raise ValueError(f"Unknown algorithm: {algo_choice}")
+
+            self.decomp_worker = decomp_obj(self.emg_obj, parameters)
+            
+            # clear any existing stop flags
+            setattr(self.decomp_worker, 'should_stop', False)
+            if hasattr(self.decomp_worker, 'emg_obj'):
+                setattr(self.decomp_worker.emg_obj, 'should_stop', False)
+            
+            self.threads.append(self.decomp_worker)
+
+            # connect signals
+            self.decomp_worker.progress.connect(self.update_progress)
+            self.decomp_worker.plot_update.connect(self.update_plots)
+            self.decomp_worker.finished.connect(self.on_decomposition_complete)
+            self.decomp_worker.error.connect(self.on_decomposition_error)
+
+            self.decomp_worker.start()
+            
+        except Exception as e:
+            print(f"Error starting decomposition: {e}")
+            import traceback
+            traceback.print_exc()
+            self.edit_field.setText(f"Error starting decomposition: {e}")
+            self.show_continue_restart_buttons()
 
     def open_editing_mode(self):
         """Open the MUeditManual window for editing motor units"""
@@ -509,6 +613,12 @@ class DecompositionApp(QMainWindow):
 
         # Pass the EMG object to the DecompositionWorker
         self.decomp_worker = decomp_obj(self.emg_obj, parameters)
+
+        # clear any existing stop flags for new start
+        setattr(self.decomp_worker, 'should_stop', False)
+        if hasattr(self.decomp_worker, 'emg_obj'):
+            setattr(self.decomp_worker.emg_obj, 'should_stop', False)
+
         self.threads.append(self.decomp_worker)  # Keep a reference to prevent garbage collection
 
         # Connect signals

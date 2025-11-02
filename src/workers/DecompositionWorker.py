@@ -30,7 +30,14 @@ class DecompositionWorker(QThread):
         self.should_stop = False
     
     def stop(self):
+        """Stop the decomposition worker"""
         self.should_stop = True
+        
+        # set stop flag on the EMG object so FastICA can see it
+        if hasattr(self, 'emg_obj'):
+            setattr(self.emg_obj, 'should_stop', True)
+            print("Stop flag set on EMG object for FastICA")
+        
         print("Stop flag set for decomposition worker")
 
     def run(self):
@@ -240,10 +247,17 @@ class DecompositionWorker(QThread):
 
     def send_plot_update(self, fICA_source, spikes, time2, sil, cov):
         """Send plot update signals to the main UI thread"""
-        # Throttle updates to avoid overwhelming the UI
+        
+        # CHECK FOR STOP FLAG IN PLOT CALLBACK (called during each FastICA iteration)
+        if getattr(self, 'should_stop', False):
+            print("Plot update detected stop flag - stopping FastICA")
+            # Set stop flag on EMG object so FastICA iterations will stop
+            if hasattr(self, 'emg_obj'):
+                setattr(self.emg_obj, 'should_stop', True)
+            return  # Don't send plot update, just return to stop the iteration
+        
+        # Send the plot update if not stopping
         self.plot_update.emit(fICA_source, spikes, time2, sil, cov)
-        # Process events to keep the UI responsive during long computations
-        time.sleep(0.01)  # Small delay to prevent UI freezing
 
     def map_parameters_to_emg_obj(self):
         """Map parameters from MUedit UI to offline_EMG parameters."""
