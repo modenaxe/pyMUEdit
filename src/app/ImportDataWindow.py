@@ -10,6 +10,7 @@ import pandas as pd
 import pyqtgraph as pg
 
 # Import UI setup function
+from core.database.database import create_new_session, get_fileid_by_path, insert_files, upsert_file_versions
 from core.utils.io.filesize_formatter import filesize_formatter
 from ui.ImportDataWindowUI import setup_ui, update_sidebar_selection
 from ui.components.SegmentSessionPage import SegmentSessionPage
@@ -50,7 +51,7 @@ class ImportDataWindow(QMainWindow):
     return_to_dashboard_requested = pyqtSignal()
 
     # Signal to request showing decomposition view with data
-    decomposition_requested = pyqtSignal(object, str, str, object, object)
+    decomposition_requested = pyqtSignal(object, str, str, object, object, int)
 
     # Signal to notify other windows when a file is imported (if needed)
     fileImported = pyqtSignal(dict)
@@ -66,6 +67,8 @@ class ImportDataWindow(QMainWindow):
         self.threads = []  # Keep reference to worker threads
         self.file_size_bytes = None  # Store file size in bytes
         self.config = None # will be used to store configuration
+
+        self.raw_fileid = None
 
         # Config popup windows
         self.visualisation_page = None
@@ -247,14 +250,13 @@ class ImportDataWindow(QMainWindow):
                     "filename": file,
                     "pathname": path,
                     "signal": signal,
-                    "filesize": os.path.getsize(full_path)  # Get actual file size
+                    "filesize": os.path.getsize(full_path),  # Get actual file size
+                    "fileid": self.raw_fileid
                 }
 
                 self.fileImported.emit(file_info)
 
                 self.channel_view_button.setEnabled(True)
-
-                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj, import_window=self)
 
                 self.add_file_to_recent_files(full_path)
                 self.update_recent_files()
@@ -265,8 +267,23 @@ class ImportDataWindow(QMainWindow):
                     self.set_configuration_button.setEnabled(False)
                 else:
                     self.set_configuration_button.setEnabled(True)
+
                 # Change file label to green if success
                 self.file_info_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
+
+                # Create a new session & add to database
+                fileid = get_fileid_by_path(full_path)
+                sessionid = create_new_session()
+
+                if fileid:
+                    # File exists: just upsert version and update last_opened
+                    versionid = upsert_file_versions(full_path, fileid, "readin")
+                else:
+                    # File not in DB: create a new session, insert, then upsert version
+                    fileid = insert_files(full_path, file, sessionid)
+                    versionid = upsert_file_versions(full_path, fileid, "readin")
+
+                self.raw_fileid = fileid
 
             except Exception as e:
                 self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
@@ -431,7 +448,7 @@ class ImportDataWindow(QMainWindow):
                 self.save_mat_in_background(savename, {"signal": self.imported_signal}, True)
 
             # Emit signal to request showing decomposition view
-            self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, self.config)
+            self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, self.config, self.raw_fileid)
 
         except Exception as e:
             print(f"Error requesting decomposition view: {e}")
@@ -646,7 +663,7 @@ class ImportDataWindow(QMainWindow):
             print(f"Error creating manual editing view: {e}")
             traceback.print_exc()
 
-    def create_decomposition_view(self, emg_obj, filename, pathname, imported_signal, config):
+    def create_decomposition_view(self, emg_obj, filename, pathname, imported_signal, config, raw_fileid):
         """Creates a decomposition view with the provided data and adds it to the stacked widget."""
         try:
             print("Creating decomposition view with provided data")
@@ -664,6 +681,7 @@ class ImportDataWindow(QMainWindow):
                 pathname=pathname,
                 imported_signal=imported_signal,
                 config=config,
+                raw_fileid=raw_fileid,
                 parent=self,  # Set parent for proper widget hierarchy
             )
 
