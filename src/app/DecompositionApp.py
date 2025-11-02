@@ -329,10 +329,17 @@ class DecompositionApp(QMainWindow):
             # clear plots
             self.ui_plot_reference.clear()
             self.ui_plot_pulsetrain.clear()
+
+            # restore original data
+            self.restore_original_data_preview()
             
             # reset iteration counter and results
             self.iteration_counter = 0
             self.decomposition_result = None
+
+            # clear stored paramaters
+            self.ui_params = None
+            self.algo_choice = None
             
             print("Decomposition reset complete")
         else:
@@ -356,6 +363,48 @@ class DecompositionApp(QMainWindow):
         # hide start/stop buttons
         self.start_button.hide()
         self.stop_button.hide()
+
+    def restore_original_data_preview(self):
+        """Restores original data preview plot (same as when file was first uploaded)"""
+        try:
+            if not self.emg_obj or not self.filename:
+                return
+            
+            # get original signal data
+            if hasattr(self.emg_obj, "signal_dict"):
+                signal = self.emg_obj.signal_dict
+
+                # recreate original preview plot
+                if "data" in signal and "fsamp" in signal:
+                    fsamp = signal["fsamp"]
+                    nsamples = signal["data"].shape[1]
+                    time = np.arange(nsamples) / fsamp
+
+                    self.ui_plot_reference.clear()
+
+                    # plot same preview channels as when first loaded
+                    num_preview_channels = min(signal["data"].shape[0], 3)
+                    num_actual_channels = 0
+                    colors = ["b", "g", "r", "c", "m", "y"]
+
+                    for i in range(num_preview_channels):
+                        if i not in self.emg_obj.rejected_channel_indices:
+                            num_actual_channels += 1
+                            self.ui_plot_reference.plot(
+                                time, signal["data"][i, :], pen=pg.mkPen(color=colors[i % len(colors)], width=1)
+                            )
+                    
+                    self.ui_plot_reference.setTitle(f"Signal Preview ({num_actual_channels} channels)")
+                    print(f"Restored original data preview with {num_actual_channels} channels")
+                else:
+                    print("no original signal data available")
+            else:
+                print("no signal_dict available in EMG object")
+
+        except Exception as e:
+            print(f"error restoring original data preview: {e}")
+            import traceback
+            traceback.print_exc()
 
     def start_decomposition_with_params(self, ui_params, algo_choice):
         """Start decomposition with specific parameters (used for continuation)"""
