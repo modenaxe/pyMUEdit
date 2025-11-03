@@ -24,6 +24,8 @@ from ui.components.muAnalysisComponents.PropertiesInnerDialogText import \
 from ui.components.muAnalysisComponents.SubsectionTitle import SubsectionTitle
 from ui.muanalysis.ComputeThresholdSection import ComputeThresholdSection
 
+from ui.components import ActionButton
+
 
 class MotorUnitPropertiesDialog(QDialog):
 
