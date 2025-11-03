@@ -1,14 +1,12 @@
 import matplotlib
 matplotlib.use("Qt5Agg")
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QDialog
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import copy
+# from core.utils.manual_editing.h5_import import h5py_convert
 from ui.components.muAnalysisComponents.ConfirmationDialog import ConfirmationDialog
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
-from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
+
+# from h5py import File as h5py
 
 import openhdemg.library as emg
 
@@ -70,18 +68,26 @@ class FileUploadFunc:
             try:
                 emgfile = emg.emg_from_otb(file_path)
             except NotImplementedError as e:
+                """
+                TODO: handle h5py files
+                """
                 ErrorDialog(
                     f"{e}",
                     "NotImplementedError",
                 ).exec_()
                 error = 1
+                # f = h5py(file_path, "r")
+                # print("h5py File load success")
+                # files = h5py_convert().h5py_to_dict(f)
+                # print(files)
             except:
                 self.import_data(None, None)
                 error = 1
 
-        self.file = emg.sort_mus(emgfile)
-        self.file_path = file_path
-        self.import_data(analysis_plot, self.file)
+        if emgfile:
+            self.file = emg.sort_mus(emgfile)
+            self.file_path = file_path
+            self.import_data(analysis_plot, self.file)
 
         return error
 
@@ -94,7 +100,7 @@ class FileUploadFunc:
             fig = emg.plot_idr(self.file, showimmediately=False)
             canvas = SaveablePlot(fig)  # plotting in centre with the data now handled
             analysis_plot.display_fig(canvas)
-        elif self.error:
+        else:
             ErrorDialog("Loaded File has errors", "Error").exec_()
 
     def handle_reset_workflow(self, analysis_plot):
