@@ -229,14 +229,10 @@ class MotorUnitPropertiesButton(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(10, 0, 10, 0)
 
-        # Subtitle
-        subtitle_label = SubsectionTitle("MOTOR UNIT ANALYSIS")
-        subtitle_label.setObjectName("motorUnitAnalysisSubTitle")
-        layout.addWidget(subtitle_label)
-
-        mu_properties_btn = GeneralButton(
-            "Motor Unit Properties", lambda: self.open_mu_properties()
-        )
+        mu_properties_btn = ActionButton("Motor Unit Properties")
+        mu_properties_btn.clicked.connect(
+            lambda: self.open_mu_properties())
+        mu_properties_btn.setMinimumHeight(40)
         layout.addWidget(mu_properties_btn)
 
     def open_mu_properties(self):

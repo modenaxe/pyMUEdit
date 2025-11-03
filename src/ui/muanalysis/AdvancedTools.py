@@ -19,9 +19,6 @@ class AdvancedTools(QWidget):
 
         adv_layout = QVBoxLayout(self)
         adv_layout.setContentsMargins(10, 10, 10, 0)
-        # the title
-        advanced_label = AnalysisText.create_major_title("Advanced Tools")
-        adv_layout.addWidget(advanced_label)
 
         # declaring the dropdown options
         self.analysis_tool = "Analysis Tool"

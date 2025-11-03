@@ -37,6 +37,8 @@ from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import \
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
 from ui.components.muAnalysisComponents.SubsectionTitle import SubsectionTitle
 
+from ui.components import ActionButton
+
 
 class PlotEMGToolDialog(QDialog):
 
@@ -684,14 +686,11 @@ class PlotEMGButton(QWidget):
 
     def init_ui(self):
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(10, 0, 10, 0)
 
-        # Subtitle
-        subtitle_label = SubsectionTitle("PLOT EMG")
-        subtitle_label.setObjectName("motorUnitAnalysisSubTitle")
-        layout.addWidget(subtitle_label)
-
-        plot_emg_btn = GeneralButton(
-            "Plot EMG", lambda: self.open_plot_emg_btn())
+        plot_emg_btn = ActionButton("Plot EMG")
+        plot_emg_btn.clicked.connect(lambda: self.open_plot_emg_btn())
+        plot_emg_btn.setMinimumHeight(40)
         layout.addWidget(plot_emg_btn)
         layout.setAlignment(plot_emg_btn, Qt.AlignmentFlag.AlignTop)
 

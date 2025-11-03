@@ -26,7 +26,7 @@ from ui.muanalysis.ResultsTable import ResultsTable
 from ui.muanalysis.SignalEditing import SignalEditing
 
 from ui.components import CleanTheme as Theme
-from ui.components import ActionButton, CleanScrollBar
+from ui.components import ActionButton, CleanScrollBar, CollapsiblePanel
 
 
 # legacy code
@@ -143,11 +143,8 @@ class MUAnalysis(QWidget):
         sidebar.setStyleSheet(
             f"""
             #leftSidebar {{
-                background-color: {Theme.BG_CARD};
-                border: 1px solid {Theme.BORDER};
-                border-radius: 8px;
+                background-color: {Theme.BG_MAIN};
             }}
-
         """)
 
         # enables scrolling
@@ -159,17 +156,17 @@ class MUAnalysis(QWidget):
 
         scroll_content = QWidget()
         scroll_layout = QVBoxLayout(scroll_content)
-        scroll_layout.setContentsMargins(10, 10, 10, 10)
+        scroll_layout.setContentsMargins(0, 0, 0, 0)
         scroll_layout.setSpacing(10)
 
         # title
-        title_div = QWidget()  # creating layout for the margin spacing
-        title_div_layout = QVBoxLayout(title_div)
-        # tells it to keep left, top, right margins
-        title_div_layout.setContentsMargins(-1, -1, -1, 0)
-        title_label = AnalysisText.create_major_title("Analysis")
-        title_div_layout.addWidget(title_label)
-        scroll_layout.addWidget(title_div)
+        # title_div = QWidget()  # creating layout for the margin spacing
+        # title_div_layout = QVBoxLayout(title_div)
+        # # tells it to keep left, top, right margins
+        # title_div_layout.setContentsMargins(-1, -1, -1, 0)
+        # title_label = AnalysisText.create_major_title("Analysis")
+        # title_div_layout.addWidget(title_label)
+        # scroll_layout.addWidget(title_div)
 
         # signal editing + remove mu section
         mu_editing_widget = QWidget()
@@ -182,35 +179,43 @@ class MUAnalysis(QWidget):
             self.mu, self.analysis_plot, parent=sidebar)
         mu_editing_layout.addWidget(remove_mu_section)
         mu_editing_layout.addWidget(signal_editing)
-        mu_editing_section = CollapsibleSection(
-            "MU Editing", mu_editing_widget, expanded=False)
+        mu_editing_section = CollapsiblePanel("MU Editing")
+        mu_editing_section.add_widget(mu_editing_widget)
+        mu_editing_section.toggle_collapsed()
         scroll_layout.addWidget(mu_editing_section)
 
         # force anaylsis
         force_analysis = ForceAnalysisSection(sidebar, self.analysis_plot)
-        force_analysis_section = CollapsibleSection(
-            "Force Analysis", force_analysis, expanded=False)
+        force_analysis_section = CollapsiblePanel("Force Analysis")
+        force_analysis_section.add_widget(force_analysis)
+        force_analysis_section.toggle_collapsed()
         scroll_layout.addWidget(force_analysis_section)
 
         # motor unit properties
         motor_unit_properties = MotorUnitPropertiesButton(
             self.analysis_plot, parent=self)
         motor_unit_properties.mvc_updated.connect(self.prop.set_mvc)
-        mu_properties_section = CollapsibleSection(
-            "Motor Unit Properties", motor_unit_properties, expanded=False)
+        mu_properties_section = CollapsiblePanel(
+            "Motor Unit Properties")
+        mu_properties_section.add_widget(motor_unit_properties)
+        mu_properties_section.toggle_collapsed()
         scroll_layout.addWidget(mu_properties_section)
         self.motor_unit_properties = motor_unit_properties
 
         # plot emg button
         plot_emg_tools = PlotEMGButton(self.analysis_plot, parent=self)
-        plot_emg_section = CollapsibleSection(
-            "Plot EMG", plot_emg_tools, expanded=False)
+        plot_emg_section = CollapsiblePanel(
+            "Plot EMG")
+        plot_emg_section.add_widget(plot_emg_tools)
+        plot_emg_section.toggle_collapsed()
         scroll_layout.addWidget(plot_emg_section)
         self.plot_emg_tools = plot_emg_tools
 
         # advanced tools
         advanced_tools = AdvancedTools(parent=sidebar)
-        scroll_layout.addWidget(advanced_tools)
+        advanced_tools_section = CollapsiblePanel("Advanced Tools")
+        advanced_tools_section.add_widget(advanced_tools)
+        scroll_layout.addWidget(advanced_tools_section)
         scroll_layout.addStretch(1)
         scroll_content.setLayout(scroll_layout)
         scroll.setWidget(scroll_content)

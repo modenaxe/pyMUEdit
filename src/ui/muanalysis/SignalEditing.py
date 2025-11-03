@@ -1,26 +1,20 @@
 import copy
 
 import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import (QDialog, QFrame, QHBoxLayout, QMessageBox,
+from PyQt5.QtWidgets import (QDialog, QFrame, QHBoxLayout,
                              QVBoxLayout, QWidget)
 from scipy import signal
 
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from core.muAnalysisCore.SelectRange import SelectRange
-from ui.components.muAnalysisComponents.AnalysisDropdown import \
-    AnalysisDropdown
-from ui.components.muAnalysisComponents.AnalysisDropdownDialog import \
-    AnalysisDropdownDialog
 from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
-from ui.components.muAnalysisComponents.AnalysisLabeledDropdown import \
-    AnalysisLabeledDropdown
 from ui.components.muAnalysisComponents.AnalysisLabeledDropdownDialog import \
     AnalysisLabeledDropdownDialog
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.SaveablePlot import SaveablePlot
+from ui.components import ActionButton
 
 
 class SignalEditing(QWidget):
@@ -43,10 +37,10 @@ class SignalEditing(QWidget):
         self.analysis_plot = analysis_plot
 
         layout = QVBoxLayout(self)
-        btn = GeneralButton(
-            "Signal Editing",
-            lambda: self.show_window(),
-            parent=self)
+        layout.setContentsMargins(10, 0, 10, 10)
+        btn = ActionButton("Signal Editing", parent=self)
+        btn.clicked.connect(lambda: self.show_window())
+        btn.setMinimumHeight(40)
         layout.addWidget(btn, stretch=1)
 
     def show_window(self):
