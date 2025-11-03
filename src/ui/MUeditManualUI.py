@@ -1,3 +1,4 @@
+from functools import partial
 from pathlib import Path
 
 import pyqtgraph as pg
@@ -7,9 +8,18 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QFrame,
                              QGraphicsSceneMouseEvent, QGroupBox, QHBoxLayout,
                              QLabel, QLayout, QLineEdit, QListView,
-                             QScrollArea, QSizePolicy, QSpacerItem, QTabWidget,
-                             QToolButton, QVBoxLayout, QWidget)
+                             QScrollArea, QSizePolicy, QSlider, QSpacerItem,
+                             QTabWidget, QToolButton, QVBoxLayout, QWidget)
 
+from app.muEditFunctions.batch_processing import *
+from app.muEditFunctions.edit_actions import (add_spikes_button_pushed,
+                                              delete_dr_button_pushed,
+                                              delete_spikes_button_pushed,
+                                              lock_spikes_button_pushed,
+                                              remove_outliers_button_pushed)
+from app.muEditFunctions.exporter import *
+from app.muEditFunctions.mu_filter_actions import *
+from app.muEditFunctions.visualization import *
 # Import custom components
 from ui.components import (ActionButton, CleanCard, CleanScrollBar, CleanTheme,
                            CollapsiblePanel, GoodSlider, SectionHeader,
@@ -176,7 +186,8 @@ def setup_control_panel(main_window):
     save_group = SettingsGroup("Save the Edition")
 
     main_window.save_btn = ActionButtonedit("Save", primary=True)
-    main_window.save_btn.clicked.connect(main_window.save_button_pushed)
+    main_window.save_btn.clicked.connect(
+        lambda: save_button_pushed(main_window))
 
     save_group.add_field(main_window.save_btn)
     control_layout.addWidget(save_group)
@@ -395,29 +406,29 @@ def create_batch_processing_tab(main_window):
     batch_layout = QVBoxLayout(batch_tab)
     batch_layout.setSpacing(10)
     batch_layout.setContentsMargins(10, 10, 10, 10)
-
+# lambda: update_mu_filter_button_pushed(main_window)
     # Label, handler, attribute name for later access
     action_batch_configs = [
         ("1 - Remove all the outliers",
-         main_window.remove_all_outliers_button_pushed,
+         remove_all_outliers_button_pushed,
          "remove_outliers_all_btn"),
         ("2 - Update all MU filters",
-         main_window.update_all_mu_filters_button_pushed,
+         update_all_mu_filters_button_pushed,
          "update_mu_filter_all_btn"),
         ("3 - Remove flagged MU",
-         main_window.remove_flagged_mu_button_pushed,
+         remove_flagged_mu_button_pushed,
          "remove_flagged_mu_btn"),
         ("4 - Remove duplicates within grids",
-         main_window.remove_duplicates_within_grids_button_pushed,
+         remove_duplicates_within_grids_button_pushed,
          "remove_duplicates_within_btn"),
         ("5 - Remove duplicates between grids",
-         main_window.remove_duplicates_between_grids_button_pushed,
+         remove_duplicates_between_grids_button_pushed,
          "remove_duplicates_between_btn"),
     ]
 
     for label, handler, attr_name in action_batch_configs:
         btn = ActionButtonedit(label, primary=True)
-        btn.clicked.connect(handler)
+        btn.clicked.connect(partial(handler, main_window))
         btn.setFixedHeight(34)
         batch_layout.addWidget(btn)
         setattr(main_window, attr_name, btn)
@@ -511,13 +522,13 @@ def create_visualization_tab(main_window):
     main_window.plot_spiketrains_btn = ActionButtonedit(
         "Plot MU spike trains", primary=True)
     main_window.plot_spiketrains_btn.clicked.connect(
-        main_window.plot_mu_spiketrains_button_pushed)
+        lambda: plot_mu_spiketrains_button_pushed(main_window))
     button_panel.add_widget(main_window.plot_spiketrains_btn)
 
     main_window.plot_firingrates_btn = ActionButtonedit(
         "Plot MU firing rates", primary=True)
     main_window.plot_firingrates_btn.clicked.connect(
-        main_window.plot_mu_firingrates_button_pushed)
+        lambda: plot_mu_firingrates_button_pushed(main_window))
     button_panel.add_widget(main_window.plot_firingrates_btn)
 
     row3 = QWidget()
@@ -614,13 +625,13 @@ def setup_display_panel(main_window):
 
     save_btn = ActionButtonedit("Save")
     save_btn.setFixedHeight(30)
-    save_btn.clicked.connect(main_window.save_button_pushed)
+    save_btn.clicked.connect(lambda: save_button_pushed(main_window))
     main_window.floating_save_btn = save_btn
 
     saveas_btn = ActionButtonedit("Save As")
     saveas_btn.setFixedHeight(30)
     saveas_btn.setFixedWidth(80)
-    saveas_btn.clicked.connect(main_window.saveas_button_pushed)
+    saveas_btn.clicked.connect(lambda: saveas_button_pushed(main_window))
     main_window.floating_saveas_btn = saveas_btn
 
     select_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -786,7 +797,6 @@ def setup_display_panel(main_window):
 
     display_layout.addWidget(plots_scroll_area, 1)  # 1 is stretch factor
     # horizontal pan‑slider just below all plots moy
-    from PyQt5.QtWidgets import QSlider
     main_window.pan_slider = QSlider(Qt.Horizontal, parent=display_widget)
     # 0 = far left, 1000 = far right
     main_window.pan_slider.setRange(0, 1000)
@@ -832,40 +842,123 @@ def setup_display_panel(main_window):
     action_layout.setContentsMargins(0, 0, 0, 0)
     action_layout.setSpacing(8)
 
-    # Define all action buttons
-    action_button_configs = [
-        ("Add spikes", main_window.add_spikes_button_pushed, "add_spikes_btn"),
-        ("Delete spikes", main_window.delete_spikes_button_pushed, "delete_spikes_btn"),
-        ("Delete DR", main_window.delete_dr_button_pushed, "delete_dr_btn"),
-        ("Remove outliers", main_window.remove_outliers_button_pushed, "remove_outliers_single_btn"),
-        ("Lock spikes", main_window.lock_spikes_button_pushed, "lock_spikes_btn"),
-        ("Update MU filter", main_window.update_mu_filter_button_pushed, "update_mu_filter_btn"),
-        ("Extend MU filter", main_window.extend_mu_filter_button_pushed, "extend_mu_filter_btn"),
+    # Group buttons based on functionality
+    spikes_buttons = [
+        ("Add spikes", add_spikes_button_pushed, "add_spikes_btn"),
+        ("Delete spikes", delete_spikes_button_pushed, "delete_spikes_btn"),
+        ("Lock spikes", lock_spikes_button_pushed, "lock_spikes_btn"),
     ]
 
-    # Create action buttons and store references
-    main_window.action_buttons = {}
-    for text, handler, attr_name in action_button_configs:
-        btn = ActionButtonedit(text, primary=False)
-        btn.setFocusPolicy(Qt.NoFocus)
-        btn.clicked.connect(handler)
-        btn.setMinimumHeight(36)
-        btn.setMaximumHeight(36)
-        action_layout.addWidget(btn)
-        # Store reference to button in main_window
-        setattr(main_window, attr_name, btn)
-        main_window.action_buttons[handler.__name__] = btn
-        if text in {
-            "Add spikes",
-            "Delete spikes",
-            "Update MU filter",
-            "Extend MU filter",
-                "Lock spikes"}:
-            btn.set_blue()
-        if text in {"Delete spikes", "Delete DR", "Remove outliers"}:
-            spacer = QWidget()
-            spacer.setFixedWidth(20)
-            action_layout.addWidget(spacer)
+    misc_buttons = [
+        ("Delete DR",
+         delete_dr_button_pushed,
+         "delete_dr_btn"),
+        ("Remove outliers",
+         remove_outliers_button_pushed,
+         "remove_outliers_single_btn"),
+    ]
+
+    mu_filter_buttons = [
+        ("Update MU filter", update_mu_filter_button_pushed,
+         "update_mu_filter_btn"),
+        ("Extend MU filter", extend_mu_filter_button_pushed,
+         "extend_mu_filter_btn"),
+    ]
+
+    def add_buttons_group(main_window, title_name, buttons, groups_layout):
+        frame = QFrame()
+        frame.setObjectName(f"group_{title_name.replace(' ', '_')}")
+        frame.setStyleSheet(f"""
+            QFrame#{frame.objectName()} {{
+                background-color: {CleanTheme.BG_CARD};
+                border: 1px solid {CleanTheme.BORDER};
+                border-radius: 8px;
+            }}
+        """)
+        frame_layout = QVBoxLayout(frame)
+        frame_layout.setContentsMargins(8, 8, 8, 8)
+        frame_layout.setSpacing(6)
+
+        card = CleanCard()
+        # Removes border from inner nest
+        card.setStyleSheet("background: transparent; border: none;")
+
+        content = QWidget()
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(6)
+
+        title_label = QLabel(title_name)
+        title_label.setStyleSheet(
+            f"color: {CleanTheme.TEXT_PRIMARY}; font-size: 10pt; font-weight: bold; background: transparent; border: none;"
+        )
+        title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        content_layout.addWidget(title_label)
+
+        buttons_container = QWidget()
+        # Removes border from inner nest
+        buttons_container.setStyleSheet(
+            "background: transparent; border: none;")
+        buttons_layout = QHBoxLayout(buttons_container)
+        buttons_layout.setContentsMargins(0, 0, 0, 0)
+        buttons_layout.setSpacing(6)
+
+        if not hasattr(
+                main_window,
+                "action_buttons") or main_window.action_buttons is None:
+            main_window.action_buttons = {}
+
+        for text, handler, attr_name in buttons:
+            btn = ActionButtonedit(text, primary=False)
+            btn.setFocusPolicy(Qt.NoFocus)
+            btn.clicked.connect(partial(handler, main_window))
+            btn.setFixedHeight(32)
+            btn.setFixedWidth(120)
+            if text in {"Add spikes", "Delete spikes", "Lock spikes",
+                        "Update MU filter", "Extend MU filter"}:
+                # btn.set_blue()
+                ...  # placeholder before confirmation of colors
+
+            setattr(main_window, attr_name, btn)
+            main_window.action_buttons[attr_name] = btn
+            main_window.action_buttons[handler.__name__] = btn
+            buttons_layout.addWidget(btn)
+
+        content_layout.addWidget(buttons_container)
+
+        if hasattr(
+                card,
+                "content_layout") and isinstance(
+                card.content_layout,
+                QLayout):
+            card.content_layout.addWidget(content)
+
+        frame_layout.addWidget(card)
+        groups_layout.addWidget(frame)
+
+    # Add container for button groups
+    groups_container = QWidget()
+    groups_layout = QHBoxLayout(groups_container)
+    groups_layout.setContentsMargins(0, 0, 0, 0)
+    groups_layout.setSpacing(12)
+
+    add_buttons_group(
+        main_window,
+        "Spikes Actions",
+        spikes_buttons,
+        groups_layout)
+    add_buttons_group(
+        main_window,
+        "MU Filter Actions",
+        mu_filter_buttons,
+        groups_layout)
+    add_buttons_group(
+        main_window,
+        "Miscellaneous Actions",
+        misc_buttons,
+        groups_layout)
+
+    display_layout.addWidget(groups_container)
 
     action_card.content_layout.addWidget(action_container)
     display_layout.addWidget(action_card)
@@ -993,6 +1086,8 @@ def create_mu_checkbox(
     )
     checkbox.setObjectName(f"Array_{array_idx+1}_MU_{mu_idx+1}")
     checkbox.setChecked(is_checked)
-    checkbox.stateChanged.connect(main_window.mu_checkbox_state_changed)
+    checkbox.stateChanged.connect(
+        lambda state: mu_checkbox_state_changed(
+            main_window, state))
 
     return checkbox
