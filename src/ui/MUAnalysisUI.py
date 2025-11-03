@@ -26,7 +26,7 @@ from ui.muanalysis.ResultsTable import ResultsTable
 from ui.muanalysis.SignalEditing import SignalEditing
 
 from ui.components import CleanTheme as Theme
-from ui.components import ActionButton, CleanScrollBar, CollapsiblePanel
+from ui.components import ActionButton, CleanScrollBar, CollapsiblePanel, SectionHeader
 
 
 # legacy code
@@ -91,12 +91,16 @@ class MUAnalysis(QWidget):
     def _create_top_bar(self):
         top_bar = QFrame()
         top_bar.setObjectName("topBar")
-        top_bar.setFixedHeight(55)
+        top_bar.setFixedHeight(70)
         top_bar.setStyleSheet(
             f"""
             #topBar {{
-                background-color: {Theme.BG_MAIN};
-                border: none;
+                background-color: {Theme.BG_CARD};
+                border: 1px solid {Theme.BORDER};
+                margin-top: 15px;
+                margin-left: 15px;
+                margin-right: 15px;
+                border-radius: 8px;
             }}
             """
         )
@@ -105,10 +109,10 @@ class MUAnalysis(QWidget):
         top_bar_layout.setSpacing(10)
 
         # title
-        title_label = QLabel("Motor Unit Analysis")
-        title_label.setFont(QFont("Arial", 20, QFont.Bold))
-        title_label.setStyleSheet(
-            f"color: {self.colors['text_title']}; border: none;")
+        title_label = SectionHeader("Motor Unit Analysis")
+        # title_label.setFont(QFont("Arial", 20, QFont.Bold))
+        # title_label.setStyleSheet(
+        #     f"color: {self.colors['text_title']}; border: none;")
 
         top_bar_layout.addWidget(title_label)
         top_bar_layout.addStretch(1)
