@@ -18,7 +18,8 @@ class AdvancedTools(QWidget):
         super().__init__(parent)
 
         adv_layout = QVBoxLayout(self)
-        adv_layout.setContentsMargins(10, 10, 10, 0)
+        adv_layout.setContentsMargins(0, 0, 0, 0)
+        adv_layout.setSpacing(8)
 
         # declaring the dropdown options
         self.analysis_tool = "Analysis Tool"
