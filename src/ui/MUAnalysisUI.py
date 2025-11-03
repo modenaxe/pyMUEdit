@@ -26,7 +26,7 @@ from ui.muanalysis.ResultsTable import ResultsTable
 from ui.muanalysis.SignalEditing import SignalEditing
 
 from ui.components import CleanTheme as Theme
-from ui.components import ActionButton
+from ui.components import ActionButton, CleanScrollBar
 
 
 # legacy code
@@ -143,17 +143,19 @@ class MUAnalysis(QWidget):
         sidebar.setStyleSheet(
             f"""
             #leftSidebar {{
-                background-color: {self.colors['bg_sidebar']};
+                background-color: {Theme.BG_CARD};
+                border: 1px solid {Theme.BORDER};
+                border-radius: 8px;
             }}
 
-        """
-        )
+        """)
 
         # enables scrolling
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        CleanScrollBar.apply(scroll)
 
         scroll_content = QWidget()
         scroll_layout = QVBoxLayout(scroll_content)
@@ -230,6 +232,15 @@ class MUAnalysis(QWidget):
     def _create_center_area(self):
         center = QFrame()
         center.setObjectName("centerContent")
+        center.setStyleSheet(
+            f"""
+            #centerContent {{
+                background-color: {Theme.BG_CARD};
+                border: 1px solid {Theme.BORDER};
+                border-radius: 8px;
+            }}
+
+        """)
         center_layout = QVBoxLayout(center)
         center_layout.addWidget(self.analysis_plot)
         return center
@@ -242,11 +253,12 @@ class MUAnalysis(QWidget):
         sidebar.setStyleSheet(
             f"""
             #rightSidebar {{
-                background-color: {self.colors['bg_sidebar']};
+                background-color: {Theme.BG_CARD};
+                border: 1px solid {Theme.BORDER};
+                border-radius: 8px;
             }}
 
-        """
-        )
+        """)
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setContentsMargins(10, 10, 10, 10)
         sidebar_layout.setSpacing(10)
