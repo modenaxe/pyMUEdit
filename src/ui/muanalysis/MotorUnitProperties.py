@@ -252,7 +252,7 @@ class MotorUnitPropertiesButton(QWidget):
     def update_mvc(self, mvc_value):
         # Update the MVC value
         self.current_mvc = mvc_value
-        print(f"MVC updated to: {mvc_value} N")
+        logger.debug(f"MVC updated to: {mvc_value} N")
         self.mvc_updated.emit(mvc_value)
 
     def get_mvc(self):

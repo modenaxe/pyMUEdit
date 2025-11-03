@@ -27,7 +27,7 @@ from ui.muanalysis.ResultSelection import ResultSelection
 from ui.muanalysis.ResultsPanel import ResultsPanel
 from ui.muanalysis.ResultsTable import ResultsTable
 from ui.muanalysis.SignalEditing import SignalEditing
-
+from core.logger import logger
 
 # legacy code
 def get_icon(standard_icon):
@@ -129,8 +129,9 @@ class MUAnalysis(QWidget):
     def handle_save_as(self):
         if hasattr(self, "results_section"):
             self.results_section.save_results()
+            logger.debug("Save As: Results successfully saved via ResultsPanel.")
         else:
-            print("Save as: ResultsPanel not found")
+            logger.warning("Save as: ResultsPanel not found")
 
     # dropdown order for matrix code
     # the border on the right sidebar

@@ -180,7 +180,6 @@ class DecompositionWorker(QThread):
 
         except Exception as e:
             logger.exception(f"Exception in DecompositionWorker: {str(e)}")
-            traceback.print_exc()
             self.error.emit(str(e))
 
     def send_plot_update(self, fICA_source, spikes, time2, sil, cov):

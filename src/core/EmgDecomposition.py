@@ -746,7 +746,7 @@ class offline_EMG(EMG):
                     #         "fast_ICA_and_CKC", g, interval, i+2, 11
                     #     )
 
-                logger.info(
+                logger.debug(
                     f"Iteration {i+1}/{self.its} - SIL: {self.decomp_dict['SILs'][interval, i]:.4f}, "
                     f"CoV: {self.decomp_dict['CoVs'][interval, i]:.4f}, Spikes: {len(spikes)}"
                 )

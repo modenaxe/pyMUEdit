@@ -23,7 +23,7 @@ def notch_filter(emg: torch.Tensor, f_samp: float, notch_params: tuple, cutoff_l
     if filt_harms:
         freqs_to_filter.extend([f_notch * i for i in range(2, cutoff_lowpass // f_notch + 1)]) # harmonics up to the low pass cutoff
 
-    print(f"freqs_to_filter: {freqs_to_filter}")
+    logger.debug(f"freqs_to_filter: {freqs_to_filter}")
     # Filter
     for f in freqs_to_filter:
         b, a = butter(2, [2 * (f - bw) / f_samp, 2 * (f + bw) / f_samp], btype="bandstop")

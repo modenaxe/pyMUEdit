@@ -3,7 +3,7 @@ import scipy
 from sklearn.cluster import KMeans
 from core.utils.preprocessing.extend_emg import extend_emg
 from core.utils.decomposition.get_spikes import maxk
-
+from core.logger import logger
 
 def refine_mus(signal, signal_mask, pulse_trains_n_1, discharge_times_n_1, fsamp):
     """

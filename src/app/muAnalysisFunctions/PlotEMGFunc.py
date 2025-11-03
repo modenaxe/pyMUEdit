@@ -9,7 +9,7 @@ import itertools
 from matplotlib.figure import Figure
 from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
 from ui.components.SaveablePlot import SaveablePlot
-
+from core.logger import logger
 
 def parse_channel_input(raw_text, max_channels=None):
     """Parse a string of channel numbers and ranges into a list of integers."""
@@ -531,13 +531,13 @@ def plot_differentials(
     common = CommonOpenFunc()
 
     if column not in differential:
-        print(f"ERROR: '{column}' not in differential keys: {list(differential.keys())}")
+        logger.error(f"'{column}' not in differential keys: {list(differential.keys())}")
         raise KeyError(f"differential does not contain the column '{column}'")
 
     emgsig = differential[column]
 
     if not isinstance(emgsig, pd.DataFrame):
-        print(f"ERROR: differential['{column}'] is of type {type(emgsig)}")
+        logger.error(f"differential['{column}'] is of type {type(emgsig)}")
         raise TypeError(
             "The signal differential[column] is present but not in a DataFrame"
         )

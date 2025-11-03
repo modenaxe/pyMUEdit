@@ -5,27 +5,10 @@ import numpy as np
 import scipy.io as sio
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QPixmap
-<<<<<<< HEAD
-from PyQt5.QtWidgets import (
-    QMainWindow,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QLabel,
-    QPushButton,
-    QCheckBox,
-    QComboBox,
-    QLineEdit,
-    QGroupBox,
-    QSpinBox,
-)
-from core.logger import logger
-=======
 from PyQt5.QtWidgets import (QCheckBox, QComboBox, QGroupBox, QHBoxLayout,
                              QLabel, QLineEdit, QMainWindow, QPushButton,
                              QSpinBox, QVBoxLayout, QWidget)
-
->>>>>>> development
+from core.logger import logger
 
 class ColoredCircle(QWidget):
     def __init__(self, color="red", parent=None):
@@ -312,7 +295,7 @@ class Quattrodlg(QMainWindow):
 
             # Set the number of grids
             if "signal" not in self.file:
-                print("Error: No signal data in file")
+                logger.error("No signal data in file")
                 return
 
             # Update the number of active grids
@@ -360,12 +343,7 @@ class Quattrodlg(QMainWindow):
                 self.file["signal"]["muscle"][0, 0] = muscle_obj
 
             except Exception as e:
-<<<<<<< HEAD
                 logger.exception(f"Error with specific case, trying general solution: {e}")
-=======
-                print(
-                    f"Error with specific case, trying general solution: {e}")
->>>>>>> development
                 try:
                     # Just replace the entire field
                     self.file["signal"]["gridname"] = np.array(

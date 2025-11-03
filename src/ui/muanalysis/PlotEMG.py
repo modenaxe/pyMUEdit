@@ -583,8 +583,6 @@ class PlotEMGToolDialog(QDialog):
             plt.close(fig)
 
         except Exception as e:
-            print("Full traceback:")
-            traceback.print_exc()
             logger.exception(f'Error plotting Derivation:\n{str(e)}')
             ErrorDialog(f'Error plotting Derivation:\n{str(e)}', 'Error').exec_()
 
@@ -638,7 +636,7 @@ class PlotEMGToolDialog(QDialog):
                             "Please select an orientation",
                             "Invalid Input").exec_()
                     else:
-                        print(e)
+                        logger.error(e)
                     return
 
                 if self.configuration_dropdown.currentText() == "Single differential":

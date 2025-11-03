@@ -239,7 +239,7 @@ class ImportDataWindow(QMainWindow):
                     except Exception as e:
                         logger.exception(f"Error creating preview plot: {e}")
                 else:
-                    print("Error cannot display data")
+                    logger.error("Error cannot display data")
 
                 # Resize app window to show the plot properly, then display the plot in the preview pane
                 self.preview_stacked_frame.setCurrentIndex(PreviewElement.GRAPH.value)
@@ -311,7 +311,7 @@ class ImportDataWindow(QMainWindow):
         # Get valid channels
         valid_indices = [i for i in range(data.shape[0]) if i not in self.emg_obj.rejected_channel_indices and i in all_indices]
         if not valid_indices:
-            print("No valid channels to process.")
+            logger.error("No valid channels to process.")
             return
 
         # Prepare temporary array for smoothed data
@@ -396,7 +396,7 @@ class ImportDataWindow(QMainWindow):
 
     def on_save_finished(self, worker):
         """Handle completion of background save."""
-        print("Data saved successfully")
+        logger.debug("Data saved successfully")
         self.cleanup_thread(worker)
 
     def enable_segment_session(self):
@@ -408,7 +408,7 @@ class ImportDataWindow(QMainWindow):
 
     def on_save_error(self, worker, error_msg):
         """Handle error in background save."""
-        print(f"Error saving data: {error_msg}")
+        logger.error(f"Error saving data: {error_msg}")
         self.cleanup_thread(worker)
 
     def cleanup_thread(self, worker):
@@ -476,7 +476,7 @@ class ImportDataWindow(QMainWindow):
     def open_channel_viewer(self):
         """Open the Channel Viewer window with the current EMG data"""
         if not self.emg_obj or "data" not in self.emg_obj.signal_dict:
-            print("No EMG data loaded for channel viewer.")
+            logger.debug("No EMG data loaded for channel viewer.")
             return
 
         try:
@@ -514,7 +514,7 @@ class ImportDataWindow(QMainWindow):
             except Exception as e:
                 logger.exception(f"Error showing configuration dialog: {e}")
         else:
-            print("No configuration dialog available")
+            logger.debug("No configuration dialog available")
 
     def segment_session_button_pushed(self):
         if not self.emg_obj or "data" not in self.emg_obj.signal_dict or not self.pathname or not self.filename:
@@ -554,7 +554,7 @@ class ImportDataWindow(QMainWindow):
             if hasattr(self.mu_analysis_page, "set_export_window_opener"):
                 self.mu_analysis_page.set_export_window_opener(self.open_export_results_window)
             else:
-                print("WARNING: MotorUnitAnalysisWidget does not have 'set_export_window_opener' method.")
+                logger.debug("WARNING: MotorUnitAnalysisWidget does not have 'set_export_window_opener' method.")
 
         if DecompositionApp:
             self.decomposition_page = DecompositionApp()
@@ -567,7 +567,7 @@ class ImportDataWindow(QMainWindow):
         """
         Handle the fileImported signal from the ImportDataWindow
         """
-        print(f"Dashboard received fileImported signal for {file_info.get('filename')}")
+        logger.debug(f"Dashboard received fileImported signal for {file_info.get('filename')}")
         # Extract information from the signal
         filename = file_info.get("filename", "Unknown file")
         pathname = file_info.get("pathname", "")
@@ -607,13 +607,12 @@ class ImportDataWindow(QMainWindow):
             self.central_stacked_widget.addWidget(wrapper)
 
         except Exception as e:
-            print(f"Error creating import view: {e}")
-            traceback.print_exc()
+            logger.exception(f"Error creating import view: {e}")
 
     def create_manual_editing_view(self):
         """Creates a manual editing view and adds it to the stacked widget."""
         try:
-            print("Creating manual editing view")
+            logger.debug("Creating manual editing view")
 
             # Create a wrapper widget to hold the MUeditManual
             # wrapper = QWidget()
@@ -643,13 +642,12 @@ class ImportDataWindow(QMainWindow):
             self.central_stacked_widget.addWidget(manual_edit_app)
 
         except Exception as e:
-            print(f"Error creating manual editing view: {e}")
-            traceback.print_exc()
+            logger.exception(f"Error creating manual editing view: {e}")
 
     def create_decomposition_view(self, emg_obj, filename, pathname, imported_signal, config):
         """Creates a decomposition view with the provided data and adds it to the stacked widget."""
         try:
-            print("Creating decomposition view with provided data")
+            logger.debug("Creating decomposition view with provided data")
 
             # Create a wrapper widget to hold the DecompositionApp
             wrapper = QWidget()
@@ -697,50 +695,49 @@ class ImportDataWindow(QMainWindow):
             self.show_decomposition_view()
 
         except Exception as e:
-            print(f"Error creating decomposition view: {e}")
-            traceback.print_exc()
+            logger.error(f"Error creating decomposition view: {e}")
 
     def show_mu_analysis_view(self):
         """Switches the central widget to the MU Analysis page."""
         if hasattr(self, "mu_analysis_page") and self.mu_analysis_page:
-            print("Switching to MU Analysis View")
+            logger.debug("Switching to MU Analysis View")
             self.central_stacked_widget.setCurrentWidget(self.mu_analysis_page)
             update_sidebar_selection(self, "mu_analysis")
         else:
-            print("MU Analysis view is not available.")
+            logger.debug("MU Analysis view is not available.")
 
     def show_import_data_view(self):
         """Switches the central widget to the Import Data page."""
-        print("Switching to Import Data view")
+        logger.debug("Switching to Import Data view")
         if hasattr(self, "import_data_page") and self.import_data_page:
             self.central_stacked_widget.setCurrentWidget(self.import_data_page)
             update_sidebar_selection(self, "import")
         else:
-            print("ImportDataWindow not available.")
+            logger.debug("ImportDataWindow not available.")
 
     def show_manual_editing_view(self):
         """Switches to Manual Editing view."""
-        print("Switching to Manual Editing View")
+        logger.debug("Switching to Manual Editing View")
         if hasattr(self, "manual_editing_page") and self.manual_editing_page:
             self.central_stacked_widget.setCurrentWidget(self.manual_editing_page)
             update_sidebar_selection(self, "manual_edit")
         else:
-            print("Manual Editing view widget not found.")
+            logger.debug("Manual Editing view widget not found.")
 
     def show_decomposition_view(self):
         """Switches to Decomposition view."""
-        print("Switching to Decomposition View")
+        logger.debug("Switching to Decomposition View")
         if hasattr(self, "decomposition_page") and self.decomposition_page:
             self.central_stacked_widget.setCurrentWidget(self.decomposition_page)
             update_sidebar_selection(self, "decomposition")
         else:
-            print("Decomposition view widget not found.")
+            logger.debug("Decomposition view widget not found.")
 
     def open_export_results_window(self):
         """Opens the Export Results window, creating it if necessary."""
-        print(">>> Main Window: Request received to open Export Results window.")
+        logger.debug(">>> Main Window: Request received to open Export Results window.")
         if ExportResultsWindow is None:
-            print("ERROR: ExportResultsWindow class is not available (check import).")
+            logger.error("ERROR: ExportResultsWindow class is not available (check import).")
             return
 
         window_exists = False
@@ -749,25 +746,25 @@ class ImportDataWindow(QMainWindow):
                 # Check if the window still exists and hasn't been closed/deleted
                 if self.export_results_window.isVisible() or not self.export_results_window.isHidden():
                     window_exists = True
-                    print(">>> Main Window: Existing ExportResultsWindow instance seems valid.")
+                    logger.debug(">>> Main Window: Existing ExportResultsWindow instance seems valid.")
                 else:
-                    print(
+                    logger.debug(
                         ">>> Main Window: Existing window reference present but window is hidden/closed; will create new."
                     )
                     self.export_results_window = None  # Force recreation
                     window_exists = False
             except RuntimeError:  # Window was likely deleted
-                print(">>> Main Window: Existing window reference invalid (RuntimeError); will create new.")
+                logger.error("Main Window: Existing window reference invalid (RuntimeError); will create new.")
                 self.export_results_window = None
                 window_exists = False
             except Exception as e:  # Catch other potential issues
-                print(f">>> Main Window: Error checking existing window ({type(e).__name__}); will create new.")
+                logger.exception(f"Main Window: Error checking existing window ({type(e).__name__}); will create new.")
                 self.export_results_window = None
                 window_exists = False
 
         if not window_exists:
             try:
-                print(">>> Main Window: Creating NEW ExportResultsWindow instance.")
+                logger.debug("Main Window: Creating NEW ExportResultsWindow instance.")
                 # Ensure it's created as a top-level window (parent=None)
                 self.export_results_window = ExportResultsWindow(parent=None)
                 # Position it relative to the main window for convenience
@@ -777,30 +774,27 @@ class ImportDataWindow(QMainWindow):
                 width = 600  # Define desired size
                 height = 550
                 self.export_results_window.setGeometry(new_x, new_y, width, height)
-                print(f">>> Set geometry for new window to ({new_x}, {new_y}, {width}, {height})")
+                logger.debug(f"Set geometry for new window to ({new_x}, {new_y}, {width}, {height})")
             except Exception as e:
-                print(f"FATAL ERROR during ExportResultsWindow creation: {e}")
-                traceback.print_exc()
+                logger.exception(f"FATAL ERROR during ExportResultsWindow creation: {e}")
                 self.export_results_window = None  # Ensure it's None if creation failed
                 return  # Stop execution here
 
         # After potentially creating or confirming existence, try to show/activate
         if self.export_results_window:
             try:
-                print(">>> Main Window: Attempting to show and activate ExportResultsWindow.")
                 self.export_results_window.show()
                 self.export_results_window.raise_()  # Bring to front
                 self.export_results_window.activateWindow()  # Give focus
                 QApplication.processEvents()  # Ensure UI updates
-                print(">>> ExportResultsWindow shown and activated.")
+                logger.debug("ExportResultsWindow shown and activated.")
             except RuntimeError:  # Catch if window was deleted between check and show
-                print(">>> Error: ExportResultsWindow was deleted before it could be shown.")
+                logger.error("ExportResultsWindow was deleted before it could be shown.")
                 self.export_results_window = None
             except Exception as e:
-                print(f"Error displaying/activating ExportResultsWindow: {e}")
-                traceback.print_exc()
+                logger.exception(f"Error displaying/activating ExportResultsWindow: {e}")
         else:
-            print("ERROR - self.export_results_window is None even after creation attempt.")
+            logger.error("self.export_results_window is None even after creation attempt.")
 
 # For testing the window independently
 if __name__ == "__main__":

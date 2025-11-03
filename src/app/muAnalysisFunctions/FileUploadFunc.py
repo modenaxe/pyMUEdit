@@ -621,7 +621,7 @@ class FileUploadFunc:
         """
         # Check if there's a file loaded to reset
         if self.original_file_path is None:
-            print("No file loaded to reset.")
+            logger.warning("No file loaded to reset.")
             return
 
         dialog = ConfirmationDialog(
@@ -636,10 +636,10 @@ class FileUploadFunc:
         Resets the analysis data by reloading the original file, clearing any transformations.
         """
         if self.original_file_path is None:
-            print("No original file path stored. Cannot reset.")
+            logger.warning("No original file path stored. Cannot reset.")
             return
 
-        print("--- DEBUG: Resetting analysis data by reloading original file ---")
+        logger.debug("Resetting analysis data by reloading original file")
 
         # Clear any transformation data (MVC value, etc.)
         self.mvc_value = None
@@ -653,9 +653,9 @@ class FileUploadFunc:
         if valid:
             # Re-import the data to refresh the display
             self.import_data(self.original_file_path, analysis_plot, valid)
-            print("File successfully reloaded, transformations cleared.")
+            logger.debug("File successfully reloaded, transformations cleared.")
         else:
-            print("Error reloading file during reset.")
+            logger.error("Error reloading file during reset.")
             # If reload fails, show error but keep the original file path
             error_dialog = QMessageBox()
             error_dialog.setIcon(QMessageBox.Critical)
@@ -792,5 +792,5 @@ class FileUploadFunc:
         return sorted_emgfile
 
     def updateEMGFile(self, emgfile):
-        print(f"updating original file")
+        logger.debug(f"updating original file")
         FileUploadFunc.file = emgfile

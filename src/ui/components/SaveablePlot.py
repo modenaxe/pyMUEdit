@@ -179,7 +179,7 @@ class SaveablePlot(QWidget):
                 self.figure.savefig(
                     file_path, dpi=300, bbox_inches="tight", facecolor="white"
                 )
-                print(f"Plot saved successfully to: {file_path}")
+                logger.debug(f"Plot saved successfully to: {file_path}")
             except Exception as e:
                 logger.exception(f"Error saving plot: {e}")
                 # Could add a proper error dialog here

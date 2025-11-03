@@ -17,7 +17,7 @@ class duplicates_within_grids_worker(QThread):
 
     def cancel(self):
         self._cancelled = True
-        print("Click cancel")
+        logger.debug("Click cancel")
 
     def run(self):
         try:

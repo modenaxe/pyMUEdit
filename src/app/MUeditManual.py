@@ -295,12 +295,12 @@ class MUeditManual(QMainWindow):
         """Exit spike editing mode and reset selection state."""
 
         if hasattr(self, "add_spikes_btn") and self.add_spikes_btn.get_active():
-            print("ESC: deactivating add_spikes button")
+            logger.debug("ESC: deactivating add_spikes button")
             self.add_spikes_button_pushed()
             return
 
         elif hasattr(self, "delete_spikes_btn") and self.delete_spikes_btn.get_active():
-            print("ESC: deactivating delete_spikes button")
+            logger.debug("ESC: deactivating delete_spikes button")
             self.delete_spikes_button_pushed()
             return
 
@@ -309,7 +309,7 @@ class MUeditManual(QMainWindow):
             self.selection_tool.cleanup()
             self.selection_tool = None
 
-        print("Exited editing mode (via ESC)")
+        logger.debug("Exited editing mode (via ESC)")
 
     def _create_shortcuts(self):
         # Short cut
@@ -377,10 +377,10 @@ class MUeditManual(QMainWindow):
             except NotImplementedError:
                 try:
                     f = h5py.File(filepath, "r")
-                    print("h5py File load success")
+                    logger.debug("h5py File load success")
                     self.ish5 = True
                     files = h5py_convert().h5py_to_dict(f)
-                    print("h5py File convert complete")
+                    logger.debug("h5py File convert complete")
                 except Exception:
                     logger.exception(f"Error loading or converting h5py file: {filepath}")
                 # f.close()
@@ -423,7 +423,7 @@ class MUeditManual(QMainWindow):
                 else:
                     self.import_h5py_decomposed_file(files)
 
-            print("File import complete")
+            logger.debug("File import complete")
 
             # Calculate array numbers for each channel
             self.MUedition["edition"]["arraynb"] = np.zeros(self.MUedition["signal"]["data"].shape[0], dtype=int)
@@ -477,8 +477,7 @@ class MUeditManual(QMainWindow):
         except KeyError as ke:
             QApplication.restoreOverrideCursor()
             ErrorDialog(title_label="Missing Field", text=f"The .mat file is missing required fields:\n{ke}")
-            import traceback
-            traceback.print_exc()
+            logger.exception(title_label="Missing Field", text=f"The .mat file is missing required fields:\n{ke}")
         except Exception as e:
             logger.exception("Failed to load the file.")
             QApplication.restoreOverrideCursor()
@@ -1054,8 +1053,7 @@ class MUeditManual(QMainWindow):
 
     def update_spike_train_plot(self, array_idx, mu_idx, pulse_train, color="#D95535"):
         """Update pulse train plot only without changing layout or other widgets."""
-        print("update_spike_train_plot")
-
+        
         # Clear existing plots
         self.spiketrain_plot.clear()
 
@@ -1124,6 +1122,7 @@ class MUeditManual(QMainWindow):
                 scatter.addPoints(x=x_values, y=y_values, pen=None, brush=pg.mkBrush(color), size=10)
                 self.spiketrain_plot.addItem(scatter)
             self.spiketrainCurves.append(scatter)
+        logger.debug("update spike train plot")
 
     def update_dr_plot(self, discharge_times):
         self.dr_plot.clear()
@@ -1154,7 +1153,7 @@ class MUeditManual(QMainWindow):
         """Display the currently selected motor units."""
         if not self.MUedition:
             return
-        print("display_selected_mus ")
+        logger.debug("display selected mus")
 
         # Clear existing plots in the container
         for i in reversed(range(self.plots_layout.count())):
@@ -1630,7 +1629,7 @@ class MUeditManual(QMainWindow):
     # Editing actions
     def disable_action_buttons(self):
         """Temporarily disable action buttons during selection."""
-        print("disable_action_buttons")
+        logger.debug("disable_action_buttons")
         self.add_spikes_btn.setEnabled(False)
         self.delete_spikes_btn.setEnabled(False)
         self.delete_dr_btn.setEnabled(False)
@@ -1640,7 +1639,7 @@ class MUeditManual(QMainWindow):
 
     def enable_action_buttons(self):
         """Re-enable action buttons after selection is complete."""
-        print("enable_action_buttons")
+        logger.debug("enable_action_buttons")
         self.add_spikes_btn.setEnabled(True)
         self.delete_spikes_btn.setEnabled(True)
         self.delete_dr_btn.setEnabled(True)
@@ -1776,10 +1775,23 @@ class MUeditManual(QMainWindow):
         self.update_save_button()
         self.update_dr_plot(discharge_times)
         self.update_spike_train_plot(array_idx, mu_idx, pulse_train)
+        self.show_tip("Updated plot", duration_ms=4000)
+        if action_type == "add_spikes":
+            self.show_tip("Added spike region.", duration_ms=4000)
+            logger.debug("added spike region")
+        elif action_type == "delete_spikes":
+            self.show_tip(f"Deleted spike region.", duration_ms=4000)
+            logger.debug(f"Deleted spike region.")
+        elif action_type == "delete_dr":
+            self.show_tip("Deleted discharge region.", duration_ms=4000)
+            logger.debug(f"Deleted discharge region.")
+        else:
+            self.show_tip("Updated plot.", duration_ms=4000)
+            logger.debug(f"Selection complete for unknown action type: {action_type}")
 
     def lock_spikes_button_pushed(self):
         """Lock the current spikes to keep them during filter updates."""
-        print("push lock spikes")
+        logger.debug("lock spikes buttonb pushed")
         if self.action_buttons["lock_spikes_button_pushed"].get_active():
             self.Backup["lock"] = 0
             self.action_buttons["lock_spikes_button_pushed"].set_active(False)
@@ -1789,6 +1801,7 @@ class MUeditManual(QMainWindow):
 
     def remove_outliers_button_pushed(self):
         """Remove outliers from the current motor unit."""
+        logger.debug("outliers button pushed")
         if not self.MUedition:
             return
 
@@ -1944,7 +1957,7 @@ class MUeditManual(QMainWindow):
                 # Reset the lock
                 if self.Backup["lock_changable"] == 0:
                     self.Backup["lock"] = 0
-                print("Reset lock")
+                logger.debug("Reset lock")
             else:
                 # Update both pulse train and discharge times
                 self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = updated_pulse_train
@@ -2289,7 +2302,7 @@ class MUeditManual(QMainWindow):
         original_dischargetimes = copy.deepcopy(self.MUedition["edition"]["Dischargetimes"])
         original_silval = copy.deepcopy(self.MUedition["edition"]["silval"])
         original_silvalcon = copy.deepcopy(self.MUedition["edition"]["silvalcon"])
-        print("deep copy complete!")
+        logger.debug("deep copy complete!")
 
         progress = QProgressDialog("Removing outliers...", "Cancel", 0, 100, self)
         progress.setWindowModality(Qt.WindowModality.WindowModal)
@@ -2316,7 +2329,7 @@ class MUeditManual(QMainWindow):
                     self.MUedition["edition"]["silval"] = original_silval
                     self.MUedition["edition"]["silvalcon"] = original_silvalcon
                     progress.close()
-                    print("Batch processing interruption!")
+                    logger.debug("Batch processing interruption!")
                     return
 
                 # Create dummy arrays for remoutliers function
@@ -2349,7 +2362,7 @@ class MUeditManual(QMainWindow):
                 self.MUedition["edition"]["silval"] = original_silval
                 self.MUedition["edition"]["silvalcon"] = original_silvalcon
                 progress.close()
-                print("Batch processing interruption!")
+                logger.debug("Batch processing interruption!")
                 return
 
         progress.setValue(100)
@@ -2436,7 +2449,7 @@ class MUeditManual(QMainWindow):
         ))
         # Update the current MU display
         self._filterWorker.finished.connect(lambda: (progress.close(), self.update_save_button(), self.mu_checkbox_state_changed()))
-        self._filterWorker.error.connect(lambda msg: (progress.close(), print("Error:", msg)))
+        self._filterWorker.error.connect(lambda msg: (progress.close(), logger.error(msg)))
 
         progress.canceled.connect(self._filterWorker.cancel)
         self._filterWorker.start()
@@ -2471,7 +2484,7 @@ class MUeditManual(QMainWindow):
 
             if progress.wasCanceled():
                 progress.close()
-                print("Batch processing interruption!")
+                logger.debug("Batch processing interruption!")
                 return
 
             # Get the pulse trains for this array
@@ -2571,12 +2584,12 @@ class MUeditManual(QMainWindow):
         ))
         # Update the current MU display
         self._duplicatesInGridsWorker.finished.connect(lambda: (progress.close(), self.update_save_button(), self.mu_checkbox_state_changed()))
-        self._duplicatesInGridsWorker.error.connect(lambda msg: (progress.close(), print("Error:", msg)))
+        self._duplicatesInGridsWorker.error.connect(lambda msg: (progress.close(), logger.debug(msg)))
 
         progress.canceled.connect(self._duplicatesInGridsWorker.cancel)
         self._duplicatesInGridsWorker.start()
-
-        # print(f"[DEBUG] Done: remove_duplicates_within_grids  (t={time.time()-t0:.2f}s)") # debug if this button real work moy
+        self.show_tip("Duplicates within grids removed successfully.", duration_ms=4000)
+        logger.debug("Done: remove_duplicates_within_grids.")
 
     def remove_duplicates_between_grids_button_pushed(self):
         """Remove duplicate motor units between grids."""
@@ -2613,11 +2626,12 @@ class MUeditManual(QMainWindow):
 
         # Update the current MU display
         self._duplicatesWithGridsWorker.finished.connect(lambda: (progress.close(), self.update_save_button(), self.mu_checkbox_state_changed()))
-        self._duplicatesWithGridsWorker.error.connect(lambda msg: (progress.close(), print("Error:", msg)))
+        self._duplicatesWithGridsWorker.error.connect(lambda msg: (progress.close(), logger.error(msg)))
 
         progress.canceled.connect(self._duplicatesWithGridsWorker.cancel)
         self._duplicatesWithGridsWorker.start()
-        # print(f"[DEBUG] Done: remove_duplicates_within_grids  (t={time.time()-t0:.2f}s)") # debug if this button real work moy
+        self.show_tip("Duplicates between grids removed successfully.", duration_ms=4000)
+        logger.debug("Done: remove_duplicates_between_grids.")
 
     # Visualization methods
     def plot_mu_spiketrains_button_pushed(self):
