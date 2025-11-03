@@ -34,6 +34,13 @@ class FileUploadFunc:
         self.json = False
         self.unsortedFile = None  # store unsorted file version here
 
+    def set_file(self, emgfile):
+        """Sets the current emg file
+        Params: emgfile
+        Returns: None
+        """
+        FileUploadFunc.file = emgfile
+
     def data_loaded(self):
         """Check if an EMG file is currently loaded.
 
@@ -91,7 +98,8 @@ class FileUploadFunc:
                 error = 1
 
         if emgfile:
-            FileUploadFunc.file = emg.sort_mus(emgfile)
+            # FileUploadFunc.file = emg.sort_mus(emgfile)
+            FileUploadFunc.file = emgfile
             self.file_path = file_path
             self.import_data(analysis_plot, FileUploadFunc.file)
 
