@@ -455,7 +455,7 @@ class DecompositionApp(QMainWindow):
             from core.utils.postprocessing.decomposition_state import DecompositionState
 
             # Save the state and get metadata
-            state_meta = DecompositionState.save_state(self, raw_fileid=my_file_id)
+            state_meta = DecompositionState.save_state(self, raw_fileid=self.raw_fileid)
 
             # Add to dashboard's recent visualizations if parent exists
             if hasattr(self, 'parent') and callable(self.parent):

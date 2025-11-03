@@ -12,6 +12,7 @@ import pyqtgraph as pg
 # Import UI setup function
 from core.database.database import create_new_session, get_fileid_by_path, insert_files, upsert_file_versions
 from core.utils.io.filesize_formatter import filesize_formatter
+from core.utils.session.convert_h5 import save_as_h5
 from ui.ImportDataWindowUI import setup_ui, update_sidebar_selection
 from ui.components.SegmentSessionPage import SegmentSessionPage
 from ui.components.VisualisationPage import VisualisationPage
@@ -215,12 +216,18 @@ class ImportDataWindow(QMainWindow):
                     # Call the open_otb_plus function with the correct parameters
                     self.emg_obj.open_otb_plus(full_path, self)
 
+                    base_name = os.path.splitext(file)[0]
+
                     # Create a default save name for .mat files
-                    savename = os.path.join(path, file + "_processed.mat")
+                    savename = os.path.join(path, f"{base_name}_processed.mat")
+                    h5_processed_savename = os.path.join(path, f"{base_name}_processed.h5")
+                    h5_readin_savename = os.path.join(path, f"{base_name}_readin.h5")
 
                     # Save the data as a .mat file in the background
                     if self.emg_obj.signal_dict:
                         self.save_mat_in_background(savename, {"signal": self.emg_obj.signal_dict}, True, True)
+                        save_as_h5(self.emg_obj.signal_dict, h5_processed_savename, raw_filepath=full_path)
+                        save_as_h5(self.emg_obj.signal_dict, h5_readin_savename, raw_filepath=full_path)
                 elif ext == '.mat':
                     # Call the open_otb_plus function with the correct parameters
                     self.emg_obj.open_mat(full_path)
@@ -277,11 +284,13 @@ class ImportDataWindow(QMainWindow):
 
                 if fileid:
                     # File exists: just upsert version and update last_opened
-                    versionid = upsert_file_versions(full_path, fileid, "readin")
+                    versionid = upsert_file_versions(h5_readin_savename, fileid, "readin")
+                    versionid = upsert_file_versions(h5_processed_savename, fileid, "processed")
                 else:
                     # File not in DB: create a new session, insert, then upsert version
                     fileid = insert_files(full_path, file, sessionid)
-                    versionid = upsert_file_versions(full_path, fileid, "readin")
+                    versionid = upsert_file_versions(h5_readin_savename, fileid, "readin")
+                    versionid = upsert_file_versions(h5_processed_savename, fileid, "processed")
 
                 self.raw_fileid = fileid
 
@@ -417,7 +426,8 @@ class ImportDataWindow(QMainWindow):
 
     def enable_segment_session(self):
         if self.segment_session_button and self.pathname and self.filename:
-            filename = os.path.join(self.pathname, self.filename) + "_processed.mat"
+            base_name = os.path.splitext(self.filename)[0]
+            filename = os.path.join(self.pathname, f"{base_name}_processed.mat")
             self.segment_session = SegmentSessionPage(filename, self.add_file_to_recent_files, self.update_recent_files)
 
             self.segment_session_button.setEnabled(True)
