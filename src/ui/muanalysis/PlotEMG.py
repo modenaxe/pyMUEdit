@@ -686,7 +686,7 @@ class PlotEMGButton(QWidget):
 
     def init_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 0, 10, 0)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         plot_emg_btn = ActionButton("Plot EMG")
         plot_emg_btn.clicked.connect(lambda: self.open_plot_emg_btn())

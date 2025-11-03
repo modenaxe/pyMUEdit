@@ -37,7 +37,7 @@ class SignalEditing(QWidget):
         self.analysis_plot = analysis_plot
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 0, 10, 10)
+        layout.setContentsMargins(0, 0, 0, 0)
         btn = ActionButton("Signal Editing", parent=self)
         btn.clicked.connect(lambda: self.show_window())
         btn.setMinimumHeight(40)

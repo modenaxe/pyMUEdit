@@ -173,6 +173,10 @@ class MUAnalysis(QWidget):
         mu_editing_layout = QVBoxLayout(mu_editing_widget)
         mu_editing_layout.setContentsMargins(0, 0, 0, 0)
         mu_editing_layout.setSpacing(5)
+        sort_button = ActionButton("Sort MUs")
+        sort_button.clicked.connect(lambda: self.mu.sort_mus(self.analysis_plot, self.mu.file))
+        sort_button.setMinimumHeight(40)
+        mu_editing_layout.addWidget(sort_button)
         remove_mu_section = RemoveMUSection(
             self.mu, self.analysis_plot, self.colors, parent=sidebar)
         signal_editing = SignalEditing(

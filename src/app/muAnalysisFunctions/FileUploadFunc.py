@@ -105,6 +105,20 @@ class FileUploadFunc:
 
         return error
 
+    def sort_mus(self, analysis_plot, emgfile):
+        """Sorts motor units in the emgfile and updates the current file
+        Params: emgfile
+        Returns: sorted emgfile
+        """
+        if not self.data_loaded():
+            ErrorDialog("No file has been loaded", "Error").exec_()
+            return
+
+        sorted_file = emg.sort_mus(emgfile)
+        FileUploadFunc.file = sorted_file
+        self.plot_idr(emgfile, analysis_plot)
+        return sorted_file
+
     def import_data(self, analysis_plot, emgfile):
         """Plots files in centre if the file is valid
         Params: filepath, analysis_plot: centre plot instance, emgfile

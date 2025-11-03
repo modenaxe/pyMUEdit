@@ -229,7 +229,7 @@ class MotorUnitPropertiesButton(QWidget):
 
     def init_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 0, 10, 0)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         mu_properties_btn = ActionButton("Motor Unit Properties")
         mu_properties_btn.clicked.connect(

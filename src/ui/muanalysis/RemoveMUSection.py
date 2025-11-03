@@ -41,7 +41,7 @@ class RemoveMUSection(QWidget):
         """
         container = QFrame()
         container_layout = QVBoxLayout(container)
-        container_layout.setContentsMargins(10, 10, 10, 0)
+        container_layout.setContentsMargins(0, 0, 0, 0)
         container_layout.setSpacing(8)
 
         remove_mu_layout = QHBoxLayout()

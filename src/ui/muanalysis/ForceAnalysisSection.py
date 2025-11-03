@@ -11,6 +11,7 @@ class ForceAnalysisSection(QWidget):
         super().__init__(sidebar)
 
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
         rfd_layout = QHBoxLayout()
         rfd_value = AnalysisInput("", "")
         rfd_value.set("50,100,150,200")
