@@ -60,6 +60,8 @@ class ChannelViewer(QWidget):
         self.curves = []
         self.plot_items = []
 
+        fs = self.emg_obj.signal_dict.get("fsamp") # Sampling frequency in Hz, number of samples per second
+
         for i, index in enumerate(self.channel_indices):
             p = self.plot_widget.addPlot(row=i, col=0)
             # Show x axis grid lines only
@@ -71,7 +73,7 @@ class ChannelViewer(QWidget):
 
             # Plot data
             y = self.entire_emg_data[index]
-            x = np.arange(len(y))
+            x = np.arange(len(y)) / fs # Time in seconds
             curve = p.plot(x, y, pen=pg.mkPen(color=colours[i], width=1))
             self.curves.append(curve)
             self.plot_items.append(p)
