@@ -1,19 +1,13 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QMessageBox, QPushButton,
-                             QVBoxLayout, QWidget)
-
+from PyQt5.QtWidgets import (QVBoxLayout, QWidget)
 from app.muAnalysisFunctions.ConductionVelocityDialog import \
     ConductionVelocityDialog
 from app.muAnalysisFunctions.MotorUnitTrackingDialog import \
     MotorUnitTrackingDialog
-from ui.components.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.AnalysisDropdown import \
     AnalysisDropdown
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
-from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.SubsectionTitle import SubsectionTitle
+from ui.components import ActionButton
 from ui.muanalysis.PIC import PICDialog
 
 
@@ -70,9 +64,9 @@ class AdvancedTools(QWidget):
         self.matrix_code_dropdown = matrix_code_dropdown
 
         # advanced analysis button
-        advanced_analysis_btn = GeneralButton(
-            "Advanced Analysis", lambda: self.show_popup(), parent=self
-        )
+        advanced_analysis_btn = ActionButton("Advanced Analysis", parent=self)
+        advanced_analysis_btn.clicked.connect(lambda: self.show_popup())
+        advanced_analysis_btn.setMinimumHeight(40)
         adv_layout.addWidget(advanced_analysis_btn, stretch=1)
 
         self.analysis_tools_dropdown.currentTextChanged.connect(
