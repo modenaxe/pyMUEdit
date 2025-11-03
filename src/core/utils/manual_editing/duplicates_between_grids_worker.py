@@ -119,7 +119,7 @@ class duplicates_between_grids_worker(QThread):
                     self.MUedition["edition"]["Dischargetimes"] = self.original_data[1]
                     self.MUedition["edition"]["silval"] = self.original_data[2]
                     self.MUedition["edition"]["silvalcon"] = self.original_data[3]
-                    print("Batch processing interruption!")
+                    logger.warning("Batch processing interruption!")
                     return
 
             # Update the data

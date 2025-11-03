@@ -37,7 +37,7 @@ class duplicates_within_grids_worker(QThread):
                     self.MUedition["edition"]["Dischargetimes"] = self.original_data[1]
                     self.MUedition["edition"]["silval"] = self.original_data[2]
                     self.MUedition["edition"]["silvalcon"] = self.original_data[3]
-                    print("Batch processing interruption!")
+                    logger.warning("Batch processing interruption!")
                     return
                 percent = int(array_idx / total_arrays * 100)
                 self.progress_changed.emit(

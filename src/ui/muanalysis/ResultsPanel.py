@@ -62,7 +62,7 @@ class ResultsPanel(QFrame):
                     writer.writeheader()
                     writer.writerows(results)
 
-                print(f"Data saved to {file_path}")
+                logger.debug(f"Data saved to {file_path}")
             except Exception as e:
                 logger.exception(f"Error saving file: {e}")
 
