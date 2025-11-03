@@ -14,7 +14,6 @@ from ui.components.muAnalysisComponents.AnalysisPlot import AnalysisPlot
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CollapsibleSection import \
     CollapsibleSection
-from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.muanalysis.AdvancedTools import AdvancedTools
 from ui.muanalysis.FileSection import FileSection
 from ui.muanalysis.ForceAnalysisSection import ForceAnalysisSection
@@ -25,6 +24,9 @@ from ui.muanalysis.ResultSelection import ResultSelection
 from ui.muanalysis.ResultsPanel import ResultsPanel
 from ui.muanalysis.ResultsTable import ResultsTable
 from ui.muanalysis.SignalEditing import SignalEditing
+
+from ui.components import CleanTheme as Theme
+from ui.components import ActionButton
 
 
 # legacy code
@@ -51,14 +53,14 @@ class MUAnalysis(QWidget):
         self.prop = MUPropertiesFunc()
 
         self.colors = {
-            "bg_main": "#f8f9fa",
-            "bg_card": "#ffffff",
-            "bg_sidebar": "#f8f9fa",
-            "border_light": "#e9ecef",
+            "bg_main": Theme.BG_MAIN,
+            "bg_card": Theme.BG_CARD,
+            "bg_sidebar": Theme.BG_CARD,
+            "border_light": Theme.BORDER,
             "shadow": QColor(0, 0, 0, 25),
-            "text_primary": "#212529",
-            "text_secondary": "#6c757d",
-            "text_title": "#343a40",
+            "text_primary": Theme.TEXT_PRIMARY,
+            "text_secondary": Theme.TEXT_SECONDARY,
+            "text_title": Theme.TEXT_PRIMARY,
             "button_dark_bg": "#343a40",
             "button_dark_hover": "#495057",
             "button_grey_bg": "#e9ecee",
@@ -93,7 +95,7 @@ class MUAnalysis(QWidget):
         top_bar.setStyleSheet(
             f"""
             #topBar {{
-                background-color: #ececec;
+                background-color: {Theme.BG_MAIN};
                 border: none;
             }}
             """
@@ -118,8 +120,9 @@ class MUAnalysis(QWidget):
         top_bar_layout.addWidget(self.load_file_button)
 
         # save as button
-        self.save_as_btn = GeneralButton(
-            "Save as", lambda: self.handle_save_as())
+        self.save_as_btn = ActionButton("Save as")
+        self.save_as_btn.clicked.connect(lambda: self.handle_save_as())
+        self.save_as_btn.setMinimumHeight(40)
         top_bar_layout.addWidget(self.save_as_btn)
 
         return top_bar
@@ -287,8 +290,10 @@ class MUAnalysis(QWidget):
 
         # resize button
         resize_file = Resize(self.mu, self.analysis_plot)
-        resize_btn = GeneralButton(
-            "Resize", lambda: resize_file.resize())
+        resize_btn = ActionButton(
+            "Resize")
+        resize_btn.clicked.connect(lambda: resize_file.resize())
+        resize_btn.setMinimumHeight(40)
         resize_btn.setFixedWidth(250)
         self.analysis_plot.set_resize(resize_btn)
         resize_btn_row = QHBoxLayout()

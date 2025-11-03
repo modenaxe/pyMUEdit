@@ -2,10 +2,7 @@ from PyQt5.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout
 
 from core.muAnalysisCore.ResetButton import ResetButton
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.GeneralRedButton import \
-    GeneralRedButton
+from ui.components import ActionButton
 
 
 class FileSection(QFrame):
@@ -21,22 +18,32 @@ class FileSection(QFrame):
         layout.addWidget(title_label)
         button_row = QHBoxLayout()
         layout.addLayout(button_row)
-        self.load_btn = GeneralButton(
-            'Load File', lambda: mu.select_file_button_pushed(
-                analysis_plot, False))
+        self.load_btn = ActionButton('Load File')
+        self.load_btn.clicked.connect(
+            lambda: mu.select_file_button_pushed(
+                analysis_plot, False)
+        )
+        self.load_btn.setMinimumHeight(40)
         button_row.addWidget(self.load_btn, stretch=1)
         self.reset_btn = ResetButton('Reset')
         self.reset_btn.setStyleSheet(
             """
             QPushButton {
-                background-color: #475058;
+                background-color: #333333;
                 color: #fff;
-                border-radius: 5px;
-                font-size: 1em;
+                border: none;
+                border-radius: 4px;
                 min-height: 40px;
             }
             QPushButton:hover {
-                background-color: #495057;
+                background-color: #555555;
+            }
+            QPushButton:pressed {
+                background-color: #222222;
+            }
+            QPushButton:disabled {
+                background-color: #888888;
+                color: #dddddd;
             }
             """
         )
