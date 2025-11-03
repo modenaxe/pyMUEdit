@@ -156,7 +156,7 @@ class MUAnalysis(QWidget):
 
         scroll_content = QWidget()
         scroll_layout = QVBoxLayout(scroll_content)
-        scroll_layout.setContentsMargins(0, 0, 0, 0)
+        scroll_layout.setContentsMargins(0, 0, 10, 0)
         scroll_layout.setSpacing(10)
 
         # title
