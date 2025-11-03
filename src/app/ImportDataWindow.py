@@ -228,6 +228,7 @@ class ImportDataWindow(QMainWindow):
                         self.save_mat_in_background(savename, {"signal": self.emg_obj.signal_dict}, True, True)
                         save_as_h5(self.emg_obj.signal_dict, h5_processed_savename, raw_filepath=full_path)
                         save_as_h5(self.emg_obj.signal_dict, h5_readin_savename, raw_filepath=full_path)
+
                 elif ext == '.mat':
                     # Call the open_otb_plus function with the correct parameters
                     self.emg_obj.open_mat(full_path)

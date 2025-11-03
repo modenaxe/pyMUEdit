@@ -1,3 +1,4 @@
+import re
 import sqlite3
 from pathlib import Path
 from datetime import datetime
@@ -262,3 +263,14 @@ def get_fileid_by_path(filepath: str):
     with get_connection() as conn:
         row = conn.execute("SELECT fileid FROM files WHERE filepath = ?", (filepath,)).fetchone()
         return row["fileid"] if row else None
+
+def find_raw_fileid_from_upload(upload_path, conn):
+    base_name = Path(upload_path).stem  # trial1_decomp
+    raw_name = re.sub(r"_(decomp|proc|edit|processed|edited|readin)$", "", base_name)
+
+    cursor = conn.execute("""
+        SELECT fileid FROM files
+        WHERE filename LIKE ? || '%'
+    """, (raw_name,))
+    row = cursor.fetchone()
+    return row["fileid"] if row else None
