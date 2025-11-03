@@ -32,9 +32,9 @@ class FileUploadFunc:
         """Check if an EMG file is currently loaded.
 
         Returns:
-            Boolean indicating whether self.file contains valid data
+            Boolean indicating whether FileUploadFunc.file contains valid data
         """
-        return self.file is not None
+        return FileUploadFunc.file is not None
 
     def select_file_button_pushed(self, analysis_plot, json):
         """Method triggered on file uplaod button, allowing only valid files and importing the data from a file dialog
@@ -85,9 +85,11 @@ class FileUploadFunc:
                 error = 1
 
         if emgfile:
-            self.file = emg.sort_mus(emgfile)
+            FileUploadFunc.file = emg.sort_mus(emgfile)
             self.file_path = file_path
-            self.import_data(analysis_plot, self.file)
+            self.import_data(analysis_plot, FileUploadFunc.file)
+
+        print(self.data_loaded())
 
         return error
 
@@ -97,7 +99,7 @@ class FileUploadFunc:
         Returns: None
         """
         if emgfile:
-            fig = emg.plot_idr(self.file, showimmediately=False)
+            fig = emg.plot_idr(FileUploadFunc.file, showimmediately=False)
             canvas = SaveablePlot(fig)  # plotting in centre with the data now handled
             analysis_plot.display_fig(canvas)
         else:
