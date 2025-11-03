@@ -36,6 +36,9 @@ def main():
     # set application icon
     app.setWindowIcon(QIcon("assets/pyMUEdit-icon.png"))
 
+    # initialise database
+    init_db()
+
     # Create and show the main window
     window = ImportDataWindow()
     window.show()
