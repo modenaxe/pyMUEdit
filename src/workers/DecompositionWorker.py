@@ -59,7 +59,8 @@ class DecompositionWorker(QThread):
                 self.emg_obj.batch_w_target()
             else:
                 self.emg_obj.batch_wo_target()
-
+            if not self.emg_obj.signal_dict["batched_data"]:
+                raise ValueError("Batching produced 0 segments. Check target or plateau coordinates.")
             # =================== CONVOLUTIVE SPHERING ==================
             self.progress.emit("Beginning decomposition...", 0.25)
 
