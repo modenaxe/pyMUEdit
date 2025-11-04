@@ -60,7 +60,8 @@ class ChannelViewer(QWidget):
         self.curves = []
         self.plot_items = []
 
-        fs = self.emg_obj.signal_dict.get("fsamp") # Sampling frequency in Hz, number of samples per second
+        # Sampling frequency in Hz, number of samples per second
+        fs = self.emg_obj.signal_dict.get("fsamp")
 
         for i, index in enumerate(self.channel_indices):
             p = self.plot_widget.addPlot(row=i, col=0)
@@ -70,16 +71,21 @@ class ChannelViewer(QWidget):
             p.setLabel('left', f"{index + 1}", **
                        {"color": "black", "font-size": "12pt"})
             p.getAxis('left').setTicks([])  # Hide y axis ticks
-            
+
             # Plot data
             y = self.entire_emg_data[index]
-            x = np.arange(len(y)) / fs # Time in seconds
-            subsample_step = 300 # Subsampling which decreases number of points plotted to improve performance
+            x = np.arange(len(y)) / fs  # Time in seconds
+            # Subsampling which decreases number of points plotted to improve
+            # performance
+            subsample_step = 300
 
-            y_sub = y[::subsample_step] # Use splicing to keep every nth sample
+            # Use splicing to keep every nth sample
+            y_sub = y[::subsample_step]
             x_sub = x[::subsample_step]
 
-            curve = p.plot(x_sub, y_sub, pen=pg.mkPen(color=colours[i], width=1))
+            curve = p.plot(
+                x_sub, y_sub, pen=pg.mkPen(
+                    color=colours[i], width=1))
             self.curves.append(curve)
             self.plot_items.append(p)
 
