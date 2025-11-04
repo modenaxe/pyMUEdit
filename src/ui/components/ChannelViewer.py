@@ -76,8 +76,8 @@ class ChannelViewer(QWidget):
             x = np.arange(len(y)) / fs # Time in seconds
             subsample_step = 300 # Subsampling which decreases number of points plotted to improve performance
 
-            y_sub = y[0:len(y):subsample_step] # Use splicing to keep every nth sample
-            x_sub = x[0:len(x):subsample_step]
+            y_sub = y[::subsample_step] # Use splicing to keep every nth sample
+            x_sub = x[::subsample_step]
 
             curve = p.plot(x_sub, y_sub, pen=pg.mkPen(color=colours[i], width=1))
             self.curves.append(curve)
