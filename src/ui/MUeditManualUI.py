@@ -583,7 +583,7 @@ def create_visualization_tab(main_window):
 
     main_window.overlay_switch = ToggleSwitch()
     main_window.overlay_switch.toggled.connect(
-        lambda checked: overlay_file_button_pushed(main_window) if checked else clear_overlay_data(main_window, checked)
+        lambda checked: overlay_file_button_pushed(main_window) if checked else clear_overlay_data(main_window)
     )
     row5_lay.addWidget(main_window.overlay_switch)
 
@@ -1028,7 +1028,7 @@ def create_plot_widget(main_window, y_label, x_label=""):
             super().__init__(*args, **kwargs)
             self.zoom_slider = zoom_slider
 
-        def wheelEvent(self, event):
+        def wheelEvent(self, event, *args, **kwargs):
             event.accept()
             delta = event.delta()
             cur = self.zoom_slider.get_slider_value()
@@ -1037,6 +1037,8 @@ def create_plot_widget(main_window, y_label, x_label=""):
                 self.zoom_slider.set_slider_value(cur + 1)
             elif delta < 0:
                 self.zoom_slider.set_slider_value(cur - 1)
+            
+            super().wheelEvent(event, *args, **kwargs)
 
         def keyPressEvent(self, event):
             if event.key() in (

@@ -15,7 +15,7 @@ import os
 from PyQt5.QtWidgets import QFileDialog
 from app.muEditFunctions.importer import import_data
 
-def overlay_file_button_pushed(self):
+def overlay_file_button_pushed(self, checked=True):
     """
     Overlays the current decomposition plot with 
     a MATLAB decomposition on top.
@@ -26,6 +26,10 @@ def overlay_file_button_pushed(self):
     )
 
     if not filepath:
+        if hasattr(self, "overlay_switch"):
+            self.overlay_switch.blockSignals(True)
+            self.overlay_switch.setChecked(False)
+            self.overlay_switch.blockSignals(False)
         return
     
     filename = os.path.basename(filepath)
