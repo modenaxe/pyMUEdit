@@ -172,15 +172,28 @@ class MUAnalysis(QWidget):
         # title_div_layout.addWidget(title_label)
         # scroll_layout.addWidget(title_div)
 
+        # MU view settings
+        mu_view_widget = QWidget()
+        mu_view_layout = QVBoxLayout(mu_view_widget)
+        mu_view_layout.setContentsMargins(0, 0, 0, 0)
+        mu_view_layout.setSpacing(5)
+        view_button = ActionButton("View MUs")
+        view_button.clicked.connect(lambda: self.mu.plot_idr(self.mu.file, self.analysis_plot))
+        view_button.setMinimumHeight(40)
+        mu_view_layout.addWidget(view_button)
+        sort_button = ActionButton("Sort MUs")
+        sort_button.clicked.connect(lambda: self.mu.sort_mus(self.analysis_plot, self.mu.file))
+        sort_button.setMinimumHeight(40)
+        mu_view_layout.addWidget(sort_button)
+        mu_view_section = CollapsiblePanel("MU View")
+        mu_view_section.add_widget(mu_view_widget)
+        scroll_layout.addWidget(mu_view_section)
+
         # signal editing + remove mu section
         mu_editing_widget = QWidget()
         mu_editing_layout = QVBoxLayout(mu_editing_widget)
         mu_editing_layout.setContentsMargins(0, 0, 0, 0)
         mu_editing_layout.setSpacing(5)
-        sort_button = ActionButton("Sort MUs")
-        sort_button.clicked.connect(lambda: self.mu.sort_mus(self.analysis_plot, self.mu.file))
-        sort_button.setMinimumHeight(40)
-        mu_editing_layout.addWidget(sort_button)
         remove_mu_section = RemoveMUSection(
             self.mu, self.analysis_plot, self.colors, parent=sidebar)
         signal_editing = SignalEditing(
