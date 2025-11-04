@@ -1,5 +1,4 @@
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt
 import numpy as np
 import pandas as pd
 import copy
@@ -11,6 +10,10 @@ from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from app.muAnalysisFunctions.electrode_layouts import get_electrode_grid
+
+from ui.components import ActionButton
+
+from openhdemg.library import plot_muaps_for_cv, sta, xcc_sta, sort_rawemg, double_diff
 
 
 # --- Utility Functions ---
@@ -164,21 +167,21 @@ class ConductionVelocityDialog(QDialog):
         return f"""
             QDialog {{ background: {CleanTheme.BG_CARD}; }}
             QLabel {{ color: {CleanTheme.TEXT_PRIMARY}; font-size: 14px; }}
-            QGroupBox {{ 
-                border: 1px solid {CleanTheme.BORDER}; border-radius: 6px; 
-                margin-top: 10px; background: {CleanTheme.BG_MAIN}; 
+            QGroupBox {{
+                border: 1px solid {CleanTheme.BORDER}; border-radius: 6px;
+                margin-top: 10px; background: {CleanTheme.BG_CARD};
             }}
-            QGroupBox:title {{ 
-                subcontrol-origin: margin; left: 10px; padding: 0 3px; 
-                color: {CleanTheme.TEXT_SECONDARY}; 
+            QGroupBox:title {{
+                subcontrol-origin: margin; left: 10px; padding: 0 3px;
+                color: {CleanTheme.TEXT_SECONDARY};
             }}
-            QComboBox, QSpinBox, QTextEdit {{ 
-                background: {CleanTheme.BG_MAIN}; color: {CleanTheme.TEXT_PRIMARY}; 
-                border: 1px solid {CleanTheme.BORDER}; border-radius: 4px; font-size: 14px; 
+            QComboBox, QSpinBox, QTextEdit {{
+                background: {CleanTheme.BG_CARD}; color: {CleanTheme.TEXT_PRIMARY};
+                border: 1px solid {CleanTheme.BORDER}; border-radius: 4px; font-size: 14px;
             }}
-            QPushButton {{ 
-                background: {CleanTheme.ANALYSIS_BG_BUTTON}; color: {CleanTheme.ANALYSIS_TEXT_BUTTON}; 
-                border-radius: 5px; padding: 6px 16px; font-weight: bold; 
+            QPushButton {{
+                background: {CleanTheme.ANALYSIS_BG_BUTTON}; color: {CleanTheme.ANALYSIS_TEXT_BUTTON};
+                border-radius: 5px; padding: 6px 16px; font-weight: bold;
             }}
             QPushButton:hover {{ background: {CleanTheme.ANALYSIS_BG_DROPDOWN}; }}
         """
@@ -284,8 +287,9 @@ class ConductionVelocityDialog(QDialog):
         row_group.setLayout(row_layout)
 
         # Estimate button
-        self.estimate_btn = QPushButton("Estimate")
+        self.estimate_btn = ActionButton("Estimate")
         self.estimate_btn.clicked.connect(self._on_estimate)
+        self.estimate_btn.setMinimumHeight(40)
 
         # Add to controls
         for widget in [mu_group, col_group, row_group, self.estimate_btn]:
@@ -307,8 +311,9 @@ class ConductionVelocityDialog(QDialog):
             ["Column", "CV (m/s)", "RMS (µV)", "XCC"]
         )
 
-        copy_btn = QPushButton("Copy results")
+        copy_btn = ActionButton("Copy results")
         copy_btn.clicked.connect(self._copy_results)
+        self.estimate_btn.setMinimumHeight(40)
 
         results_layout.addWidget(self.results_table)
         results_layout.addWidget(copy_btn)
@@ -640,180 +645,44 @@ class ConductionVelocityDialog(QDialog):
         showing the signal at each electrode position with cross-correlation values overlaid.
         """
 
-        def compute_muaps(file, mu_index, window):
-            raw_signal = file.get("RAW_SIGNAL")
-            mu_pulses = file.get("MUPULSES")
-            fsamp = file.get("FSAMP", 2048)
-
-            if raw_signal is None or mu_pulses is None:
-                return None, fsamp, {}
-
-            if isinstance(raw_signal, dict):
-                raw_signal = pd.DataFrame(raw_signal)
-            if isinstance(raw_signal, pd.DataFrame):
-                raw_signal = raw_signal.values
-
-            pulses = (
-                mu_pulses[mu_index]
-                if isinstance(mu_pulses, (list, tuple)) and mu_index < len(mu_pulses)
-                else []
-            )
-            pulses = (
-                np.array(pulses, dtype=int)
-                if len(pulses) > 0
-                else np.array([], dtype=int)
-            )
-
-            valid_pulses = pulses[
-                (pulses - window >= 0) & (pulses + window + 1 <= raw_signal.shape[0])
-            ]
-
-            seg_len = 2 * window + 1
-            muaps = np.full((64, seg_len), np.nan)
-            sta_dict = {}
-
-            for ch in range(min(raw_signal.shape[1], 64)):
-                segments = []
-                for p in valid_pulses:
-                    seg = raw_signal[p - window : p + window + 1, ch]
-                    segments.append(seg - np.mean(seg))
-                if segments:
-                    muaps[ch, :] = np.mean(segments, axis=0)
-                    sta_dict[ch] = np.mean(segments, axis=0)
-
-            return muaps, fsamp, sta_dict
-
         # Get parameters
         emgfile = FileUploadFunc.file
         if emgfile is None:
             self._show_message("No EMG file loaded")
             return
 
-        values = self._get_ui_values()
-        window = 50
-        muaps, fsamp, sta_dict = compute_muaps(emgfile, values["mu"], window)
-
         fig = self.plot_canvas.figure
         fig.clear()
+
+        code = "GR08MM1305"
+        orientation = 180
+
+        sorted_rawemg = sort_rawemg(
+            emgfile=emgfile,
+            code=code,
+            orientation=orientation
+        )
+
+        dd = double_diff(sorted_rawemg)
+
+        sta_dict = sta(emgfile, dd)
+        values = self._get_ui_values()
+
+        mu = values["mu"]
+        muaps = sta_dict[mu]
 
         if muaps is None:
             self._show_message("MUAPs not available")
             return
 
-        # Get grid and compute XCC values
-        grid = get_electrode_grid(code="GR08MM1305", orientation=180)
-        n_rows, n_cols = len(grid), len(grid[0])
+        xcc_values = xcc_sta(sta_dict)
 
-        xcc_values = {}
-        if sta_dict:
-            for r in range(max(0, values["from_row"]), min(11, values["to_row"] + 1)):
-                for c in range(n_cols):
-                    ch = grid[r][c]
-                    if np.isnan(ch) or r == 0:  # Skip row 0 for XCC
-                        continue
-                    ch = int(ch)
-
-                    adj_ch = grid[r - 1][c]  # Channel above
-                    if not np.isnan(adj_ch):
-                        adj_ch = int(adj_ch)
-                        if ch in sta_dict and adj_ch in sta_dict:
-                            try:
-                                xcc = norm_xcorr(
-                                    sta_dict[ch], sta_dict[adj_ch], out="max"
-                                )
-                                if not np.isnan(xcc):
-                                    xcc_values[ch] = xcc
-                            except:
-                                pass
-
-        # Plot setup
-        time_ms = np.arange(-window, window + 1) * 1000.0 / fsamp
-        valid_muaps = muaps[np.isfinite(muaps)]
-
-        if valid_muaps.size > 0:
-            ymin, ymax = np.min(valid_muaps), np.max(valid_muaps)
-            if np.isclose(ymin, ymax):
-                ymin, ymax = ymin - 1, ymax + 1
-            else:
-                yrange = ymax - ymin
-                ymin, ymax = ymin - 0.05 * yrange, ymax + 0.05 * yrange
-        else:
-            ymin, ymax = -1, 1
-
-        # Create subplots
-        axs = fig.subplots(11, n_cols, squeeze=False)
-
-        # Add column headers
-        for c in range(n_cols):
-            axs[0, c].text(
-                0.5,
-                1.15,
-                f"col{c}",
-                transform=axs[0, c].transAxes,
-                fontsize=10,
-                fontweight="bold",
-                ha="center",
-                va="bottom",
-            )
-
-        # Plot grid
-        for display_r in range(11):
-            for c in range(n_cols):
-                ch = grid[display_r][c]
-                ax = axs[display_r][c]
-                ax.clear()
-
-                if np.isnan(ch):
-                    ax.axis("off")
-                    continue
-
-                ch = int(ch)
-
-                # Add row labels
-                if c == 0:
-                    ax.text(
-                        -0.15,
-                        0.5,
-                        str(display_r),
-                        transform=ax.transAxes,
-                        fontsize=10,
-                        fontweight="bold",
-                        ha="right",
-                        va="center",
-                    )
-
-                # Plot MUAP
-                if muaps[ch, :].shape[0] > 0 and np.any(np.isfinite(muaps[ch, :])):
-                    ax.plot(time_ms, muaps[ch, :], color="black", linewidth=1)
-
-                # Add XCC value
-                if ch in xcc_values:
-                    xcc_val = xcc_values[ch]
-                    color = "black" if xcc_val >= 0.8 else "red"
-                    ax.text(
-                        0.05,
-                        0.95,
-                        f"{xcc_val:.2f}",
-                        transform=ax.transAxes,
-                        fontsize=8,
-                        color=color,
-                        fontweight="bold",
-                        verticalalignment="top",
-                        horizontalalignment="left",
-                    )
-
-                # Styling
-                ax.set_xticks([])
-                ax.set_yticks([])
-                ax.set_ylim([ymin, ymax])
-                for spine in ax.spines.values():
-                    spine.set_visible(False)
-
-        # Layout
-        fig.tight_layout(pad=0.5)
-        fig.subplots_adjust(
-            top=0.92, bottom=0.02, left=0.08, right=0.98, wspace=0.15, hspace=0.05
+        self.plot_canvas.figure = plot_muaps_for_cv(
+            sta_dict=sta_dict[mu],
+            xcc_sta_dict=xcc_values[mu],
+            showimmediately=False
         )
+
         self.plot_canvas.draw()
 
     def _fill_results_table(self, table_data):
