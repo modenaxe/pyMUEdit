@@ -372,6 +372,17 @@ def display_selected_mus(self, checked_mus, pluse_train_color="#D95535"):
         self.plots_layout.addWidget(self.dr_plot, stretch=2)
         update_dr_plot(self, discharge_times)
 
+        if getattr(self, "overlay_data", None) is not None:
+            try:
+                pulsetrain_overlay = self.overlay_data["edition"]["Pulsetrain"][array_idx][mu_idx]
+                discharge_overlay = self.overlay_data["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
+
+                update_spike_train_plot(self, array_idx, mu_idx, pulsetrain_overlay,
+                                color="#1E90FF", overlay=True)
+                update_dr_plot(self, discharge_overlay, overlay=True, color="#1E90FF")
+            except Exception as e:
+                print(f"Failed to overlay for array {array_idx} and MU {mu_idx}: {e}")
+
         def on_xrange_changed(_, ranges):
             if self.update_plot_setRange:
                 return
@@ -379,7 +390,6 @@ def display_selected_mus(self, checked_mus, pluse_train_color="#D95535"):
 
         self.dr_plot.setXLink(self.spiketrain_plot)
 
-        # self.dr_plot.getViewBox().sigXRangeChanged.connect(on_xrange_changed, type=Qt.UniqueConnection) 
         self.spiketrain_plot.getViewBox().sigXRangeChanged.connect(on_xrange_changed, type=Qt.UniqueConnection)
 
         self.resetPlot = False
