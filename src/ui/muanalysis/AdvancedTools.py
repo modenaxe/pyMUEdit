@@ -14,7 +14,7 @@ from ui.muanalysis.PIC import PICDialog
 class AdvancedTools(QWidget):
     """Dialog and drops down for advanced tool analysis"""
 
-    def __init__(self, items=None, parent=None):
+    def __init__(self, parent=None):
         super().__init__(parent)
 
         adv_layout = QVBoxLayout(self)
