@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QHBoxLayout
 
 from ui.components.muAnalysisComponents.AnalysisDropdownDialog import \
     AnalysisDropdownDialog
-from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
+from ui.components import ActionButton
 
 
 class ComputeThresholdSection(QHBoxLayout):
@@ -26,11 +26,12 @@ class ComputeThresholdSection(QHBoxLayout):
         event_ = AnalysisDropdownDialog(
             "Event", items=['rt', 'dert', 'rt_dert'])
         type_ = AnalysisDropdownDialog("Type", items=['abs', 'rel', 'abs_rel'])
-        button = GeneralButton(
-            "Compute Thresholds",
+        button = ActionButton("Compute Thresholds")
+        button.clicked.connect(
             lambda: func.compute_thresh(
-                event_.currentText(),
-                type_.currentText()))
+                event_.currentText(), type_.currentText())
+        )
+        button.setMinimumHeight(40)
 
         self.addWidget(button)
         self.addWidget(event_)
