@@ -28,11 +28,7 @@ from MUeditManual import MUeditManual
 
 
 class DecompositionApp(QMainWindow):
-<<<<<<< HEAD
     def __init__(self, emg_obj=None, filename=None, pathname=None, imported_signal=None, raw_fileid = None, config=None, parent=None):
-=======
-    def __init__(self, emg_obj=None, filename=None, pathname=None, imported_signal=None, config=None, parent=None):
->>>>>>> 1aa4342b264a5ee62b8a82c1cdd6c3fcd8dee4bd
         super().__init__(parent)
 
         # Initialize variables
@@ -41,11 +37,8 @@ class DecompositionApp(QMainWindow):
         self.emg_obj = emg_obj
         self.imported_signal = imported_signal
 
-<<<<<<< HEAD
         self.raw_fileid = raw_fileid
 
-=======
->>>>>>> 1aa4342b264a5ee62b8a82c1cdd6c3fcd8dee4bd
         self.MUdecomp = {"config": config}
         self.Configuration = None
         self.MUedition = None
@@ -387,11 +380,6 @@ class DecompositionApp(QMainWindow):
 
         # Start the worker thread
         self.decomp_worker.start()
-<<<<<<< HEAD
-
-=======
-            
->>>>>>> 1aa4342b264a5ee62b8a82c1cdd6c3fcd8dee4bd
 
     def on_decomposition_complete(self, result):
         """Handle successful completion of decomposition"""
@@ -466,11 +454,7 @@ class DecompositionApp(QMainWindow):
             from core.utils.postprocessing.decomposition_state import DecompositionState
 
             # Save the state and get metadata
-<<<<<<< HEAD
             state_meta = DecompositionState.save_state(self, raw_fileid=self.raw_fileid)
-=======
-            state_meta = DecompositionState.save_state(self)
->>>>>>> 1aa4342b264a5ee62b8a82c1cdd6c3fcd8dee4bd
 
             # Add to dashboard's recent visualizations if parent exists
             if hasattr(self, 'parent') and callable(self.parent):

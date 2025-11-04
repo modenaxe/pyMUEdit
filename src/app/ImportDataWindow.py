@@ -10,13 +10,10 @@ import pandas as pd
 import pyqtgraph as pg
 
 # Import UI setup function
-<<<<<<< HEAD
 from core.database.database import create_new_session, get_fileid_by_path, insert_files, upsert_file_versions
 from core.utils.io.filesize_formatter import filesize_formatter
 from core.utils.session.convert_h5 import save_as_h5
-=======
 from core.utils.io.filesize_formatter import filesize_formatter
->>>>>>> 1aa4342b264a5ee62b8a82c1cdd6c3fcd8dee4bd
 from ui.ImportDataWindowUI import setup_ui, update_sidebar_selection
 from ui.components.SegmentSessionPage import SegmentSessionPage
 from ui.components.VisualisationPage import VisualisationPage
@@ -56,11 +53,7 @@ class ImportDataWindow(QMainWindow):
     return_to_dashboard_requested = pyqtSignal()
 
     # Signal to request showing decomposition view with data
-<<<<<<< HEAD
     decomposition_requested = pyqtSignal(object, str, str, object, object, int)
-=======
-    decomposition_requested = pyqtSignal(object, str, str, object, object)
->>>>>>> 1aa4342b264a5ee62b8a82c1cdd6c3fcd8dee4bd
 
     # Signal to notify other windows when a file is imported (if needed)
     fileImported = pyqtSignal(dict)
@@ -77,11 +70,8 @@ class ImportDataWindow(QMainWindow):
         self.file_size_bytes = None  # Store file size in bytes
         self.config = None # will be used to store configuration
 
-<<<<<<< HEAD
         self.raw_fileid = None
 
-=======
->>>>>>> 1aa4342b264a5ee62b8a82c1cdd6c3fcd8dee4bd
         # Config popup windows
         self.visualisation_page = None
         self.segment_session = None
@@ -227,30 +217,19 @@ class ImportDataWindow(QMainWindow):
                     # Call the open_otb_plus function with the correct parameters
                     self.emg_obj.open_otb_plus(full_path, self)
 
-<<<<<<< HEAD
                     base_name = os.path.splitext(file)[0]
 
                     # Create a default save name for .mat files
                     savename = os.path.join(path, f"{base_name}_processed.mat")
                     h5_processed_savename = os.path.join(path, f"{base_name}_processed.h5")
                     h5_readin_savename = os.path.join(path, f"{base_name}_readin.h5")
-=======
-                    # Create a default save name for .mat files
-                    savename = os.path.join(path, file + "_processed.mat")
->>>>>>> 1aa4342b264a5ee62b8a82c1cdd6c3fcd8dee4bd
 
                     # Save the data as a .mat file in the background
                     if self.emg_obj.signal_dict:
                         self.save_mat_in_background(savename, {"signal": self.emg_obj.signal_dict}, True, True)
-<<<<<<< HEAD
                         save_as_h5(self.emg_obj.signal_dict, h5_processed_savename, raw_filepath=full_path)
                         save_as_h5(self.emg_obj.signal_dict, h5_readin_savename, raw_filepath=full_path)
-<<<<<<< HEAD
 
-=======
->>>>>>> 1aa4342b264a5ee62b8a82c1cdd6c3fcd8dee4bd
-=======
->>>>>>> parent of 65f5168 (Added functionality for readin and processed, WIP for decomp)
                 elif ext == '.mat':
                     # Call the open_otb_plus function with the correct parameters
                     self.emg_obj.open_mat(full_path)
@@ -280,23 +259,14 @@ class ImportDataWindow(QMainWindow):
                     "filename": file,
                     "pathname": path,
                     "signal": signal,
-<<<<<<< HEAD
                     "filesize": os.path.getsize(full_path),  # Get actual file size
                     "fileid": self.raw_fileid
-=======
-                    "filesize": os.path.getsize(full_path)  # Get actual file size
->>>>>>> 1aa4342b264a5ee62b8a82c1cdd6c3fcd8dee4bd
                 }
 
                 self.fileImported.emit(file_info)
 
                 self.channel_view_button.setEnabled(True)
 
-<<<<<<< HEAD
-=======
-                self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj, import_window=self)
-
->>>>>>> 1aa4342b264a5ee62b8a82c1cdd6c3fcd8dee4bd
                 self.add_file_to_recent_files(full_path)
                 self.update_recent_files()
 
@@ -306,7 +276,6 @@ class ImportDataWindow(QMainWindow):
                     self.set_configuration_button.setEnabled(False)
                 else:
                     self.set_configuration_button.setEnabled(True)
-<<<<<<< HEAD
 
                 # Change file label to green if success
                 self.file_info_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
@@ -327,11 +296,6 @@ class ImportDataWindow(QMainWindow):
 
                 self.raw_fileid = fileid
 
-=======
-                # Change file label to green if success
-                self.file_info_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
-
->>>>>>> 1aa4342b264a5ee62b8a82c1cdd6c3fcd8dee4bd
             except Exception as e:
                 self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
                 self.preview_message.setText(f"Error loading file: {str(e)}")
@@ -464,12 +428,8 @@ class ImportDataWindow(QMainWindow):
 
     def enable_segment_session(self):
         if self.segment_session_button and self.pathname and self.filename:
-<<<<<<< HEAD
             base_name = os.path.splitext(self.filename)[0]
             filename = os.path.join(self.pathname, f"{base_name}_processed.mat")
-=======
-            filename = os.path.join(self.pathname, self.filename) + "_processed.mat"
->>>>>>> 1aa4342b264a5ee62b8a82c1cdd6c3fcd8dee4bd
             self.segment_session = SegmentSessionPage(filename, self.add_file_to_recent_files, self.update_recent_files)
 
             self.segment_session_button.setEnabled(True)
@@ -500,11 +460,7 @@ class ImportDataWindow(QMainWindow):
                 self.save_mat_in_background(savename, {"signal": self.imported_signal}, True)
 
             # Emit signal to request showing decomposition view
-<<<<<<< HEAD
             self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, self.config, self.raw_fileid)
-=======
-            self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, self.config)
->>>>>>> 1aa4342b264a5ee62b8a82c1cdd6c3fcd8dee4bd
 
         except Exception as e:
             print(f"Error requesting decomposition view: {e}")
@@ -719,11 +675,7 @@ class ImportDataWindow(QMainWindow):
             print(f"Error creating manual editing view: {e}")
             traceback.print_exc()
 
-<<<<<<< HEAD
     def create_decomposition_view(self, emg_obj, filename, pathname, imported_signal, config, raw_fileid):
-=======
-    def create_decomposition_view(self, emg_obj, filename, pathname, imported_signal, config):
->>>>>>> 1aa4342b264a5ee62b8a82c1cdd6c3fcd8dee4bd
         """Creates a decomposition view with the provided data and adds it to the stacked widget."""
         try:
             print("Creating decomposition view with provided data")
@@ -741,10 +693,7 @@ class ImportDataWindow(QMainWindow):
                 pathname=pathname,
                 imported_signal=imported_signal,
                 config=config,
-<<<<<<< HEAD
                 raw_fileid=raw_fileid,
-=======
->>>>>>> 1aa4342b264a5ee62b8a82c1cdd6c3fcd8dee4bd
                 parent=self,  # Set parent for proper widget hierarchy
             )
 
