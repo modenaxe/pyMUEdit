@@ -29,8 +29,8 @@ class AnalysisCheckboxDark(QCheckBox):
                 background-color: #ffffff;
             }}
             QCheckBox::indicator:checked {{
-                background-color: {CleanTheme.ANALYSIS_BG_BUTTON};
-                border-color: {CleanTheme.ANALYSIS_BG_BUTTON};
+                background-color: #333333;
+                border-color: #333333;
             }}
             """
         )
