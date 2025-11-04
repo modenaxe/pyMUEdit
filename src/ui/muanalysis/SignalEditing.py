@@ -1,6 +1,7 @@
 
 from PyQt5.QtWidgets import (QFrame, QHBoxLayout,
                              QVBoxLayout, QWidget, QMainWindow)
+from PyQt5.QtCore import Qt
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
 from ui.components.muAnalysisComponents.AnalysisLabeledDropdownDialog import \
@@ -58,11 +59,13 @@ class SignalEditing(QWidget):
         window_layout = QVBoxLayout()
         window.setLayout(window_layout)
         window_layout.setSpacing(10)
-        self.window = QMainWindow(self)
-        self.window.setCentralWidget(window)
-        self.window.setWindowTitle("Signal Editing Window")
-        self.window.setFixedHeight(486)
-        self.window.setFixedWidth(383)
+        window.setWindowTitle("Signal Editing Window")
+        window.setFixedHeight(486)
+        window.setFixedWidth(383)
+        window.setWindowFlags(
+            Qt.Window | Qt.WindowCloseButtonHint
+        )
+        self.window = window
 
         # Title
         title = AnalysisText.create_title_dark("Signal Editing")
