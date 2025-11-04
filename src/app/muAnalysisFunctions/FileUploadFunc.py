@@ -116,7 +116,7 @@ class FileUploadFunc:
 
         sorted_file = emg.sort_mus(emgfile)
         FileUploadFunc.file = sorted_file
-        self.plot_idr(emgfile, analysis_plot)
+        self.plot_idr(sorted_file, analysis_plot)
         return sorted_file
 
     def import_data(self, analysis_plot, emgfile):
