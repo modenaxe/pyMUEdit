@@ -12,6 +12,7 @@ sys.path.insert(0, project_root)
 from app.ImportDataWindow import ImportDataWindow
 from PyQt5.QtWidgets import QApplication
 from core.utils.config.scaling_config import apply_qt_scaling # Added for high DPI scaling attributes
+from core.database.database import init_db
 
 
 import warnings
@@ -34,6 +35,9 @@ def main():
 
     # set application icon
     app.setWindowIcon(QIcon("assets/pyMUEdit-icon.png"))
+
+    # initialise database
+    init_db()
 
     # Create and show the main window
     window = ImportDataWindow()
