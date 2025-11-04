@@ -181,133 +181,43 @@ class FileUploadFunc:
             error_dialog.setWindowTitle("Error")
             error_dialog.exec_()
 
-    """
-    needs to be retained due to bug in existing openHDEMG library which
-    errors on plotting subsequent figures after initial import
-    """
-    def plot_idr(
-        self,
-        emgfile,
-        analysis_plot,
-        munumber="all",
-        addrefsig=True,
-        timeinseconds=True,
-        figsize=[20, 15],
-    ):
-        """from openHDEMG to plot idr on graph when first loaded
-        Params (relevant to us): emgfile, analysis_plot(instance of centre plot)
-        Returns: None
+    def plot_idr(self, emgfile, analysis_plot):
+        """Wrapper to plot the IDR using openhdemg library
+        Params:
+            - emgfile: the file
+            - analysis_plot: instance used to plot fig in the centre
+        Returns:
+            None
         """
-        common = CommonOpenFunc()
-        idr = common.compute_idr(emgfile=emgfile)
-        if isinstance(munumber, str):
-            if emgfile["NUMBER_OF_MUS"] == 1:
-                munumber = 0
-            else:
-                munumber = [*range(0, emgfile["NUMBER_OF_MUS"])]
-        if isinstance(munumber, list) and len(munumber) == 1:
-            munumber = munumber[0]
-        figname = "aditi_unique_name"
-        plt.close()  # This is to prevent plots from overlaying in centre on repeated uploads
-        fig, ax1 = plt.subplots(
-            figsize=(figsize[0] / 2.54, figsize[1] / 2.54),
-            num=figname,
-        )
-        if isinstance(munumber, int):
-            ax1.plot(
-                idr[munumber]["timesec" if timeinseconds else "mupulses"],
-                idr[munumber]["idr"],
-                ".",
-                markersize=12,
-            )
-            ax1.set_ylabel("MU {} (pps)".format(munumber))
-            ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
-        elif isinstance(munumber, list):
-            idr_all = pd.DataFrame({key: df["idr"] for key, df in idr.items()})
-            idr_all = idr_all[munumber]
-            common = CommonOpenFunc()
-            norm_idr_all = common.min_max_scaling(data=idr_all, col_by_col=False)
-            for count, thisMU in enumerate(munumber):
-                norm_idr = norm_idr_all[thisMU]
-                if norm_idr.mean() <= 0.5:
-                    norm_idr = norm_idr + (0.5 - norm_idr.mean()) + count
-                else:
-                    norm_idr = norm_idr - (norm_idr.mean() - 0.5) + count
-                ax1.plot(
-                    idr[thisMU]["timesec" if timeinseconds else "mupulses"][1:],
-                    norm_idr.dropna(),
-                    ".",
-                    markersize=8,
-                )
-            ax1.set_yticks(np.arange(0.5, len(munumber) + 0.5, 1))
-            ax1.set_yticklabels([str(mu) for mu in munumber])
-            ax1.set_ylabel("Motor units")
-            ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
-        else:
-            raise TypeError(
-                "While calling the plot_idr function, you should pass an "
-                + "integer, a list or 'all' to munumber"
-            )
-        if addrefsig:
-            if not isinstance(emgfile["REF_SIGNAL"], pd.DataFrame):
-                raise TypeError(
-                    "REF_SIGNAL is probably absent or it is not contained in a "
-                    + "dataframe"
-                )
-            x_axis = (
-                emgfile["REF_SIGNAL"].index / emgfile["FSAMP"]
-                if timeinseconds
-                else emgfile["REF_SIGNAL"].index
-            )
-            ax2 = ax1.twinx()
-            ax2.plot(x_axis, emgfile["REF_SIGNAL"][0], color='#555555')
-            ax2.set_ylabel("MVC")
-            ax2.set_zorder(0)
-            ax1.set_zorder(1)
-            ax1.patch.set_alpha(0)
+        if not self.data_loaded():
+            ErrorDialog("No file has been loaded", "Error").exec_()
+            return
+
+        fig = emg.plot_idr(emgfile=emgfile, showimmediately=False)
         canvas = SaveablePlot(fig)  # plotting in centre with the data now handled
         analysis_plot.display_fig(canvas)
+        plt.close(fig)
 
     def plot_refsig(
             self,
             emgfile,
             analysis_plot,
             timeinseconds=True,
-            figsize=[20, 15],
         ):
-        """From OPENHDEMG. Plots the reference signal
+        """Wrapper to plot the reference signal using openhdemg library
         Params:
             - emgfile: the file
             - analysis_plot: instance used to plot fig in the centre
             - timeinseconds: boolean if you want the axis to be plotted in seconds
-            - figsize: (legacy code) defines the size of the plot, but now it's
             plotted in the centre
+        Returns:
+            None
         """
-        if isinstance(emgfile["REF_SIGNAL"], pd.DataFrame):
-            refsig = emgfile["REF_SIGNAL"]
-        else:
-            raise TypeError(
-                "REF_SIGNAL is probably absent or it is not contained in a "
-                + "dataframe"
-            )
+        if not self.data_loaded():
+            ErrorDialog("No file has been loaded", "Error").exec_()
+            return
 
-        if timeinseconds:
-            x_axis = refsig.index / emgfile["FSAMP"]
-        else:
-            x_axis = refsig.index
-
-        figname = "Reference Signal Graph"
-        plt.close()
-        fig, ax1 = plt.subplots(
-            figsize=(figsize[0] / 2.54, figsize[1] / 2.54),
-            num=figname,
-        )
-
-        ax1.plot(x_axis, refsig[0], color='#555555')
-
-        ax1.set_ylabel("MVC")
-        ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
-
-        # Plotting
-        canvas = SaveablePlot(fig)
+        fig = emg.plot_refsig(emgfile=emgfile, timeinseconds=timeinseconds, showimmediately=False)
+        canvas = SaveablePlot(fig)  # plotting in centre with the data now handled
         analysis_plot.display_fig(canvas)
+        plt.close(fig)
