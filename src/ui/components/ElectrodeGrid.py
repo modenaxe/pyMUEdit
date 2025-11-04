@@ -83,11 +83,13 @@ class ElectrodeGrid(QWidget):
 
         self.grid_layout = QGridLayout()
         self.grid_layout.setSpacing(10)
+        self.grid_layout.setContentsMargins(40, 0, 0, 0)
         self.init_grids()
         self.draw_grid()
         layout.addLayout(self.grid_layout)
 
         self.label = QLabel(f"{self.muscle_names[self.electrode_index]}")
+        self.label.setContentsMargins(40, 0, 0, 0)
         layout.addWidget(self.label)
 
         # left and right buttons
