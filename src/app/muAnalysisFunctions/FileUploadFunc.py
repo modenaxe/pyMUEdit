@@ -267,3 +267,47 @@ class FileUploadFunc:
             ax1.patch.set_alpha(0)
         canvas = SaveablePlot(fig)  # plotting in centre with the data now handled
         analysis_plot.display_fig(canvas)
+
+    def plot_refsig(
+            self,
+            emgfile,
+            analysis_plot,
+            timeinseconds=True,
+            figsize=[20, 15],
+        ):
+        """From OPENHDEMG. Plots the reference signal
+        Params:
+            - emgfile: the file
+            - analysis_plot: instance used to plot fig in the centre
+            - timeinseconds: boolean if you want the axis to be plotted in seconds
+            - figsize: (legacy code) defines the size of the plot, but now it's
+            plotted in the centre
+        """
+        if isinstance(emgfile["REF_SIGNAL"], pd.DataFrame):
+            refsig = emgfile["REF_SIGNAL"]
+        else:
+            raise TypeError(
+                "REF_SIGNAL is probably absent or it is not contained in a "
+                + "dataframe"
+            )
+
+        if timeinseconds:
+            x_axis = refsig.index / emgfile["FSAMP"]
+        else:
+            x_axis = refsig.index
+
+        figname = "Reference Signal Graph"
+        plt.close()
+        fig, ax1 = plt.subplots(
+            figsize=(figsize[0] / 2.54, figsize[1] / 2.54),
+            num=figname,
+        )
+
+        ax1.plot(x_axis, refsig[0], color='#555555')
+
+        ax1.set_ylabel("MVC")
+        ax1.set_xlabel("Time (Sec)" if timeinseconds else "Samples")
+
+        # Plotting
+        canvas = SaveablePlot(fig)
+        analysis_plot.display_fig(canvas)
