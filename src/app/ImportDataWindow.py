@@ -1,6 +1,8 @@
+from pathlib import Path
 import sys
 import os
 import traceback
+import zipfile
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent
@@ -10,7 +12,7 @@ import pandas as pd
 import pyqtgraph as pg
 
 # Import UI setup function
-from core.database.database import create_new_session, get_fileid_by_path, insert_files, upsert_file_versions
+from core.database.database import create_new_session, get_fileid_by_path, get_or_create_session_for_file, get_session_files, insert_files, upsert_file_versions
 from core.utils.io.filesize_formatter import filesize_formatter
 from core.utils.session.convert_h5 import save_as_h5
 from core.utils.io.filesize_formatter import filesize_formatter
@@ -71,7 +73,7 @@ class ImportDataWindow(QMainWindow):
         self.config = None # will be used to store configuration
 
         self.raw_fileid = None
-
+        self.sessionid = None
         # Config popup windows
         self.visualisation_page = None
         self.segment_session = None
@@ -134,6 +136,49 @@ class ImportDataWindow(QMainWindow):
 
                 # Load the file
                 self.load_file(self.pathname, self.filename)
+
+
+    def export_session(self):
+        if not self.sessionid:
+            print("Warning: No session has been initialised")
+            return False
+
+        session_files = get_session_files(self.sessionid)
+        print(session_files)
+        if not session_files:
+            print("No files in this session to export")
+            return False
+
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        save_path, _ = QFileDialog.getSaveFileName(
+            None,
+            "Export Session",
+            f"Session_{timestamp}.zip",
+            "Zip Files (*.zip);;All Files (*)"
+        )
+
+        if save_path:
+            file_paths_to_zip = []
+            for file in session_files:
+                for version in file.get("versions", []):
+                    version_path = version.get("version_filepath")
+                    if version_path and os.path.exists(version_path):
+                        file_paths_to_zip.append(version_path)
+
+            if not file_paths_to_zip:
+                print("No valid files found to zip")
+                return False
+
+            with zipfile.ZipFile(save_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for filepath in file_paths_to_zip:
+                    arcname = os.path.basename(filepath)
+                    zipf.write(filepath, arcname)
+                    print(f"Added {filepath} as {arcname}")
+
+            print(f"Session exported successfully to {save_path}")
+            return True
+        else:
+            print("Export cancelled")
 
     def select_file(self):
         """Open file dialog to select a file."""
@@ -280,19 +325,15 @@ class ImportDataWindow(QMainWindow):
                 # Change file label to green if success
                 self.file_info_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
 
-                # Create a new session & add to database
+                # Get or create session for this dataset
+                sessionid = get_or_create_session_for_file(full_path)
+                self.sessionid = sessionid
                 fileid = get_fileid_by_path(full_path)
-                sessionid = create_new_session()
-
-                if fileid:
-                    # File exists: just upsert version and update last_opened
-                    versionid = upsert_file_versions(h5_readin_savename, fileid, "readin")
-                    versionid = upsert_file_versions(h5_processed_savename, fileid, "processed")
-                else:
-                    # File not in DB: create a new session, insert, then upsert version
+                if not fileid:
                     fileid = insert_files(full_path, file, sessionid)
-                    versionid = upsert_file_versions(h5_readin_savename, fileid, "readin")
-                    versionid = upsert_file_versions(h5_processed_savename, fileid, "processed")
+
+                versionid_readin = upsert_file_versions(h5_readin_savename, fileid, "readin")
+                versionid_processed = upsert_file_versions(h5_processed_savename, fileid, "processed")
 
                 self.raw_fileid = fileid
 

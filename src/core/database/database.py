@@ -274,3 +274,23 @@ def find_raw_fileid_from_upload(upload_path, conn):
     """, (raw_name,))
     row = cursor.fetchone()
     return row["fileid"] if row else None
+
+def get_or_create_session_for_file(filepath: str) -> int:
+    """
+    Get existing session for a file, or create a new one if it doesn't exist.
+    Returns sessionid.
+    """
+    with get_connection() as conn:
+        row = conn.execute("""
+            SELECT sessionid FROM files WHERE filepath = ?
+        """, (filepath,)).fetchone()
+
+        if row:
+            return row["sessionid"]
+        else:
+            cur = conn.execute("""
+                INSERT INTO sessions (created_at)
+                VALUES (?)
+            """, (get_timestamp(),))
+            conn.commit()
+            return cur.lastrowid
