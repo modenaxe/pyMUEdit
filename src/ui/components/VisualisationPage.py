@@ -54,6 +54,17 @@ class VisualisationPage(QWidget):
         left_sidebar_title.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
         left_sidebar_layout.addWidget(left_sidebar_title)
 
+        # number of signals dropdown panel
+        self.num_signals_input_box = FormSpinBox(
+        "Number of Signals to Display", 8, 1, 16)
+        left_sidebar_layout.addWidget(self.num_signals_input_box)
+
+        signals_limit_label = QLabel("(Max: 16)")
+        signals_limit_label.setStyleSheet("color: gray; font-size: 11px;")
+        left_sidebar_layout.addWidget(signals_limit_label)
+        
+        left_sidebar_layout.addSpacing(5)
+
         # signal range dropdown panel
         self.range_dropdown = FormDropdown(
             "Select Reference Signal",
@@ -72,11 +83,6 @@ class VisualisationPage(QWidget):
         button_layout.addWidget(self.right_button)
         lrbuttons.setLayout(button_layout)
         left_sidebar_layout.addWidget(lrbuttons)
-
-        # number of signals dropdown panel
-        self.num_signals_input_box = FormSpinBox(
-            "Number of Signals to Display", 8, 1, 16)
-        left_sidebar_layout.addWidget(self.num_signals_input_box)
 
         # add gap between controls and done button
         left_sidebar_layout.addStretch()
