@@ -70,11 +70,16 @@ class ChannelViewer(QWidget):
             p.setLabel('left', f"{index + 1}", **
                        {"color": "black", "font-size": "12pt"})
             p.getAxis('left').setTicks([])  # Hide y axis ticks
-
+            
             # Plot data
             y = self.entire_emg_data[index]
             x = np.arange(len(y)) / fs # Time in seconds
-            curve = p.plot(x, y, pen=pg.mkPen(color=colours[i], width=1))
+            subsample_step = 300 # Subsampling which decreases number of points plotted to improve performance
+
+            y_sub = y[0:len(y):subsample_step] # Use splicing to keep every nth sample
+            x_sub = x[0:len(x):subsample_step]
+
+            curve = p.plot(x_sub, y_sub, pen=pg.mkPen(color=colours[i], width=1))
             self.curves.append(curve)
             self.plot_items.append(p)
 
