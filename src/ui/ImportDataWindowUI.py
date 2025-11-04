@@ -6,6 +6,7 @@ import pyqtgraph as pg
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtSvg import QSvgWidget
+from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
                              QPushButton, QScrollArea, QSizePolicy,
                              QSpacerItem, QStackedWidget, QVBoxLayout, QWidget)
@@ -370,13 +371,16 @@ def _create_left_sidebar(import_window):
     sidebar = Sidebar("HDEMG App")
 
     export_session_button = ActionButton("Export Session", primary=True)
-    export_session_button.setFixedHeight(36)
-    export_session_button.setMinimumWidth(160)
+    export_session_button.setMinimumHeight(40)  # Match SidebarButton height
+    export_session_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    export_session_button.setCursor(QCursor(Qt.PointingHandCursor))
     export_session_button.clicked.connect(import_window.export_session)
     import_window.sidebar_buttons["export_session_button"] = export_session_button
 
     sidebar.layout.insertWidget(1, export_session_button)
 
+    spacer = QSpacerItem(0, 15, QSizePolicy.Minimum, QSizePolicy.Fixed)
+    sidebar.layout.insertSpacerItem(2, spacer)
 
     # Define icon names
     icons = {
