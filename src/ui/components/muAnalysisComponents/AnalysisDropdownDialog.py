@@ -9,7 +9,7 @@ from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 # defining absolute path for icons
 ABS_PATH = Path(__file__).parent.parent.parent.parent
 ICONS_PATH = ABS_PATH / "public"
-down_arrow_path = ICONS_PATH / "down_arrow_icon.svg"
+down_arrow_path = "public/down_arrow_icon.svg"
 
 
 # For dropdown inputs for the analysis tab (factory method)
@@ -62,9 +62,6 @@ class AnalysisDropdownDialog(QComboBox):
             }}
             QComboBox QAbstractItemView::item:last {{
                 border-bottom: none;
-            }}
-            QComboBox:hover {{
-                padding: 1px solid #888;
             }}
             QComboBox:disabled {{
                 background-color: #f2f2f2;
