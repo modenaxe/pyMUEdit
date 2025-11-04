@@ -245,9 +245,12 @@ class ImportDataWindow(QMainWindow):
 <<<<<<< HEAD
                         save_as_h5(self.emg_obj.signal_dict, h5_processed_savename, raw_filepath=full_path)
                         save_as_h5(self.emg_obj.signal_dict, h5_readin_savename, raw_filepath=full_path)
+<<<<<<< HEAD
 
 =======
 >>>>>>> 1aa4342b264a5ee62b8a82c1cdd6c3fcd8dee4bd
+=======
+>>>>>>> parent of 65f5168 (Added functionality for readin and processed, WIP for decomp)
                 elif ext == '.mat':
                     # Call the open_otb_plus function with the correct parameters
                     self.emg_obj.open_mat(full_path)

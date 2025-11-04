@@ -1,7 +1,10 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import re
 =======
 >>>>>>> 1aa4342b264a5ee62b8a82c1cdd6c3fcd8dee4bd
+=======
+>>>>>>> parent of 65f5168 (Added functionality for readin and processed, WIP for decomp)
 import sqlite3
 from pathlib import Path
 from datetime import datetime
@@ -297,6 +300,7 @@ def get_fileid_by_path(filepath: str):
     with get_connection() as conn:
         row = conn.execute("SELECT fileid FROM files WHERE filepath = ?", (filepath,)).fetchone()
         return row["fileid"] if row else None
+<<<<<<< HEAD
 
 def find_raw_fileid_from_upload(upload_path, conn):
     base_name = Path(upload_path).stem  # trial1_decomp
@@ -310,3 +314,5 @@ def find_raw_fileid_from_upload(upload_path, conn):
     return row["fileid"] if row else None
 =======
 >>>>>>> 1aa4342b264a5ee62b8a82c1cdd6c3fcd8dee4bd
+=======
+>>>>>>> parent of 65f5168 (Added functionality for readin and processed, WIP for decomp)
