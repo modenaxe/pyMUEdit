@@ -1,3 +1,4 @@
+from functools import partial
 from pathlib import Path
 
 import pyqtgraph as pg
@@ -7,9 +8,20 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QFrame,
                              QGraphicsSceneMouseEvent, QGroupBox, QHBoxLayout,
                              QLabel, QLayout, QLineEdit, QListView,
-                             QScrollArea, QSizePolicy, QSpacerItem, QTabWidget,
-                             QToolButton, QVBoxLayout, QWidget)
+                             QScrollArea, QSizePolicy, QSlider, QSpacerItem,
+                             QTabWidget, QToolButton, QVBoxLayout, QWidget)
 
+from app.muEditFunctions.batch_processing import *
+from app.muEditFunctions.edit_actions import (add_spikes_button_pushed,
+                                              delete_dr_button_pushed,
+                                              delete_spikes_button_pushed,
+                                              lock_spikes_button_pushed,
+                                              remove_outliers_button_pushed)
+from app.muEditFunctions.exporter import *
+from app.muEditFunctions.mu_filter_actions import *
+from app.muEditFunctions.overlay_plots import (clear_overlay_data,
+                                               overlay_file_button_pushed)
+from app.muEditFunctions.visualization import *
 # Import custom components
 from ui.components import (ActionButton, CleanCard, CleanScrollBar, CleanTheme,
                            CollapsiblePanel, GoodSlider, SectionHeader,
@@ -176,7 +188,8 @@ def setup_control_panel(main_window):
     save_group = SettingsGroup("Save the Edition")
 
     main_window.save_btn = ActionButtonedit("Save", primary=True)
-    main_window.save_btn.clicked.connect(main_window.save_button_pushed)
+    main_window.save_btn.clicked.connect(
+        lambda: save_button_pushed(main_window))
 
     save_group.add_field(main_window.save_btn)
     control_layout.addWidget(save_group)
@@ -395,29 +408,29 @@ def create_batch_processing_tab(main_window):
     batch_layout = QVBoxLayout(batch_tab)
     batch_layout.setSpacing(10)
     batch_layout.setContentsMargins(10, 10, 10, 10)
-
+# lambda: update_mu_filter_button_pushed(main_window)
     # Label, handler, attribute name for later access
     action_batch_configs = [
         ("1 - Remove all the outliers",
-         main_window.remove_all_outliers_button_pushed,
+         remove_all_outliers_button_pushed,
          "remove_outliers_all_btn"),
         ("2 - Update all MU filters",
-         main_window.update_all_mu_filters_button_pushed,
+         update_all_mu_filters_button_pushed,
          "update_mu_filter_all_btn"),
         ("3 - Remove flagged MU",
-         main_window.remove_flagged_mu_button_pushed,
+         remove_flagged_mu_button_pushed,
          "remove_flagged_mu_btn"),
         ("4 - Remove duplicates within grids",
-         main_window.remove_duplicates_within_grids_button_pushed,
+         remove_duplicates_within_grids_button_pushed,
          "remove_duplicates_within_btn"),
         ("5 - Remove duplicates between grids",
-         main_window.remove_duplicates_between_grids_button_pushed,
+         remove_duplicates_between_grids_button_pushed,
          "remove_duplicates_between_btn"),
     ]
 
     for label, handler, attr_name in action_batch_configs:
         btn = ActionButtonedit(label, primary=True)
-        btn.clicked.connect(handler)
+        btn.clicked.connect(partial(handler, main_window))
         btn.setFixedHeight(34)
         batch_layout.addWidget(btn)
         setattr(main_window, attr_name, btn)
@@ -511,13 +524,13 @@ def create_visualization_tab(main_window):
     main_window.plot_spiketrains_btn = ActionButtonedit(
         "Plot MU spike trains", primary=True)
     main_window.plot_spiketrains_btn.clicked.connect(
-        main_window.plot_mu_spiketrains_button_pushed)
+        lambda: plot_mu_spiketrains_button_pushed(main_window))
     button_panel.add_widget(main_window.plot_spiketrains_btn)
 
     main_window.plot_firingrates_btn = ActionButtonedit(
         "Plot MU firing rates", primary=True)
     main_window.plot_firingrates_btn.clicked.connect(
-        main_window.plot_mu_firingrates_button_pushed)
+        lambda: plot_mu_firingrates_button_pushed(main_window))
     button_panel.add_widget(main_window.plot_firingrates_btn)
 
     row3 = QWidget()
@@ -556,6 +569,23 @@ def create_visualization_tab(main_window):
     row4_lay.addWidget(main_window.sps_switch)
 
     button_panel.add_widget(row4)
+
+    # Overlay Decomposition Toggle
+    row5 = QWidget()
+    row5_lay = QHBoxLayout(row5)
+    row5_lay.setContentsMargins(0, 0, 0, 0)
+    row5_lay.setSpacing(6)
+
+    overlay_lbl = QLabel("Overlay Benchmark Decomposition")
+    set_standard_label_style(overlay_lbl)
+    row5_lay.addWidget(overlay_lbl)
+
+    main_window.overlay_switch = ToggleSwitch()
+    main_window.overlay_switch.toggled.connect(lambda checked: overlay_file_button_pushed(
+        main_window) if checked else clear_overlay_data(main_window))
+    row5_lay.addWidget(main_window.overlay_switch)
+
+    button_panel.add_widget(row5)
 
     viz_layout.addWidget(button_panel)
     viz_layout.addStretch()
@@ -614,13 +644,13 @@ def setup_display_panel(main_window):
 
     save_btn = ActionButtonedit("Save")
     save_btn.setFixedHeight(30)
-    save_btn.clicked.connect(main_window.save_button_pushed)
+    save_btn.clicked.connect(lambda: save_button_pushed(main_window))
     main_window.floating_save_btn = save_btn
 
     saveas_btn = ActionButtonedit("Save As")
     saveas_btn.setFixedHeight(30)
     saveas_btn.setFixedWidth(80)
-    saveas_btn.clicked.connect(main_window.saveas_button_pushed)
+    saveas_btn.clicked.connect(lambda: saveas_button_pushed(main_window))
     main_window.floating_saveas_btn = saveas_btn
 
     select_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -786,7 +816,6 @@ def setup_display_panel(main_window):
 
     display_layout.addWidget(plots_scroll_area, 1)  # 1 is stretch factor
     # horizontal pan‑slider just below all plots moy
-    from PyQt5.QtWidgets import QSlider
     main_window.pan_slider = QSlider(Qt.Horizontal, parent=display_widget)
     # 0 = far left, 1000 = far right
     main_window.pan_slider.setRange(0, 1000)
@@ -834,13 +863,13 @@ def setup_display_panel(main_window):
 
     # Define all action buttons
     action_button_configs = [
-        ("Add spikes", main_window.add_spikes_button_pushed, "add_spikes_btn"),
-        ("Delete spikes", main_window.delete_spikes_button_pushed, "delete_spikes_btn"),
-        ("Delete DR", main_window.delete_dr_button_pushed, "delete_dr_btn"),
-        ("Remove outliers", main_window.remove_outliers_button_pushed, "remove_outliers_single_btn"),
-        ("Lock spikes", main_window.lock_spikes_button_pushed, "lock_spikes_btn"),
-        ("Update MU filter", main_window.update_mu_filter_button_pushed, "update_mu_filter_btn"),
-        ("Extend MU filter", main_window.extend_mu_filter_button_pushed, "extend_mu_filter_btn"),
+        ("Add spikes", lambda: add_spikes_button_pushed(main_window), "add_spikes_btn"),
+        ("Delete spikes", lambda: delete_spikes_button_pushed(main_window), "delete_spikes_btn"),
+        ("Delete DR", lambda: delete_dr_button_pushed(main_window), "delete_dr_btn"),
+        ("Remove outliers", lambda: remove_outliers_button_pushed(main_window), "remove_outliers_single_btn"),
+        ("Lock spikes", lambda: lock_spikes_button_pushed(main_window), "lock_spikes_btn"),
+        ("Update MU filter", lambda: update_mu_filter_button_pushed(main_window), "update_mu_filter_btn"),
+        ("Extend MU filter", lambda: extend_mu_filter_button_pushed(main_window), "extend_mu_filter_btn"),
     ]
 
     # Create action buttons and store references
@@ -851,6 +880,7 @@ def setup_display_panel(main_window):
         btn.clicked.connect(handler)
         btn.setMinimumHeight(36)
         btn.setMaximumHeight(36)
+        btn.setFixedWidth(140)
         action_layout.addWidget(btn)
         # Store reference to button in main_window
         setattr(main_window, attr_name, btn)
@@ -914,7 +944,7 @@ def create_plot_widget(main_window, y_label, x_label=""):
             super().__init__(*args, **kwargs)
             self.zoom_slider = zoom_slider
 
-        def wheelEvent(self, event):
+        def wheelEvent(self, event, *args, **kwargs):
             event.accept()
             delta = event.delta()
             cur = self.zoom_slider.get_slider_value()
@@ -923,6 +953,8 @@ def create_plot_widget(main_window, y_label, x_label=""):
                 self.zoom_slider.set_slider_value(cur + 1)
             elif delta < 0:
                 self.zoom_slider.set_slider_value(cur - 1)
+
+            super().wheelEvent(event, *args, **kwargs)
 
         def keyPressEvent(self, event):
             if event.key() in (
@@ -993,6 +1025,8 @@ def create_mu_checkbox(
     )
     checkbox.setObjectName(f"Array_{array_idx+1}_MU_{mu_idx+1}")
     checkbox.setChecked(is_checked)
-    checkbox.stateChanged.connect(main_window.mu_checkbox_state_changed)
+    checkbox.stateChanged.connect(
+        lambda state: mu_checkbox_state_changed(
+            main_window, state))
 
     return checkbox
