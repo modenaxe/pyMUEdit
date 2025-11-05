@@ -1,7 +1,4 @@
-from PyQt5.QtGui import QColor, QPalette
-from PyQt5.QtWidgets import QCheckBox, QLabel, QVBoxLayout, QWidget
-
-from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
+from PyQt5.QtWidgets import QCheckBox
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
 

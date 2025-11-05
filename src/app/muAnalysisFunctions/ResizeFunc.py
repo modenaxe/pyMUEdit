@@ -1,17 +1,8 @@
-import sys
-import numpy as np
-import matplotlib.pyplot as plt
-import os
-import copy
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from core.muAnalysisCore.SelectRange import SelectRange
-from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
-from PyQt5.QtCore import Qt
 
-from openhdemg.library import plot_idr, resize_emgfile
-
+from openhdemg.library import resize_emgfile
 
 class Resize:
     """Class to handle resizing EMG file functionality.

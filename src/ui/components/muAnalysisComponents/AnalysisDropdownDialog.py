@@ -1,10 +1,6 @@
 from pathlib import Path
-
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QComboBox, QFrame, QLabel, QVBoxLayout, QWidget
-
-from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
+from PyQt5.QtWidgets import QComboBox
 
 # defining absolute path for icons
 ABS_PATH = Path(__file__).parent.parent.parent.parent

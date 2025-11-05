@@ -26,25 +26,5 @@ class FileSection(QFrame):
         self.load_btn.setMinimumHeight(40)
         button_row.addWidget(self.load_btn, stretch=1)
         self.reset_btn = ResetButton('Reset')
-        self.reset_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #333333;
-                color: #fff;
-                border: none;
-                border-radius: 4px;
-                min-height: 40px;
-            }
-            QPushButton:hover {
-                background-color: #555555;
-            }
-            QPushButton:pressed {
-                background-color: #222222;
-            }
-            QPushButton:disabled {
-                background-color: #888888;
-                color: #dddddd;
-            }
-            """
-        )
+        self.reset_btn.setMinimumHeight(40)
         button_row.addWidget(self.reset_btn, stretch=1)

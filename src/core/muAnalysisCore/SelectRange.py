@@ -1,12 +1,7 @@
-import sys
-import numpy as np
 import matplotlib.pyplot as plt
-import os
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-from ui.components.SaveablePlot import SaveablePlot
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
-from PyQt5.QtCore import Qt
 
 class SelectRange:
 

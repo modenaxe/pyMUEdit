@@ -1,19 +1,14 @@
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QFileDialog, QLineEdit, QCheckBox, QMessageBox, QSpacerItem, QSizePolicy,
+    QFileDialog, QLineEdit, QSpacerItem, QSizePolicy,
     QTableWidget, QTableWidgetItem, QHeaderView, QComboBox
 )
 
-
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 import numpy as np
-from scipy.spatial.distance import cosine
 import os
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
-from scipy.io import loadmat
 import pandas as pd
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
@@ -577,12 +572,6 @@ class MotorUnitTrackingDialog(QDialog):
         fig.subplots_adjust(top=1, bottom=0, left=0, right=1, wspace=0.15, hspace=0.05)
         canvas.draw()
 
-
-
-
-
-
-
     def clear_all_plots(self):
         """
         Clear and redraw all figures/canvases to a blank state.
@@ -598,7 +587,7 @@ class MotorUnitTrackingDialog(QDialog):
         self.muap_canvas1.draw()
         self.muap_fig2.clf()
         self.muap_canvas2.draw()
-        
+
 
     def toggle_inclusion(self):
         """

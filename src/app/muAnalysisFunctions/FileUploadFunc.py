@@ -1,18 +1,11 @@
 import matplotlib
 matplotlib.use("Qt5Agg")
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QDialog
-# from core.utils.manual_editing.h5_import import h5py_convert
 from ui.components.muAnalysisComponents.ConfirmationDialog import ConfirmationDialog
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
-from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
-
 from matplotlib import pyplot as plt
-import pandas as pd
-import numpy as np
-
-# from h5py import File as h5py
 
 import openhdemg.library as emg
 
@@ -89,16 +82,11 @@ class FileUploadFunc:
                     "NotImplementedError",
                 ).exec_()
                 error = 1
-                # f = h5py(file_path, "r")
-                # print("h5py File load success")
-                # files = h5py_convert().h5py_to_dict(f)
-                # print(files)
             except:
                 self.import_data(None, None)
                 error = 1
 
         if emgfile:
-            # FileUploadFunc.file = emg.sort_mus(emgfile)
             FileUploadFunc.file = emgfile
             self.file_path = file_path
             self.import_data(analysis_plot, FileUploadFunc.file)
@@ -126,9 +114,6 @@ class FileUploadFunc:
         """
 
         if emgfile:
-            # fig = emg.plot_idr(emgfile, showimmediately=False)
-            # canvas = SaveablePlot(fig)  # plotting in centre with the data now handled
-            # analysis_plot.display_fig(canvas)
             self.plot_idr(emgfile, analysis_plot)
         else:
             ErrorDialog("Loaded File has errors", "Error").exec_()
