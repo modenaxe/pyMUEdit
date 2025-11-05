@@ -153,7 +153,9 @@ class AdvancedTools(QWidget):
             dialog = MotorUnitTrackingDialog(
                 parent=self,
                 matrix_orientation=matrix_orientation,
-                matrix_code=matrix_code
+                matrix_code=matrix_code,
+                n_rows=rows,
+                n_cols=columns
             )
             dialog.exec_()
         elif selected_tool == "Conduction Velocity Estimation":
