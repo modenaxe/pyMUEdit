@@ -2,7 +2,6 @@ import pandas as pd
 from core.muAnalysisCore.AnalysisResultsHist import store
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
-from core.muAnalysisCore.SelectRange import SelectRange
 
 from openhdemg.library import get_mvc, compute_rfd
 
