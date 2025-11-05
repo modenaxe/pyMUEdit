@@ -79,6 +79,7 @@ class MotorUnitPropertiesDialog(QWidget):
             items=["rec", "derec", "rec_derec", "steady", "rec_derec_steady"],
             parent=self,
         )
+        self.dr_event_dropdown.setCurrentIndex(0)
         self.dr_event_dropdown.setMinimumHeight(32)
         dr_section.addWidget(self.dr_event_dropdown)
 

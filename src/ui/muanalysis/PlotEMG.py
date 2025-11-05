@@ -87,6 +87,7 @@ class PlotEMGToolDialog(QDialog):
             items=["GR08MM1305", "GR04MM1305", "GR10MM0808"],
             parent=self
         )
+        self.matrix_code_dropdown.setCurrentIndex(0)
         dropdown_col.addWidget(self.matrix_code_dropdown)
 
         # orientation dropdown
@@ -95,6 +96,7 @@ class PlotEMGToolDialog(QDialog):
             items=["0", "180"],
             parent=self
         )
+        self.orientation_dropdown.setCurrentIndex(1)
         dropdown_col.addWidget(self.orientation_dropdown)
         filter_row_layout.addWidget(dropdowns, stretch=1)
 
@@ -237,6 +239,7 @@ class PlotEMGToolDialog(QDialog):
             items=["Single Differential", "Double Differential"],
             parent=self
         )
+        self.derivation_config_dropdown.setCurrentIndex(0)
         derivation_row.addWidget(self.derivation_config_dropdown)
 
         # the button
@@ -264,6 +267,7 @@ class PlotEMGToolDialog(QDialog):
             "Double differential"]
         configuration_dropdown = AnalysisDropdownDialog(
             "Configuration", configuration_items, parent=self)
+        configuration_dropdown.setCurrentIndex(0)
         muap_row.addWidget(configuration_dropdown, stretch=1)
         self.configuration_dropdown = configuration_dropdown
 
@@ -271,6 +275,7 @@ class PlotEMGToolDialog(QDialog):
         timewindow_items = ["25", "50", "100", "200"]
         timewindow_dropdown = AnalysisDropdownDialog(
             "Timewindow (ms)", timewindow_items, parent=self)
+        timewindow_dropdown.setCurrentIndex(1)
         muap_row.addWidget(timewindow_dropdown, stretch=1)
         self.timewindow_dropdown = timewindow_dropdown
 
