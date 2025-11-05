@@ -25,7 +25,10 @@ from ui.components import (ActionButton, CleanCard, CleanScrollBar, CleanTheme,
                            CollapsiblePanel, GoodSlider, SectionHeader,
                            SettingsGroup, Sidebar, VisualizationPanelForEdit)
 from ui.components.ActionButtonedit import ActionButtonedit
-
+from app.muEditFunctions.overlay_plots import (
+    overlay_file_button_pushed,
+    clear_overlay_data,
+)
 
 class FixedPopupComboBox(QComboBox):  # set a new class for dropout moy
     def __init__(self, *args, **kwargs):
@@ -568,6 +571,24 @@ def create_visualization_tab(main_window):
 
     button_panel.add_widget(row4)
 
+    # Overlay Decomposition Toggle
+    row5 = QWidget()
+    row5_lay = QHBoxLayout(row5)
+    row5_lay.setContentsMargins(0, 0, 0, 0)
+    row5_lay.setSpacing(6)
+
+    overlay_lbl = QLabel("Overlay Benchmark Decomposition")
+    set_standard_label_style(overlay_lbl)
+    row5_lay.addWidget(overlay_lbl)
+
+    main_window.overlay_switch = ToggleSwitch()
+    main_window.overlay_switch.toggled.connect(
+        lambda checked: overlay_file_button_pushed(main_window) if checked else clear_overlay_data(main_window)
+    )
+    row5_lay.addWidget(main_window.overlay_switch)
+
+    button_panel.add_widget(row5)
+
     viz_layout.addWidget(button_panel)
     viz_layout.addStretch()
 
@@ -925,7 +946,7 @@ def create_plot_widget(main_window, y_label, x_label=""):
             super().__init__(*args, **kwargs)
             self.zoom_slider = zoom_slider
 
-        def wheelEvent(self, event):
+        def wheelEvent(self, event, *args, **kwargs):
             event.accept()
             delta = event.delta()
             cur = self.zoom_slider.get_slider_value()
@@ -934,6 +955,8 @@ def create_plot_widget(main_window, y_label, x_label=""):
                 self.zoom_slider.set_slider_value(cur + 1)
             elif delta < 0:
                 self.zoom_slider.set_slider_value(cur - 1)
+            
+            super().wheelEvent(event, *args, **kwargs)
 
         def keyPressEvent(self, event):
             if event.key() in (
