@@ -1,9 +1,12 @@
+from datetime import datetime
 from pathlib import Path
+from tkinter.filedialog import FileDialog
 
 import pyqtgraph as pg
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtSvg import QSvgWidget
+from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
                              QPushButton, QScrollArea, QSizePolicy,
                              QSpacerItem, QStackedWidget, QVBoxLayout, QWidget)
@@ -96,10 +99,6 @@ def create_right_content(import_window):
     # Add section header
     header = SectionHeader("Import HDEMG Data")
     right_layout.addWidget(header)
-
-    # Create dropzone card
-    dropzone_card = create_dropzone_card(import_window)
-    right_layout.addWidget(dropzone_card)
 
     # Create preview section
     preview_section = create_preview_section(import_window)
@@ -370,6 +369,19 @@ def _create_left_sidebar(import_window):
     """Creates the improved left sidebar with SVG icons."""
     # Create sidebar with app title
     sidebar = Sidebar("HDEMG App")
+
+    export_session_button = ActionButton("Export Session", primary=True)
+    export_session_button.setMinimumHeight(40)  # Match SidebarButton height
+    export_session_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    export_session_button.setCursor(QCursor(Qt.PointingHandCursor))
+    export_session_button.clicked.connect(import_window.export_session)
+    import_window.sidebar_buttons["export_session_button"] = export_session_button
+
+    sidebar.layout.insertWidget(1, export_session_button)
+
+    spacer = QSpacerItem(0, 15, QSizePolicy.Minimum, QSizePolicy.Fixed)
+    sidebar.layout.insertSpacerItem(2, spacer)
+
     # Define icon names
     icons = {
         "import": "import_data_icon",
@@ -493,3 +505,4 @@ def update_sidebar_selection(import_window, selected_key):
                 button.blockSignals(True)
                 button.setChecked(key == selected_key)
                 button.blockSignals(False)
+
