@@ -14,6 +14,21 @@ from openhdemg.library import plot_muaps_for_cv, sta, xcc_sta, sort_rawemg, doub
 # --- Helper Functions ---
 def get_sta_xcc(emgfile, code, orientation, n_cols, n_rows):
 
+    """
+    Compute STA and XCC dictionaries for given EMG file and electrode configuration.
+
+    Params:
+        - emgfile: EMG file dictionary containing RAW_SIGNAL and MUPULSES
+        - code: Electrode grid code (e.g., "GR08MM1305")
+        - orientation: Orientation of the electrode grid (0 or 180 degrees)
+        - n_cols: Number of columns in the electrode grid
+        - n_rows: Number of rows in the electrode grid
+
+    Returns:
+        - sta_dict: Dictionary of spike-triggered averages for each motor unit
+        - xcc_dict: Dictionary of cross-correlation values for each motor unit
+    """
+
     sorted_rawemg = sort_rawemg(
         emgfile=emgfile,
         code=code,
@@ -51,6 +66,8 @@ def get_available_mus():
 
 def get_available_grid_rows(st):
     """Get list of available electrode grid row indices.
+    Params:
+        st: Spike-triggered average dictionary
 
     Returns:
         List of string representations of row indices
@@ -66,6 +83,9 @@ def get_available_grid_rows(st):
 
 def get_available_grid_columns(st):
     """Get list of available electrode grid column indices.
+
+    Params:
+        st: Spike-triggered average dictionary
 
     Returns:
         List of string representations of column indices
