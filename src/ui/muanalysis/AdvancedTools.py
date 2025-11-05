@@ -45,6 +45,7 @@ class AdvancedTools(QWidget):
         analysis_tools_dropdown = AnalysisDropdown(
             self.analysis_tool, items=self.analysis_tools_options, parent=self
         )
+        analysis_tools_dropdown.setCurrentIndex(0)
         adv_layout.addWidget(analysis_tools_dropdown)
         self.analysis_tools_dropdown = analysis_tools_dropdown
 
@@ -53,11 +54,13 @@ class AdvancedTools(QWidget):
             self.matrix_orientation, items=self.matrix_orientation_options, parent=self)
         adv_layout.addWidget(matrix_orientation_dropdown)
         self.matrix_orientation_dropdown = matrix_orientation_dropdown
+        self.matrix_orientation_dropdown.setCurrentIndex(1)
 
         # matrix selection dropdown
         matrix_code_dropdown = AnalysisDropdown(
             self.matrix_code, items=self.matrix_code_options, parent=self
         )
+        matrix_code_dropdown.setCurrentIndex(1)
         adv_layout.addWidget(matrix_code_dropdown)
         self.matrix_code_dropdown = matrix_code_dropdown
         self.matrix_code_dropdown.currentTextChanged.connect(
