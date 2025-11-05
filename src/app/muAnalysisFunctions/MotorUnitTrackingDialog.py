@@ -70,11 +70,9 @@ class MotorUnitTrackingDialog(QDialog):
         self.results = []
         self.inclusion_status = []
         self.init_ui()
-        
-        
-        self.matrix_orientation = int(matrix_orientation) if matrix_orientation else 0
-        self.matrix_code = None if matrix_code in (None, "", "None") else matrix_code
-        
+
+        self.matrix_orientation = matrix_orientation
+        self.matrix_code = matrix_code
 
     def init_ui(self):
         """

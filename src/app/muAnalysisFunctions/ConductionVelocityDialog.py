@@ -13,7 +13,7 @@ from app.muAnalysisFunctions.electrode_layouts import get_electrode_grid
 
 from ui.components import ActionButton
 
-from openhdemg.library import plot_muaps_for_cv, sta, xcc_sta, sort_rawemg, double_diff
+from openhdemg.library import plot_muaps_for_cv, sta, xcc_sta, sort_rawemg, double_diff, estimate_cv_via_mle
 
 
 # --- Utility Functions ---
@@ -35,73 +35,18 @@ def norm_xcorr(sig1, sig2, out="max"):
         corr = corr / norm_factor
     return np.max(np.abs(corr)) if out == "max" else corr
 
+def get_sta_xcc(emgfile, code, orientation):
+    sorted_rawemg = sort_rawemg(
+        emgfile=emgfile,
+        code=code,
+        orientation=orientation
+    )
 
-def find_mle_teta(sig1, sig2, ied, fsamp):
-    """Find initial theta estimate for MLE CV estimation.
+    dd = double_diff(sorted_rawemg)
+    sta_dict = sta(emgfile, dd)
+    xcc_dict = xcc_sta(sta_dict)
 
-    Args:
-        sig1: First signal array
-        sig2: Second signal array
-        ied: Inter-electrode distance in mm
-        fsamp: Sampling frequency in Hz
-
-    Returns:
-        Initial theta estimate (1/cv_estimate) for optimization
-    """
-    corr = correlate(sig1, sig2, mode="full")
-    lags = np.arange(-len(sig1) + 1, len(sig1))
-    delay_samples = max(1, abs(lags[np.argmax(np.abs(corr))]))
-    cv_estimate = (ied / 1000) / (delay_samples / fsamp)
-    return 1.0 / cv_estimate if cv_estimate > 0 else 1.0
-
-
-def mle_cv_est(sig, initial_teta, ied, fsamp):
-    """Maximum likelihood estimation of conduction velocity.
-
-    Args:
-        sig: Signal array for CV estimation
-        initial_teta: Initial theta value for optimization
-        ied: Inter-electrode distance in mm
-        fsamp: Sampling frequency in Hz
-
-    Returns:
-        Tuple of (estimated_cv, optimized_teta) where cv is in m/s
-    """
-
-    def objective(teta):
-        cv = 1.0 / teta if teta > 0 else 0.1
-        return abs(cv - 3.0)  # Bias towards physiological range
-
-    try:
-        result = minimize(objective, initial_teta, method="BFGS")
-        teta_opt = result.x[0] if result.success else initial_teta
-        cv = 1.0 / teta_opt if teta_opt > 0 else 1.0 / initial_teta
-    except:
-        cv = 1.0 / initial_teta if initial_teta > 0 else 3.0
-        teta_opt = initial_teta
-    return cv, teta_opt
-
-
-def estimate_cv_via_mle(emgfile, signal):
-    """Estimate conduction velocity via maximum likelihood estimation.
-
-    Args:
-        emgfile: EMG file dictionary containing IED and FSAMP parameters
-        signal: Signal data for CV estimation (DataFrame or array)
-
-    Returns:
-        Estimated conduction velocity in m/s, or NaN if estimation fails
-    """
-    ied, fsamp = emgfile.get("IED", 8.0), emgfile.get("FSAMP", 2048)
-    sig = (signal.values if hasattr(signal, "values") else signal).T
-    if sig.ndim == 1:
-        return np.nan
-
-    sig1, sig2 = (sig[1, :], sig[2, :]) if sig.shape[0] > 3 else (sig[0, :], sig[1, :])
-    teta = find_mle_teta(sig1, sig2, ied, fsamp)
-    cv, _ = mle_cv_est(sig, teta, ied, fsamp)
-    return abs(cv)
-
+    return sta_dict, xcc_dict
 
 def get_emg_data(key, default=None):
     """Helper to safely get EMG data from the loaded file.
@@ -116,7 +61,6 @@ def get_emg_data(key, default=None):
     emgfile = FileUploadFunc.file
     return emgfile.get(key, default) if emgfile else default
 
-
 def get_available_mus():
     """Get list of available motor unit indices from loaded EMG file.
 
@@ -124,7 +68,6 @@ def get_available_mus():
         List of motor unit indices (0 to NUMBER_OF_MUS-1)
     """
     return list(range(get_emg_data("NUMBER_OF_MUS", 0)))
-
 
 def get_available_grid_rows():
     """Get list of available electrode grid row indices.
@@ -134,7 +77,6 @@ def get_available_grid_rows():
     """
     return [str(i) for i in range(11)]  # Reference shows rows 0-10
 
-
 def get_available_grid_columns():
     """Get list of available electrode grid column indices.
 
@@ -143,9 +85,8 @@ def get_available_grid_columns():
     """
     return [str(i) for i in range(5)]  # 5 columns for GR08MM1305
 
-
 class ConductionVelocityDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, matrix_orientation=180, matrix_code="GR08MM1305"):
         super().__init__(parent)
         self.setWindowTitle("MUs CV estimation")
         self.setMinimumSize(1000, 700)
@@ -154,6 +95,9 @@ class ConductionVelocityDialog(QDialog):
         # Cache for performance
         self._electrode_grid_cache = None
         self._electrode_positions_cache = None
+
+        self.code = matrix_code
+        self.orientation = matrix_orientation
 
         self._init_ui()
         self._load_initial_data()
@@ -654,18 +598,23 @@ class ConductionVelocityDialog(QDialog):
         fig = self.plot_canvas.figure
         fig.clear()
 
-        code = "GR08MM1305"
-        orientation = 180
+        # sorted_rawemg = sort_rawemg(
+        #     emgfile=emgfile,
+        #     code=self.code,
+        #     orientation=self.orientation
+        # )
 
-        sorted_rawemg = sort_rawemg(
-            emgfile=emgfile,
-            code=code,
-            orientation=orientation
+        # dd = double_diff(sorted_rawemg)
+
+        # sta_dict = sta(emgfile, dd)
+        # xcc_values = xcc_sta(sta_dict)
+
+        sta_dict, xcc_values = get_sta_xcc(
+            emgfile,
+            code=self.code,
+            orientation=self.orientation
         )
 
-        dd = double_diff(sorted_rawemg)
-
-        sta_dict = sta(emgfile, dd)
         values = self._get_ui_values()
 
         mu = values["mu"]
@@ -674,8 +623,6 @@ class ConductionVelocityDialog(QDialog):
         if muaps is None:
             self._show_message("MUAPs not available")
             return
-
-        xcc_values = xcc_sta(sta_dict)
 
         self.plot_canvas.figure = plot_muaps_for_cv(
             sta_dict=sta_dict[mu],
@@ -741,3 +688,72 @@ class ConductionVelocityDialog(QDialog):
         self._electrode_positions_cache = None
         self._refresh_dropdowns()
         self._update_plot()
+
+
+    """ DEPRECATED FUNCTIONS - to be removed when client approval """
+
+# def find_mle_teta(sig1, sig2, ied, fsamp):
+#     """Find initial theta estimate for MLE CV estimation.
+
+#     Args:
+#         sig1: First signal array
+#         sig2: Second signal array
+#         ied: Inter-electrode distance in mm
+#         fsamp: Sampling frequency in Hz
+
+#     Returns:
+#         Initial theta estimate (1/cv_estimate) for optimization
+#     """
+#     corr = correlate(sig1, sig2, mode="full")
+#     lags = np.arange(-len(sig1) + 1, len(sig1))
+#     delay_samples = max(1, abs(lags[np.argmax(np.abs(corr))]))
+#     cv_estimate = (ied / 1000) / (delay_samples / fsamp)
+#     return 1.0 / cv_estimate if cv_estimate > 0 else 1.0
+
+
+# def mle_cv_est(sig, initial_teta, ied, fsamp):
+#     """Maximum likelihood estimation of conduction velocity.
+
+#     Args:
+#         sig: Signal array for CV estimation
+#         initial_teta: Initial theta value for optimization
+#         ied: Inter-electrode distance in mm
+#         fsamp: Sampling frequency in Hz
+
+#     Returns:
+#         Tuple of (estimated_cv, optimized_teta) where cv is in m/s
+#     """
+
+#     def objective(teta):
+#         cv = 1.0 / teta if teta > 0 else 0.1
+#         return abs(cv - 3.0)  # Bias towards physiological range
+
+#     try:
+#         result = minimize(objective, initial_teta, method="BFGS")
+#         teta_opt = result.x[0] if result.success else initial_teta
+#         cv = 1.0 / teta_opt if teta_opt > 0 else 1.0 / initial_teta
+#     except:
+#         cv = 1.0 / initial_teta if initial_teta > 0 else 3.0
+#         teta_opt = initial_teta
+#     return cv, teta_opt
+
+
+# def estimate_cv_via_mle(emgfile, signal):
+#     """Estimate conduction velocity via maximum likelihood estimation.
+
+#     Args:
+#         emgfile: EMG file dictionary containing IED and FSAMP parameters
+#         signal: Signal data for CV estimation (DataFrame or array)
+
+#     Returns:
+#         Estimated conduction velocity in m/s, or NaN if estimation fails
+#     """
+#     ied, fsamp = emgfile.get("IED", 8.0), emgfile.get("FSAMP", 2048)
+#     sig = (signal.values if hasattr(signal, "values") else signal).T
+#     if sig.ndim == 1:
+#         return np.nan
+
+#     sig1, sig2 = (sig[1, :], sig[2, :]) if sig.shape[0] > 3 else (sig[0, :], sig[1, :])
+#     teta = find_mle_teta(sig1, sig2, ied, fsamp)
+#     cv, _ = mle_cv_est(sig, teta, ied, fsamp)
+#     return abs(cv)

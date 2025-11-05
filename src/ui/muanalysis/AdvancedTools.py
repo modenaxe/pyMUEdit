@@ -97,15 +97,26 @@ class AdvancedTools(QWidget):
 
     def show_analysis(self):
         selected_tool = self.analysis_tools_dropdown.currentText()
+
+        matrix_orientation_string = self.matrix_orientation_dropdown.currentText()
+        matrix_code_string = self.matrix_code_dropdown.currentText()
+
+        matrix_orientation = int(matrix_orientation_string) if matrix_orientation_string else 180
+        matrix_code = None if matrix_code_string in (None, "", "None") else matrix_code_string
+
         if selected_tool == "Motor Unit Tracking":
             dialog = MotorUnitTrackingDialog(
                 parent=self,
-                matrix_orientation=self.matrix_orientation_dropdown.currentText(),
-                matrix_code=self.matrix_code_dropdown.currentText(),
+                matrix_orientation=matrix_orientation,
+                matrix_code=matrix_code
             )
             dialog.exec_()
         elif selected_tool == "Conduction Velocity Estimation":
-            dialog = ConductionVelocityDialog(self)
+            dialog = ConductionVelocityDialog(
+                parent=self,
+                matrix_orientation=matrix_orientation,
+                matrix_code=matrix_code
+            )
             dialog.exec_()
         elif selected_tool == "Persistent Inward Currents":
             dialog = PICDialog(self)
