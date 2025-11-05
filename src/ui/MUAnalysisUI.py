@@ -1,7 +1,7 @@
 import sys
 
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QColor, QFont
+from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
                              QMainWindow, QScrollArea,
                              QSizePolicy, QStyle, QVBoxLayout, QWidget)
@@ -12,8 +12,6 @@ from app.muAnalysisFunctions.ResizeFunc import Resize
 from core.muAnalysisCore.AnalysisResultsHist import store
 from ui.components.muAnalysisComponents.AnalysisPlot import AnalysisPlot
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.CollapsibleSection import \
-    CollapsibleSection
 from ui.muanalysis.AdvancedTools import AdvancedTools
 from ui.muanalysis.FileSection import FileSection
 from ui.muanalysis.ForceAnalysisSection import ForceAnalysisSection
@@ -27,7 +25,6 @@ from ui.muanalysis.SignalEditing import SignalEditing
 
 from ui.components import CleanTheme as Theme
 from ui.components import ActionButton, CleanScrollBar, CollapsiblePanel, SectionHeader
-
 
 # legacy code
 def get_icon(standard_icon):
@@ -162,15 +159,6 @@ class MUAnalysis(QWidget):
         scroll_layout = QVBoxLayout(scroll_content)
         scroll_layout.setContentsMargins(0, 0, 10, 0)
         scroll_layout.setSpacing(10)
-
-        # title
-        # title_div = QWidget()  # creating layout for the margin spacing
-        # title_div_layout = QVBoxLayout(title_div)
-        # # tells it to keep left, top, right margins
-        # title_div_layout.setContentsMargins(-1, -1, -1, 0)
-        # title_label = AnalysisText.create_major_title("Analysis")
-        # title_div_layout.addWidget(title_label)
-        # scroll_layout.addWidget(title_div)
 
         # MU view settings
         mu_view_widget = QWidget()
