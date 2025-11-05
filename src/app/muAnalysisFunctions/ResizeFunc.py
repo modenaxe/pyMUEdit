@@ -1,4 +1,4 @@
-from core.muAnalysisCore.SelectRange import SelectRange
+# from core.muAnalysisCore.SelectRange import SelectRange
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 
@@ -31,18 +31,22 @@ class Resize:
         if not self.mu.data_loaded():
             ErrorDialog("No file has been loaded", "Error").exec_()
             return
-        SelectRange(self.analysis_plot, self.two_point, False)
+        # SelectRange(self.analysis_plot, self.two_point, False)
 
-    def two_point(self, x, y):
-        """Callback function for range selection completion.
-
-        Args:
-            x: Start point (sample index) selected by user
-            y: End point (sample index) selected by user
-
-        Performs the actual resize operation, updates the plot display,
-        and reverts the plot to normal interaction mode.
-        """
-        FileUploadFunc.file, start_, end_ = resize_emgfile(FileUploadFunc.file, area=[x, y])
+        FileUploadFunc.file, start_, end_ = resize_emgfile(FileUploadFunc.file)
         self.mu.plot_idr(FileUploadFunc.file, self.analysis_plot)
         self.analysis_plot.revert()
+
+    # def two_point(self, x, y):
+    #     """Callback function for range selection completion.
+
+    #     Args:
+    #         x: Start point (sample index) selected by user
+    #         y: End point (sample index) selected by user
+
+    #     Performs the actual resize operation, updates the plot display,
+    #     and reverts the plot to normal interaction mode.
+    #     """
+    #     FileUploadFunc.file, start_, end_ = resize_emgfile(FileUploadFunc.file, area=[x, y])
+    #     self.mu.plot_idr(FileUploadFunc.file, self.analysis_plot)
+    #     self.analysis_plot.revert()
