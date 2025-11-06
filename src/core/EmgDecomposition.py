@@ -1211,6 +1211,18 @@ class offline_EMG(EMG):
                 },
                 "post_process_across_arrays", 0
             )
+    
+        if not hasattr(self, 'mu_dict') or not isinstance(self.mu_dict, dict):
+            print("Warning: mu_dict not properly initialized")
+            self.mu_dict = {"pulse_trains": [], "discharge_times": []}
+        
+        if "pulse_trains" not in self.mu_dict or not isinstance(self.mu_dict["pulse_trains"], list):
+            print("Warning: pulse_trains not properly initialized")
+            self.mu_dict["pulse_trains"] = []
+            
+        if "discharge_times" not in self.mu_dict or not isinstance(self.mu_dict["discharge_times"], list):
+            print("Warning: discharge_times not properly initialized")
+            self.mu_dict["discharge_times"] = []
 
         mu_count = 0
         no_arrays = len(self.mu_dict["pulse_trains"])
@@ -1251,12 +1263,16 @@ class offline_EMG(EMG):
 
         if mu_count == 0:
             print("No motor units found, skipping cross-array processing")
+            self.mu_dict["muscle"] = np.array([])
             return
 
         # ensure signal target exists and has proper shape
         if "target" not in self.signal_dict or self.signal_dict["target"] is None:
             print("Warning: No target signal found, using default size")
-            signal_length = 1000
+            if "data" in self.signal_dict and self.signal_dict["data"] is not None:
+                signal_length = self.signal_dict["data"].shape[1]
+            else:
+                signal_length = 1000
         else:
             signal_length = np.shape(self.signal_dict["target"])[0]
 
