@@ -498,7 +498,7 @@ def setup_bottom_navigation(main_window):
             border-top: 1px solid {CleanTheme.BORDER};
         }}
     """)
-    bottom_nav.setFixedHeight(80)
+    bottom_nav.setFixedHeight(64)
 
     # create layout for bottom navigation
     bottom_layout = QHBoxLayout(bottom_nav)
@@ -507,25 +507,7 @@ def setup_bottom_navigation(main_window):
 
     # previous button
     main_window.back_to_import_btn = ActionButton("← Previous", primary=False)
-    main_window.back_to_import_btn.setMinimumWidth(120)
-    main_window.back_to_import_btn.setStyleSheet(f"""
-        QPushButton {{
-            background-color: {CleanTheme.BG_MAIN};
-            color: {CleanTheme.TEXT_PRIMARY};
-            border: 1px solid {CleanTheme.BORDER};
-            border-radius: 6px;
-            padding: 12px 24px;
-            font-size: 14px;
-            font-weight: 500;
-        }}
-        QPushButton:hover {{
-            background-color: {CleanTheme.BG_VISUALIZATION};
-            border-color: {CleanTheme.TEXT_SECONDARY};
-        }}
-        QPushButton:pressed {{
-            background-color: {CleanTheme.HEADER};
-        }}
-    """)
+    main_window.back_to_import_btn.setMinimumWidth(90)
     bottom_layout.addWidget(main_window.back_to_import_btn)
 
     bottom_layout.addStretch()
@@ -533,28 +515,7 @@ def setup_bottom_navigation(main_window):
     # next button
     main_window.next_to_editing_btn = ActionButton("Next →", primary=True)
     main_window.next_to_editing_btn.setEnabled(False)
-    main_window.next_to_editing_btn.setMinimumWidth(120)
-    main_window.next_to_editing_btn.setStyleSheet(f"""
-        QPushButton {{
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 12px 24px;
-            font-size: 14px;
-            font-weight: 500;
-        }}
-        QPushButton:hover {{
-            background-color: #0056B3;
-        }}
-        QPushButton:pressed {{
-            background-color: #004085;
-        }}
-        QPushButton:disabled {{
-            background-color: {CleanTheme.BG_VISUALIZATION};
-            color: {CleanTheme.TEXT_SECONDARY};
-        }}
-    """)
+    main_window.next_to_editing_btn.setMinimumWidth(90)
     bottom_layout.addWidget(main_window.next_to_editing_btn)
 
     # add the bottom navigation to the main layout
