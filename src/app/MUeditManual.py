@@ -32,6 +32,7 @@ import h5py
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from types import MethodType
 
 from ui.MUeditManualUI import setup_ui
 from core.utils.manual_editing.getsil import getsil
@@ -58,9 +59,18 @@ from app.muEditFunctions.mu_selection import (
     calculate_silval
 )
 from app.muEditFunctions.edit_actions import (
+    add_spikes_button_pushed,
     delete_spikes_button_pushed,
-    add_spikes_button_pushed
+    delete_dr_button_pushed,
+    remove_outliers_button_pushed,
+    lock_spikes_button_pushed
 )
+from app.muEditFunctions.mu_filter_actions import (
+    update_mu_filter_button_pushed,
+    extend_mu_filter_button_pushed,
+)
+from app.muEditFunctions.mu_selection import update_display_mus
+
 # Import custom components
 from ui.components import (
     WarningDialog,
@@ -109,6 +119,17 @@ class MUeditManual(QMainWindow):
         self._save_flag = True
         self._on_save = 0
         self._ish5 = False
+        self.overlay_data = None
+
+        # Connected methods to class
+        self.add_spikes_button_pushed = MethodType(add_spikes_button_pushed, self)
+        self.delete_spikes_button_pushed = MethodType(delete_spikes_button_pushed, self)
+        self.delete_dr_button_pushed = MethodType(delete_dr_button_pushed, self)
+        self.remove_outliers_button_pushed = MethodType(remove_outliers_button_pushed, self)
+        self.lock_spikes_button_pushed = MethodType(lock_spikes_button_pushed, self)
+        self.update_mu_filter_button_pushed = MethodType(update_mu_filter_button_pushed, self)
+        self.extend_mu_filter_button_pushed = MethodType(extend_mu_filter_button_pushed, self)
+        self.update_display_mus = MethodType(update_display_mus, self)
 
         # Set up the UI
         setup_ui(self)

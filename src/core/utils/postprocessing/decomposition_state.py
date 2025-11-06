@@ -5,6 +5,8 @@ import time
 import copy
 from core.logger import logger
 
+from core.database.database import upsert_file_versions
+
 # Path for saving decomposition states - Fixed to create in user home directory
 HOME_DIR = os.path.expanduser("~")
 STATES_DIR = os.path.join(HOME_DIR, "hdemg_states")
@@ -12,7 +14,7 @@ STATES_DIR = os.path.join(HOME_DIR, "hdemg_states")
 
 class DecompositionState:
     """Helper class to store and load decomposition states."""
-    
+
     @staticmethod
     def ensure_state_directory():
         """Ensures that the states directory exists."""
@@ -31,17 +33,16 @@ class DecompositionState:
                 logger.exception(f"Using fallback states directory: {STATES_DIR}")
     
     @staticmethod
-    def save_state(decomp_app, state_name=None):
+    def save_state(decomp_app, state_name=None, raw_fileid=None):
         """
         Saves the current state of the decomposition screen to be loaded later.
-        
+
         Args:
             decomp_app: The DecompositionApp instance
             state_name: Optional name for the state, defaults to timestamp + filename
         """
         logger.debug("Starting save_state()")
         DecompositionState.ensure_state_directory()
-        
         # Generate default state name if none provided
         if not state_name:
             timestamp = time.strftime("%Y%m%d_%H%M%S")
@@ -63,7 +64,6 @@ class DecompositionState:
                         pulses = result["Pulsetrain"][0, i]
                         if hasattr(pulses, "shape"):
                             total_mus += pulses.shape[0]
-        
         # Get SIL and CoV values
         sil_value = None
         cov_value = None
@@ -71,19 +71,18 @@ class DecompositionState:
             sil_text = decomp_app.sil_value_label.text()
             if sil_text and ':' in sil_text:
                 sil_value = sil_text.split(':', 1)[1].strip()
-        
         if hasattr(decomp_app, 'cov_value_label'):
             cov_text = decomp_app.cov_value_label.text()
             if cov_text and ':' in cov_text:
                 cov_value = cov_text.split(':', 1)[1].strip()
-        
+
         # Save plot data from the PyQtGraph plot widgets
         plot_data = {}
-        
+
         # Save reference plot data
         if hasattr(decomp_app, 'ui_plot_reference'):
             plot_data['reference'] = DecompositionState._extract_plot_data(decomp_app.ui_plot_reference)
-            
+
         # Save pulse train plot data
         if hasattr(decomp_app, 'ui_plot_pulsetrain'):
             plot_data['pulsetrain'] = DecompositionState._extract_plot_data(decomp_app.ui_plot_pulsetrain)
@@ -102,29 +101,29 @@ class DecompositionState:
             'timestamp': time.time(),
             'title': f"Analysis of {decomp_app.filename}",
             'description': f"Decomposition completed on {time.strftime('%Y-%m-%d %H:%M:%S')}",
-            
+
             # UI configurations
             'ui_params': decomp_app.ui_params if hasattr(decomp_app, 'ui_params') else None,
-            
+
             # Results summary
             'motor_units_count': str(total_mus),
             'sil_value': sil_value,
             'cov_value': cov_value,
-            
+
             # Visualization data
             'current_plot_data': decomp_app.current_plot_data if hasattr(decomp_app, 'current_plot_data') else None,
             'plot_data': plot_data,  # New field for extracted plot data
-            
+
             # EMG data for channel viewer (use a more safe approach)
             'emg_data': None,  # Will be set below if available
-            
+
             # Decomposition result data (for reconstruction)
             'decomposition_result': decomp_app.decomposition_result if hasattr(decomp_app, 'decomposition_result') else None,
-            
+
             # Path to the saved output file for reference
             'output_file': os.path.join(decomp_app.pathname, decomp_app.filename + "_output_decomp.mat") if decomp_app.pathname and decomp_app.filename else None,
         }
-        
+
         # Try to safely extract EMG data for channel viewer
         try:
             if hasattr(decomp_app, 'emg_obj') and decomp_app.emg_obj:
@@ -140,10 +139,10 @@ class DecompositionState:
         except Exception as e:
             logger.exception(f"Warning: Failed to extract EMG data for channel viewer: {e}")
             # This is not critical, so continue with saving anyway
-        
+
         # Create a special object for storing NumPy arrays
         serializable_state = DecompositionState._make_serializable(state)
-        
+
         # Save the state
         state_path = os.path.join(STATES_DIR, f"{state_name}.decomp")
         logger.debug(f"Saving serialized state to {state_path}")
@@ -151,6 +150,7 @@ class DecompositionState:
             with open(state_path, 'wb') as f:
                 pickle.dump(serializable_state, f)
             logger.info(f"State saved successfully to {state_path}")
+            versionid = upsert_file_versions(state_path, raw_fileid, "decomposed")
         except Exception as e:
             logger.exception(f"Error saving state: {e}")
         
@@ -163,28 +163,25 @@ class DecompositionState:
             'description': state['description'],
             'motor_units_count': state['motor_units_count'],
         }
-    
     @staticmethod
     def _extract_plot_data(plot_widget):
         """
         Extracts data from a PyQtGraph plot widget to enable reconstruction.
-        
+
         Args:
             plot_widget: A PyQtGraph PlotWidget
-            
+
         Returns:
             Dictionary with plot data and configuration
         """
         if not plot_widget:
             return None
-            
         plot_data = {
             'items': [],
             'title': plot_widget.plotItem.titleLabel.text if hasattr(plot_widget.plotItem, 'titleLabel') else None,
             'x_range': plot_widget.viewRange()[0] if hasattr(plot_widget, 'viewRange') else None,
             'y_range': plot_widget.viewRange()[1] if hasattr(plot_widget, 'viewRange') else None,
         }
-        
         # Extract data from each plot item
         for item in plot_widget.plotItem.items:
             if hasattr(item, 'xData') and hasattr(item, 'yData'):
@@ -193,10 +190,10 @@ class DecompositionState:
                 pen_color = "#000000"  # Default black
                 pen_width = 1
                 pen_style = None
-                
+
                 if hasattr(item, 'opts') and isinstance(item.opts, dict):
                     pen_opt = item.opts.get('pen', None)
-                    
+
                     # Handle different pen formats
                     if isinstance(pen_opt, dict):
                         pen_color = pen_opt.get('color', "#000000")
@@ -207,7 +204,6 @@ class DecompositionState:
                         pen_width = pen_opt.width() if hasattr(pen_opt, 'width') else 1
                     elif isinstance(pen_opt, str):
                         pen_color = pen_opt
-                
                 item_data = {
                     'type': 'plot',
                     'x_data': item.xData if hasattr(item, 'xData') else None,
@@ -256,16 +252,15 @@ class DecompositionState:
                     else:
                         x_values = []
                         y_values = []
-                    
                     # Convert to list for serialization
                     if not isinstance(x_values, list):
                         x_values = list(x_values)
                     if not isinstance(y_values, list):
                         y_values = list(y_values)
-                    
+
                     # Get styling properties
                     size = item.opts.get('size', 10) if hasattr(item, 'opts') else 10
-                    
+
                     # Extract brush color safely
                     brush = '#FF0000'  # Default fallback
                     if hasattr(item, 'opts') and 'brush' in item.opts:
@@ -275,7 +270,6 @@ class DecompositionState:
                             brush = brush_obj.color().name()
                         elif isinstance(brush_obj, str):
                             brush = brush_obj
-                    
                     item_data = {
                         'type': 'scatter',
                         'x_data': x_values,
@@ -294,36 +288,34 @@ class DecompositionState:
                         'brush': '#FF0000',
                     }
                 plot_data['items'].append(item_data)
-        
+
         return plot_data
-        
+
     @staticmethod
     def load_state(state_path):
         """
         Loads a saved decomposition state.
-        
+
         Args:
             state_path: Path to the saved state file
-        
+
         Returns:
             Dictionary with the complete state information
         """
         with open(state_path, 'rb') as f:
             state = pickle.load(f)
-        
+
         # Convert serializable form back to original format
         return DecompositionState._restore_from_serializable(state)
-    
+
     @staticmethod
     def list_saved_states():
         """
         Lists all saved decomposition states.
-        
         Returns:
             List of dictionaries with state metadata
         """
         DecompositionState.ensure_state_directory()
-        
         states = []
         if os.path.exists(STATES_DIR):
             for filename in os.listdir(STATES_DIR):
@@ -332,7 +324,6 @@ class DecompositionState:
                         state_path = os.path.join(STATES_DIR, filename)
                         with open(state_path, 'rb') as f:
                             state = pickle.load(f)
-                        
                         # Extract basic metadata without full deserialization
                         metadata = {
                             'state_name': os.path.splitext(filename)[0],
@@ -348,11 +339,11 @@ class DecompositionState:
                         # Skip corrupted state files
                         logger.exception(f"Error reading state file {filename}: {e}")
                         continue
-        
+
         # Sort by timestamp, newest first
         states.sort(key=lambda x: x['timestamp'], reverse=True)
         return states
-    
+
     @staticmethod
     def delete_state(state_path):
         """Deletes a saved state file."""
@@ -364,7 +355,6 @@ class DecompositionState:
             except Exception as e:
                 logger.exception(f"Error deleting state file {state_path}: {e}")
         return False
-    
     @staticmethod
     def _make_serializable(obj):
         """
@@ -388,7 +378,6 @@ class DecompositionState:
             }
         else:
             return obj
-    
     @staticmethod
     def _restore_from_serializable(obj):
         """
