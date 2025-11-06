@@ -31,6 +31,7 @@ class DecompositionWorker(QThread):
     
     def stop(self):
         """Stop the decomposition worker"""
+        print("DecompositionWorker.stop() called")
         self.should_stop = True
         
         # set stop flag on the EMG object so FastICA can see it
@@ -39,6 +40,34 @@ class DecompositionWorker(QThread):
             print("Stop flag set on EMG object for FastICA")
         
         print("Stop flag set for decomposition worker")
+
+    def cleanup_incomplete_decomposition(self):
+        """Clean up incomplete decomposition data to prevent errors"""
+        try:
+            print("cleaning up incoplete decomposition data")
+
+            # reset mu directories to prevent index error
+            if hasattr(self.emg_obj, 'mu_dict'):
+                self.emg_obj.mu_dict["pulse_trains"] = []
+            
+                if hasattr(self.emg_obj, 'signal_dict'):
+                    num_electrodes = getattr(self.emg_obj.signal_dict, 'ngrid', 1)
+                else:
+                    num_electrodes = 1
+
+                # initialise the discharge_times list for each electrode
+                self.emg_obj.mu_dict["discharge_times"] = [[] for _ in range(num_electrodes)]
+
+                print(f"reset mu dictionaries for {num_electrodes} electrodes")
+
+            # reset decomposition dictioniaries
+            if hasattr(self.emg_obj, 'decomp_dict'):
+                self.emg_obj.decomp_dict["masked_mu_filters"] = []
+
+            print("clean up completed successfully")
+        
+        except Exception as cleanup_error:
+            print(f"error during clean up: {cleanup_error}")
 
     def run(self):
         """Run the decomposition process in a separate thread."""
@@ -51,6 +80,7 @@ class DecompositionWorker(QThread):
 
             if self.should_stop:
                 print("Decomposition stoppped before starting")
+                self.cleanup_incomplete_decomposition()
                 return
 
             # Map parameters from MUedit to the emg_obj
@@ -58,6 +88,7 @@ class DecompositionWorker(QThread):
 
             if self.should_stop:
                 print("Decomposition stoppped after parameter mapping")
+                self.cleanup_incomplete_decomposition()
                 return
 
             # Send initial progress
@@ -68,6 +99,7 @@ class DecompositionWorker(QThread):
 
             if self.should_stop:
                 print("Decomposition stoppped after electrode formatting")
+                self.cleanup_incomplete_decomposition()
                 return
 
             # Manual rejection (only if enabled)
@@ -77,6 +109,7 @@ class DecompositionWorker(QThread):
 
             if self.should_stop:
                 print("Decomposition stoppped after manual rejection")
+                self.cleanup_incomplete_decomposition()
                 return
 
             # =================== BATCHING SIGNAL =======================
@@ -90,6 +123,7 @@ class DecompositionWorker(QThread):
 
             if self.should_stop:
                 print("Decomposition stoppped after batching")
+                self.cleanup_incomplete_decomposition()
                 return
 
             # =================== CONVOLUTIVE SPHERING ==================
@@ -173,6 +207,7 @@ class DecompositionWorker(QThread):
 
                     if self.should_stop:
                         print(f"Decomposition stoppped before convolutive sphering at electrode {g+1}, interval {interval+1}")
+                        self.cleanup_incomplete_decomposition()
                         return
 
                     # Run convolutive sphering
@@ -180,6 +215,7 @@ class DecompositionWorker(QThread):
 
                     if self.should_stop:
                         print(f"Decomposition stoppped before FastICA at electrode {g+1}, interval {interval+1}")
+                        self.cleanup_incomplete_decomposition()
                         return
 
                     # Run FastICA with plot callback
@@ -193,6 +229,7 @@ class DecompositionWorker(QThread):
 
                     if self.should_stop:
                         print(f"Decomposition stoppped after FastICA at electrode {g+1}, interval {interval+1}")
+                        self.cleanup_incomplete_decomposition()
                         return
 
                     # Send current progress with SIL/CoV information
@@ -207,6 +244,7 @@ class DecompositionWorker(QThread):
 
                 if self.should_stop:
                     print(f"Decomposition stoppped before post-processing electrode {g+1}")
+                    self.cleanup_incomplete_decomposition()
                     return
 
                 # Post-process this electrode
@@ -215,6 +253,7 @@ class DecompositionWorker(QThread):
             
             if self.should_stop:
                 print(f"Decomposition stoppped before processing across arrays")
+                self.cleanup_incomplete_decomposition()
                 return
 
             # Process across arrays if enabled
@@ -224,6 +263,7 @@ class DecompositionWorker(QThread):
 
             if self.should_stop:
                 print(f"Decomposition stoppped before formatting results")
+                self.cleanup_incomplete_decomposition()
                 return
 
             # Format results for return
