@@ -1,6 +1,6 @@
 from datetime import datetime
 from pathlib import Path
-# from tkinter.filedialog import FileDialog
+from tkinter.filedialog import FileDialog
 
 import pyqtgraph as pg
 from PyQt5.QtCore import Qt
