@@ -4,6 +4,7 @@ import traceback
 import numpy as np
 import scipy.io as sio
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
+from PyQt5.QtCore import pyqtSignal
 
 import pyqtgraph as pg
 
@@ -28,6 +29,10 @@ from MUeditManual import MUeditManual
 
 
 class DecompositionApp(QMainWindow):
+    # add signal for navigation
+    editing_requested = pyqtSignal(str, str)
+    import_requested = pyqtSignal()
+
     def __init__(self, emg_obj=None, filename=None, pathname=None, imported_signal=None, raw_fileid = None, config=None, parent=None):
         super().__init__(parent)
 
@@ -73,8 +78,7 @@ class DecompositionApp(QMainWindow):
 
     def back_to_import(self):
         """Return to the Import window."""
-        # This will now be connected externally to show the import view in the dashboard
-        pass
+        self.import_requested.emit()
 
     def set_data(self, emg_obj, filename, pathname, imported_signal=None):
         """Set data from ImportDataWindow and update UI."""
@@ -178,7 +182,7 @@ class DecompositionApp(QMainWindow):
                 print(f"Error creating preview plot: {e}")
 
     def open_editing_mode(self):
-        """Open the MUeditManual window for editing motor units"""
+        """navigate to the MU editing screen with decomposition data for editing motor units"""
         if not self.pathname or not self.filename:
             self.edit_field.setText("No file selected for editing")
             return
@@ -253,22 +257,14 @@ class DecompositionApp(QMainWindow):
                 "edition": edition_data,  # Properly formatted edition data
             }
 
-            def openEditor():
-                # Create the MUeditManual window
-                self.mu_edit_window = MUeditManual(filename=self.filename + "_fixed_for_editing.mat", pathname=self.pathname)
+            def on_file_ready():
+                # signal to parent to nav to editing mode
+                self.editing_requested.emit(self.filename + "_fixed_for_editing.mat", self.pathname)
+                self.edit_field.setText("navigating to mu editing screen...")
 
-                # Show the window without preloading
-                self.mu_edit_window.show()
-
-                # Suggest the file to open
-                self.edit_field.setText(f"Editor opened. Please select {fixed_filename}")
-
-
-            # Use existing save_mat_in_background function to save the fixed data
-            self.save_mat_in_background(fixed_filename, fixed_data, True, onFinished=openEditor)
-
-            # Update UI
-            self.edit_field.setText(f"Preparing data for editing and opening editor...")
+            # save the fixed file and then navigate
+            self.save_mat_in_background(fixed_filename, fixed_data, True, onFinished=on_file_ready)
+            self.edit_field.setText(f"Preparing data for editing...")
 
         except Exception as e:
             self.edit_field.setText(f"Error opening editing mode: {str(e)}")
