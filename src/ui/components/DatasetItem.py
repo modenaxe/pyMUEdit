@@ -37,6 +37,9 @@ class DatasetItem(QFrame):
             QFrame#datasetItem:hover {{
                 background-color: rgba(0, 0, 0, 0.05);
             }}
+            QLabel {{
+                background-color: transparent;
+            }}
         """
         )
 

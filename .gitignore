@@ -2,6 +2,8 @@ venv
 .venv
 __pycache__
 *.mat
+*.h5
+data/*.h5
 **/data1/
 data/*.mat
 tests/*.mat
@@ -9,3 +11,4 @@ tests/*.otb+
 .DS_Store
 .vscode
 .idea
+database.db
