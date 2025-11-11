@@ -12,6 +12,7 @@ from ui.components import (ActionButton, CleanScrollBar, CleanTheme,
                            CollapsiblePanel, FormDoubleSpinBox, FormDropdown,
                            FormSpinBox, SettingsGroup, VisualizationPanel)
 
+from ui.components.Footer import Footer
 
 def setup_ui(main_window):
     """
@@ -49,6 +50,19 @@ def setup_ui(main_window):
 
     main_window.main_layout.addWidget(content_widget)
 
+    main_window.footer = Footer(
+        # on_prev=main_window.go_to_import_data_screen, # These don't exist yet
+        # on_next=main_window.go_to_analysis_screen
+    )
+    main_window.main_layout.addWidget(main_window.footer)
+    
+    # Get file info from ImportDataWindow 
+    parent = main_window.parent()
+    if parent and hasattr(parent, "current_file_info"):
+        file_info = parent.current_file_info
+        main_window.footer.footer_file_info.setText(f"File: {file_info['name']}")
+        main_window.footer.size_info.setText(f"Size: {file_info['size']}")
+        main_window.footer.format_info.setText(f"Format: {file_info['format']}")
 
 def setup_left_panel(main_window):
     """Set up the left panel with settings and controls."""
