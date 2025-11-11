@@ -297,7 +297,7 @@ class ImportDataWindow(QMainWindow):
 
                 # Resize app window to show the plot properly, then display the plot in the preview pane
                 self.preview_stacked_frame.setCurrentIndex(PreviewElement.GRAPH.value)
-                self.next_btn.setEnabled(True)
+                self.footer.next_btn.setEnabled(True)
 
                 # Signal that we've imported a file with more details
                 file_info = {
@@ -343,7 +343,7 @@ class ImportDataWindow(QMainWindow):
                 self.play_error_popup("Error loading file", str(e))
                 print(f"Error loading OTB+ file: {e}")
                 traceback.print_exc()
-                self.next_btn.setEnabled(False)
+                self.footer.next_btn.setEnabled(False)
                 # Change file label to red if failure
                 self.file_info_label.setText(f"Failed uploading: {self.filename}")
                 self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
@@ -351,7 +351,7 @@ class ImportDataWindow(QMainWindow):
             self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
             self.preview_message.setText(f"File type {ext} not supported in this demo.\nPlease select an OTB+ file.")
             self.play_error_popup(f"File type error", f"File type {ext} not supported in this demo.\nPlease select an OTB+ file.")
-            self.next_btn.setEnabled(False)
+            self.footer.next_btn.setEnabled(False)
             self.file_info_label.setText(f"Failed uploading: {self.filename}")
             self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
             self.failure_message.setVisible(True)
