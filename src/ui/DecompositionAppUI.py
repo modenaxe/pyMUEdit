@@ -29,7 +29,8 @@ def setup_ui(main_window):
     # Main widget and layout
     main_window.central_widget = QWidget()
     main_window.setCentralWidget(main_window.central_widget)
-    main_window.main_layout = QHBoxLayout(main_window.central_widget)
+    # main_window.main_layout = QHBoxLayout(main_window.central_widget)
+    main_window.main_layout = QVBoxLayout(main_window.central_widget) # Changed to vertical layout
     main_window.main_layout.setContentsMargins(0, 0, 0, 0)
     main_window.main_layout.setSpacing(0)
 
@@ -54,6 +55,7 @@ def setup_ui(main_window):
         # on_prev=main_window.go_to_import_data_screen, # These don't exist yet
         # on_next=main_window.go_to_analysis_screen
     )
+    main_window.footer.setFixedHeight(64)
     main_window.main_layout.addWidget(main_window.footer)
     
     # Get file info from ImportDataWindow 
