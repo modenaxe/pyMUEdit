@@ -14,7 +14,7 @@ import pyqtgraph as pg
 # Import UI setup function
 from core.database.database import create_new_session, get_fileid_by_path, get_or_create_session_for_file, get_session_files, insert_files, upsert_file_versions
 from core.utils.io.filesize_formatter import filesize_formatter
-from core.utils.session.convert_h5 import save_as_h5
+from core.utils.session.convert_h5 import load_from_h5, save_as_h5
 from core.utils.io.filesize_formatter import filesize_formatter
 from ui.ImportDataWindowUI import setup_ui, update_sidebar_selection
 from ui.components.SegmentSessionPage import SegmentSessionPage
@@ -247,7 +247,7 @@ class ImportDataWindow(QMainWindow):
         # Reset failure messages
         self.failure_message.setVisible(False)
 
-        if ext == ".otb+" or ext == ".mat":
+        if ext == ".otb+" or ext == ".mat" or ext == ".h5":
             try:
                 # Construct the full file path
                 full_path = os.path.join(path, file)
@@ -278,6 +278,42 @@ class ImportDataWindow(QMainWindow):
                 elif ext == '.mat':
                     # Call the open_otb_plus function with the correct parameters
                     self.emg_obj.open_mat(full_path)
+
+                # elif ext == ".h5":
+                #     full_path = os.path.join(path, file)
+                #     try:
+                #         signal_dict, raw_filepath = load_from_h5(full_path)
+                #         self.emg_obj.signal_dict = signal_dict
+                #         self.imported_signal = signal_dict
+                #         self.raw_file_path = raw_filepath
+
+                #         h5_readin_savename = full_path
+                #         base_name = os.path.splitext(file)[0]
+                #         h5_processed_savename = os.path.join(path, f"{base_name}_processed.h5")
+
+                #         if "data" in signal_dict and "fsamp" in signal_dict:
+                #             self.cur_electrode_preview_idx = 0
+                #             self.update_preview_plot()
+                #             self.update_buttons()
+
+                #         self.file_info_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
+                #         self.next_btn.setEnabled(True)
+
+                #         sessionid = get_or_create_session_for_file(raw_filepath)
+                #         self.sessionid = sessionid
+                #         fileid = get_fileid_by_path(raw_filepath)
+                #         if not fileid:
+                #             fileid = insert_files(raw_filepath, file, sessionid)
+                #         versionid_readin = upsert_file_versions(h5_readin_savename, fileid, "readin")
+                #         versionid_processed = upsert_file_versions(h5_processed_savename, fileid, "processed")
+
+                #     except Exception as e:
+                #         self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
+                #         self.preview_message.setText(f"Error loading H5 file: {str(e)}")
+                #         self.play_error_popup("Error loading file", str(e))
+                #         traceback.print_exc()
+                #         self.next_btn.setEnabled(False)
+                #         self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
 
                 # Store the imported signal
                 signal = self.emg_obj.signal_dict
@@ -333,7 +369,6 @@ class ImportDataWindow(QMainWindow):
                     fileid = insert_files(full_path, file, sessionid)
 
                 versionid_readin = upsert_file_versions(h5_readin_savename, fileid, "readin")
-                versionid_processed = upsert_file_versions(h5_processed_savename, fileid, "processed")
 
                 self.raw_fileid = fileid
 

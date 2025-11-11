@@ -112,6 +112,7 @@ class DecompositionState:
 
             # Path to the saved output file for reference
             'output_file': os.path.join(decomp_app.pathname, decomp_app.filename + "_output_decomp.mat") if decomp_app.pathname and decomp_app.filename else None,
+
         }
 
         # Try to safely extract EMG data for channel viewer
@@ -142,7 +143,6 @@ class DecompositionState:
             print(f"Successfully saved state with {total_mus} motor units")
 
             # save to db
-            versionid = upsert_file_versions(state_path, raw_fileid, "decomposed")
         except Exception as e:
             print(f"Error saving state: {e}")
             import traceback

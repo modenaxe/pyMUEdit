@@ -10,6 +10,8 @@ import pyqtgraph as pg
 # Add project root to path
 from pathlib import Path
 
+from core.database.database import get_fileid_by_path, insert_log, upsert_file_versions
+from core.utils.session.convert_h5 import save_as_h5
 from ui.components.SegmentSessionPage import SegmentSessionPage
 
 project_root = Path(__file__).parent.parent.parent.parent
@@ -391,6 +393,20 @@ class DecompositionApp(QMainWindow):
             # Save with parameters
             parameters = prepare_parameters(self.ui_params, self.algo_choice) if hasattr(self, 'ui_params') else {}
             self.save_mat_in_background(savename, {"signal": formatted_result, "parameters": parameters}, True)
+
+            # save h5
+            base_filename = os.path.splitext(self.filename)[0]
+            savename_h5 = os.path.join(self.pathname, f"{base_filename}_decomp.h5")
+            save_as_h5(
+                {"signal": formatted_result, "parameters": parameters},
+                savename_h5,
+                raw_filepath=savename
+            )
+            print(parameters)
+            versionid = upsert_file_versions(savename_h5, self.raw_fileid, "decomposed")
+            insert_log(versionid, {
+                "method": self.algo_choice
+            }, self.ui_params)
 
             # Store the decomposition result
             self.decomposition_result = formatted_result

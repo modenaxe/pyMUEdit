@@ -12,3 +12,30 @@ def save_as_h5(signal_dict, output_path, raw_filepath=None):
 
         if raw_filepath:
             f.attrs['raw_filepath'] = os.path.abspath(raw_filepath)
+
+def load_from_h5(filepath):
+    signal_dict = {}
+    raw_filepath = None
+
+    with h5py.File(filepath, 'r') as f:
+        # Load datasets
+        for key, item in f.items():
+            if isinstance(item, h5py.Dataset):
+                signal_dict[key] = np.array(item)
+
+        # Load attributes
+        for key, value in f.attrs.items():
+            if key == "raw_filepath":
+                raw_filepath = str(value)
+            else:
+                try:
+                    # Try to convert numbers back
+                    val = int(value)
+                except ValueError:
+                    try:
+                        val = float(value)
+                    except ValueError:
+                        val = str(value)
+                signal_dict[key] = val
+
+    return signal_dict, raw_filepath
