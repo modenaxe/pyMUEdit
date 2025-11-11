@@ -63,8 +63,13 @@ class Footer(QFrame):
         self.next_btn = ActionButton("Next →", primary=True)
         self.next_btn.setEnabled(False)
         # self.next_btn.clicked.connect(
-        #     import_window.go_to_algorithm_screen)
+        #      import_window.go_to_algorithm_screen)
         # import_window.next_btn.setEnabled(False)
+
+        if on_prev:
+            self.prev_btn.clicked.connect(on_prev)
+        if on_next:
+            self.next_btn.clicked.connect(on_next)
 
         # Add navigation buttons to layout
         footer_layout.addWidget(self.prev_btn)
