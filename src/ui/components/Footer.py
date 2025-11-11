@@ -13,31 +13,24 @@ from ui.components import (ActionButton, CleanCard, CleanTheme, SectionHeader,
                            Sidebar, VisualizationPanel)
 from ui.components.CleanScrollBar import CleanScrollBar
 
+# Footer class for resuability, extensibility and maintability
 class Footer(QFrame):
     """Persistent footer component with file info and nav buttons across all tabs."""
 
     def __init__(self, on_prev=None, on_next=None, parent=None):
         super().__init__(parent)
+
+        """Create the footer with file info and navigation buttons."""
         self.setObjectName("footer")
-        self.setStyleSheet(f"""
+        self.setStyleSheet(
+            f"""
             #footer {{
                 background-color: {CleanTheme.BG_MAIN};
                 border-top: 1px solid {CleanTheme.BORDER};
             }}
-        """)
+        """
+        )
         
-        # """Create the footer with file info and navigation buttons."""
-        # footer = QFrame()
-        # footer.setObjectName("footer")
-        # footer.setStyleSheet(
-        #     f"""
-        #     #footer {{
-        #         background-color: {CleanTheme.BG_MAIN};
-        #         border-top: 1px solid {CleanTheme.BORDER};
-        #     }}
-        # """
-        # )
-
         footer_layout = QHBoxLayout(self)
         footer_layout.setContentsMargins(20, 10, 20, 10)
 
@@ -78,4 +71,3 @@ class Footer(QFrame):
         footer_layout.addSpacing(10)
         footer_layout.addWidget(self.next_btn)
 
-    # return footer
