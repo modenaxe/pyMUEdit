@@ -35,13 +35,14 @@ def setup_ui(main_window):
     main_window.main_layout.setSpacing(0)
 
     # Create the left panel for settings with a scroll area
-    setup_left_panel(main_window)
+    left_panel_widget = setup_left_panel(main_window)
 
-    # Create the content area (center + right panels)
+    # Create the content area (for left, centre and right panels)
     content_widget = QWidget()
     content_layout = QHBoxLayout(content_widget)
     content_layout.setContentsMargins(20, 20, 20, 20)
     content_layout.setSpacing(20)
+    content_layout.addWidget(left_panel_widget)
 
     # Create the center panel for visualization
     setup_center_panel(main_window, content_layout)
@@ -338,8 +339,9 @@ def setup_left_panel(main_window):
     # Add the scroll area to the container layout
     left_container_layout.addWidget(scroll_area)
 
-    # Add the container to the main layout
-    main_window.main_layout.addWidget(left_container)
+    # Return the left container
+    # main_window.main_layout.addWidget(left_container)
+    return left_container
 
 
 def setup_center_panel(main_window, parent_layout):
