@@ -125,14 +125,14 @@ class ImportDataWindow(QMainWindow):
                 # Update UI to show selected file
                 self.file_info_label.setText(f"Selected: {self.filename}")
                 self.file_info_label.setVisible(True)
-                self.footer_file_info.setText(f"File: {self.filename}")
+                self.footer.footer_file_info.setText(f"File: {self.filename}")
 
                 # Update file size and format
                 size_str = filesize_formatter(file_path)
                 file_format = os.path.splitext(self.filename)[1].upper().replace(".", "")
 
-                self.size_info.setText(f"Size: {size_str}")
-                self.format_info.setText(f"Format: {file_format}")
+                self.footer.size_info.setText(f"Size: {size_str}")
+                self.footer.format_info.setText(f"Format: {file_format}")
 
                 # Load the file
                 self.load_file(self.pathname, self.filename)
@@ -195,13 +195,13 @@ class ImportDataWindow(QMainWindow):
         # Update UI to show selected file
         self.file_info_label.setText(f"Selected: {self.filename}")
         self.file_info_label.setVisible(True)
-        self.footer_file_info.setText(f"File: {self.filename}")
+        self.footer.footer_file_info.setText(f"File: {self.filename}")
 
         file_format = os.path.splitext(self.filename)[1].upper().replace(".", "")
         size_str = filesize_formatter(file)
 
-        self.size_info.setText(f"Size: {size_str}")
-        self.format_info.setText(f"Format: {file_format}")
+        self.footer.size_info.setText(f"Size: {size_str}")
+        self.footer.format_info.setText(f"Format: {file_format}")
 
         # Load the file (passing the whole path)
         self.load_file(self.pathname, self.filename)
@@ -215,16 +215,16 @@ class ImportDataWindow(QMainWindow):
         self.pathname = os.path.dirname(filename) + "/"
 
         # Update UI to show selected file
-        self.file_info_label.setText(f"Selected: {self.filename}")
-        self.file_info_label.setVisible(True)
-        self.footer_file_info.setText(f"File: {self.filename}")
+        self.footer.file_info_label.setText(f"Selected: {self.filename}")
+        self.footer.lfile_info_label.setVisible(True)
+        self.footer.footer_file_info.setText(f"File: {self.filename}")
 
         # Get file size in bytes
         size_str = filesize_formatter(filename)
         file_format = os.path.splitext(self.filename)[1].upper().replace(".", "")
 
-        self.size_info.setText(f"Size: {size_str}")
-        self.format_info.setText(f"Format: {file_format}")
+        self.footer.size_info.setText(f"Size: {size_str}")
+        self.footer.format_info.setText(f"Format: {file_format}")
 
         # Load the file (passing the whole path)
         self.load_file(self.pathname, self.filename)
