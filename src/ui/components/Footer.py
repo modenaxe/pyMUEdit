@@ -8,7 +8,12 @@ from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
                              QPushButton, QScrollArea, QSizePolicy,
                              QSpacerItem, QStackedWidget, QVBoxLayout, QWidget)
 
-def create_footer(import_window, prev_window, next_window):
+# Import custom components
+from ui.components import (ActionButton, CleanCard, CleanTheme, SectionHeader,
+                           Sidebar, VisualizationPanel)
+from ui.components.CleanScrollBar import CleanScrollBar
+
+def create_footer(import_window):
     """Create the footer with file info and navigation buttons."""
     footer = QFrame()
     footer.setObjectName("footer")

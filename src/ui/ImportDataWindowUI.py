@@ -15,6 +15,8 @@ from ui.components import (ActionButton, CleanCard, CleanTheme, SectionHeader,
                            Sidebar, VisualizationPanel)
 from ui.components.CleanScrollBar import CleanScrollBar
 
+from ui.components.Footer import create_footer
+
 # Define absolute path to the public icons folder (same logic as Sidebar.py)
 ABS_PATH = Path(__file__).parent.parent
 ICONS_PATH = ABS_PATH / "public"
@@ -252,7 +254,7 @@ def create_configuration_section(import_window):
     config_group.addWidget(import_window.channel_view_button)
     return config_group
 
-
+'''
 def create_footer(import_window):
     """Create the footer with file info and navigation buttons."""
     footer = QFrame()
@@ -301,7 +303,7 @@ def create_footer(import_window):
     footer_layout.addSpacing(10)
     footer_layout.addWidget(import_window.next_btn)
     return footer
-
+'''
 
 def find_sidebar(import_window):
     """Find the sidebar component in the application hierarchy."""
