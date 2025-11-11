@@ -15,7 +15,7 @@ from ui.components import (ActionButton, CleanCard, CleanTheme, SectionHeader,
                            Sidebar, VisualizationPanel)
 from ui.components.CleanScrollBar import CleanScrollBar
 
-from ui.components.Footer import create_footer
+from ui.components.Footer import Footer
 
 # Define absolute path to the public icons folder (same logic as Sidebar.py)
 ABS_PATH = Path(__file__).parent.parent
@@ -487,7 +487,16 @@ def _create_import_page(import_window):
 
     right_v.addWidget(scroll_area, 1)
 
-    footer = create_footer(import_window)
+    # footer = create_footer(import_window)
+    # footer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    # footer.setFixedHeight(64)
+    # right_v.addWidget(footer, 0)
+
+    # Persistent footer in Import data window
+    footer = Footer(
+        # on_prev=import_window.go_to_previous_screen,
+        on_next=import_window.go_to_algorithm_screen
+    )
     footer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
     footer.setFixedHeight(64)
     right_v.addWidget(footer, 0)
