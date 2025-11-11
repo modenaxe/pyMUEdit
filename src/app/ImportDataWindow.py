@@ -180,6 +180,25 @@ class ImportDataWindow(QMainWindow):
         else:
             print("Export cancelled")
 
+    def load_session(self):
+        file, _ = QFileDialog.getOpenFileName(
+            self, "Select session .zip File", "", "ZIP Files (*.zip)"
+        )
+
+        zip_path = Path(file)
+
+        readin_name = None
+        decomp_name = None
+
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            for name in zip_ref.namelist():
+                if name.endswith("_readin.h5"):
+                    readin_name = name
+                elif name.endswith("_decomp.h5"):
+                    decomp_name = name
+
+
+
     def select_file(self):
         """Open file dialog to select a file."""
         file, _ = QFileDialog.getOpenFileName(
