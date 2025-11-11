@@ -12,3 +12,4 @@ tests/*.otb+
 .vscode
 .idea
 database.db
+*.zip
