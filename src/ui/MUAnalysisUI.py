@@ -28,6 +28,7 @@ from ui.muanalysis.ResultsPanel import ResultsPanel
 from ui.muanalysis.ResultsTable import ResultsTable
 from ui.muanalysis.SignalEditing import SignalEditing
 
+from ui.components.Footer import Footer
 
 # legacy code
 def get_icon(standard_icon):
@@ -84,6 +85,12 @@ class MUAnalysis(QWidget):
         self.widget_layout.addLayout(
             self.content_layout
         )  # Add main content below top bar
+        self.footer = Footer(
+            # on_prev=None
+            # on_next=None
+        )
+        self.footer.setFixedHeight(64)
+        self.widget_layout.addWidget(self.footer)
 
     # --- UI Creation Methods ---
 
