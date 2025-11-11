@@ -352,7 +352,7 @@ class ImportDataWindow(QMainWindow):
                 self.update_recent_files()
 
                 if ext == ".mat":
-                    self.segment_session = SegmentSessionPage(full_path, self.add_file_to_recent_files, self.update_recent_files)
+                    self.segment_session = SegmentSessionPage(full_path, self.add_file_to_recent_files, self.update_recent_files, self.raw_fileid)
                     self.segment_session_button.setEnabled(True)
                     self.set_configuration_button.setEnabled(False)
                 else:
@@ -506,7 +506,7 @@ class ImportDataWindow(QMainWindow):
         if self.segment_session_button and self.pathname and self.filename:
             base_name = os.path.splitext(self.filename)[0]
             filename = os.path.join(self.pathname, f"{base_name}_processed.mat")
-            self.segment_session = SegmentSessionPage(filename, self.add_file_to_recent_files, self.update_recent_files)
+            self.segment_session = SegmentSessionPage(filename, self.add_file_to_recent_files, self.update_recent_files, self.raw_fileid)
 
             self.segment_session_button.setEnabled(True)
 
