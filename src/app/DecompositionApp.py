@@ -402,7 +402,6 @@ class DecompositionApp(QMainWindow):
                 savename_h5,
                 raw_filepath=savename
             )
-            print(parameters)
             versionid = upsert_file_versions(savename_h5, self.raw_fileid, "decomposed")
             insert_log(versionid, {
                 "method": self.algo_choice
