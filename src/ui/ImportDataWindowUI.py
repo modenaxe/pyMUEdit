@@ -492,14 +492,13 @@ def _create_import_page(import_window):
     # footer.setFixedHeight(64)
     # right_v.addWidget(footer, 0)
 
-    # Persistent footer in Import data window
-    footer = Footer(
+    import_window.footer = Footer(
         # on_prev=import_window.go_to_previous_screen,
         on_next=import_window.go_to_algorithm_screen
     )
-    footer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-    footer.setFixedHeight(64)
-    right_v.addWidget(footer, 0)
+    import_window.footer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    import_window.footer.setFixedHeight(64)
+    right_v.addWidget(import_window.footer, 0)
 
     return right_layout
 
