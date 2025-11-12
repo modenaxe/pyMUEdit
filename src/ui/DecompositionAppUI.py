@@ -345,8 +345,6 @@ def setup_left_panel(main_window):
     # Add the scroll area to the container layout
     left_container_layout.addWidget(scroll_area)
 
-    # Return the left container
-    # main_window.main_layout.addWidget(left_container)
     return left_container
 
 

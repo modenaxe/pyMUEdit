@@ -487,16 +487,10 @@ def _create_import_page(import_window):
 
     right_v.addWidget(scroll_area, 1)
 
-    # footer = create_footer(import_window)
-    # footer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-    # footer.setFixedHeight(64)
-    # right_v.addWidget(footer, 0)
-
     import_window.footer = Footer(
         on_prev=None,
         on_next=import_window.go_to_algorithm_screen
     )
-    
     import_window.footer.next_btn.setEnabled(False)
     import_window.footer.prev_btn.hide() 
     import_window.footer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
