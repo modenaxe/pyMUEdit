@@ -496,6 +496,8 @@ def _create_import_page(import_window):
         on_prev=None,
         on_next=import_window.go_to_algorithm_screen
     )
+    
+    import_window.footer.next_btn.setEnabled(False)
     import_window.footer.prev_btn.hide() 
     import_window.footer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
     import_window.footer.setFixedHeight(64)
