@@ -85,10 +85,15 @@ class MUAnalysis(QWidget):
         self.widget_layout.addLayout(
             self.content_layout
         )  # Add main content below top bar
+
+        def go_to_editing():
+            self.window().show_manual_editing_view()
+
         self.footer = Footer(
-            # on_prev=None
-            # on_next=None
+            on_prev=go_to_editing,
+            on_next=None
         )
+        self.footer.next_btn.hide() 
         self.footer.setFixedHeight(64)
         self.widget_layout.addWidget(self.footer)
 
