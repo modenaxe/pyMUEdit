@@ -52,9 +52,15 @@ def setup_ui(main_window):
 
     main_window.main_layout.addWidget(content_widget)
 
+    def go_to_import_data():
+        main_window.window().show_import_data_view()
+
+    def go_to_editing():
+        main_window.window().show_manual_editing_view()
+
     main_window.footer = Footer(
-        # on_prev=main_window.go_to_import_data_screen, # These don't exist yet
-        # on_next=main_window.go_to_analysis_screen
+        on_prev=go_to_import_data,
+        on_next=go_to_editing
     )
     main_window.footer.setFixedHeight(64)
     main_window.main_layout.addWidget(main_window.footer)
