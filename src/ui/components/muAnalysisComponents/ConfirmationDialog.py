@@ -1,12 +1,9 @@
-from PyQt5.QtCore import QSize, Qt, pyqtSignal
-from PyQt5.QtGui import QColor, QFont
-from PyQt5.QtWidgets import (QDialog, QHBoxLayout, QLabel, QPushButton,
-                             QVBoxLayout)
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QDialog, QHBoxLayout, QLabel, QVBoxLayout
 
+from ui.components import ActionButton
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.GeneralRedButton import \
-    GeneralRedButton
 
 
 class ConfirmationDialog(QDialog):
@@ -34,10 +31,11 @@ class ConfirmationDialog(QDialog):
         buttons_layout.setSpacing(10)
         buttons_layout.setAlignment(Qt.AlignCenter)
 
-        cancel_button = GeneralButton("Cancel", lambda: self.reject())
+        cancel_button = ActionButton("Cancel", primary=False)
+        cancel_button.clicked.connect(lambda: self.reject())
         cancel_button.setFixedHeight(30)
 
-        reset_button = GeneralRedButton("Confirm")
+        reset_button = ActionButton("Confirm")
         reset_button.clicked.connect(self.accept)
         reset_button.setFixedHeight(30)
 

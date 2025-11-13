@@ -1,6 +1,3 @@
-from PyQt5.QtWidgets import QMessageBox
-
-
 class MUAnalysisFunc:
     """Functionality handler for motor unit analysis operations.
 
