@@ -867,9 +867,9 @@ def setup_display_panel(main_window):
         ("Delete spikes", delete_spikes_button_pushed, "delete_spikes_btn"),
         ("Lock spikes", lock_spikes_button_pushed, "lock_spikes_btn"),
         ("Delete DR", delete_dr_button_pushed, "delete_dr_btn"),
-        ("Remove outliers", remove_outliers_button_pushed,"remove_outliers_single_btn"),
-        ("Update MU filter", update_mu_filter_button_pushed,"update_mu_filter_btn"),
-        ("Extend MU filter", extend_mu_filter_button_pushed,"extend_mu_filter_btn"),
+        ("Remove outliers", remove_outliers_button_pushed, "remove_outliers_single_btn"),
+        ("Update MU filter", update_mu_filter_button_pushed, "update_mu_filter_btn"),
+        ("Extend MU filter", extend_mu_filter_button_pushed, "extend_mu_filter_btn"),
     ]
 
     main_window.action_buttons = {}
@@ -885,7 +885,12 @@ def setup_display_panel(main_window):
         setattr(main_window, attr_name, btn)
         main_window.action_buttons[attr_name] = btn
         main_window.action_buttons[handler.__name__] = btn
-        if text in {"Add spikes", "Delete spikes", "Update MU filter", "Extend MU filter", "Lock spikes"}:
+        if text in {
+            "Add spikes",
+            "Delete spikes",
+            "Update MU filter",
+            "Extend MU filter",
+                "Lock spikes"}:
             btn.set_blue()
         if text in {"Delete spikes", "Delete DR", "Remove outliers"}:
             spacer = QWidget()
