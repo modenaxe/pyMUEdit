@@ -1,11 +1,12 @@
+from openhdemg.library import compute_dr
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import (QHBoxLayout,
-                             QLineEdit, QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import QHBoxLayout, QLineEdit, QVBoxLayout, QWidget
 
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
 from core.muAnalysisCore.AnalysisResultsHist import store
+from ui.components import ActionButton
 from ui.components.muAnalysisComponents.AnalysisDropdownDialog import \
     AnalysisDropdownDialog
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
@@ -14,9 +15,6 @@ from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.PropertiesInnerDialogText import \
     PropertiesInnerDialogText
 from ui.muanalysis.ComputeThresholdSection import ComputeThresholdSection
-
-from ui.components import ActionButton
-from openhdemg.library import compute_dr
 
 
 class MotorUnitPropertiesDialog(QWidget):
@@ -161,6 +159,7 @@ class MotorUnitPropertiesBasic(QHBoxLayout):
         self.addWidget(steady_input)
 
 # general class for any inner inputs inside dialog
+
 
 class PropertiesInnerDialogText(QLineEdit):
     """Inputs within Motor Unit Properties dialogs"""

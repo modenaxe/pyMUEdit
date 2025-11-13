@@ -1,17 +1,17 @@
 
-from PyQt5.QtWidgets import (QFrame, QHBoxLayout,
-                             QVBoxLayout, QWidget, QMainWindow)
+from openhdemg.library import filter_rawemg, filter_refsig, remove_offset
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (QFrame, QHBoxLayout, QMainWindow, QVBoxLayout,
+                             QWidget)
+
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
+from ui.components import ActionButton
 from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
 from ui.components.muAnalysisComponents.AnalysisLabeledDropdownDialog import \
     AnalysisLabeledDropdownDialog
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
-from ui.components import ActionButton
-
-from openhdemg.library import filter_rawemg, filter_refsig, remove_offset
 
 
 class SignalEditing(QWidget):
@@ -225,7 +225,7 @@ class SignalEditing(QWidget):
             "*Only for absolute\nvalued RefSigs")
         percent_h_layout.addWidget(percent_warning)
 
-        percent_btn = ActionButton("To Percent",parent=self)
+        percent_btn = ActionButton("To Percent", parent=self)
         percent_btn.clicked.connect(lambda: self.to_percent())
         percent_btn.setMinimumHeight(40)
         percent_h_layout.addWidget(percent_btn)

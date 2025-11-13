@@ -1,8 +1,8 @@
 from PyQt5.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout
 
 from core.muAnalysisCore.ResetButton import ResetButton
-from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components import ActionButton
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 
 
 class FileSection(QFrame):

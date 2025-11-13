@@ -1,8 +1,8 @@
 from PyQt5.QtWidgets import QHBoxLayout
 
+from ui.components import ActionButton
 from ui.components.muAnalysisComponents.AnalysisDropdownDialog import \
     AnalysisDropdownDialog
-from ui.components import ActionButton
 
 
 class ComputeThresholdSection(QHBoxLayout):

@@ -1,7 +1,10 @@
+from openhdemg.library import compute_deltaf, compute_svr
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QDialog, QVBoxLayout
 
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
+from core.muAnalysisCore.AnalysisResultsHist import store
+from ui.components import ActionButton
 from ui.components.muAnalysisComponents.AnalysisCheckboxDark import \
     AnalysisCheckboxDark
 from ui.components.muAnalysisComponents.AnalysisLabeledDropdownDialog import \
@@ -9,12 +12,6 @@ from ui.components.muAnalysisComponents.AnalysisLabeledDropdownDialog import \
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
-
-from core.muAnalysisCore.AnalysisResultsHist import store
-
-from ui.components import ActionButton
-
-from openhdemg.library import compute_deltaf, compute_svr
 
 
 class PICDialog(QDialog):

@@ -1,7 +1,9 @@
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+
 from app.muAnalysisFunctions.ForceAnalysisFunc import ForceAnalysisFunc
 from ui.components import ActionButton
 from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
+
 
 class ForceAnalysisSection(QWidget):
 

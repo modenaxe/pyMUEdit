@@ -3,13 +3,16 @@ import sys
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
-                             QMainWindow, QScrollArea,
-                             QSizePolicy, QStyle, QVBoxLayout, QWidget)
+                             QMainWindow, QScrollArea, QSizePolicy, QStyle,
+                             QVBoxLayout, QWidget)
 
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
 from app.muAnalysisFunctions.ResizeFunc import Resize
 from core.muAnalysisCore.AnalysisResultsHist import store
+from ui.components import ActionButton, CleanScrollBar
+from ui.components import CleanTheme as Theme
+from ui.components import CollapsiblePanel, SectionHeader
 from ui.components.muAnalysisComponents.AnalysisPlot import AnalysisPlot
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.muanalysis.AdvancedTools import AdvancedTools
@@ -23,8 +26,6 @@ from ui.muanalysis.ResultsPanel import ResultsPanel
 from ui.muanalysis.ResultsTable import ResultsTable
 from ui.muanalysis.SignalEditing import SignalEditing
 
-from ui.components import CleanTheme as Theme
-from ui.components import ActionButton, CleanScrollBar, CollapsiblePanel, SectionHeader
 
 # legacy code
 def get_icon(standard_icon):
@@ -166,11 +167,16 @@ class MUAnalysis(QWidget):
         mu_view_layout.setContentsMargins(0, 0, 0, 0)
         mu_view_layout.setSpacing(5)
         view_button = ActionButton("View MUs")
-        view_button.clicked.connect(lambda: self.mu.plot_idr(self.mu.file, self.analysis_plot))
+        view_button.clicked.connect(
+            lambda: self.mu.plot_idr(
+                self.mu.file, self.analysis_plot))
         view_button.setMinimumHeight(40)
         mu_view_layout.addWidget(view_button)
         sort_button = ActionButton("Sort MUs")
-        sort_button.clicked.connect(lambda: self.mu.sort_mus(self.analysis_plot, self.mu.file))
+        sort_button.clicked.connect(
+            lambda: self.mu.sort_mus(
+                self.analysis_plot,
+                self.mu.file))
         sort_button.setMinimumHeight(40)
         mu_view_layout.addWidget(sort_button)
         mu_view_section = CollapsiblePanel("MU View")

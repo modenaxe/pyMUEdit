@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import QCheckBox
+
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
 

@@ -1,3 +1,4 @@
+import openhdemg.library as emg
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
 
@@ -8,7 +9,6 @@ from ui.components.muAnalysisComponents.CleanTheme import \
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.SubsectionTitle import SubsectionTitle
 
-import openhdemg.library as emg
 
 class RemoveMUSection(QWidget):
     """Widget section for removing motor units from EMG data.
@@ -71,8 +71,10 @@ class RemoveMUSection(QWidget):
             """
         )
 
-        self.remove_empty_mus_btn = ActionButton("Remove empty MUs", parent=self)
-        self.remove_empty_mus_btn.clicked.connect(lambda: self.remove_empty_mus())
+        self.remove_empty_mus_btn = ActionButton(
+            "Remove empty MUs", parent=self)
+        self.remove_empty_mus_btn.clicked.connect(
+            lambda: self.remove_empty_mus())
         self.remove_empty_mus_btn.setMinimumHeight(40)
 
         container_layout.addWidget(self.remove_empty_mus_btn)
@@ -171,7 +173,8 @@ class RemoveMUSection(QWidget):
 
             sub_parts = [p.strip() for p in part.split("-")]
 
-            # In MU Analysis, we don't have arrays, so we expect 'mu' or 'start-end'
+            # In MU Analysis, we don't have arrays, so we expect 'mu' or
+            # 'start-end'
             if len(sub_parts) == 1:  # Single MU
                 mu_idx = int(sub_parts[0])
                 if mu_idx < 0:
@@ -183,11 +186,13 @@ class RemoveMUSection(QWidget):
                 if mu_start_idx < 0 or mu_end_idx < 0:
                     raise ValueError("Indices must be positive.")
                 if mu_end_idx < mu_start_idx:
-                    raise ValueError("End of range cannot be smaller than start.")
+                    raise ValueError(
+                        "End of range cannot be smaller than start.")
                 for mu_idx in range(mu_start_idx, mu_end_idx + 1):
                     mus_to_remove.append(mu_idx)
             else:
-                raise ValueError("Each part must be in 'mu' or 'start-end' format.")
+                raise ValueError(
+                    "Each part must be in 'mu' or 'start-end' format.")
 
         mus_to_remove = sorted(list(set(mus_to_remove)))
 

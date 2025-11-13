@@ -1,14 +1,20 @@
 import traceback
-import pandas as pd
+
 import matplotlib.pyplot as plt
+import pandas as pd
+from openhdemg.library import (diff, double_diff, extract_delsys_muaps,
+                               plot_differentials, plot_emgsig, plot_idr,
+                               plot_ipts, plot_muaps, plot_mupulses,
+                               plot_refsig, sort_rawemg, sta)
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import (QDialog, QHBoxLayout,
-                             QLineEdit,
-                             QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import (QDialog, QHBoxLayout, QLineEdit, QVBoxLayout,
+                             QWidget)
 
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
-from app.muAnalysisFunctions.PlotEMGFunc import parse_channel_input, parse_mu_input
+from app.muAnalysisFunctions.PlotEMGFunc import (parse_channel_input,
+                                                 parse_mu_input)
+from ui.components import ActionButton
 from ui.components.muAnalysisComponents.AnalysisCheckboxDark import \
     AnalysisCheckboxDark
 from ui.components.muAnalysisComponents.AnalysisDropdownDialog import \
@@ -18,14 +24,6 @@ from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
-
-from ui.components import ActionButton
-
-from openhdemg.library import (
-    plot_idr, plot_mupulses, plot_emgsig, plot_refsig,
-    plot_ipts, plot_differentials, sort_rawemg, diff, double_diff,
-    sta, plot_muaps, extract_delsys_muaps
-)
 
 
 class PlotEMGToolDialog(QDialog):
@@ -244,7 +242,8 @@ class PlotEMGToolDialog(QDialog):
 
         # the button
         derivation_btn = ActionButton("Derivation", parent=self)
-        derivation_btn.clicked.connect(lambda: self.handle_derivation_clicked())
+        derivation_btn.clicked.connect(
+            lambda: self.handle_derivation_clicked())
         derivation_btn.setMinimumHeight(40)
         derivation_btn.setFixedWidth(button_width)
         derivation_row.addWidget(derivation_btn)
@@ -314,12 +313,15 @@ class PlotEMGToolDialog(QDialog):
             elif isinstance(channels, (list, int)):
                 # For direct channel input, validate the range
                 if isinstance(channels, list):
-                    invalid_channels = [ch for ch in channels if ch < 0 or ch >= max_channels]
+                    invalid_channels = [
+                        ch for ch in channels if ch < 0 or ch >= max_channels]
                     if invalid_channels:
-                        raise ValueError(f"Invalid channels: {invalid_channels}. Available channels are 0-{max_channels-1}")
+                        raise ValueError(
+                            f"Invalid channels: {invalid_channels}. Available channels are 0-{max_channels-1}")
                 else:  # int
                     if channels < 0 or channels >= max_channels:
-                        raise ValueError(f"Invalid channel: {channels}. Available channels are 0-{max_channels-1}")
+                        raise ValueError(
+                            f"Invalid channel: {channels}. Available channels are 0-{max_channels-1}")
 
             # Pass the raw text string directly to plot_emgsig for validation
             fig = plot_emgsig(

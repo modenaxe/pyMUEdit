@@ -1,8 +1,9 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import (QDialog, QHBoxLayout, QLabel, QVBoxLayout)
+from PyQt5.QtWidgets import QDialog, QHBoxLayout, QLabel, QVBoxLayout
 
 from ui.components import ActionButton
+
 
 class ErrorDialog(QDialog):
 

@@ -1,9 +1,9 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import (QDialog, QHBoxLayout, QLabel, QVBoxLayout)
+from PyQt5.QtWidgets import QDialog, QHBoxLayout, QLabel, QVBoxLayout
 
-from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components import ActionButton
+from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
 
 class ConfirmationDialog(QDialog):

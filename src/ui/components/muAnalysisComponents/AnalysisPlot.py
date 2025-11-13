@@ -1,9 +1,9 @@
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import QVBoxLayout, QWidget
 
-from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components import ActionButton
+from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 
 
 class AnalysisPlot(QWidget):

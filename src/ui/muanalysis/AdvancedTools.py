@@ -1,13 +1,14 @@
-from PyQt5.QtWidgets import (QVBoxLayout, QHBoxLayout, QWidget)
+from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+
 from app.muAnalysisFunctions.ConductionVelocityDialog import \
     ConductionVelocityDialog
 from app.muAnalysisFunctions.MotorUnitTrackingDialog import \
     MotorUnitTrackingDialog
+from ui.components import ActionButton
 from ui.components.muAnalysisComponents.AnalysisDropdown import \
     AnalysisDropdown
 from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
-from ui.components import ActionButton
 from ui.muanalysis.PIC import PICDialog
 
 
@@ -123,13 +124,14 @@ class AdvancedTools(QWidget):
                 self.rows = self.rows_input.get()
                 self.columns = self.columns_input.get()
                 if not self.rows_input.get() or not self.columns_input.get():
-                    self.show_error("Please enter both rows and columns for the matrix.")
+                    self.show_error(
+                        "Please enter both rows and columns for the matrix.")
                 else:
                     try:
                         self.rows = int(self.rows)
                         self.columns = int(self.columns)
                         self.show_analysis()
-                    except:
+                    except BaseException:
                         self.show_error("Rows and Columns must be integers.")
             else:
                 self.show_analysis()
@@ -143,8 +145,10 @@ class AdvancedTools(QWidget):
         matrix_orientation_string = self.matrix_orientation_dropdown.currentText()
         matrix_code_string = self.matrix_code_dropdown.currentText()
 
-        matrix_orientation = int(matrix_orientation_string) if matrix_orientation_string else 180
-        matrix_code = None if matrix_code_string in (None, "", "None") else matrix_code_string
+        matrix_orientation = int(
+            matrix_orientation_string) if matrix_orientation_string else 180
+        matrix_code = None if matrix_code_string in (
+            None, "", "None") else matrix_code_string
 
         rows = self.rows if matrix_code is None else None
         columns = self.columns if matrix_code is None else None
