@@ -285,18 +285,26 @@ class ImportDataWindow(QMainWindow):
 
                     # Create a default save name for .mat files
                     savename = os.path.join(path, f"{base_name}_processed.mat")
-                    h5_processed_savename = os.path.join(path, f"{base_name}_processed.h5")
                     h5_readin_savename = os.path.join(path, f"{base_name}_readin.h5")
 
                     # Save the data as a .mat file in the background
                     if self.emg_obj.signal_dict:
                         self.save_mat_in_background(savename, {"signal": self.emg_obj.signal_dict}, True, True)
-                        save_as_h5(self.emg_obj.signal_dict, h5_processed_savename, raw_filepath=full_path)
                         save_as_h5(self.emg_obj.signal_dict, h5_readin_savename, raw_filepath=full_path)
 
                 elif ext == '.mat':
                     # Call the open_otb_plus function with the correct parameters
                     self.emg_obj.open_mat(full_path)
+
+                    base_name = os.path.splitext(file)[0]
+                    savename = os.path.join(path, f"{base_name}_processed.mat")
+                    h5_readin_savename = os.path.join(path, f"{base_name}_readin.h5")
+
+                    try:
+                        if self.emg_obj.signal_dict:
+                            save_as_h5(self.emg_obj.signal_dict, h5_readin_savename)
+                    except Exception as e:
+                        print(f"Error saving .h5 file: {e}")
 
                 # elif ext == ".h5":
                 #     full_path = os.path.join(path, file)
