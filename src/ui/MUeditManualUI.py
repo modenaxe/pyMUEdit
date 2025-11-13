@@ -861,36 +861,31 @@ def setup_display_panel(main_window):
     action_layout.setContentsMargins(0, 0, 0, 0)
     action_layout.setSpacing(8)
 
-    # Define all action buttons
+    # Group buttons based on functionality
     action_button_configs = [
-        ("Add spikes", lambda: add_spikes_button_pushed(main_window), "add_spikes_btn"),
-        ("Delete spikes", lambda: delete_spikes_button_pushed(main_window), "delete_spikes_btn"),
-        ("Delete DR", lambda: delete_dr_button_pushed(main_window), "delete_dr_btn"),
-        ("Remove outliers", lambda: remove_outliers_button_pushed(main_window), "remove_outliers_single_btn"),
-        ("Lock spikes", lambda: lock_spikes_button_pushed(main_window), "lock_spikes_btn"),
-        ("Update MU filter", lambda: update_mu_filter_button_pushed(main_window), "update_mu_filter_btn"),
-        ("Extend MU filter", lambda: extend_mu_filter_button_pushed(main_window), "extend_mu_filter_btn"),
+        ("Add spikes", add_spikes_button_pushed, "add_spikes_btn"),
+        ("Delete spikes", delete_spikes_button_pushed, "delete_spikes_btn"),
+        ("Lock spikes", lock_spikes_button_pushed, "lock_spikes_btn"),
+        ("Delete DR", delete_dr_button_pushed, "delete_dr_btn"),
+        ("Remove outliers", remove_outliers_button_pushed,"remove_outliers_single_btn"),
+        ("Update MU filter", update_mu_filter_button_pushed,"update_mu_filter_btn"),
+        ("Extend MU filter", extend_mu_filter_button_pushed,"extend_mu_filter_btn"),
     ]
 
-    # Create action buttons and store references
     main_window.action_buttons = {}
     for text, handler, attr_name in action_button_configs:
         btn = ActionButtonedit(text, primary=False)
         btn.setFocusPolicy(Qt.NoFocus)
-        btn.clicked.connect(handler)
+        btn.clicked.connect(partial(handler, main_window))
         btn.setMinimumHeight(36)
         btn.setMaximumHeight(36)
         btn.setFixedWidth(140)
         action_layout.addWidget(btn)
         # Store reference to button in main_window
         setattr(main_window, attr_name, btn)
+        main_window.action_buttons[attr_name] = btn
         main_window.action_buttons[handler.__name__] = btn
-        if text in {
-            "Add spikes",
-            "Delete spikes",
-            "Update MU filter",
-            "Extend MU filter",
-                "Lock spikes"}:
+        if text in {"Add spikes", "Delete spikes", "Update MU filter", "Extend MU filter", "Lock spikes"}:
             btn.set_blue()
         if text in {"Delete spikes", "Delete DR", "Remove outliers"}:
             spacer = QWidget()
