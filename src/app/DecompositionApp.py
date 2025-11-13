@@ -41,7 +41,7 @@ class DecompositionApp(QMainWindow):
 
         self.raw_fileid = raw_fileid
 
-        self.MUdecomp = {"config": config}
+        self.config = config
         self.Configuration = None
         self.MUedition = None
         self.Backup = {"lock": 0}
@@ -62,6 +62,12 @@ class DecompositionApp(QMainWindow):
         # Initialize with data if provided
         if self.emg_obj and self.filename:
             self.update_ui_with_loaded_data()
+
+        print(config)
+        if config:
+            print('hi')
+            from ui.DecompositionAppUI import load_config
+            load_config(self, config)
 
     def connect_signals(self):
         """Connect all UI signals to their handlers."""

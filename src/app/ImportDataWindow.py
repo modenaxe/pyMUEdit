@@ -207,7 +207,7 @@ class ImportDataWindow(QMainWindow):
             if decomp_name:
                 decomp_path = extract_dir / decomp_name
                 signal_dict, raw_filepath, config_dict = load_from_h5(str(decomp_path))
-
+                self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, config_dict, self.raw_fileid)
                 print("Config:", config_dict)
                 print("Loaded signal_dict keys:", signal_dict.keys())
                 print("Raw filepath:", raw_filepath)
@@ -821,8 +821,6 @@ class ImportDataWindow(QMainWindow):
 
             # Set window flags to make it a widget instead of a window
             self.decomp_app.setWindowFlags(Qt.WindowType.Widget)
-
-            self.decomp_app.load_config(config)
 
             # Add to layout
             wrapper_layout.addWidget(self.decomp_app)

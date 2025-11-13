@@ -477,7 +477,7 @@ def setup_right_panel(main_window, parent_layout):
     right_layout.addStretch(1)
     parent_layout.addWidget(right_panel, 1)
 
-def load_decomp_config(self, config):
+def load_config(self, config):
     if not config:
         return
     if "contrast_function" in config:
