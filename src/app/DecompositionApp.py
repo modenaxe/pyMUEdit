@@ -64,9 +64,7 @@ class DecompositionApp(QMainWindow):
         if self.emg_obj and self.filename:
             self.update_ui_with_loaded_data()
 
-        print(config)
         if config:
-            print('hi')
             from ui.DecompositionAppUI import load_config
             load_config(self, config)
 

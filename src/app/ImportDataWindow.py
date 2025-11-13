@@ -204,17 +204,13 @@ class ImportDataWindow(QMainWindow):
                 elif name.endswith("_decomp.h5"):
                     decomp_name = name
 
+            if readin_name:
+                self.load_file(extract_dir, readin_name)
+
             if decomp_name:
                 decomp_path = extract_dir / decomp_name
                 signal_dict, raw_filepath, config_dict = load_from_h5(str(decomp_path))
                 self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, config_dict, self.raw_fileid)
-                print("Config:", config_dict)
-                print("Loaded signal_dict keys:", signal_dict.keys())
-                print("Raw filepath:", raw_filepath)
-
-            if readin_name:
-                readin_path = extract_dir / readin_name
-                print(f"Readin file available at: {readin_path}")
 
             print(f"Files extracted to: {extract_dir}")
 
@@ -325,42 +321,31 @@ class ImportDataWindow(QMainWindow):
                     except Exception as e:
                         print(f"Error saving .h5 file: {e}")
 
-                # elif ext == ".h5":
-                #     full_path = os.path.join(path, file)
-                #     try:
-                #         signal_dict, raw_filepath = load_from_h5(full_path)
-                #         self.emg_obj.signal_dict = signal_dict
-                #         self.imported_signal = signal_dict
-                #         self.raw_file_path = raw_filepath
+                elif ext == ".h5":
+                    full_path = os.path.join(path, file)
+                    try:
+                        signal_dict, raw_filepath, config_dict = load_from_h5(full_path)
+                        self.emg_obj.signal_dict = signal_dict
+                        self.imported_signal = signal_dict
+                        self.raw_file_path = raw_filepath
 
-                #         h5_readin_savename = full_path
-                #         base_name = os.path.splitext(file)[0]
-                #         h5_processed_savename = os.path.join(path, f"{base_name}_processed.h5")
+                        if "data" in signal_dict and "fsamp" in signal_dict:
+                            self.cur_electrode_preview_idx = 0
+                            self.update_preview_plot()
+                            self.update_buttons()
 
-                #         if "data" in signal_dict and "fsamp" in signal_dict:
-                #             self.cur_electrode_preview_idx = 0
-                #             self.update_preview_plot()
-                #             self.update_buttons()
+                        self.file_info_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
+                        self.next_btn.setEnabled(True)
 
-                #         self.file_info_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
-                #         self.next_btn.setEnabled(True)
+                    except Exception as e:
+                        self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
+                        self.preview_message.setText(f"Error loading H5 file: {str(e)}")
+                        self.play_error_popup("Error loading file", str(e))
+                        traceback.print_exc()
+                        self.next_btn.setEnabled(False)
+                        self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
 
-                #         sessionid = get_or_create_session_for_file(raw_filepath)
-                #         self.sessionid = sessionid
-                #         fileid = get_fileid_by_path(raw_filepath)
-                #         if not fileid:
-                #             fileid = insert_files(raw_filepath, file, sessionid)
-                #         versionid_readin = upsert_file_versions(h5_readin_savename, fileid, "readin")
-                #         versionid_processed = upsert_file_versions(h5_processed_savename, fileid, "processed")
-
-                #     except Exception as e:
-                #         self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
-                #         self.preview_message.setText(f"Error loading H5 file: {str(e)}")
-                #         self.play_error_popup("Error loading file", str(e))
-                #         traceback.print_exc()
-                #         self.next_btn.setEnabled(False)
-                #         self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
-
+                    fileid = None # temp
                 # Store the imported signal
                 signal = self.emg_obj.signal_dict
                 self.imported_signal = signal
@@ -408,13 +393,14 @@ class ImportDataWindow(QMainWindow):
                 self.file_info_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
 
                 # Get or create session for this dataset
-                sessionid = get_or_create_session_for_file(full_path)
-                self.sessionid = sessionid
-                fileid = get_fileid_by_path(full_path)
-                if not fileid:
-                    fileid = insert_files(full_path, file, sessionid)
+                if ext != ".h5": # temporary dont create session with h5 for now due to using load_file for loading a session
+                    sessionid = get_or_create_session_for_file(full_path)
+                    self.sessionid = sessionid
+                    fileid = get_fileid_by_path(full_path)
+                    if not fileid:
+                        fileid = insert_files(full_path, file, sessionid)
 
-                upsert_file_versions(h5_readin_savename, fileid, "readin")
+                    upsert_file_versions(h5_readin_savename, fileid, "readin")
 
                 self.raw_fileid = fileid
 

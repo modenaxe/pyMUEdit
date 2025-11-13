@@ -327,7 +327,6 @@ def restore_sidebar(import_window):
     if sidebar and hasattr(sidebar, "clear_recent_files_section"):
         sidebar.clear_recent_files_section()
 
-
 def create_placeholder_page(title, import_window):
     """Creates a placeholder page with a title and back button."""
     page = QWidget()
