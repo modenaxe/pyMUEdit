@@ -530,6 +530,7 @@ def setup_right_panel(main_window, parent_layout):
     right_layout.addStretch(1)
     parent_layout.addWidget(right_panel, 1)
 
+
 def setup_bottom_navigation(main_window):
     """set up the bottom navigation bar with next and previous buttons"""
     # create the bottom navigation container
@@ -563,6 +564,7 @@ def setup_bottom_navigation(main_window):
 
     # add the bottom navigation to the main layout
     main_window.main_layout.addWidget(bottom_nav)
+
 
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication, QMainWindow
