@@ -1,3 +1,4 @@
+from functools import partial
 from pathlib import Path
 
 import pyqtgraph as pg
@@ -7,27 +8,26 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QFrame,
                              QGraphicsSceneMouseEvent, QGroupBox, QHBoxLayout,
                              QLabel, QLayout, QLineEdit, QListView,
-                             QScrollArea, QSizePolicy, QSpacerItem, QTabWidget,
-                             QToolButton, QVBoxLayout, QWidget)
-from PyQt5.QtWidgets import QSlider
-from functools import partial
+                             QScrollArea, QSizePolicy, QSlider, QSpacerItem,
+                             QTabWidget, QToolButton, QVBoxLayout, QWidget)
 
+from app.muEditFunctions.batch_processing import *
+from app.muEditFunctions.edit_actions import (add_spikes_button_pushed,
+                                              delete_dr_button_pushed,
+                                              delete_spikes_button_pushed,
+                                              lock_spikes_button_pushed,
+                                              remove_outliers_button_pushed)
+from app.muEditFunctions.exporter import *
+from app.muEditFunctions.mu_filter_actions import *
+from app.muEditFunctions.overlay_plots import (clear_overlay_data,
+                                               overlay_file_button_pushed)
+from app.muEditFunctions.visualization import *
 # Import custom components
 from ui.components import (ActionButton, CleanCard, CleanScrollBar, CleanTheme,
                            CollapsiblePanel, GoodSlider, SectionHeader,
                            SettingsGroup, Sidebar, VisualizationPanelForEdit)
 from ui.components.ActionButtonedit import ActionButtonedit
-from app.muEditFunctions.mu_filter_actions import *
-from app.muEditFunctions.batch_processing import *
-from app.muEditFunctions.visualization import *
-from app.muEditFunctions.exporter import *
-from app.muEditFunctions.edit_actions import (
-    add_spikes_button_pushed,
-    delete_dr_button_pushed,
-    delete_spikes_button_pushed,
-    lock_spikes_button_pushed,
-    remove_outliers_button_pushed
-)
+
 
 class FixedPopupComboBox(QComboBox):  # set a new class for dropout moy
     def __init__(self, *args, **kwargs):
@@ -188,7 +188,8 @@ def setup_control_panel(main_window):
     save_group = SettingsGroup("Save the Edition")
 
     main_window.save_btn = ActionButtonedit("Save", primary=True)
-    main_window.save_btn.clicked.connect(lambda: save_button_pushed(main_window))
+    main_window.save_btn.clicked.connect(
+        lambda: save_button_pushed(main_window))
 
     save_group.add_field(main_window.save_btn)
     control_layout.addWidget(save_group)
@@ -569,6 +570,23 @@ def create_visualization_tab(main_window):
 
     button_panel.add_widget(row4)
 
+    # Overlay Decomposition Toggle
+    row5 = QWidget()
+    row5_lay = QHBoxLayout(row5)
+    row5_lay.setContentsMargins(0, 0, 0, 0)
+    row5_lay.setSpacing(6)
+
+    overlay_lbl = QLabel("Overlay Benchmark Decomposition")
+    set_standard_label_style(overlay_lbl)
+    row5_lay.addWidget(overlay_lbl)
+
+    main_window.overlay_switch = ToggleSwitch()
+    main_window.overlay_switch.toggled.connect(lambda checked: overlay_file_button_pushed(
+        main_window) if checked else clear_overlay_data(main_window))
+    row5_lay.addWidget(main_window.overlay_switch)
+
+    button_panel.add_widget(row5)
+
     viz_layout.addWidget(button_panel)
     viz_layout.addStretch()
 
@@ -921,7 +939,7 @@ def create_plot_widget(main_window, y_label, x_label=""):
             super().__init__(*args, **kwargs)
             self.zoom_slider = zoom_slider
 
-        def wheelEvent(self, event):
+        def wheelEvent(self, event, *args, **kwargs):
             event.accept()
             delta = event.delta()
             cur = self.zoom_slider.get_slider_value()
@@ -930,6 +948,8 @@ def create_plot_widget(main_window, y_label, x_label=""):
                 self.zoom_slider.set_slider_value(cur + 1)
             elif delta < 0:
                 self.zoom_slider.set_slider_value(cur - 1)
+
+            super().wheelEvent(event, *args, **kwargs)
 
         def keyPressEvent(self, event):
             if event.key() in (
@@ -1000,7 +1020,8 @@ def create_mu_checkbox(
     )
     checkbox.setObjectName(f"Array_{array_idx+1}_MU_{mu_idx+1}")
     checkbox.setChecked(is_checked)
-    checkbox.stateChanged.connect(lambda state: mu_checkbox_state_changed(main_window, state))
-
+    checkbox.stateChanged.connect(
+        lambda state: mu_checkbox_state_changed(
+            main_window, state))
 
     return checkbox

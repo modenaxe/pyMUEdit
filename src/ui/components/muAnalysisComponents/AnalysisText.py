@@ -1,4 +1,3 @@
-from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QLabel
 
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
