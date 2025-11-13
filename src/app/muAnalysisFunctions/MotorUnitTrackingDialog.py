@@ -27,6 +27,7 @@ def load_otb_data(filepath):
     success = file_handler.emg_from_otb(filepath)
     if not success:
         raise ValueError("Failed to load .mat file using OpenHDEMG loader")
+        logger.error("Failed to load .mat file using OpenHDEMG loader")
     return FileUploadFunc.file
 
 class MotorUnitTrackingDialog(QDialog):
