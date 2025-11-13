@@ -1,7 +1,5 @@
-from PyQt5.QtGui import QColor, QPalette
-from PyQt5.QtWidgets import QCheckBox, QLabel, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QCheckBox
 
-from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
 
@@ -29,8 +27,8 @@ class AnalysisCheckboxDark(QCheckBox):
                 background-color: #ffffff;
             }}
             QCheckBox::indicator:checked {{
-                background-color: {CleanTheme.ANALYSIS_BG_BUTTON};
-                border-color: {CleanTheme.ANALYSIS_BG_BUTTON};
+                background-color: #333333;
+                border-color: #333333;
             }}
             """
         )

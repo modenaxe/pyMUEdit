@@ -19,6 +19,8 @@ from app.muEditFunctions.edit_actions import (add_spikes_button_pushed,
                                               remove_outliers_button_pushed)
 from app.muEditFunctions.exporter import *
 from app.muEditFunctions.mu_filter_actions import *
+from app.muEditFunctions.overlay_plots import (clear_overlay_data,
+                                               overlay_file_button_pushed)
 from app.muEditFunctions.visualization import *
 # Import custom components
 from ui.components import (ActionButton, CleanCard, CleanScrollBar, CleanTheme,
@@ -568,6 +570,23 @@ def create_visualization_tab(main_window):
 
     button_panel.add_widget(row4)
 
+    # Overlay Decomposition Toggle
+    row5 = QWidget()
+    row5_lay = QHBoxLayout(row5)
+    row5_lay.setContentsMargins(0, 0, 0, 0)
+    row5_lay.setSpacing(6)
+
+    overlay_lbl = QLabel("Overlay Benchmark Decomposition")
+    set_standard_label_style(overlay_lbl)
+    row5_lay.addWidget(overlay_lbl)
+
+    main_window.overlay_switch = ToggleSwitch()
+    main_window.overlay_switch.toggled.connect(lambda checked: overlay_file_button_pushed(
+        main_window) if checked else clear_overlay_data(main_window))
+    row5_lay.addWidget(main_window.overlay_switch)
+
+    button_panel.add_widget(row5)
+
     viz_layout.addWidget(button_panel)
     viz_layout.addStretch()
 
@@ -842,123 +861,41 @@ def setup_display_panel(main_window):
     action_layout.setContentsMargins(0, 0, 0, 0)
     action_layout.setSpacing(8)
 
-    # Group buttons based on functionality
-    spikes_buttons = [
-        ("Add spikes", add_spikes_button_pushed, "add_spikes_btn"),
-        ("Delete spikes", delete_spikes_button_pushed, "delete_spikes_btn"),
-        ("Lock spikes", lock_spikes_button_pushed, "lock_spikes_btn"),
+    # Define all action buttons
+    action_button_configs = [
+        ("Add spikes", lambda: add_spikes_button_pushed(main_window), "add_spikes_btn"),
+        ("Delete spikes", lambda: delete_spikes_button_pushed(main_window), "delete_spikes_btn"),
+        ("Delete DR", lambda: delete_dr_button_pushed(main_window), "delete_dr_btn"),
+        ("Remove outliers", lambda: remove_outliers_button_pushed(main_window), "remove_outliers_single_btn"),
+        ("Lock spikes", lambda: lock_spikes_button_pushed(main_window), "lock_spikes_btn"),
+        ("Update MU filter", lambda: update_mu_filter_button_pushed(main_window), "update_mu_filter_btn"),
+        ("Extend MU filter", lambda: extend_mu_filter_button_pushed(main_window), "extend_mu_filter_btn"),
     ]
 
-    misc_buttons = [
-        ("Delete DR",
-         delete_dr_button_pushed,
-         "delete_dr_btn"),
-        ("Remove outliers",
-         remove_outliers_button_pushed,
-         "remove_outliers_single_btn"),
-    ]
-
-    mu_filter_buttons = [
-        ("Update MU filter", update_mu_filter_button_pushed,
-         "update_mu_filter_btn"),
-        ("Extend MU filter", extend_mu_filter_button_pushed,
-         "extend_mu_filter_btn"),
-    ]
-
-    def add_buttons_group(main_window, title_name, buttons, groups_layout):
-        frame = QFrame()
-        frame.setObjectName(f"group_{title_name.replace(' ', '_')}")
-        frame.setStyleSheet(f"""
-            QFrame#{frame.objectName()} {{
-                background-color: {CleanTheme.BG_CARD};
-                border: 1px solid {CleanTheme.BORDER};
-                border-radius: 8px;
-            }}
-        """)
-        frame_layout = QVBoxLayout(frame)
-        frame_layout.setContentsMargins(8, 8, 8, 8)
-        frame_layout.setSpacing(6)
-
-        card = CleanCard()
-        # Removes border from inner nest
-        card.setStyleSheet("background: transparent; border: none;")
-
-        content = QWidget()
-        content_layout = QVBoxLayout(content)
-        content_layout.setContentsMargins(0, 0, 0, 0)
-        content_layout.setSpacing(6)
-
-        title_label = QLabel(title_name)
-        title_label.setStyleSheet(
-            f"color: {CleanTheme.TEXT_PRIMARY}; font-size: 10pt; font-weight: bold; background: transparent; border: none;"
-        )
-        title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        content_layout.addWidget(title_label)
-
-        buttons_container = QWidget()
-        # Removes border from inner nest
-        buttons_container.setStyleSheet(
-            "background: transparent; border: none;")
-        buttons_layout = QHBoxLayout(buttons_container)
-        buttons_layout.setContentsMargins(0, 0, 0, 0)
-        buttons_layout.setSpacing(6)
-
-        if not hasattr(
-                main_window,
-                "action_buttons") or main_window.action_buttons is None:
-            main_window.action_buttons = {}
-
-        for text, handler, attr_name in buttons:
-            btn = ActionButtonedit(text, primary=False)
-            btn.setFocusPolicy(Qt.NoFocus)
-            btn.clicked.connect(partial(handler, main_window))
-            btn.setFixedHeight(32)
-            btn.setFixedWidth(120)
-            if text in {"Add spikes", "Delete spikes", "Lock spikes",
-                        "Update MU filter", "Extend MU filter"}:
-                # btn.set_blue()
-                ...  # placeholder before confirmation of colors
-
-            setattr(main_window, attr_name, btn)
-            main_window.action_buttons[attr_name] = btn
-            main_window.action_buttons[handler.__name__] = btn
-            buttons_layout.addWidget(btn)
-
-        content_layout.addWidget(buttons_container)
-
-        if hasattr(
-                card,
-                "content_layout") and isinstance(
-                card.content_layout,
-                QLayout):
-            card.content_layout.addWidget(content)
-
-        frame_layout.addWidget(card)
-        groups_layout.addWidget(frame)
-
-    # Add container for button groups
-    groups_container = QWidget()
-    groups_layout = QHBoxLayout(groups_container)
-    groups_layout.setContentsMargins(0, 0, 0, 0)
-    groups_layout.setSpacing(12)
-
-    add_buttons_group(
-        main_window,
-        "Spikes Actions",
-        spikes_buttons,
-        groups_layout)
-    add_buttons_group(
-        main_window,
-        "MU Filter Actions",
-        mu_filter_buttons,
-        groups_layout)
-    add_buttons_group(
-        main_window,
-        "Miscellaneous Actions",
-        misc_buttons,
-        groups_layout)
-
-    display_layout.addWidget(groups_container)
+    # Create action buttons and store references
+    main_window.action_buttons = {}
+    for text, handler, attr_name in action_button_configs:
+        btn = ActionButtonedit(text, primary=False)
+        btn.setFocusPolicy(Qt.NoFocus)
+        btn.clicked.connect(handler)
+        btn.setMinimumHeight(36)
+        btn.setMaximumHeight(36)
+        btn.setFixedWidth(140)
+        action_layout.addWidget(btn)
+        # Store reference to button in main_window
+        setattr(main_window, attr_name, btn)
+        main_window.action_buttons[handler.__name__] = btn
+        if text in {
+            "Add spikes",
+            "Delete spikes",
+            "Update MU filter",
+            "Extend MU filter",
+                "Lock spikes"}:
+            btn.set_blue()
+        if text in {"Delete spikes", "Delete DR", "Remove outliers"}:
+            spacer = QWidget()
+            spacer.setFixedWidth(20)
+            action_layout.addWidget(spacer)
 
     action_card.content_layout.addWidget(action_container)
     display_layout.addWidget(action_card)
@@ -1007,7 +944,7 @@ def create_plot_widget(main_window, y_label, x_label=""):
             super().__init__(*args, **kwargs)
             self.zoom_slider = zoom_slider
 
-        def wheelEvent(self, event):
+        def wheelEvent(self, event, *args, **kwargs):
             event.accept()
             delta = event.delta()
             cur = self.zoom_slider.get_slider_value()
@@ -1016,6 +953,8 @@ def create_plot_widget(main_window, y_label, x_label=""):
                 self.zoom_slider.set_slider_value(cur + 1)
             elif delta < 0:
                 self.zoom_slider.set_slider_value(cur - 1)
+
+            super().wheelEvent(event, *args, **kwargs)
 
         def keyPressEvent(self, event):
             if event.key() in (
