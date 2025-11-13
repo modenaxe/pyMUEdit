@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 import sys
 import os
@@ -186,18 +187,36 @@ class ImportDataWindow(QMainWindow):
         )
 
         zip_path = Path(file)
+        zip_name = zip_path.stem
 
-        readin_name = None
-        decomp_name = None
+        extract_dir = Path("..") / "loaded_sessions" / zip_name
+        extract_dir.mkdir(parents=True, exist_ok=True)
 
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_dir)
+
+            readin_name = None
+            decomp_name = None
+
             for name in zip_ref.namelist():
                 if name.endswith("_readin.h5"):
                     readin_name = name
                 elif name.endswith("_decomp.h5"):
                     decomp_name = name
 
+            if decomp_name:
+                decomp_path = extract_dir / decomp_name
+                signal_dict, raw_filepath, config_dict = load_from_h5(str(decomp_path))
 
+                print("Config:", config_dict)
+                print("Loaded signal_dict keys:", signal_dict.keys())
+                print("Raw filepath:", raw_filepath)
+
+            if readin_name:
+                readin_path = extract_dir / readin_name
+                print(f"Readin file available at: {readin_path}")
+
+            print(f"Files extracted to: {extract_dir}")
 
     def select_file(self):
         """Open file dialog to select a file."""
@@ -395,7 +414,7 @@ class ImportDataWindow(QMainWindow):
                 if not fileid:
                     fileid = insert_files(full_path, file, sessionid)
 
-                versionid_readin = upsert_file_versions(h5_readin_savename, fileid, "readin")
+                upsert_file_versions(h5_readin_savename, fileid, "readin")
 
                 self.raw_fileid = fileid
 
@@ -802,6 +821,8 @@ class ImportDataWindow(QMainWindow):
 
             # Set window flags to make it a widget instead of a window
             self.decomp_app.setWindowFlags(Qt.WindowType.Widget)
+
+            self.decomp_app.load_config(config)
 
             # Add to layout
             wrapper_layout.addWidget(self.decomp_app)

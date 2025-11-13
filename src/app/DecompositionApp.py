@@ -397,10 +397,13 @@ class DecompositionApp(QMainWindow):
             # save h5
             base_filename = os.path.splitext(self.filename)[0]
             savename_h5 = os.path.join(self.pathname, f"{base_filename}_decomp.h5")
+            h5_config = self.ui_params
+            h5_config['method'] = self.algo_choice
             save_as_h5(
                 {"signal": formatted_result, "parameters": parameters},
                 savename_h5,
-                raw_filepath=savename
+                raw_filepath=savename,
+                config = h5_config
             )
             versionid = upsert_file_versions(savename_h5, self.raw_fileid, "decomposed")
             insert_log(versionid, {
@@ -595,7 +598,6 @@ class DecompositionApp(QMainWindow):
         # Save in background
         self.save_mat_in_background(save_path, {"signal": formatted_result, "parameters": parameters}, True)
         self.edit_field.setText(f"Saving results to {save_path}")
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
