@@ -365,7 +365,7 @@ def setup_center_panel(main_window, parent_layout):
     # container for button switching
     main_window.button_container = QWidget()
     main_window.button_layout = QHBoxLayout(main_window.button_container)
-    main_window.button_layout.setContentsMargins(0,0,0,0)
+    main_window.button_layout.setContentsMargins(0, 0, 0, 0)
     main_window.button_layout.setSpacing(10)
 
     # start decomposition button
@@ -374,7 +374,8 @@ def setup_center_panel(main_window, parent_layout):
     main_window.start_button.setEnabled(False)
 
     # stop decomposition button
-    main_window.stop_button = ActionButton("⏹ Stop Decomposition", primary=False)
+    main_window.stop_button = ActionButton(
+        "⏹ Stop Decomposition", primary=False)
     main_window.stop_button.setStyleSheet(
         """
         ActionButton {
@@ -395,8 +396,10 @@ def setup_center_panel(main_window, parent_layout):
     )
 
     main_window.stop_button.setEnabled(False)
-    main_window.continue_button = ActionButton("▶ Continue Decomposition", primary=True)
-    main_window.restart_button = ActionButton("Restart Decomposition", primary=False)
+    main_window.continue_button = ActionButton(
+        "▶ Continue Decomposition", primary=True)
+    main_window.restart_button = ActionButton(
+        "Restart Decomposition", primary=False)
 
     # initially show start and stop buttons
     main_window.button_layout.addWidget(main_window.start_button)
