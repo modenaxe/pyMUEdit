@@ -1,4 +1,5 @@
 import sys
+import os
 
 from PyQt5.QtCore import QSize, Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QFont
@@ -11,6 +12,7 @@ from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
 from app.muAnalysisFunctions.ResizeFunc import Resize
 from core.muAnalysisCore.AnalysisResultsHist import store
+from core.utils.io.filesize_formatter import filesize_formatter
 from ui.components.muAnalysisComponents.AnalysisPlot import AnalysisPlot
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
@@ -27,8 +29,9 @@ from ui.muanalysis.ResultSelection import ResultSelection
 from ui.muanalysis.ResultsPanel import ResultsPanel
 from ui.muanalysis.ResultsTable import ResultsTable
 from ui.muanalysis.SignalEditing import SignalEditing
-
 from ui.components.Footer import Footer
+
+from pathlib import Path
 
 # legacy code
 def get_icon(standard_icon):
@@ -49,7 +52,7 @@ class MUAnalysis(QWidget):
         self.result_combo = ResultSelection(self.results_table)
         # setting instance of function class from
         # src/app.muAnalysisFunctions.FileUploadFunc
-        self.mu = FileUploadFunc()
+        self.mu = FileUploadFunc(parent=self)
         self.analysis_plot = AnalysisPlot()
         self.prop = MUPropertiesFunc()
 
@@ -96,6 +99,27 @@ class MUAnalysis(QWidget):
         self.footer.next_btn.hide() 
         self.footer.setFixedHeight(64)
         self.widget_layout.addWidget(self.footer)
+
+        self.update_analysis_footer_file_info = self.update_footer_file_info
+
+    # Update footer information if a new file is uploaded successfully in analysis tab
+    def update_footer_file_info(self, file_path):
+        if not file_path:
+            self.footer.footer_file_info.setText("No file selected")
+            self.footer.size_info.setText("Size: --")
+            self.footer.format_info.setText("Format: --")
+            return
+
+        file_name = Path(file_path).name
+        file_ext = Path(file_path).suffix
+        try:
+            file_size = filesize_formatter(file_path)
+        except Exception:
+            size_str = "--"
+
+        self.footer.footer_file_info.setText(f"File: {file_name}")
+        self.footer.size_info.setText(f"Size: {file_size}")
+        self.footer.format_info.setText(f"Format: {file_ext}")
 
     # --- UI Creation Methods ---
 

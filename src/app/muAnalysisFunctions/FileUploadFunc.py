@@ -30,11 +30,12 @@ class FileUploadFunc:
     # global instance of file
     file = None
 
-    def __init__(self):
+    def __init__(self, parent=None):
         """Initialises class instance
         Params: None
         Returns: class instance
         """
+        self.parent = parent
         self.original_file_path = None
         self.coords = []
         self.cid = None
@@ -154,6 +155,9 @@ class FileUploadFunc:
                 valid = self.emg_from_json(file_path)
                 self.original_file_path = file_path
                 self.import_data(file_path, analysis_plot, valid)
+                if valid:
+                    if self.parent and hasattr(self.parent, "update_footer_file_info"):
+                        self.parent.update_footer_file_info(file_path)
             else:
                 try:
                     valid = self.emg_from_otb(file_path)
@@ -162,6 +166,9 @@ class FileUploadFunc:
                 else:
                     self.original_file_path = file_path
                     self.import_data(file_path, analysis_plot, valid)
+                    if valid:
+                        if self.parent and hasattr(self.parent, "update_footer_file_info"):
+                            self.parent.update_footer_file_info(file_path)
 
     def import_data(self, filepath, analysis_plot, valid):
         """Plots files in centre if the file is valid
