@@ -1,41 +1,31 @@
 import traceback
-
+import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QCursor, QFont
-from PyQt5.QtWidgets import (QCheckBox, QComboBox, QDialog, QHBoxLayout,
-                             QLabel, QLineEdit, QMessageBox, QPushButton,
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import (QDialog, QHBoxLayout,
+                             QLineEdit,
                              QVBoxLayout, QWidget)
 
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
-from app.muAnalysisFunctions.MUAPFunc import (extract_delsys_muaps,
-                                              muaps_from_sta, sta)
-from app.muAnalysisFunctions.PlotEMGFunc import (diff, double_diff,
-                                                 parse_channel_input,
-                                                 plot_differentials,
-                                                 plot_emgsig, plot_idr,
-                                                 plot_ipts, plot_mupulses,
-                                                 plot_refsig, sort_rawemg)
-from ui.components.muAnalysisComponents.AnalysisCheckbox import \
-    AnalysisCheckbox
+from app.muAnalysisFunctions.PlotEMGFunc import parse_channel_input, parse_mu_input
 from ui.components.muAnalysisComponents.AnalysisCheckboxDark import \
     AnalysisCheckboxDark
-from ui.components.muAnalysisComponents.AnalysisDropdown import \
-    AnalysisDropdown
 from ui.components.muAnalysisComponents.AnalysisDropdownDialog import \
     AnalysisDropdownDialog
 from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
-from ui.components.muAnalysisComponents.AnalysisLabeledDropdownDialog import \
-    AnalysisLabeledDropdownDialog
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
-from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.PropertiesInnerDialogButton import \
-    PropertiesInnerDialogButton
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
-from ui.components.muAnalysisComponents.SubsectionTitle import SubsectionTitle
+
+from ui.components import ActionButton
+
+from openhdemg.library import (
+    plot_idr, plot_mupulses, plot_emgsig, plot_refsig,
+    plot_ipts, plot_differentials, sort_rawemg, diff, double_diff,
+    sta, plot_muaps, extract_delsys_muaps
+)
 
 
 class PlotEMGToolDialog(QDialog):
@@ -50,12 +40,12 @@ class PlotEMGToolDialog(QDialog):
     def init_ui(self):
         self.setWindowTitle("Plot EMG Tool")
         self.setMinimumWidth(700)
-        self.setModal(True)
+        self.setModal(False)
         self.setWindowFlags(
-            Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint
+            Qt.Window | Qt.WindowCloseButtonHint
         )
         self.setStyleSheet(
-            f"background-color: {CleanTheme.ANALYSIS_DIALOG_BACKGROUND};")
+            f"background-color: {CleanTheme.BG_CARD};")
 
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
@@ -97,6 +87,7 @@ class PlotEMGToolDialog(QDialog):
             items=["GR08MM1305", "GR04MM1305", "GR10MM0808"],
             parent=self
         )
+        self.matrix_code_dropdown.setCurrentIndex(0)
         dropdown_col.addWidget(self.matrix_code_dropdown)
 
         # orientation dropdown
@@ -105,6 +96,7 @@ class PlotEMGToolDialog(QDialog):
             items=["0", "180"],
             parent=self
         )
+        self.orientation_dropdown.setCurrentIndex(1)
         dropdown_col.addWidget(self.orientation_dropdown)
         filter_row_layout.addWidget(dropdowns, stretch=1)
 
@@ -131,12 +123,11 @@ class PlotEMGToolDialog(QDialog):
         mid_layout.addWidget(right, stretch=1)
 
         # figuring out button and input widths
-        def dummy_action(): return None
         button_width = max(
-            GeneralButton("Plot EMGsig", dummy_action).sizeHint().width(),
-            GeneralButton("Plot REFsig", dummy_action).sizeHint().width(),
-            GeneralButton("Plot IDR", dummy_action).sizeHint().width(),
-            GeneralButton("Plot MUPulses", dummy_action).sizeHint().width(),
+            ActionButton("Plot EMGsig").sizeHint().width(),
+            ActionButton("Plot REFsig").sizeHint().width(),
+            ActionButton("Plot IDR").sizeHint().width(),
+            ActionButton("Plot MUPulses").sizeHint().width(),
         ) + 40  # Add extra width for longer text
         textbox_width = 230
 
@@ -153,10 +144,9 @@ class PlotEMGToolDialog(QDialog):
         emgsig_row.addWidget(self.channel_input)
 
         # the button
-        emgsig_btn = GeneralButton(
-            "Plot EMGsig",
-            self.handle_emgsig_clicked,
-            parent=self)
+        emgsig_btn = ActionButton("Plot EMGsig", parent=self)
+        emgsig_btn.clicked.connect(lambda: self.handle_emgsig_clicked())
+        emgsig_btn.setMinimumHeight(40)
         emgsig_btn.setFixedWidth(button_width)
         emgsig_row.addWidget(emgsig_btn)
 
@@ -172,10 +162,9 @@ class PlotEMGToolDialog(QDialog):
         idr_row.addWidget(self.mu_input)
 
         # the button
-        idr_btn = GeneralButton(
-            "Plot IDR",
-            self.handle_idr_clicked,
-            parent=self)
+        idr_btn = ActionButton("Plot IDR", parent=self)
+        idr_btn.clicked.connect(lambda: self.handle_idr_clicked())
+        idr_btn.setMinimumHeight(40)
         idr_btn.setFixedWidth(button_width)
         idr_row.addWidget(idr_btn)
 
@@ -192,10 +181,9 @@ class PlotEMGToolDialog(QDialog):
         source_row.addWidget(self.source_mu_input)
 
         # the button
-        source_btn = GeneralButton(
-            "Plot Source",
-            self.handle_source_clicked,
-            parent=self)
+        source_btn = ActionButton("Plot Source", parent=self)
+        source_btn.clicked.connect(lambda: self.handle_source_clicked())
+        source_btn.setMinimumHeight(40)
         source_btn.setFixedWidth(button_width)
         source_row.addWidget(source_btn)
 
@@ -211,10 +199,9 @@ class PlotEMGToolDialog(QDialog):
         mupulses_row.addWidget(self.linewidth_input)
 
         # the button
-        mupulses_btn = GeneralButton(
-            "Plot MUPulses",
-            self.handle_mupulses_clicked,
-            parent=self)
+        mupulses_btn = ActionButton("Plot MUPulses", parent=self)
+        mupulses_btn.clicked.connect(lambda: self.handle_mupulses_clicked())
+        mupulses_btn.setMinimumHeight(40)
         mupulses_btn.setFixedWidth(button_width)
         mupulses_row.addWidget(mupulses_btn)
 
@@ -226,10 +213,9 @@ class PlotEMGToolDialog(QDialog):
 
         # the button
         refsig_row.addStretch(1)
-        refsig_btn = GeneralButton(
-            "Plot REFsig",
-            self.handle_refsig_clicked,
-            parent=self)
+        refsig_btn = ActionButton("Plot REFsig", parent=self)
+        refsig_btn.clicked.connect(lambda: self.handle_refsig_clicked())
+        refsig_btn.setMinimumHeight(40)
         refsig_btn.setFixedWidth(button_width)
         refsig_row.addWidget(refsig_btn)
 
@@ -253,13 +239,13 @@ class PlotEMGToolDialog(QDialog):
             items=["Single Differential", "Double Differential"],
             parent=self
         )
+        self.derivation_config_dropdown.setCurrentIndex(0)
         derivation_row.addWidget(self.derivation_config_dropdown)
 
         # the button
-        derivation_btn = GeneralButton(
-            "Derivation",
-            self.handle_derivation_clicked,
-            parent=self)
+        derivation_btn = ActionButton("Derivation", parent=self)
+        derivation_btn.clicked.connect(lambda: self.handle_derivation_clicked())
+        derivation_btn.setMinimumHeight(40)
         derivation_btn.setFixedWidth(button_width)
         derivation_row.addWidget(derivation_btn)
 
@@ -281,6 +267,7 @@ class PlotEMGToolDialog(QDialog):
             "Double differential"]
         configuration_dropdown = AnalysisDropdownDialog(
             "Configuration", configuration_items, parent=self)
+        configuration_dropdown.setCurrentIndex(0)
         muap_row.addWidget(configuration_dropdown, stretch=1)
         self.configuration_dropdown = configuration_dropdown
 
@@ -288,11 +275,14 @@ class PlotEMGToolDialog(QDialog):
         timewindow_items = ["25", "50", "100", "200"]
         timewindow_dropdown = AnalysisDropdownDialog(
             "Timewindow (ms)", timewindow_items, parent=self)
+        timewindow_dropdown.setCurrentIndex(1)
         muap_row.addWidget(timewindow_dropdown, stretch=1)
         self.timewindow_dropdown = timewindow_dropdown
 
         # the button
-        muap_btn = GeneralButton("Plot MUAPs", self.plot_muaps, parent=self)
+        muap_btn = ActionButton("Plot MUAPs", parent=self)
+        muap_btn.clicked.connect(lambda: self.handle_muaps_clicked())
+        muap_btn.setMinimumHeight(40)
         muap_btn.setFixedWidth(button_width)
         muap_row.addWidget(muap_btn)
 
@@ -309,16 +299,35 @@ class PlotEMGToolDialog(QDialog):
             time_in_seconds = self.time_seconds_checkbox.isChecked()
             add_ref_signal = self.ref_signal_checkbox.isChecked()
 
+            if isinstance(emgfile["RAW_SIGNAL"], pd.DataFrame):
+                emgsig = emgfile["RAW_SIGNAL"]
+            else:
+                raise TypeError("RAW_SIGNAL is missing or not a DataFrame")
+
+            max_channels = len(emgsig.columns)
+
+            channels = raw_text
+
+            # If channels is a string, parse it and validate
+            if isinstance(channels, str):
+                channels = parse_channel_input(channels, max_channels)
+            elif isinstance(channels, (list, int)):
+                # For direct channel input, validate the range
+                if isinstance(channels, list):
+                    invalid_channels = [ch for ch in channels if ch < 0 or ch >= max_channels]
+                    if invalid_channels:
+                        raise ValueError(f"Invalid channels: {invalid_channels}. Available channels are 0-{max_channels-1}")
+                else:  # int
+                    if channels < 0 or channels >= max_channels:
+                        raise ValueError(f"Invalid channel: {channels}. Available channels are 0-{max_channels-1}")
+
             # Pass the raw text string directly to plot_emgsig for validation
             fig = plot_emgsig(
                 emgfile=emgfile,
-                analysis_plot=self.analysis_plot,
-                channels=raw_text,  # Pass as string for validation
+                channels=channels,  # Pass as string for validation
                 manual_offset=0,
                 addrefsig=add_ref_signal,  # Use checkbox state
                 timeinseconds=time_in_seconds,  # Use checkbox state
-                figsize=[20, 15],
-                tight_layout=True,
                 showimmediately=False,
             )
             canvas = SaveablePlot(fig)
@@ -342,8 +351,8 @@ class PlotEMGToolDialog(QDialog):
         try:
             fig = plot_refsig(
                 emgfile=emgfile,
-                analysis_plot=self.analysis_plot,
-                timeinseconds=self.time_seconds_checkbox.isChecked()
+                timeinseconds=self.time_seconds_checkbox.isChecked(),
+                showimmediately=False
             )
             canvas = SaveablePlot(fig)
             self.analysis_plot.display_fig(canvas)
@@ -363,7 +372,7 @@ class PlotEMGToolDialog(QDialog):
             return
         mu_text = self.mu_input.get()
         try:
-            munumber = self.parse_mu_input(mu_text)
+            munumber = parse_mu_input(mu_text)
         except Exception:
             ErrorDialog('invalid plot inputs', 'Error').exec_()
             return
@@ -379,7 +388,7 @@ class PlotEMGToolDialog(QDialog):
             self.analysis_plot.display_fig(canvas)
             plt.close(fig)
         except Exception as e:
-            ErrorDialog('Error plotting IDR', 'Error').exec_()
+            ErrorDialog(f'{e}', 'Error').exec_()
 
     def handle_mupulses_clicked(self):
         """Function that plots MUPulses based on the selected configuration
@@ -414,40 +423,6 @@ class PlotEMGToolDialog(QDialog):
         except Exception as e:
             ErrorDialog('Error plotting MUPulses', 'Error').exec_()
 
-    def parse_mu_input(self, raw_text):
-        """Parses the MU input text and returns a sorted list of MU numbers.
-
-        Args:
-            raw_text (str): The input text containing MU numbers or ranges.
-
-        Returns:
-            list: A sorted list of unique MU numbers.
-
-        Raises:
-            ValueError: If the input format is invalid.
-        """
-        # Accepts comma-separated and dash ranges, e.g. '1,3,5-7'
-        mus = []
-        raw_text = raw_text.strip()
-        if not raw_text:
-            raise ValueError("Empty input")
-        parts = raw_text.split(',')
-        for part in parts:
-            part = part.strip()
-            if '-' in part:
-                start_end = part.split('-')
-                if len(start_end) != 2:
-                    raise ValueError("Invalid range format")
-                start, end = start_end
-                start = int(start)
-                end = int(end)
-                if start > end:
-                    raise ValueError("Range start must be <= end")
-                mus.extend(range(start, end + 1))
-            else:
-                mus.append(int(part))
-        return sorted(set(mus))
-
     def handle_source_clicked(self):
         """Function that plots the source EMG signals based on the selected
         configuration and inputs.
@@ -460,7 +435,7 @@ class PlotEMGToolDialog(QDialog):
             return
         mu_text = self.source_mu_input.get()
         try:
-            munumber = self.parse_mu_input(mu_text)
+            munumber = parse_mu_input(mu_text)
         except Exception:
             ErrorDialog('invalid plot inputs', 'Error').exec_()
             return
@@ -470,7 +445,7 @@ class PlotEMGToolDialog(QDialog):
                 munumber=munumber,
                 timeinseconds=self.time_seconds_checkbox.isChecked(),
                 addrefsig=self.ref_signal_checkbox.isChecked(),
-                tight_layout=True,
+                showimmediately=False
             )
             canvas = SaveablePlot(fig)
             self.analysis_plot.display_fig(canvas)
@@ -552,7 +527,6 @@ class PlotEMGToolDialog(QDialog):
                 column=column_name,
                 timeinseconds=self.time_seconds_checkbox.isChecked(),
                 addrefsig=self.ref_signal_checkbox.isChecked(),
-                tight_layout=True,
                 showimmediately=False
             )
 
@@ -567,7 +541,7 @@ class PlotEMGToolDialog(QDialog):
                 f'Error plotting Derivation:\n{str(e)}',
                 'Error').exec_()
 
-    def plot_muaps(self):
+    def handle_muaps_clicked(self):
         """Function that plots MUAPs as long as the correct inputs are defined
         in the modal.
         Params: None
@@ -592,7 +566,7 @@ class PlotEMGToolDialog(QDialog):
             # DELSYS requires different MUAPS plot
             if FileUploadFunc.file["SOURCE"] == "DELSYS":
                 muaps_dict = extract_delsys_muaps(FileUploadFunc.file)
-                muaps_from_sta(self.analysis_plot, muaps_dict[mu_num])
+                plot_muaps(self.analysis_plot, muaps_dict[mu_num])
 
             else:
                 try:
@@ -630,7 +604,11 @@ class PlotEMGToolDialog(QDialog):
                 )
 
                 # Plotting
-                muaps_from_sta(self.analysis_plot, sta_dict[mu_num])
+                fig = plot_muaps(sta_dict[mu_num])
+                canvas = SaveablePlot(fig)
+                self.analysis_plot.display_fig(canvas)
+                plt.close()
+
         except ValueError as e:
             if (self.configuration_dropdown.currentText() == ""):
                 ErrorDialog(
@@ -684,14 +662,11 @@ class PlotEMGButton(QWidget):
 
     def init_ui(self):
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
 
-        # Subtitle
-        subtitle_label = SubsectionTitle("PLOT EMG")
-        subtitle_label.setObjectName("motorUnitAnalysisSubTitle")
-        layout.addWidget(subtitle_label)
-
-        plot_emg_btn = GeneralButton(
-            "Plot EMG", lambda: self.open_plot_emg_btn())
+        plot_emg_btn = ActionButton("Plot EMG")
+        plot_emg_btn.clicked.connect(lambda: self.open_plot_emg_btn())
+        plot_emg_btn.setMinimumHeight(40)
         layout.addWidget(plot_emg_btn)
         layout.setAlignment(plot_emg_btn, Qt.AlignmentFlag.AlignTop)
 

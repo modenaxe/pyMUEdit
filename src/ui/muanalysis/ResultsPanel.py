@@ -4,14 +4,11 @@ from PyQt5.QtWidgets import (QDialog, QFileDialog, QFrame, QTableView,
                              QVBoxLayout)
 
 from core.muAnalysisCore.AnalysisResultsHist import store
-from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ConfirmationDialog import \
     ConfirmationDialog
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
-from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.GeneralRedButton import \
-    GeneralRedButton
+from ui.components import ActionButton
 
 
 class ResultsPanel(QFrame):
@@ -70,24 +67,11 @@ class ResultsPanel(QFrame):
         store.clear_results()
 
 
-class ClearButton(GeneralRedButton):
+class ClearButton(ActionButton):
     def __init__(self, parent=None):
-        super().__init__("Clear Results", parent)
+        super().__init__("Clear Results", parent=parent)
         self.clicked.connect(lambda: self.clear_results())
-        self.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #475058;
-                color: #fff;
-                border-radius: 5px;
-                font-size: 1em;
-                min-height: 40px;
-            }
-            QPushButton:hover {
-                background-color: #495057;
-            }
-            """
-        )
+        self.setMinimumHeight(40)
 
     def clear_results(self):
         if store.is_empty():

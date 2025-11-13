@@ -1,21 +1,20 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QCheckBox, QDialog, QLabel, QVBoxLayout
+from PyQt5.QtWidgets import QDialog, QVBoxLayout
 
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
-from app.muAnalysisFunctions.PICFunc import compute_deltaf
 from ui.components.muAnalysisComponents.AnalysisCheckboxDark import \
     AnalysisCheckboxDark
-from ui.components.muAnalysisComponents.AnalysisDropdownDialog import \
-    AnalysisDropdownDialog
-from ui.components.muAnalysisComponents.AnalysisLabeledDropdown import \
-    AnalysisLabeledDropdown
 from ui.components.muAnalysisComponents.AnalysisLabeledDropdownDialog import \
     AnalysisLabeledDropdownDialog
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
-from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
+
+from core.muAnalysisCore.AnalysisResultsHist import store
+
+from ui.components import ActionButton
+
+from openhdemg.library import compute_deltaf, compute_svr
 
 
 class PICDialog(QDialog):
@@ -48,7 +47,7 @@ class PICDialog(QDialog):
             Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint
         )
         self.setStyleSheet(
-            f"background-color: {CleanTheme.ANALYSIS_DIALOG_BACKGROUND};")
+            f"background-color: {CleanTheme.BG_CARD};")
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
         layout.setContentsMargins(30, 20, 30, 20)
@@ -86,9 +85,11 @@ class PICDialog(QDialog):
 
         layout.addLayout(checkbox_layout, stretch=1)
 
-        self.PIC_button = GeneralButton(
-            "Compute PIC", lambda: self.computePIC()
+        self.PIC_button = ActionButton(
+            "Compute PIC"
         )
+        self.PIC_button.clicked.connect(lambda: self.computePIC())
+        self.PIC_button.setMinimumHeight(40)
         layout.addWidget(self.PIC_button, stretch=1)
 
     def computePIC(self):
@@ -107,7 +108,17 @@ class PICDialog(QDialog):
         avg_method = "all" if self.avg_method_dropdown.get() == "All" else "test_unit_average"
         clean = False if not self.clean_checkbox.checkState() else True
 
-        compute_deltaf(
+        smoothfits = compute_svr(emgfile=self.file)["gensvr"]
+
+        delta_f = compute_deltaf(
+            emgfile=self.file,
+            smoothfits=smoothfits,
             average_method=avg_method,
             normalisation=normalisation,
-            clean=clean)
+            clean=clean
+        )
+
+        # update results table
+        store.append_analysis_hist(
+            "PIC", delta_f.to_dict("records")
+        )

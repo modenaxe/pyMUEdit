@@ -1,26 +1,17 @@
-import copy
 
-import matplotlib.pyplot as plt
-from PyQt5.QtWidgets import (QDialog, QFrame, QHBoxLayout, QMessageBox,
-                             QVBoxLayout, QWidget)
-from scipy import signal
-
+from PyQt5.QtWidgets import (QFrame, QHBoxLayout,
+                             QVBoxLayout, QWidget, QMainWindow)
+from PyQt5.QtCore import Qt
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
-from core.muAnalysisCore.SelectRange import SelectRange
-from ui.components.muAnalysisComponents.AnalysisDropdown import \
-    AnalysisDropdown
-from ui.components.muAnalysisComponents.AnalysisDropdownDialog import \
-    AnalysisDropdownDialog
 from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
-from ui.components.muAnalysisComponents.AnalysisLabeledDropdown import \
-    AnalysisLabeledDropdown
 from ui.components.muAnalysisComponents.AnalysisLabeledDropdownDialog import \
     AnalysisLabeledDropdownDialog
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
-from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.SaveablePlot import SaveablePlot
+from ui.components import ActionButton
+
+from openhdemg.library import filter_rawemg, filter_refsig, remove_offset
 
 
 class SignalEditing(QWidget):
@@ -43,10 +34,10 @@ class SignalEditing(QWidget):
         self.analysis_plot = analysis_plot
 
         layout = QVBoxLayout(self)
-        btn = GeneralButton(
-            "Signal Editing",
-            lambda: self.show_window(),
-            parent=self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        btn = ActionButton("Signal Editing", parent=self)
+        btn.clicked.connect(lambda: self.show_window())
+        btn.setMinimumHeight(40)
         layout.addWidget(btn, stretch=1)
 
     def show_window(self):
@@ -58,16 +49,22 @@ class SignalEditing(QWidget):
             ErrorDialog("No file has been loaded", "Error").exec_()
             return
 
-        window = QDialog()
+        window = QWidget(self)
         window.setWindowTitle("Signal Editing Window")
         window.setStyleSheet(
             f"""
-            background-color: {CleanTheme.ANALYSIS_DIALOG_BACKGROUND};
+            background-color: {CleanTheme.BG_CARD};
             """
         )
         window_layout = QVBoxLayout()
         window.setLayout(window_layout)
         window_layout.setSpacing(10)
+        window.setWindowTitle("Signal Editing Window")
+        window.setFixedHeight(486)
+        window.setFixedWidth(383)
+        window.setWindowFlags(
+            Qt.Window | Qt.WindowCloseButtonHint
+        )
         self.window = window
 
         # Title
@@ -103,10 +100,9 @@ class SignalEditing(QWidget):
         filter_v_emg_layout.setContentsMargins(0, 0, 0, 0)
         filter_v_emg_layout.addStretch()
 
-        filter_emg_btn = GeneralButton(
-            "Filter EMG signal",
-            lambda: self.filter_emg_signal(),
-            parent=self)
+        filter_emg_btn = ActionButton("Filter EMG signal", parent=self)
+        filter_emg_btn.clicked.connect(lambda: self.filter_emg_signal())
+        filter_emg_btn.setMinimumHeight(40)
         filter_v_emg_layout.addWidget(filter_emg_btn)
         filter_emg_layout.addWidget(filter_v_emg, stretch=1)
 
@@ -137,8 +133,9 @@ class SignalEditing(QWidget):
         filter_v_refsig_layout.setContentsMargins(0, 0, 0, 0)
         filter_v_refsig_layout.addStretch()
 
-        filter_refsig_btn = GeneralButton(
-            "Filter Refsig", lambda: self.filter_refsig(), parent=self)
+        filter_refsig_btn = ActionButton("Filter Refsig", parent=self)
+        filter_refsig_btn.clicked.connect(lambda: self.filter_refsig())
+        filter_refsig_btn.setMinimumHeight(40)
         filter_v_refsig_layout.addWidget(filter_refsig_btn)
         filter_refsig_layout.addWidget(filter_v_refsig, stretch=1)
 
@@ -165,8 +162,9 @@ class SignalEditing(QWidget):
         remove_v_offset_layout.setContentsMargins(0, 0, 0, 0)
         remove_v_offset_layout.addStretch()
 
-        remove_offset_btn = GeneralButton(
-            "Remove Offset", lambda: self.remove_offset(), parent=self)
+        remove_offset_btn = ActionButton("Remove Offset", parent=self)
+        remove_offset_btn.clicked.connect(lambda: self.remove_offset())
+        remove_offset_btn.setMinimumHeight(40)
         remove_v_offset_layout.addWidget(remove_offset_btn)
         remove_offset_layout.addWidget(remove_v_offset, stretch=1)
 
@@ -196,8 +194,9 @@ class SignalEditing(QWidget):
         convert_v_layout.setContentsMargins(0, 0, 0, 0)
         convert_v_layout.addStretch()
 
-        convert_btn = GeneralButton(
-            "Convert", lambda: self.convert(), parent=self)
+        convert_btn = ActionButton("Convert", parent=self)
+        convert_btn.clicked.connect(lambda: self.convert())
+        convert_btn.setMinimumHeight(40)
         convert_v_layout.addWidget(convert_btn)
         convert_layout.addWidget(convert_v, stretch=1)
 
@@ -226,10 +225,9 @@ class SignalEditing(QWidget):
             "*Only for absolute\nvalued RefSigs")
         percent_h_layout.addWidget(percent_warning)
 
-        percent_btn = GeneralButton(
-            "To Percent",
-            lambda: self.to_percent(),
-            parent=self)
+        percent_btn = ActionButton("To Percent",parent=self)
+        percent_btn.clicked.connect(lambda: self.to_percent())
+        percent_btn.setMinimumHeight(40)
         percent_h_layout.addWidget(percent_btn)
 
         percent_v_layout.addWidget(percent_h)
@@ -237,7 +235,7 @@ class SignalEditing(QWidget):
         percent_layout.addWidget(percent_v, stretch=1)
 
         window_layout.addStretch()
-        window.exec()
+        self.window.show()
 
     def is_int(self, n):
         """Checks if a given string is a valid int for filter_emg or
@@ -278,26 +276,8 @@ class SignalEditing(QWidget):
                 "Invalid Input").exec_()
             return
 
-        filtered_file = copy.deepcopy(self.mu.file)
-
-        # Subtracting 1 to account for is_int()
-        order -= 1
-        lo -= 1
-        hi -= 1
-
-        sos = signal.butter(
-            N=order,
-            Wn=[lo, hi],
-            btype="bandpass",
-            output="sos",
-            fs=filtered_file["FSAMP"],
-        )
-        for col in filtered_file["RAW_SIGNAL"]:
-            filtered_file["RAW_SIGNAL"][col] = signal.sosfiltfilt(
-                sos,
-                x=filtered_file["RAW_SIGNAL"][col],
-            )
-
+        filtered_file = filter_rawemg(self.mu.file, order - 1, lo - 1, hi - 1)
+        self.mu.set_file(filtered_file)
         self.mu.plot_idr(filtered_file, self.analysis_plot)
 
     def filter_refsig(self):
@@ -318,24 +298,8 @@ class SignalEditing(QWidget):
                 "Invalid Input").exec_()
             return
 
-        filtered_file = copy.deepcopy(self.mu.file)
-
-        # Subtracting 1 to account for is_int()
-        order -= 1
-        cutoff -= 1
-
-        sos = signal.butter(
-            N=order,
-            Wn=cutoff,
-            btype="lowpass",
-            output="sos",
-            fs=filtered_file["FSAMP"],
-        )
-        filtered_file["REF_SIGNAL"][0] = signal.sosfiltfilt(
-            sos,
-            x=filtered_file["REF_SIGNAL"][0],
-        )
-
+        filtered_file = filter_refsig(self.mu.file, order - 1, cutoff - 1)
+        self.mu.set_file(filtered_file)
         self.mu.plot_refsig(filtered_file, self.analysis_plot)
 
     def remove_offset(self):
@@ -344,47 +308,19 @@ class SignalEditing(QWidget):
         Returns: None
         """
         try:
-            offset = int(self.remove_offset_value.get())
+            offset = float(self.remove_offset_value.get())
             auto = int(self.remove_auto_offset.get())
 
-            plt.close()
+            # plt.close()
 
-            # Setting up the plot
-            self.fig, self.ax = plt.subplots()
-            self.ax.set_xlabel("Time(sec)")
-            self.ax.set_ylabel('MVC')
+            filtered_file = remove_offset(self.mu.file, offset, auto)
+            self.mu.set_file(filtered_file)
+            self.mu.plot_refsig(self.mu.file, self.analysis_plot)
 
-            self.fig.set_figheight(5)
-            self.fig.set_figwidth(5)
-
-            if (auto <= 0):
-                if (offset != 0):
-                    self.mu.file["REF_SIGNAL"][0] = self.mu.file["REF_SIGNAL"][0] - offset
-                    self.mu.plot_refsig(self.mu.file, self.analysis_plot)
-                else:
-                    self.window.accept()
-                    SelectRange(self.analysis_plot, self.two_point, False)
-            else:
-                offset = self.mu.file["REF_SIGNAL"].iloc[0:auto].mean()
-                self.mu.file["REF_SIGNAL"][0] = (
-                    self.mu.file["REF_SIGNAL"][0] - float(offset))
-                self.mu.plot_refsig(self.mu.file, self.analysis_plot)
         except ValueError as e:
             ErrorDialog(
                 "Offset and Automatic Offset value must be a valid integer",
                 "Invalid Input").exec_()
-
-    def two_point(self, x, y):
-        """two_point function required for SelectRange. Ran after two points in
-        ranged are gathered
-        Params: None
-        Returns: None
-        """
-        offsetval = self.mu.file["REF_SIGNAL"].loc[x:y].mean()
-        self.mu.file["REF_SIGNAL"][0] = (
-            self.mu.file["REF_SIGNAL"][0] - float(offsetval))
-
-        self.mu.plot_refsig(self.mu.file, self.analysis_plot)
 
     def convert(self):
         """Multiplies/Divides and plots values in the y-axis by the user-

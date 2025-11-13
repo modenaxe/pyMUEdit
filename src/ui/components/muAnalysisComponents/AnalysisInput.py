@@ -1,5 +1,5 @@
 from PyQt5.QtGui import QColor, QPalette
-from PyQt5.QtWidgets import QLabel, QLineEdit, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QLineEdit, QVBoxLayout, QWidget
 
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme

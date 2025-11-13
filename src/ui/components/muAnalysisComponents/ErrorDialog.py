@@ -1,11 +1,8 @@
-from PyQt5.QtCore import QSize, Qt, pyqtSignal
-from PyQt5.QtGui import QColor, QFont
-from PyQt5.QtWidgets import (QDialog, QHBoxLayout, QLabel, QPushButton, QStyle,
-                             QVBoxLayout)
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import (QDialog, QHBoxLayout, QLabel, QVBoxLayout)
 
-from ui.components.muAnalysisComponents.GeneralRedButton import \
-    GeneralRedButton
-
+from ui.components import ActionButton
 
 class ErrorDialog(QDialog):
 
@@ -27,7 +24,8 @@ class ErrorDialog(QDialog):
         buttons_layout = QHBoxLayout()
         buttons_layout.setSpacing(10)
         buttons_layout.setAlignment(Qt.AlignCenter)
-        cancel_button = GeneralRedButton("Ok")
+        cancel_button = ActionButton("Ok")
         cancel_button.clicked.connect(self.reject)
+        cancel_button.setMinimumHeight(40)
         buttons_layout.addWidget(cancel_button)
         main_layout.addLayout(buttons_layout)
