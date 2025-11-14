@@ -1211,15 +1211,15 @@ class offline_EMG(EMG):
                 },
                 "post_process_across_arrays", 0
             )
-    
+
         if not hasattr(self, 'mu_dict') or not isinstance(self.mu_dict, dict):
             print("Warning: mu_dict not properly initialized")
             self.mu_dict = {"pulse_trains": [], "discharge_times": []}
-        
+
         if "pulse_trains" not in self.mu_dict or not isinstance(self.mu_dict["pulse_trains"], list):
             print("Warning: pulse_trains not properly initialized")
             self.mu_dict["pulse_trains"] = []
-            
+
         if "discharge_times" not in self.mu_dict or not isinstance(self.mu_dict["discharge_times"], list):
             print("Warning: discharge_times not properly initialized")
             self.mu_dict["discharge_times"] = []
@@ -1232,10 +1232,10 @@ class offline_EMG(EMG):
         array_motor_unit_counts = []
 
         for i in range(no_arrays):
-            if (i < len(self.mu_dict["pulse_trains"]) and 
-                isinstance(self.mu_dict["pulse_trains"][i], np.ndarray) and 
+            if (i < len(self.mu_dict["pulse_trains"]) and
+                isinstance(self.mu_dict["pulse_trains"][i], np.ndarray) and
                 self.mu_dict["pulse_trains"][i].size > 0):
-                
+
                 motor_unit_count = (
                     self.mu_dict["pulse_trains"][i].shape[0]
                     if hasattr(self.mu_dict["pulse_trains"][i], "shape")
@@ -1284,10 +1284,10 @@ class offline_EMG(EMG):
         print("Consolidating motor units from all arrays...")
         for i in range(no_arrays):  # iterating over arrays
             # bounds check for pulse_trains
-            if (i < len(self.mu_dict["pulse_trains"]) and 
-                isinstance(self.mu_dict["pulse_trains"][i], np.ndarray) and 
+            if (i < len(self.mu_dict["pulse_trains"]) and
+                isinstance(self.mu_dict["pulse_trains"][i], np.ndarray) and
                 self.mu_dict["pulse_trains"][i].size > 0):
-                
+
                 motor_unit_count = (
                     self.mu_dict["pulse_trains"][i].shape[0]
                     if hasattr(self.mu_dict["pulse_trains"][i], "shape")
@@ -1297,11 +1297,11 @@ class offline_EMG(EMG):
                 # iterating over the mus per array
                 for j in range(motor_unit_count):
                     # bounds check for both pulse_trains and discharge_times
-                    if (mu < mu_count and 
+                    if (mu < mu_count and
                         j < self.mu_dict["pulse_trains"][i].shape[0] and
                         i < len(self.mu_dict["discharge_times"]) and
                         j < len(self.mu_dict["discharge_times"][i])):
-                        
+
                         # additional shape check for pulse train
                         pulse_train = self.mu_dict["pulse_trains"][i][j]
                         if len(pulse_train) <= signal_length:
@@ -1309,7 +1309,7 @@ class offline_EMG(EMG):
                         else:
                             # truncate if pulse train is longer than expected
                             all_pulse_trains[mu, :] = pulse_train[:signal_length]
-                        
+
                         all_discharge_times.append(self.mu_dict["discharge_times"][i][j])
                         muscle[mu] = i
                         mu += 1
@@ -1392,7 +1392,7 @@ class offline_EMG(EMG):
 
             # bounds check for discharge_times access
             for j in range(motor_unit_count):
-                if (j < len(idx) and 
+                if (j < len(idx) and
                     idx[j] < len(discharge_times_new) and
                     i < len(self.mu_dict["discharge_times"])):
                     self.mu_dict["discharge_times"][i].append(discharge_times_new[idx[j]])

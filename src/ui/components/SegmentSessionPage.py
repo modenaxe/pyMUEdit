@@ -308,6 +308,16 @@ class SegmentSessionPage(QWidget):
         signal = self.file["signal"][0, 0]
         save_filename = f"{self.filename.split('.')[0]}_concatenated.mat"
         sio.savemat(save_filename, {"signal": signal}, do_compression=True)
+
+        # save as .h5 file
+        savename_h5 = f"{self.filename.split('.')[0]}_concatenated.h5"
+        save_as_h5(
+            {"signal": signal},
+            savename_h5,
+            raw_filepath=save_filename
+        )
+
+        versionid = upsert_file_versions(savename_h5, self.raw_fileid, "segmented")
         self.on_new_segment(save_filename)
 
     def split_clicked(self):

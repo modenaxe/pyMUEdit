@@ -1,3 +1,4 @@
+import ast
 import sys
 import os
 import traceback
@@ -687,6 +688,8 @@ class DecompositionApp(QMainWindow):
         # Start the worker thread
         self.decomp_worker.start()
 
+
+
     def on_decomposition_complete(self, result):
         """Handle successful completion of decomposition"""
 
@@ -708,7 +711,7 @@ class DecompositionApp(QMainWindow):
             h5_config = self.ui_params
             h5_config['method'] = self.algo_choice
             save_as_h5(
-                {"signal": formatted_result, "parameters": parameters},
+                result,
                 savename_h5,
                 raw_filepath=savename,
                 config = h5_config
@@ -719,6 +722,99 @@ class DecompositionApp(QMainWindow):
             }, self.ui_params)
 
             # Store the decomposition result
+            self.decomposition_result = formatted_result
+
+        self.edit_field.setText("Decomposition complete")
+        self.status_text.setText("Complete")
+        self.status_progress.setValue(100)
+        self.start_button.setEnabled(True)
+        self.save_output_button.setEnabled(True)
+
+        # Count total motor units
+        total_mus = 0
+        if "Pulsetrain" in result:
+            if isinstance(result["Pulsetrain"], dict):
+                for electrode, pulses in result["Pulsetrain"].items():
+                    if hasattr(pulses, "shape"):
+                        total_mus += pulses.shape[0]
+            elif isinstance(result["Pulsetrain"], list):
+                for electrode_pulses in result["Pulsetrain"]:
+                    if hasattr(electrode_pulses, "shape"):
+                        total_mus += electrode_pulses.shape[0]
+
+        self.motor_units_label.setText(f"Motor Units: {total_mus}")
+
+        # Plot the reference signal
+        try:
+            if "auxiliary" in self.decomposition_result and "fsamp" in self.decomposition_result:
+                index = 0
+                # Plot selected auxiliary signal
+                for i, aux_name in enumerate(self.decomposition_result["auxiliaryname"][0]):
+                    # if aux_name == self.reference_dropdown.currentText():
+                    if aux_name == "EMG amplitude":
+                        index = i
+                        break
+
+                # First auxiliary signal
+                reference_signal = self.decomposition_result["auxiliary"][index, :]
+                fsamp = self.decomposition_result["fsamp"]
+                time_vector = np.arange(reference_signal.shape[0]) / fsamp
+
+                # Clear signal preview plot
+                self.ui_plot_reference.clear()
+                # Plot new reference signal
+                self.ui_plot_reference.plot(time_vector, reference_signal, pen=pg.mkPen(color="#E40000", width=2))
+
+                # Adjust the plot title
+                if "auxiliaryname" in self.decomposition_result:
+                    name_array = self.decomposition_result["auxiliaryname"]
+                    name = name_array[0, 0] if isinstance(name_array[0, 0], str) else str(name_array[0, 0][0])
+                    self.ui_plot_reference.setTitle(f"Reference Signal: {name}")
+                else:
+                    self.ui_plot_reference.setTitle("Reference Signal")
+            else:
+                print("No reference signal found to plot.")
+        except Exception as e:
+            print(f"Error plotting reference signal after decomposition: {e}")
+
+        # Save the decomposition state
+        try:
+            # Import the DecompositionState class
+            from core.utils.postprocessing.decomposition_state import DecompositionState
+
+            # Save the state and get metadata
+            state_meta = DecompositionState.save_state(self, raw_fileid=self.raw_fileid)
+
+            # Add to dashboard's recent visualizations if parent exists
+            if hasattr(self, 'parent') and callable(self.parent):
+                parent = self.parent()
+                if parent is not None and hasattr(parent, 'add_recent_visualization'):
+                    parent.add_recent_visualization(state_meta)
+                    print(f"Successfully added visualization to dashboard: {state_meta['title']}")
+                else:
+                    print("Parent exists but does not have add_recent_visualization method")
+            else:
+                print("No parent available to add visualization to dashboard")
+        except Exception as e:
+            print(f"Error saving decomposition state: {e}")
+            import traceback
+            traceback.print_exc()
+
+        if hasattr(self, "decomp_worker") and self.decomp_worker in self.threads:
+            self.threads.remove(self.decomp_worker)
+
+    def on_decomposition_complete_2(self, result):
+        # Convert result fields if they are stringified dicts
+        for key in ['Pulsetrain', 'Dischargetimes', 'auxiliaryname', 'coordinates', 'EMGmask']:
+            if key in result and isinstance(result[key], str):
+                try:
+                    result[key] = ast.literal_eval(result[key])
+                except Exception as e:
+                    print(f"Failed to deserialize {key}: {e}")
+
+        # Then, assign formatted_result
+        if self.pathname and self.filename:
+            formatted_result = format_results_2(result)
             self.decomposition_result = formatted_result
 
         self.edit_field.setText("Decomposition complete")

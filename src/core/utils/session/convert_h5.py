@@ -51,4 +51,5 @@ def load_from_h5(filepath):
     if config_str:
         import json
         config_dict = json.loads(config_str)
+
     return signal_dict, raw_filepath, config_dict

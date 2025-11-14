@@ -212,6 +212,7 @@ class ImportDataWindow(QMainWindow):
                 decomp_path = extract_dir / decomp_name
                 signal_dict, raw_filepath, config_dict = load_from_h5(str(decomp_path))
                 self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, config_dict, self.raw_fileid)
+                self.decomp_app.on_decomposition_complete_2(signal_dict)
 
             print(f"Files extracted to: {extract_dir}")
 
@@ -350,6 +351,7 @@ class ImportDataWindow(QMainWindow):
                 # Store the imported signal
                 signal = self.emg_obj.signal_dict
                 self.imported_signal = signal
+                print(signal)
 
                 # Load file data into the plot
                 if "data" in signal and "fsamp" in signal:
