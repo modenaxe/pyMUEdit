@@ -216,7 +216,7 @@ class DecompositionApp(QMainWindow):
     def stop_decomposition(self):
         """Stop the current decomposition"""
         try:
-            logger.debug("Stop button clicked!")
+            logger.info("Stop button clicked!")
             
             if hasattr(self, 'decomp_worker') and self.decomp_worker:
                 logger.debug("Setting stop flag for decomposition worker...")
@@ -254,7 +254,7 @@ class DecompositionApp(QMainWindow):
     def continue_decomposition(self):
         """Continue the stopped decomposition"""
         try:
-            logger.debug("Continue button clicked")
+            logger.info("Continue button clicked")
             
             # check if we have the necessary data to continue
             if not self.emg_obj or not self.pathname or not self.filename:
@@ -303,7 +303,7 @@ class DecompositionApp(QMainWindow):
         )
 
         if reply == QMessageBox.Yes:
-            logger.debug("User confirmed restart")
+            logger.info("User confirmed restart")
             
             # clear any existing workers
             if hasattr(self, 'decomp_worker') and self.decomp_worker:
@@ -345,7 +345,7 @@ class DecompositionApp(QMainWindow):
             
             logger.debug("Decomposition reset complete")
         else:
-            logger.debug("User cancelled restart - staying in stopped state")
+            logger.info("User cancelled restart - staying in stopped state")
 
     def show_continue_restart_buttons(self):
         """Show continue and restart buttons"""
@@ -418,8 +418,8 @@ class DecompositionApp(QMainWindow):
             
             # convert ui parameters to algorithm parameters
             parameters = prepare_parameters(ui_params, algo_choice)
-            logger.debug(f"Starting decomposition with algorithm: {algo_choice}")
-            logger.debug(f"Parameters: {parameters}")
+            logger.info(f"Starting decomposition with algorithm: {algo_choice}")
+            logger.info(f"Parameters: {parameters}")
 
             # Update UI
             self.edit_field.setText("Starting decomposition...")
@@ -586,7 +586,7 @@ class DecompositionApp(QMainWindow):
         self.show_start_stop_buttons(start_enabled=False, stop_enabled=True)
 
         algo_choice = self.algo_combo.currentText()
-        logger.debug(f"Algorithm chosen: {algo_choice}")
+        logger.info(f"Algorithm chosen: {algo_choice}")
         # Reset iteration counter at the start of a new decomposition
         self.iteration_counter = 0
         ui_params = {}

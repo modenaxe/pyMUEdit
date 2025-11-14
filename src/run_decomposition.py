@@ -69,7 +69,7 @@ def run_decomposition(input_file, output_dir=None, save_intermediate=True):
         }
         emg.apply_muedit_params(parameters)
 
-        logger.debug(f"Starting decomposition of {input_file}")
+        logger.info(f"Starting decomposition of {input_file}")
 
         # Open the OTB+ file
         emg.open_otb_plus(input_file)

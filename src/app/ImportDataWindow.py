@@ -142,11 +142,11 @@ class ImportDataWindow(QMainWindow):
 
     def export_session(self):
         if not self.sessionid:
-            logger.warning("Warning: No session has been initialised")
+            logger.warning("No session has been initialised")
             return False
 
         session_files = get_session_files(self.sessionid)
-        logger.debug(session_files)
+        logger.debug(f"Session files found: {session_files}")
         if not session_files:
             logger.warning("No files in this session to export")
             return False
@@ -552,7 +552,7 @@ class ImportDataWindow(QMainWindow):
     def open_channel_viewer(self):
         """Open the Channel Viewer window with the current EMG data"""
         if not self.emg_obj or "data" not in self.emg_obj.signal_dict:
-            logger.debug("No EMG data loaded for channel viewer.")
+            logger.warning("No EMG data loaded for channel viewer.")
             return
 
         try:
@@ -590,7 +590,7 @@ class ImportDataWindow(QMainWindow):
             except Exception as e:
                 logger.exception(f"Error showing configuration dialog: {e}")
         else:
-            logger.debug("No configuration dialog available")
+            logger.warning("No configuration dialog available")
 
     def segment_session_button_pushed(self):
         if not self.emg_obj or "data" not in self.emg_obj.signal_dict or not self.pathname or not self.filename:
@@ -630,7 +630,7 @@ class ImportDataWindow(QMainWindow):
             if hasattr(self.mu_analysis_page, "set_export_window_opener"):
                 self.mu_analysis_page.set_export_window_opener(self.open_export_results_window)
             else:
-                logger.debug("WARNING: MotorUnitAnalysisWidget does not have 'set_export_window_opener' method.")
+                logger.warning("MotorUnitAnalysisWidget does not have 'set_export_window_opener' method.")
 
         if DecompositionApp:
             self.decomposition_page = DecompositionApp()
