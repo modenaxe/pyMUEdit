@@ -70,23 +70,30 @@ def setup_ui(main_window):
     # Disable anti-aliasing for better performance
     pg.setConfigOption("antialias", False)
 
-    # Create main widget and layout
+    # Create main widget and main layout (vertical)
     main_widget = QWidget()
     main_window.setCentralWidget(main_widget)
-    main_layout = QHBoxLayout(main_widget)
+    main_layout = QVBoxLayout(main_widget)
     main_layout.setContentsMargins(0, 0, 0, 0)
     main_layout.setSpacing(0)
+
+    # Main content layout (horizontal)
+    content_layout = QHBoxLayout()
+    content_layout.setContentsMargins(0, 0, 0, 0)
+    content_layout.setSpacing(0)
 
     # Set up control panel and display panel
     setup_display_panel(main_window)
     setup_control_panel(main_window)
     create_side_panel_widget(main_window)
 
-    # Add panels to main layout
-    main_layout.addWidget(
+    # Add panels to content layout
+    content_layout.addWidget(
         main_window.display_panel,
         1)  # The 1 is the stretch factor
-    main_layout.addWidget(main_window.sub_panel, 1)
+    content_layout.addWidget(main_window.sub_panel, 1)
+
+    main_layout.addLayout(content_layout)
 
     # Set up keyboard shortcuts
     main_window.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
