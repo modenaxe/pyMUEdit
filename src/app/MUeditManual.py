@@ -398,19 +398,24 @@ class MUeditManual(QMainWindow):
         file_dialog = QFileDialog()
         file_path, _ = file_dialog.getOpenFileName(self, "Select file", "", "MAT Files (*.mat);;All Files (*.*)")
 
-        if file_path:
-            self.pathname = os.path.dirname(file_path) + "/"
-            self.filename = os.path.basename(file_path)
-            self.file_path_field.setText(self.filename)
-            self.select_file_title_btn.setText(self.filename)
+        if not file_path:
+            return 
         
-            # Update footer file info
-            file_info = os.path.join(self.pathname, self.filename)
-            if hasattr(self, "update_footer_file_info"):
-                self.update_footer_file_info(file_info)
+        self.pathname = os.path.dirname(file_path) + "/"
+        self.filename = os.path.basename(file_path)
+        self.file_path_field.setText(self.filename)
+        self.select_file_title_btn.setText(self.filename)
+        
+        valid = import_data(self)
 
-            import_data(self)
-                    
+        if not valid:
+            return 
+
+        # Update footer file info
+        file_info = os.path.join(self.pathname, self.filename)
+        if hasattr(self, "update_footer_file_info"):
+            self.update_footer_file_info(file_info)
+
     def update_action_button_states(self):
         enabled = self.plot_display_mode == 0
         self.add_spikes_btn.setEnabled(enabled)

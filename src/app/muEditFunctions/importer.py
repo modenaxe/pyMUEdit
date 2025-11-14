@@ -29,15 +29,14 @@ from app.muEditFunctions.mu_selection import (
 def import_data(self):
     """Import data from selected file."""
     if not self.filename or not self.pathname:
-        return
+        return False
 
     self.ish5 = False
 
     # Wrong Format
     if not self.filename.lower().endswith(".mat"):
         ErrorDialog(title_label="File Format Error", text="Selected file is not a valid .mat file.\nPlease choose a .mat file.")
-        return
-
+        return False
 
     # Set Mouse State to Wait
     QApplication.setOverrideCursor(Qt.WaitCursor)
@@ -151,16 +150,20 @@ def import_data(self):
         # Set current data as clear data
         self.initial_data = copy.deepcopy(self.MUedition["edition"])
 
+        return True
+
     except KeyError as ke:
         QApplication.restoreOverrideCursor()
         ErrorDialog(title_label="Missing Field", text=f"The .mat file is missing required fields:\n{ke}")
         import traceback
         traceback.print_exc()
+        return False
     except Exception as e:
         import traceback
         traceback.print_exc()
         QApplication.restoreOverrideCursor()
         ErrorDialog(title_label="Import Error", text=f"Failed to load the file:\n{str(e)}")
+        return False
 
 def import_edited_file(self, files):
     """Import data from a previously edited file."""
