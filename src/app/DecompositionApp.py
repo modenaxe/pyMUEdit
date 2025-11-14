@@ -55,6 +55,8 @@ class DecompositionApp(QMainWindow):
         self.decomposition_result = None  # Store the decomposition result
         self.ui_params = None  # Store UI parameters
 
+        self.mat_data = None
+
         # Set up the UI components by calling the function from DecompositionAppUI.py
         setup_ui(self)
 
@@ -483,18 +485,20 @@ class DecompositionApp(QMainWindow):
         try:
             # First check if the output file exists
             output_filename = os.path.join(self.pathname, self.filename + "_output_decomp.mat")
-            if not os.path.exists(output_filename):
+            if os.path.exists(output_filename):
+                # Load the data first to fix the structure
+                data = sio.loadmat(output_filename)
+                if "signal" not in data:
+                    self.edit_field.setText("Invalid file format: 'signal' field not found")
+                    return
+
+                signal = data["signal"]
+            elif self.mat_data is not None:
+                signal = self.mat_data["signal"]
+            else:
                 self.edit_field.setText(f"Output file {output_filename} not found")
                 return
-
-            # Load the data first to fix the structure
-            data = sio.loadmat(output_filename)
-            if "signal" not in data:
-                self.edit_field.setText("Invalid file format: 'signal' field not found")
-                return
-
-            signal = data["signal"]
-
+            print(signal)
             # Create the proper data structure for MUeditManual
             edition_data = {
                 "time": np.linspace(
@@ -649,7 +653,6 @@ class DecompositionApp(QMainWindow):
 
         # Convert UI parameters to algorithm parameters
         parameters = prepare_parameters(ui_params, algo_choice)
-        print(parameters)
 
         # Check if we have a file and EMG object
         if not self.emg_obj or not self.pathname or not self.filename:
@@ -688,14 +691,11 @@ class DecompositionApp(QMainWindow):
         # Start the worker thread
         self.decomp_worker.start()
 
-
-
     def on_decomposition_complete(self, result):
         """Handle successful completion of decomposition"""
 
         self.decomposition_state = "idle"
         self.show_start_stop_buttons(start_enabled=True, stop_enabled=False)
-
         if self.pathname and self.filename:
             savename = os.path.join(self.pathname, self.filename + "_output_decomp.mat")
 
@@ -703,7 +703,8 @@ class DecompositionApp(QMainWindow):
 
             # Save with parameters
             parameters = prepare_parameters(self.ui_params, self.algo_choice) if hasattr(self, 'ui_params') else {}
-            self.save_mat_in_background(savename, {"signal": formatted_result, "parameters": parameters}, True)
+            self.mat_data = {"signal": formatted_result, "parameters": parameters}
+            self.save_mat_in_background(savename, self.mat_data, True)
 
             # save h5
             base_filename = os.path.splitext(self.filename)[0]
@@ -711,7 +712,7 @@ class DecompositionApp(QMainWindow):
             h5_config = self.ui_params
             h5_config['method'] = self.algo_choice
             save_as_h5(
-                result,
+                {"signal": formatted_result, "parameters": parameters},
                 savename_h5,
                 raw_filepath=savename,
                 config = h5_config
@@ -804,17 +805,14 @@ class DecompositionApp(QMainWindow):
             self.threads.remove(self.decomp_worker)
 
     def on_decomposition_complete_2(self, result):
-        # Convert result fields if they are stringified dicts
-        for key in ['Pulsetrain', 'Dischargetimes', 'auxiliaryname', 'coordinates', 'EMGmask']:
-            if key in result and isinstance(result[key], str):
-                try:
-                    result[key] = ast.literal_eval(result[key])
-                except Exception as e:
-                    print(f"Failed to deserialize {key}: {e}")
 
-        # Then, assign formatted_result
+        self.decomposition_state = "idle"
+        self.show_start_stop_buttons(start_enabled=True, stop_enabled=False)
+        print(result)
         if self.pathname and self.filename:
             formatted_result = format_results_2(result)
+            self.mat_data = formatted_result
+            # Store the decomposition result
             self.decomposition_result = formatted_result
 
         self.edit_field.setText("Decomposition complete")
@@ -822,6 +820,7 @@ class DecompositionApp(QMainWindow):
         self.status_progress.setValue(100)
         self.start_button.setEnabled(True)
         self.save_output_button.setEnabled(True)
+        self.next_button.setEnabled(True)
 
         # Count total motor units
         total_mus = 0
@@ -892,9 +891,6 @@ class DecompositionApp(QMainWindow):
             print(f"Error saving decomposition state: {e}")
             import traceback
             traceback.print_exc()
-
-        if hasattr(self, "decomp_worker") and self.decomp_worker in self.threads:
-            self.threads.remove(self.decomp_worker)
 
     def on_decomposition_error(self, error_msg):
         """Handle errors during decomposition"""

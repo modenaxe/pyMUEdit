@@ -351,7 +351,6 @@ class ImportDataWindow(QMainWindow):
                 # Store the imported signal
                 signal = self.emg_obj.signal_dict
                 self.imported_signal = signal
-                print(signal)
 
                 # Load file data into the plot
                 if "data" in signal and "fsamp" in signal:
