@@ -411,7 +411,7 @@ class MUeditManual(QMainWindow):
         if not valid:
             return 
 
-        # Update footer file info
+        # Update footer file info only if file imported successfully
         file_info = os.path.join(self.pathname, self.filename)
         if hasattr(self, "update_footer_file_info"):
             self.update_footer_file_info(file_info)
