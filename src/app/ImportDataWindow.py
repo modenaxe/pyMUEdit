@@ -95,7 +95,7 @@ class ImportDataWindow(QMainWindow):
         self.recent_files = []
 
         # Set up the UI using our improved UI setup
-        setup_ui(self)
+        self.import_data_ui = setup_ui(self)
 
          # Now create the manual editing view
         self.create_manual_editing_view()
@@ -205,7 +205,8 @@ class ImportDataWindow(QMainWindow):
                     decomp_name = name
 
             if readin_name:
-                self.load_file(extract_dir, readin_name)
+                readin_path = extract_dir / readin_name
+                self.update_ui_for_file(readin_path, readin_name)
 
             if decomp_name:
                 decomp_path = extract_dir / decomp_name
@@ -939,6 +940,24 @@ class ImportDataWindow(QMainWindow):
                 traceback.print_exc()
         else:
             print("ERROR - self.export_results_window is None even after creation attempt.")
+
+    def update_ui_for_file(self, full_path, filename):
+        self.filename = filename
+        self.pathname = os.path.dirname(full_path) + "/"
+
+        self.file_info_label.setText(f"Selected: {filename}")
+        self.file_info_label.setVisible(True)
+        self.footer_file_info.setText(f"File: {filename}")
+
+        try:
+            size_str = filesize_formatter(full_path)
+            self.size_info.setText(f"Size: {size_str}")
+        except:
+            self.size_info.setText("Size: --")
+        ext = os.path.splitext(filename)[1].upper().replace('.', '')
+        self.format_info.setText(f"Format: {ext}")
+
+        self.load_file(os.path.dirname(full_path), filename)
 
 # For testing the window independently
 if __name__ == "__main__":
