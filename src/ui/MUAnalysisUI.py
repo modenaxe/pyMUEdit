@@ -100,8 +100,6 @@ class MUAnalysis(QWidget):
         self.footer.setFixedHeight(64)
         self.widget_layout.addWidget(self.footer)
 
-        self.update_analysis_footer_file_info = self.update_footer_file_info
-
     # Update footer information if a new file is uploaded successfully in analysis tab
     def update_footer_file_info(self, file_path):
         if not file_path:
