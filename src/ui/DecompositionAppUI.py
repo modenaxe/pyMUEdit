@@ -28,29 +28,39 @@ def setup_ui(main_window):
     # Main widget and layout
     main_window.central_widget = QWidget()
     main_window.setCentralWidget(main_window.central_widget)
-    main_window.main_layout = QHBoxLayout(main_window.central_widget)
+    main_window.main_layout = QVBoxLayout(main_window.central_widget)
     main_window.main_layout.setContentsMargins(0, 0, 0, 0)
     main_window.main_layout.setSpacing(0)
 
-    # Create the left panel for settings with a scroll area
-    setup_left_panel(main_window)
-
-    # Create the content area (center + right panels)
+    # main content area
     content_widget = QWidget()
     content_layout = QHBoxLayout(content_widget)
-    content_layout.setContentsMargins(20, 20, 20, 20)
-    content_layout.setSpacing(20)
+    content_layout.setContentsMargins(0, 0, 0, 0)
+    content_layout.setSpacing(0)
+
+    # Create the left panel for settings with a scroll area
+    setup_left_panel(main_window, content_layout)
+
+    # Create the content area (center + right panels)
+    centre_right_widget = QWidget()
+    centre_right_layout = QHBoxLayout(centre_right_widget)
+    centre_right_layout.setContentsMargins(20, 20, 20, 20)
+    centre_right_layout.setSpacing(20)
 
     # Create the center panel for visualization
-    setup_center_panel(main_window, content_layout)
+    setup_center_panel(main_window, centre_right_layout)
 
     # Create the right panel for status and results
-    setup_right_panel(main_window, content_layout)
+    setup_right_panel(main_window, centre_right_layout)
+
+    content_layout.addWidget(centre_right_widget)
 
     main_window.main_layout.addWidget(content_widget)
 
+    setup_bottom_navigation(main_window)
 
-def setup_left_panel(main_window):
+
+def setup_left_panel(main_window, parent_layout):
     """Set up the left panel with settings and controls."""
     # Create a container for the scroll area to control positioning
     left_container = QWidget()
@@ -323,7 +333,7 @@ def setup_left_panel(main_window):
     left_container_layout.addWidget(scroll_area)
 
     # Add the container to the main layout
-    main_window.main_layout.addWidget(left_container)
+    parent_layout.addWidget(left_container)
 
 
 def setup_center_panel(main_window, parent_layout):
@@ -547,6 +557,41 @@ def load_config(self, config):
         self.cov_threshold_field.setValue(config["cov_threshold"])
     if "method" in config:
         self.algo_combo.setCurrentText(config["method"])
+
+def setup_bottom_navigation(main_window):
+    """set up the bottom navigation bar with next and previous buttons"""
+    # create the bottom navigation container
+    bottom_nav = QWidget()
+    bottom_nav.setObjectName("bottom_navigation")
+    bottom_nav.setStyleSheet(f"""
+        #bottom_navigation {{
+            background-color: {CleanTheme.BG_CARD};
+            border-top: 1px solid {CleanTheme.BORDER};
+        }}
+    """)
+    bottom_nav.setFixedHeight(64)
+
+    # create layout for bottom navigation
+    bottom_layout = QHBoxLayout(bottom_nav)
+    bottom_layout.setContentsMargins(30, 15, 30, 15)
+    bottom_layout.setSpacing(20)
+
+    # previous button
+    main_window.back_to_import_btn = ActionButton("← Previous", primary=False)
+    main_window.back_to_import_btn.setMinimumWidth(90)
+    bottom_layout.addWidget(main_window.back_to_import_btn)
+
+    bottom_layout.addStretch()
+
+    # next button
+    main_window.next_to_editing_btn = ActionButton("Next →", primary=True)
+    main_window.next_to_editing_btn.setEnabled(False)
+    main_window.next_to_editing_btn.setMinimumWidth(90)
+    bottom_layout.addWidget(main_window.next_to_editing_btn)
+
+    # add the bottom navigation to the main layout
+    main_window.main_layout.addWidget(bottom_nav)
+
 
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication, QMainWindow
