@@ -29,7 +29,6 @@ def setup_ui(main_window):
     # Main widget and layout
     main_window.central_widget = QWidget()
     main_window.setCentralWidget(main_window.central_widget)
-    # main_window.main_layout = QHBoxLayout(main_window.central_widget)
     main_window.main_layout = QVBoxLayout(main_window.central_widget) # Changed to vertical layout
     main_window.main_layout.setContentsMargins(0, 0, 0, 0)
     main_window.main_layout.setSpacing(0)
