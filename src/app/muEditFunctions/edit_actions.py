@@ -10,6 +10,8 @@ from ui.components import (
 
 )
 from app.muEditFunctions.batch_processing import remove_outliers
+from core.logger import logger
+
 @smart_button_pushed
 def add_spikes_button_pushed(self):
     """Add spikes by drawing a selection rectangle."""
@@ -119,7 +121,7 @@ def delete_dr_button_pushed(self):
 
 def lock_spikes_button_pushed(self):
     """Lock the current spikes to keep them during filter updates."""
-    print("push lock spikes")
+    logger.debug("push lock spikes")
     if self.action_buttons["lock_spikes_button_pushed"].get_active():
         self.Backup["lock"] = 0
         self.action_buttons["lock_spikes_button_pushed"].set_active(False)

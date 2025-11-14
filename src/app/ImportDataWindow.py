@@ -1,7 +1,6 @@
 from pathlib import Path
 import sys
 import os
-import traceback
 import zipfile
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox
 from PyQt5.QtCore import pyqtSignal
@@ -143,13 +142,13 @@ class ImportDataWindow(QMainWindow):
 
     def export_session(self):
         if not self.sessionid:
-            print("Warning: No session has been initialised")
+            logger.warning("Warning: No session has been initialised")
             return False
 
         session_files = get_session_files(self.sessionid)
-        print(session_files)
+        logger.debug(session_files)
         if not session_files:
-            print("No files in this session to export")
+            logger.warning("No files in this session to export")
             return False
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -169,19 +168,19 @@ class ImportDataWindow(QMainWindow):
                         file_paths_to_zip.append(version_path)
 
             if not file_paths_to_zip:
-                print("No valid files found to zip")
+                logger.warning("No valid files found to zip")
                 return False
 
             with zipfile.ZipFile(save_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
                 for filepath in file_paths_to_zip:
                     arcname = os.path.basename(filepath)
                     zipf.write(filepath, arcname)
-                    print(f"Added {filepath} as {arcname}")
+                    logger.debug(f"Added {filepath} as {arcname}")
 
-            print(f"Session exported successfully to {save_path}")
+            logger.debug(f"Session exported successfully to {save_path}")
             return True
         else:
-            print("Export cancelled")
+            logger.debug("Export cancelled")
 
     def select_file(self):
         """Open file dialog to select a file."""
@@ -500,9 +499,16 @@ class ImportDataWindow(QMainWindow):
             if self.pathname and self.filename:
                 savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
                 self.save_mat_in_background(savename, {"signal": self.imported_signal}, True)
+            
+            # create decomposition view
+            if not hasattr(self, "decomp_app") or not self.decomp_app:
+                self.create_decomposition_view(
+                    self.emg_obj, self.filename, self.pathname,
+                    self.imported_signal, self.config, self.raw_fileid
+                )
 
             # Emit signal to request showing decomposition view
-            self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, self.config, self.raw_fileid)
+            self.show_decomposition_view()
 
         except Exception as e:
             logger.exception(f"Error requesting decomposition view: {e}")
@@ -736,37 +742,80 @@ class ImportDataWindow(QMainWindow):
                 parent=self,  # Set parent for proper widget hierarchy
             )
 
+            # connect navigation signals
+            self.decomp_app.editing_requested.connect(self.navigate_to_editing_with_data)
+            self.decomp_app.import_requested.connect(self.show_import_data_view)
+
             # Set window flags to make it a widget instead of a window
             self.decomp_app.setWindowFlags(Qt.WindowType.Widget)
 
             # Add to layout
             wrapper_layout.addWidget(self.decomp_app)
 
-            # Connect back button to show import view
-            if hasattr(self.decomp_app, "back_to_import_btn"):
-                self.decomp_app.back_to_import_btn.clicked.connect(self.show_import_data_view)
-
             # Replace the placeholder with our real decomposition view
             self.decomposition_page = wrapper
-
-            # Remove the old placeholder if it exists
-            for i in range(self.central_stacked_widget.count()):
-                widget = self.central_stacked_widget.widget(i)
-                if widget and (
-                    widget.objectName() == "decomposition_placeholder"
-                    or (hasattr(widget, "objectName") and widget.objectName() == "decomposition_placeholder")
-                ):
-                    self.central_stacked_widget.removeWidget(widget)
-                    break
 
             # Add the wrapper to the stacked widget
             self.central_stacked_widget.addWidget(wrapper)
 
-            # Show the decomposition view
-            self.show_decomposition_view()
-
         except Exception as e:
             logger.error(f"Error creating decomposition view: {e}")
+
+    def create_manual_editing_view(self):
+        """creates a manual editing view and adds it to the stacked widget"""
+        try:
+            logger.debug("creating manual editing view")
+
+            # create MUeditManual instance
+            manual_edit_app = MUeditManual()
+
+            # Sct window flags to make it a widget instead of a window
+            manual_edit_app.setWindowFlags(Qt.WindowType.Widget)
+
+            self.mu_edit_tabs = manual_edit_app.tabs
+
+            # replace the placeholder with our real manual editing view
+            self.manual_editing_page = manual_edit_app
+
+            # add the manual editing app directly to the stacked widget
+            self.central_stacked_widget.addWidget(manual_edit_app)
+
+        except Exception as e:
+            logger.exception(f"error creating manual editing view: {e}")
+    
+    def navigate_to_editing_with_data(self, filename, pathname):
+        """load data into muedit and navigate to editing view"""
+        try:
+            logger.debug(f"navigating to editing mode with file: {filename}")
+
+            # ensure manual editing view exists
+            if not hasattr(self, "manual_editing_page") or not self.manual_editing_page:
+                self.create_manual_editing_view()
+            
+            # check if the file exists
+            full_file_path = os.path.join(pathname, filename)
+            if not os.path.exists(full_file_path):
+                logger.error(f"error: file {full_file_path} does not exist")
+                return
+
+            # load data into the existing mu edit instance
+            self.manual_editing_page.filename = filename
+            self.manual_editing_page.pathname = pathname
+            
+            # update the file path field in the ui
+            if hasattr(self.manual_editing_page, 'file_path_field'):
+                self.manual_editing_page.file_path_field.setText(filename)
+
+            # import the data using the existing import function
+            from app.muEditFunctions.importer import import_data
+            import_data(self.manual_editing_page)
+
+            self.show_manual_editing_view()
+
+            logger.debug("successfully navigated to MU editing view with data loaded")
+        
+        except Exception as e:
+            logger.exception(f"error navigating to mu edit: {e}")
 
     def show_mu_analysis_view(self):
         """Switches the central widget to the MU Analysis page."""

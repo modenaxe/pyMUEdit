@@ -962,7 +962,7 @@ class MUeditManual(QMainWindow):
                 )
 
             except Exception as e:
-                print(f"Error calculating SIL for array {array_idx}, MU {mu_idx}: {e}")
+                logger.exception(f"Error calculating SIL for array {array_idx}, MU {mu_idx}: {e}")
                 self.MUedition["edition"]["silval"][(array_idx, mu_idx)] = 0
                 self.MUedition["edition"]["silvalcon"][(array_idx, mu_idx)] = np.zeros((1, 2))
         else:

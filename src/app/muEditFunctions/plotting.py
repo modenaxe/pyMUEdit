@@ -2,6 +2,7 @@
 import numpy as np
 from PyQt5.QtCore import Qt
 import pyqtgraph as pg
+from core.logger import logger
 
 def safe_set_range(self, plot, xrange=None, yrange=None):
     if not plot:
@@ -28,7 +29,7 @@ def update_spike_train_plot(
     red with slight opacity.
     """
 
-    print("update_spike_train_plot", "(overlay)" if overlay else "")
+    logger.debug("update_spike_train_plot", "(overlay)" if overlay else "")
 
     time_vector = self.MUedition["edition"]["time"]
 

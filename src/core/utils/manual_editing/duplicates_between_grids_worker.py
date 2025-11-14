@@ -60,14 +60,14 @@ class duplicates_between_grids_worker(QThread):
             )
             
             if self._cancelled:
-                print("Batch processing interruption!")
+                logger.info("Duplicates-between-grids worker cancelled by user.")
                 return
             # Remove duplicates between arrays
             unique_discharge_times, unique_pulse_train, unique_muscle = remove_duplicates_between_arrays(
                 all_pulse_trains, all_discharge_times, muscle, round(fsamp / 40), 0.00025, 0.3, fsamp  # Duplicate threshold
             )
             if self._cancelled:
-                print("Batch processing interruption!")
+                logger.info("Duplicates-between-grids worker cancelled by user.")
                 return
 
             self.progress_changed.emit(

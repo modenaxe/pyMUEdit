@@ -11,4 +11,6 @@ tests/*.otb+
 .DS_Store
 .vscode
 .idea
-database.db
+*.h5
+*.zip
+*.db
