@@ -215,7 +215,7 @@ class ImportDataWindow(QMainWindow):
                     self.emg_obj, self.filename, self.pathname,
                     self.imported_signal, config_dict, self.raw_fileid
                 )
-                self.decomp_app.on_decomposition_complete_2(signal_dict)
+                self.decomp_app.on_decomposition_complete_2(signal_dict, config_dict)
 
             print(f"Files extracted to: {extract_dir}")
 

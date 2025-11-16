@@ -801,11 +801,14 @@ class DecompositionApp(QMainWindow):
         if hasattr(self, "decomp_worker") and self.decomp_worker in self.threads:
             self.threads.remove(self.decomp_worker)
 
-    def on_decomposition_complete_2(self, result):
+    def on_decomposition_complete_2(self, result, config_dict):
 
         self.decomposition_state = "idle"
         self.show_start_stop_buttons(start_enabled=True, stop_enabled=False)
-        print(result)
+
+        self.algo_choice = config_dict['method']
+        self.ui_params = config_dict
+
         if self.pathname and self.filename:
             formatted_result = format_results_2(result)
             self.mat_data = formatted_result

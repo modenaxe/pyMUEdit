@@ -4,6 +4,8 @@ from PyQt5.QtWidgets import (
     QProgressDialog,
 )
 
+from core.database.database import insert_log, upsert_file_versions
+from core.utils.session.convert_h5 import save_as_h5
 from ui.components import (
     SuccessDialog,
     ErrorDialog,
@@ -52,6 +54,7 @@ def save_button_pushed(self):
     save_file(self, savename)
 
 def save_file(self, filepath):
+    print(filepath)
     if not self.MUedition:
         return
 
@@ -194,6 +197,23 @@ def save_file(self, filepath):
             text=errmsg
         )
     )
+
+    signal_dict = {
+        "signal": signal,
+        "parameters": parameters,
+        "edition": edition
+    }
+
+    log = self.get_action_logs()
+    print(log)
+    # h5_readin_savename = os.path.join(path, f"{base_name}_readin.h5")
+    base_name = os.path.splitext(os.path.basename(filepath))[0]
+    h5_save_filename = os.path.join(self.pathname, f"{base_name}_edited.h5")
+    save_as_h5(signal_dict, h5_save_filename, raw_filepath=filepath, config=log)
+
+    versionid = upsert_file_versions(h5_save_filename, self.raw_fileid, "decomposed")
+
+    insert_log(versionid, log, None)
 
     self._save_thread.start()
 

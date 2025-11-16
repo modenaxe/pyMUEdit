@@ -156,6 +156,9 @@ class MUeditManual(QMainWindow):
         self.action_logs.append(log_entry)
         print(message)
 
+    def get_action_logs(self):
+        return self.action_logs
+
     def show_tip(self, text, duration_ms=3000):
         self.tip_bar.setText(text)
         self.tip_timer.start(duration_ms)
@@ -383,7 +386,7 @@ class MUeditManual(QMainWindow):
     def select_file_button_pushed(self):
         """Open file dialog to select file for editing and automatically import it."""
         file_dialog = QFileDialog()
-        file_path, _ = file_dialog.getOpenFileName(self, "Select file", "", "MAT Files (*.mat);;All Files (*.*)")
+        file_path, _ = file_dialog.getOpenFileName(self, "Select file", "", "MAT Files (*.mat);;HDF5 Files (*.h5);;All Files (*.*)")
 
         if file_path:
             self.pathname = os.path.dirname(file_path) + "/"
