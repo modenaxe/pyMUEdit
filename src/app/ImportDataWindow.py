@@ -516,6 +516,7 @@ class ImportDataWindow(QMainWindow):
                 )
 
             # Emit signal to request showing decomposition view
+            self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, self.config, self.raw_fileid)
             self.show_decomposition_view()
 
         except Exception as e:
