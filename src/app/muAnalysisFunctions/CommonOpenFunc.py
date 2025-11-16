@@ -13,7 +13,7 @@ import warnings
 import os
 import copy
 import itertools
-import core.logger as logger
+from core.logger import logger
 
 class CommonOpenFunc():
     
