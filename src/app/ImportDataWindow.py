@@ -325,6 +325,14 @@ class ImportDataWindow(QMainWindow):
                 # Change file label to green if success
                 self.file_info_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
 
+                # Store file info globally in ImportDataWindow instance
+                self.current_file_info = {
+                    "path": os.path.join(path, file),
+                    "name": file,
+                    "size": filesize_formatter(os.path.join(path, file)),
+                    "format": os.path.splitext(file)[1].upper().replace(".", "")
+                }
+                
                 # Get or create session for this dataset
                 sessionid = get_or_create_session_for_file(full_path)
                 self.sessionid = sessionid
