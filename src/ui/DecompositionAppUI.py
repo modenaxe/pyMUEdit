@@ -12,6 +12,8 @@ from ui.components import (ActionButton, CleanScrollBar, CleanTheme,
                            CollapsiblePanel, FormDoubleSpinBox, FormDropdown,
                            FormSpinBox, SettingsGroup, VisualizationPanel)
 
+from ui.components.Footer import Footer
+
 
 def setup_ui(main_window):
     """
@@ -57,7 +59,27 @@ def setup_ui(main_window):
 
     main_window.main_layout.addWidget(content_widget)
 
-    setup_bottom_navigation(main_window)
+    # def go_to_import_data():
+    #     main_window.window().show_import_data_view()
+
+    # def go_to_editing():
+    #     main_window.window().show_manual_editing_view()
+    main_window.footer = Footer(
+        # on_prev=go_to_import_data,
+        # on_next=go_to_editing
+    )
+    main_window.footer.setFixedHeight(64)
+    main_window.main_layout.addWidget(main_window.footer)
+    
+    # Get file info from ImportDataWindow 
+    parent = main_window.parent()
+    if parent and hasattr(parent, "current_file_info"):
+        file_info = parent.current_file_info
+        main_window.footer.footer_file_info.setText(f"File: {file_info['name']}")
+        main_window.footer.size_info.setText(f"Size: {file_info['size']}")
+        main_window.footer.format_info.setText(f"Format: {file_info['format']}")
+
+    # setup_bottom_navigation(main_window)
 
 
 def setup_left_panel(main_window, parent_layout):
@@ -530,6 +552,7 @@ def setup_right_panel(main_window, parent_layout):
     right_layout.addStretch(1)
     parent_layout.addWidget(right_panel, 1)
 
+'''
 def setup_bottom_navigation(main_window):
     """set up the bottom navigation bar with next and previous buttons"""
     # create the bottom navigation container
@@ -563,6 +586,7 @@ def setup_bottom_navigation(main_window):
 
     # add the bottom navigation to the main layout
     main_window.main_layout.addWidget(bottom_nav)
+'''
 
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication, QMainWindow
