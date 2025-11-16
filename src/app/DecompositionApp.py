@@ -701,9 +701,7 @@ class DecompositionApp(QMainWindow):
         self.status_progress.setValue(100)
         self.start_button.setEnabled(True)
         self.save_output_button.setEnabled(True)
-
-        if hasattr(self, "footer") and hasattr(self.footer, "next_btn"):
-            self.footer.next_btn.setEnabled(True)
+        self.footer.next_btn.setEnabled(True)
 
         # Count total motor units
         total_mus = 0
