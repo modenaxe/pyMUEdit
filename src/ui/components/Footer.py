@@ -30,7 +30,6 @@ class Footer(QFrame):
             }}
         """
         )
-        
         footer_layout = QHBoxLayout(self)
         footer_layout.setContentsMargins(20, 10, 20, 10)
 
@@ -73,4 +72,3 @@ class Footer(QFrame):
         footer_layout.addWidget(self.prev_btn)
         footer_layout.addSpacing(10)
         footer_layout.addWidget(self.next_btn)
-

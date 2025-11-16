@@ -1,24 +1,22 @@
 import sys
 import os
 
-from PyQt5.QtCore import QSize, Qt, pyqtSignal
-from PyQt5.QtGui import QColor, QFont
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
-                             QMainWindow, QPushButton, QScrollArea,
-                             QSizePolicy, QStyle, QVBoxLayout, QWidget)
+                             QMainWindow, QScrollArea, QSizePolicy, QStyle,
+                             QVBoxLayout, QWidget)
 
-from app.ExportResults import ExportResultsWindow
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
 from app.muAnalysisFunctions.ResizeFunc import Resize
 from core.muAnalysisCore.AnalysisResultsHist import store
 from core.utils.io.filesize_formatter import filesize_formatter
+from ui.components import ActionButton, CleanScrollBar
+from ui.components import CleanTheme as Theme
+from ui.components import CollapsiblePanel, SectionHeader
 from ui.components.muAnalysisComponents.AnalysisPlot import AnalysisPlot
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from ui.components.muAnalysisComponents.CollapsibleSection import \
-    CollapsibleSection
-from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.muanalysis.AdvancedTools import AdvancedTools
 from ui.muanalysis.FileSection import FileSection
 from ui.muanalysis.ForceAnalysisSection import ForceAnalysisSection
@@ -57,14 +55,14 @@ class MUAnalysis(QWidget):
         self.prop = MUPropertiesFunc()
 
         self.colors = {
-            "bg_main": "#f8f9fa",
-            "bg_card": "#ffffff",
-            "bg_sidebar": "#f8f9fa",
-            "border_light": "#e9ecef",
+            "bg_main": Theme.BG_MAIN,
+            "bg_card": Theme.BG_CARD,
+            "bg_sidebar": Theme.BG_CARD,
+            "border_light": Theme.BORDER,
             "shadow": QColor(0, 0, 0, 25),
-            "text_primary": "#212529",
-            "text_secondary": "#6c757d",
-            "text_title": "#343a40",
+            "text_primary": Theme.TEXT_PRIMARY,
+            "text_secondary": Theme.TEXT_SECONDARY,
+            "text_title": Theme.TEXT_PRIMARY,
             "button_dark_bg": "#343a40",
             "button_dark_hover": "#495057",
             "button_grey_bg": "#e9ecee",
@@ -125,12 +123,16 @@ class MUAnalysis(QWidget):
     def _create_top_bar(self):
         top_bar = QFrame()
         top_bar.setObjectName("topBar")
-        top_bar.setFixedHeight(55)
+        top_bar.setFixedHeight(70)
         top_bar.setStyleSheet(
             f"""
             #topBar {{
-                background-color: #ececec;
-                border: none;
+                background-color: {Theme.BG_CARD};
+                border: 1px solid {Theme.BORDER};
+                margin-top: 15px;
+                margin-left: 15px;
+                margin-right: 15px;
+                border-radius: 8px;
             }}
             """
         )
@@ -139,10 +141,10 @@ class MUAnalysis(QWidget):
         top_bar_layout.setSpacing(10)
 
         # title
-        title_label = QLabel("Motor Unit Analysis")
-        title_label.setFont(QFont("Arial", 20, QFont.Bold))
-        title_label.setStyleSheet(
-            f"color: {self.colors['text_title']}; border: none;")
+        title_label = SectionHeader("Motor Unit Analysis")
+        # title_label.setFont(QFont("Arial", 20, QFont.Bold))
+        # title_label.setStyleSheet(
+        #     f"color: {self.colors['text_title']}; border: none;")
 
         top_bar_layout.addWidget(title_label)
         top_bar_layout.addStretch(1)
@@ -154,8 +156,9 @@ class MUAnalysis(QWidget):
         top_bar_layout.addWidget(self.load_file_button)
 
         # save as button
-        self.save_as_btn = GeneralButton(
-            "Save as", lambda: self.handle_save_as())
+        self.save_as_btn = ActionButton("Save as")
+        self.save_as_btn.clicked.connect(lambda: self.handle_save_as())
+        self.save_as_btn.setMinimumHeight(40)
         top_bar_layout.addWidget(self.save_as_btn)
 
         return top_bar
@@ -176,31 +179,43 @@ class MUAnalysis(QWidget):
         sidebar.setStyleSheet(
             f"""
             #leftSidebar {{
-                background-color: {self.colors['bg_sidebar']};
+                background-color: {Theme.BG_MAIN};
             }}
-
-        """
-        )
+        """)
 
         # enables scrolling
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        CleanScrollBar.apply(scroll)
 
         scroll_content = QWidget()
         scroll_layout = QVBoxLayout(scroll_content)
-        scroll_layout.setContentsMargins(10, 10, 10, 10)
+        scroll_layout.setContentsMargins(0, 0, 10, 0)
         scroll_layout.setSpacing(10)
 
-        # title
-        title_div = QWidget()  # creating layout for the margin spacing
-        title_div_layout = QVBoxLayout(title_div)
-        # tells it to keep left, top, right margins
-        title_div_layout.setContentsMargins(-1, -1, -1, 0)
-        title_label = AnalysisText.create_major_title("Analysis")
-        title_div_layout.addWidget(title_label)
-        scroll_layout.addWidget(title_div)
+        # MU view settings
+        mu_view_widget = QWidget()
+        mu_view_layout = QVBoxLayout(mu_view_widget)
+        mu_view_layout.setContentsMargins(0, 0, 0, 0)
+        mu_view_layout.setSpacing(5)
+        view_button = ActionButton("View MUs")
+        view_button.clicked.connect(
+            lambda: self.mu.plot_idr(
+                self.mu.file, self.analysis_plot))
+        view_button.setMinimumHeight(40)
+        mu_view_layout.addWidget(view_button)
+        sort_button = ActionButton("Sort MUs")
+        sort_button.clicked.connect(
+            lambda: self.mu.sort_mus(
+                self.analysis_plot,
+                self.mu.file))
+        sort_button.setMinimumHeight(40)
+        mu_view_layout.addWidget(sort_button)
+        mu_view_section = CollapsiblePanel("MU View")
+        mu_view_section.add_widget(mu_view_widget)
+        scroll_layout.addWidget(mu_view_section)
 
         # signal editing + remove mu section
         mu_editing_widget = QWidget()
@@ -213,35 +228,43 @@ class MUAnalysis(QWidget):
             self.mu, self.analysis_plot, parent=sidebar)
         mu_editing_layout.addWidget(remove_mu_section)
         mu_editing_layout.addWidget(signal_editing)
-        mu_editing_section = CollapsibleSection(
-            "MU Editing", mu_editing_widget, expanded=False)
+        mu_editing_section = CollapsiblePanel("MU Editing")
+        mu_editing_section.add_widget(mu_editing_widget)
+        mu_editing_section.toggle_collapsed()
         scroll_layout.addWidget(mu_editing_section)
 
         # force anaylsis
         force_analysis = ForceAnalysisSection(sidebar, self.analysis_plot)
-        force_analysis_section = CollapsibleSection(
-            "Force Analysis", force_analysis, expanded=False)
+        force_analysis_section = CollapsiblePanel("Force Analysis")
+        force_analysis_section.add_widget(force_analysis)
+        force_analysis_section.toggle_collapsed()
         scroll_layout.addWidget(force_analysis_section)
 
         # motor unit properties
         motor_unit_properties = MotorUnitPropertiesButton(
             self.analysis_plot, parent=self)
         motor_unit_properties.mvc_updated.connect(self.prop.set_mvc)
-        mu_properties_section = CollapsibleSection(
-            "Motor Unit Properties", motor_unit_properties, expanded=False)
+        mu_properties_section = CollapsiblePanel(
+            "Motor Unit Properties")
+        mu_properties_section.add_widget(motor_unit_properties)
+        mu_properties_section.toggle_collapsed()
         scroll_layout.addWidget(mu_properties_section)
         self.motor_unit_properties = motor_unit_properties
 
         # plot emg button
         plot_emg_tools = PlotEMGButton(self.analysis_plot, parent=self)
-        plot_emg_section = CollapsibleSection(
-            "Plot EMG", plot_emg_tools, expanded=False)
+        plot_emg_section = CollapsiblePanel(
+            "Plot EMG")
+        plot_emg_section.add_widget(plot_emg_tools)
+        plot_emg_section.toggle_collapsed()
         scroll_layout.addWidget(plot_emg_section)
         self.plot_emg_tools = plot_emg_tools
 
         # advanced tools
         advanced_tools = AdvancedTools(parent=sidebar)
-        scroll_layout.addWidget(advanced_tools)
+        advanced_tools_section = CollapsiblePanel("Advanced Tools")
+        advanced_tools_section.add_widget(advanced_tools)
+        scroll_layout.addWidget(advanced_tools_section)
         scroll_layout.addStretch(1)
         scroll_content.setLayout(scroll_layout)
         scroll.setWidget(scroll_content)
@@ -263,6 +286,15 @@ class MUAnalysis(QWidget):
     def _create_center_area(self):
         center = QFrame()
         center.setObjectName("centerContent")
+        center.setStyleSheet(
+            f"""
+            #centerContent {{
+                background-color: {Theme.BG_CARD};
+                border: 1px solid {Theme.BORDER};
+                border-radius: 8px;
+            }}
+
+        """)
         center_layout = QVBoxLayout(center)
         center_layout.addWidget(self.analysis_plot)
         return center
@@ -275,11 +307,12 @@ class MUAnalysis(QWidget):
         sidebar.setStyleSheet(
             f"""
             #rightSidebar {{
-                background-color: {self.colors['bg_sidebar']};
+                background-color: {Theme.BG_CARD};
+                border: 1px solid {Theme.BORDER};
+                border-radius: 8px;
             }}
 
-        """
-        )
+        """)
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setContentsMargins(10, 10, 10, 10)
         sidebar_layout.setSpacing(10)
@@ -323,8 +356,10 @@ class MUAnalysis(QWidget):
 
         # resize button
         resize_file = Resize(self.mu, self.analysis_plot)
-        resize_btn = GeneralButton(
-            "Resize", lambda: resize_file.resize())
+        resize_btn = ActionButton(
+            "Resize")
+        resize_btn.clicked.connect(lambda: resize_file.resize())
+        resize_btn.setMinimumHeight(40)
         resize_btn.setFixedWidth(250)
         self.analysis_plot.set_resize(resize_btn)
         resize_btn_row = QHBoxLayout()
