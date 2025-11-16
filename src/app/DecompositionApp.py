@@ -80,8 +80,6 @@ class DecompositionApp(QMainWindow):
 
         # Right panel connections
         self.save_output_button.clicked.connect(self.save_output_to_location)
-        # self.next_to_editing_btn.clicked.connect(self.open_editing_mode)
-        # self.back_to_import_btn.clicked.connect(self.back_to_import)
 
     def back_to_import(self):
         """Return to the Import window."""

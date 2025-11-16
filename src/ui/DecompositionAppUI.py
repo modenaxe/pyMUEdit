@@ -80,8 +80,6 @@ def setup_ui(main_window):
         main_window.footer.size_info.setText(f"Size: {file_info['size']}")
         main_window.footer.format_info.setText(f"Format: {file_info['format']}")
 
-    # setup_bottom_navigation(main_window)
-
 
 def setup_left_panel(main_window, parent_layout):
     """Set up the left panel with settings and controls."""
@@ -543,10 +541,6 @@ def setup_right_panel(main_window, parent_layout):
         "💾 Save Output", primary=False)
     main_window.save_output_button.setEnabled(False)
     results_group.add_field(main_window.save_output_button)
-
-    # main_window.next_button = ActionButton("Next", primary=True)
-    # main_window.next_button.setEnabled(False)
-    # results_group.add_field(main_window.next_button)
 
     right_layout.addWidget(results_group)
 
