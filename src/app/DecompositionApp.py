@@ -80,8 +80,6 @@ class DecompositionApp(QMainWindow):
 
         # Right panel connections
         self.save_output_button.clicked.connect(self.save_output_to_location)
-        self.next_to_editing_btn.clicked.connect(self.open_editing_mode)
-        self.back_to_import_btn.clicked.connect(self.back_to_import)
 
     def back_to_import(self):
         """Return to the Import window."""
@@ -579,7 +577,8 @@ class DecompositionApp(QMainWindow):
         self.edit_field.setText("Data saved successfully")
         self.cleanup_thread(worker)
         # self.next_button.setEnabled(True)
-        self.next_to_editing_btn.setEnabled(True)
+        # self.next_to_editing_btn.setEnabled(True)
+        self.footer.next_btn.setEnabled(True)
 
     def on_save_error(self, worker, error_msg):
         self.edit_field.setText(f"Error saving data: {error_msg}")
@@ -696,7 +695,7 @@ class DecompositionApp(QMainWindow):
             # Store the decomposition result
             self.decomposition_result = formatted_result
 
-        self.edit_field.setText("Decomposition complete")
+        self.edit_field.setText("Decomposition complete, saving output..")
         self.status_text.setText("Complete")
         self.status_progress.setValue(100)
         self.start_button.setEnabled(True)
