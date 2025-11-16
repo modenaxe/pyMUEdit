@@ -70,6 +70,7 @@ def setup_ui(main_window):
     )
     main_window.footer.setFixedHeight(64)
     main_window.main_layout.addWidget(main_window.footer)
+    main_window.footer.next_btn.setEnabled(False)
     
     # Get file info from ImportDataWindow 
     parent = main_window.parent()
