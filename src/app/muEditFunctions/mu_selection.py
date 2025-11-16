@@ -15,7 +15,7 @@ from app.muEditFunctions.plotting import (
     update_dr_plot
 )
 import pyqtgraph as pg
-import core.logger as logger
+from core.logger import logger
 
 def update_mu_checkboxes(self):
     """Update the MU checkboxes based on loaded data using collapsible panels."""
@@ -287,7 +287,7 @@ def display_selected_mus(self, checked_mus, pluse_train_color="#D95535"):
     """Display the currently selected motor units."""
     if not self.MUedition:
         return
-    logger.debug("display_selected_mus ")
+    logger.debug("display_selected_mus")
 
     # Clear existing plots in the container
     for i in reversed(range(self.plots_layout.count())):
