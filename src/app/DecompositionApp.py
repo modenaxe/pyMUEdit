@@ -1,10 +1,11 @@
 import ast
+import copy
 import sys
 import os
 import traceback
 import numpy as np
 import scipy.io as sio
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox
 from PyQt5.QtCore import pyqtSignal
 
 import pyqtgraph as pg
@@ -706,10 +707,10 @@ class DecompositionApp(QMainWindow):
             # save h5
             base_filename = os.path.splitext(self.filename)[0]
             savename_h5 = os.path.join(self.pathname, f"{base_filename}_decomp.h5")
-            h5_config = self.ui_params
+            h5_config = copy.deepcopy(self.ui_params)
             h5_config['method'] = self.algo_choice
             save_as_h5(
-                {"signal": formatted_result, "parameters": parameters},
+                self.mat_data,
                 savename_h5,
                 raw_filepath=savename,
                 config = h5_config
