@@ -548,6 +548,41 @@ def setup_right_panel(main_window, parent_layout):
     parent_layout.addWidget(right_panel, 1)
 
 
+def setup_bottom_navigation(main_window):
+    """set up the bottom navigation bar with next and previous buttons"""
+    # create the bottom navigation container
+    bottom_nav = QWidget()
+    bottom_nav.setObjectName("bottom_navigation")
+    bottom_nav.setStyleSheet(f"""
+        #bottom_navigation {{
+            background-color: {CleanTheme.BG_CARD};
+            border-top: 1px solid {CleanTheme.BORDER};
+        }}
+    """)
+    bottom_nav.setFixedHeight(64)
+
+    # create layout for bottom navigation
+    bottom_layout = QHBoxLayout(bottom_nav)
+    bottom_layout.setContentsMargins(30, 15, 30, 15)
+    bottom_layout.setSpacing(20)
+
+    # previous button
+    main_window.back_to_import_btn = ActionButton("← Previous", primary=False)
+    main_window.back_to_import_btn.setMinimumWidth(90)
+    bottom_layout.addWidget(main_window.back_to_import_btn)
+
+    bottom_layout.addStretch()
+
+    # next button
+    main_window.next_to_editing_btn = ActionButton("Next →", primary=True)
+    main_window.next_to_editing_btn.setEnabled(False)
+    main_window.next_to_editing_btn.setMinimumWidth(90)
+    bottom_layout.addWidget(main_window.next_to_editing_btn)
+
+    # add the bottom navigation to the main layout
+    main_window.main_layout.addWidget(bottom_nav)
+
+
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication, QMainWindow
 
