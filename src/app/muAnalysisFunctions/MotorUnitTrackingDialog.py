@@ -1,13 +1,3 @@
-# import numpy as np
-
-# from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-# import matplotlib.pyplot as plt
-# import pandas as pd
-# from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
-# from app.muAnalysisFunctions.CommonOpenFunc import CommonOpenFunc
-# from ui.components.muAnalysisComponents.AnalysisDropdown import AnalysisDropdown
-# from app.muAnalysisFunctions.electrode_layouts import get_electrode_grid
-# from scipy.signal import correlate2d
 import os
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel,
@@ -172,7 +162,7 @@ class MotorUnitTrackingDialog(QDialog):
         main_layout.addSpacing(10)
         main_layout.addStretch()
 
-        """ LEGACY CODE - to be deleted upon client approval """
+        """ LEGACY CODE - to reimplement """
 
         # # --- Top controls ---
 
@@ -355,27 +345,6 @@ class MotorUnitTrackingDialog(QDialog):
             return
 
     """ LEGACY CODE - to be deleted upon client approval """
-
-    # def get_sta(self, emgfile, code, orientation, n_cols, n_rows):
-    #     """Compute spike-triggered average for one MU.
-
-    #     Args:
-    #         file (dict): Parsed EMG data.
-    #         mu_index (int): MU index to compute STA for.
-    #         window (int): Half-window size in samples.
-
-    #     """
-
-    #     sorted_rawemg = sort_rawemg(
-    #         emgfile=emgfile,
-    #         code=code,
-    #         orientation=orientation,
-    #         n_cols=n_cols,
-    #         n_rows=n_rows
-    #     )
-
-    #     d = diff(sorted_rawemg)
-    #     return sta(emgfile, d)
 
     # def display_results(self, results):
     #     """
