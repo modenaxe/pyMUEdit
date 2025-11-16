@@ -50,7 +50,10 @@ class ForceAnalysisFunc():
         except:
             ErrorDialog("Invalid RFD values", "Error").exec_()
         else:
-            rfd = compute_rfd(file, ms)
-            store.append_analysis_hist(
-                "RFD", rfd.to_dict("records")
-            )
+            try:
+                rfd = compute_rfd(file, ms)
+                store.append_analysis_hist(
+                    "RFD", rfd.to_dict("records")
+                )
+            except Exception as e:
+                ErrorDialog(str(e), "Error").exec_()
