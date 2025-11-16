@@ -29,7 +29,7 @@ def update_spike_train_plot(
     red with slight opacity.
     """
 
-    logger.debug("update_spike_train_plot", "(overlay)" if overlay else "")
+    logger.debug(f"update_spike_train_plot {'(overlay)' if overlay else ''}")
 
     time_vector = self.MUedition["edition"]["time"]
 
