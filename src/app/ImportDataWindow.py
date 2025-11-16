@@ -211,10 +211,14 @@ class ImportDataWindow(QMainWindow):
             if decomp_name:
                 decomp_path = extract_dir / decomp_name
                 signal_dict, raw_filepath, config_dict = load_from_h5(str(decomp_path))
-                self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, config_dict, self.raw_fileid)
+                self.decomposition_requested.emit(
+                    self.emg_obj, self.filename, self.pathname,
+                    self.imported_signal, config_dict, self.raw_fileid
+                )
                 self.decomp_app.on_decomposition_complete_2(signal_dict)
 
             print(f"Files extracted to: {extract_dir}")
+
 
     def select_file(self):
         """Open file dialog to select a file."""
@@ -568,7 +572,7 @@ class ImportDataWindow(QMainWindow):
             if self.pathname and self.filename:
                 savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
                 self.save_mat_in_background(savename, {"signal": self.imported_signal}, True)
-            
+
             # create decomposition view
             if not hasattr(self, "decomp_app") or not self.decomp_app:
                 self.create_decomposition_view(
@@ -856,7 +860,7 @@ class ImportDataWindow(QMainWindow):
         except Exception as e:
             print(f"error creating manual editing view: {e}")
             traceback.print_exc()
-    
+
     def navigate_to_editing_with_data(self, filename, pathname):
         """load data into muedit and navigate to editing view"""
         try:
@@ -865,7 +869,7 @@ class ImportDataWindow(QMainWindow):
             # ensure manual editing view exists
             if not hasattr(self, "manual_editing_page") or not self.manual_editing_page:
                 self.create_manual_editing_view()
-            
+
             # check if the file exists
             full_file_path = os.path.join(pathname, filename)
             if not os.path.exists(full_file_path):
@@ -875,7 +879,7 @@ class ImportDataWindow(QMainWindow):
             # load data into the existing mu edit instance
             self.manual_editing_page.filename = filename
             self.manual_editing_page.pathname = pathname
-            
+
             # update the file path field in the ui
             if hasattr(self.manual_editing_page, 'file_path_field'):
                 self.manual_editing_page.file_path_field.setText(filename)
@@ -887,7 +891,7 @@ class ImportDataWindow(QMainWindow):
             self.show_manual_editing_view()
 
             print("successfully navigated to MU editing view with data loaded")
-        
+
         except Exception as e:
             print(f"error navigating to mu edit: {e}")
             traceback.print_exc()
