@@ -16,7 +16,6 @@ from PyQt5.QtCore import Qt
 from core.utils.manual_editing.h5_import import h5py_convert
 
 # Import custom components
-from core.utils.session.convert_h5 import load_from_h5
 from ui.components import (
     WarningDialog,
     ErrorDialog,
@@ -28,103 +27,92 @@ from app.muEditFunctions.mu_selection import (
 )
 
 def import_data(self):
-    """Import data from selected file (.mat or .h5)."""
+    """Import data from selected file."""
     if not self.filename or not self.pathname:
         return
 
     self.ish5 = False
-    filepath = os.path.join(self.pathname, self.filename)
-    ext = self.filename.lower().split('.')[-1]
 
-    # Show wait cursor
+    # Wrong Format
+    if not self.filename.lower().endswith(".mat"):
+        ErrorDialog(title_label="File Format Error", text="Selected file is not a valid .mat file.\nPlease choose a .mat file.")
+        return
+
+
+    # Set Mouse State to Wait
     QApplication.setOverrideCursor(Qt.WaitCursor)
-
     try:
-        # Load file based on extension
-        if ext == 'mat':
+        filepath = os.path.join(self.pathname, self.filename)
+        try:
+            files = sio.loadmat(filepath)
+        except NotImplementedError:
             try:
-                files = sio.loadmat(filepath)
-            except NotImplementedError:
-                from core.utils.manual_editing.h5_import import h5py_convert
-                try:
-                    with h5py.File(filepath, "r") as f:
-                        print("h5py File load success")
-                        self.ish5 = True
-                        files = h5py_convert().h5py_to_dict(f)
-                        print("h5py File convert complete")
-                except Exception:
-                    import traceback
-                    traceback.print_exc()
-                    return
-            # Check and process files
-            if not self.ish5:
-                # Verify fields present
-                if "signal" not in files:
-                    raise KeyError("Missing 'signal' in .mat file")
-                if "Pulsetrain" not in files["signal"].dtype.names:
-                    raise KeyError("Missing 'Pulsetrain' in signal")
-                # Keep data for processing
-                import_edited_file(self, files)
-            else:
-                # loaded via h5py_convert
-                if "signal" not in files:
-                    raise KeyError("Missing 'signal' in converted .mat")
-                # Decode 'signal' JSON string if needed
-                if isinstance(files["signal"], str):
-                    try:
-                        files["signal"] = json.loads(files["signal"])
-                    except:
-                        print("Failed to decode 'signal' JSON string.")
-                        return
-                if "Pulsetrain" not in files["signal"]:
-                    raise KeyError("Missing 'Pulsetrain' in signal")
-                import_h5py_edited_file(self, files)
-        elif ext == 'h5':
-            files, raw_filepath, config = load_from_h5(filepath)
-            self.ish5 = True
-            # Decode 'signal' if it's a string
-            if "signal" in files and isinstance(files["signal"], str):
-                try:
-                    files["signal"] = json.loads(files["signal"])
-                except:
-                    print("Failed to decode 'signal' JSON string.")
-                    return
-            # Decode 'edition' if exists and is string
-            if "edition" in files and isinstance(files["edition"], str):
-                try:
-                    files["edition"] = json.loads(files["edition"])
-                except:
-                    print("Failed to decode 'edition' JSON string.")
-                    return
-            # Check presence
-            if not isinstance(files["signal"], dict):
-                raise ValueError("'signal' is not a dict after decoding")
-            if "Pulsetrain" not in files["signal"]:
-                raise KeyError("Missing 'Pulsetrain' in signal")
-            # Load data
-            if "edition" in files:
-                # load from edited
-                import_h5py_edited_file(self, files)
-            else:
-                # load from decomposed
-                import_h5py_decomposed_file(self, files)
-        else:
-            raise ValueError("Unsupported file extension. Use .mat or .h5.")
+                f = h5py.File(filepath, "r")
+                print("h5py File load success")
+                self.ish5 = True
+                files = h5py_convert().h5py_to_dict(f)
+                print("h5py File convert complete")
+            except Exception:
+                import traceback
+                traceback.print_exc()
+            # f.close()
 
-        # Post-processing
+        if not self.ish5:
+            #check the data with "signal" and "Pulsetrain"
+            if "signal" not in files or (
+                    "Pulsetrain" not in files["signal"].dtype.names
+                    and "Pulsetrain" not in files
+            ):
+                QApplication.restoreOverrideCursor()  # Restore Mouse State
+                raise KeyError("Missing 'signal' or 'Pulsetrain'")
+        else:
+            #check the data with "signal" and "Pulsetrain"
+            if "signal" not in files or (
+                    "Pulsetrain" not in files["signal"].keys()
+            ):
+                QApplication.restoreOverrideCursor()  # Restore Mouse State
+                raise KeyError("Missing 'signal' or 'Pulsetrain'")
+
+        # Initialize the MUedition data structure
+        self.MUedition = {"edition": {}, "signal": {}, "parameters": {}}
+        #edition contains all the data to be edit
+
+        if not self.ish5:
+            if "edition" in files:   #edited file, recover edition
+                import_edited_file(self, files)
+            else:   #new file
+                import_decomposed_file(self, files)
+        else:
+            if "edition" in files:
+                arr = files['edition']['Dischargetimes']
+                if isinstance(arr, np.ndarray) and arr.shape == (2,) and arr.dtype == np.uint64:
+                    WarningDialog(text="We detected that the edition section does not contain any Dischargetimes data; therefore, it has fallen back to the unedited version.",
+                            enableHelpButton=False,
+                            enableCheckBox=False)
+                    import_h5py_decomposed_file(self, files)
+                else:
+                    import_h5py_edited_file(self, files)
+            else:
+                import_h5py_decomposed_file(self, files)
+
         print("File import complete")
+
+        # Overlay skips the setup
         if getattr(self, "is_overlay", False):
             QApplication.restoreOverrideCursor()
             return self.MUedition
 
-        # Calculate array number for each channel
+        # Calculate array numbers for each channel
         self.MUedition["edition"]["arraynb"] = np.zeros(self.MUedition["signal"]["data"].shape[0], dtype=int)
         ch1 = 0
+
+        # Use scalar ngrid value
         ngrid = int(self.MUedition["signal"]["ngrid"][0, 0])
+
         for i in range(ngrid):
             mask = self.MUedition["signal"]["EMGmask"][0, i]
             mask_length = len(mask)
-            self.MUedition["edition"]["arraynb"][ch1: ch1 + mask_length] = i
+            self.MUedition["edition"]["arraynb"][ch1 : ch1 + mask_length] = i
             ch1 += mask_length
 
         # Update reference dropdown
@@ -132,37 +120,45 @@ def import_data(self):
         if "auxiliary" in self.MUedition["signal"] and self.MUedition["signal"]["auxiliary"].size > 0:
             if "auxiliaryname" in self.MUedition["signal"]:
                 aux_names = self.MUedition["signal"]["auxiliaryname"][0]
-                aux_accel_count = 0
+                aux_accel_count = 0 # add number moy
                 for i in range(aux_names.shape[0]):
-                    raw = aux_names[i]
+                    raw  = aux_names[i]
                     base = str(raw[0]) if isinstance(raw, np.ndarray) and raw.size else str(raw)
+
                     if base.strip() == "AUX  Acceleration":
                         aux_accel_count += 1
-                        label = f"{base} {aux_accel_count}"
+                        label = f"{base} {aux_accel_count}" # AUX  Acceleration 1
                     else:
                         label = base
+
                     self.reference_dropdown.addItem(label)
 
         # Update MU checkboxes
         self.resetPlot = True
         update_mu_checkboxes(self)
-        # Set initial view
+
+        # Set initial view limits
         self.graphstart = self.MUedition["edition"]["time"][0]
-        if hasattr(self, "pan_slider"):
+        if hasattr(self, "pan_slider"):# moy
             self.center_pan_slider()
         self.graphend = self.MUedition["edition"]["time"][-1]
-        self.update_plot_limits()
-        self._sync_pan_slider()
 
-        # Save current data for reset
+        self.update_plot_limits()
+        self._sync_pan_slider()#moy
+
+        QApplication.restoreOverrideCursor()  # Restore Mouse State
+
+        # Set current data as clear data
         self.initial_data = copy.deepcopy(self.MUedition["edition"])
 
     except KeyError as ke:
         QApplication.restoreOverrideCursor()
-        ErrorDialog(title_label="Missing Field", text=f"The file is missing required fields:\n{ke}")
-        import traceback; traceback.print_exc()
+        ErrorDialog(title_label="Missing Field", text=f"The .mat file is missing required fields:\n{ke}")
+        import traceback
+        traceback.print_exc()
     except Exception as e:
-        import traceback; traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         QApplication.restoreOverrideCursor()
         ErrorDialog(title_label="Import Error", text=f"Failed to load the file:\n{str(e)}")
 

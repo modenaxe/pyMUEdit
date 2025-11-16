@@ -812,7 +812,6 @@ class DecompositionApp(QMainWindow):
         if self.pathname and self.filename:
             formatted_result = format_results_2(result)
             self.mat_data = formatted_result
-            # Store the decomposition result
             self.decomposition_result = formatted_result
 
         self.edit_field.setText("Decomposition complete")
