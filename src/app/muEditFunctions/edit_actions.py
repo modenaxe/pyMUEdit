@@ -121,14 +121,26 @@ def delete_dr_button_pushed(self):
 
 def lock_spikes_button_pushed(self):
     """Lock the current spikes to keep them during filter updates."""
-    logger.debug("push lock spikes")
-    if self.action_buttons["lock_spikes_button_pushed"].get_active():
-        self.Backup["lock"] = 0
-        self.action_buttons["lock_spikes_button_pushed"].set_active(False)
-    else:
-        self.Backup["lock"] = 1
-        self.action_buttons["lock_spikes_button_pushed"].set_active(True)
 
+    is_active = self.action_buttons["lock_spikes_button_pushed"].get_active()
+    new_state = not is_active
+
+    # Apply toggle
+    self.Backup["lock"] = 1 if new_state else 0
+    self.action_buttons["lock_spikes_button_pushed"].set_active(new_state)
+
+    # Researcher-facing tip (simple)
+    if new_state:
+        self.show_tip("Spikes locked.", duration_ms=3000)
+    else:
+        self.show_tip("Spikes unlocked.", duration_ms=3000)
+
+    # Developer-facing log (detailed)
+    logger.debug(
+        f"Spike lock toggled → {'ENABLED' if new_state else 'DISABLED'} "
+        f"(Backup['lock']={self.Backup['lock']})"
+    )
+    
 def remove_outliers_button_pushed(self):
     """Remove outliers from the current motor unit."""
     if not self.MUedition:

@@ -287,7 +287,7 @@ def display_selected_mus(self, checked_mus, pluse_train_color="#D95535"):
     """Display the currently selected motor units."""
     if not self.MUedition:
         return
-    logger.debug("display_selected_mus")
+    logger.debug(f"Displaying selected MUs: {checked_mus}")
 
     # Clear existing plots in the container
     for i in reversed(range(self.plots_layout.count())):
