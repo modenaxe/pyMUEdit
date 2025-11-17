@@ -820,6 +820,12 @@ class ImportDataWindow(QMainWindow):
             if hasattr(self.manual_editing_page, 'file_path_field'):
                 self.manual_editing_page.file_path_field.setText(filename)
 
+            # update file info in the top upload file button
+            self.manual_editing_page.select_file_title_btn.setText(filename) 
+
+            # update footer file info
+            self.manual_editing_page.update_footer_file_info(full_file_path)
+
             # import the data using the existing import function
             from app.muEditFunctions.importer import import_data
             import_data(self.manual_editing_page)
