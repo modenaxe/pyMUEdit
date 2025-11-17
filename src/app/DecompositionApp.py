@@ -603,6 +603,7 @@ class DecompositionApp(QMainWindow):
                 "contrast_function": self.contrast_function_dropdown.currentText(),
                 "iterations": self.number_iterations_field.value(),
                 "windows": self.number_windows_field.value(),
+                "use_threshold": self.use_threshold_target_field.isChecked(),
                 "threshold_target": self.threshold_target_field.value(),
                 "extended_channels": self.nb_extended_channels_field.value(),
                 "duplicates_threshold": self.duplicate_threshold_field.value(),

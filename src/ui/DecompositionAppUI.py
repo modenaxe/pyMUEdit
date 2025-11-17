@@ -9,8 +9,9 @@ from torch import cuda
 
 # Import custom components
 from ui.components import (ActionButton, CleanScrollBar, CleanTheme,
-                           CollapsiblePanel, FormDoubleSpinBox, FormDropdown,
-                           FormSpinBox, SettingsGroup, VisualizationPanel)
+                           CollapsiblePanel, FormCheckBox, FormDoubleSpinBox,
+                           FormDropdown, FormSpinBox, SettingsGroup,
+                           VisualizationPanel)
 
 
 def setup_ui(main_window):
@@ -194,6 +195,14 @@ def setup_left_panel(main_window, parent_layout):
     main_window.number_windows_field = windows_field.spinbox
     params_panel.add_widget(windows_field)
 
+    use_threshold_field = FormCheckBox("Use Threshold", True)
+    main_window.use_threshold_target_field = use_threshold_field.checkbox
+    params_panel.add_widget(use_threshold_field)
+    
+    use_threshold_field.checkbox.toggled.connect(
+        lambda checked: threshold_field.spinbox.setEnabled(checked)
+    )
+    
     threshold_field = FormDoubleSpinBox("Threshold Target", 0.9, 0, 1, 0.1)
     main_window.threshold_target_field = threshold_field.spinbox
     params_panel.add_widget(threshold_field)
