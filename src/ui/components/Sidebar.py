@@ -5,13 +5,13 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QFrame, QLabel, QVBoxLayout
 
+from core.logger import logger
 from core.utils.io.filesize_formatter import filesize_formatter
 
 from .CleanTheme import CleanTheme
 from .DatasetItem import DatasetItem
 from .SectionHeader import SectionHeader
 from .SidebarButton import SidebarButton
-from core.logger import logger
 
 # defining absolute path for icons
 ABS_PATH = Path(__file__).parent.parent.parent

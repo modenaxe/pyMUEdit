@@ -3,13 +3,14 @@ import csv
 from PyQt5.QtWidgets import (QDialog, QFileDialog, QFrame, QTableView,
                              QVBoxLayout)
 
+from core.logger import logger
 from core.muAnalysisCore.AnalysisResultsHist import store
 from ui.components import ActionButton
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ConfirmationDialog import \
     ConfirmationDialog
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
-from core.logger import logger
+
 
 class ResultsPanel(QFrame):
 

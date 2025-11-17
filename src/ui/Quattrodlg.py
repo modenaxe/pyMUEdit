@@ -8,7 +8,9 @@ from PyQt5.QtGui import QColor, QPixmap
 from PyQt5.QtWidgets import (QCheckBox, QComboBox, QGroupBox, QHBoxLayout,
                              QLabel, QLineEdit, QMainWindow, QPushButton,
                              QSpinBox, QVBoxLayout, QWidget)
+
 from core.logger import logger
+
 
 class ColoredCircle(QWidget):
     def __init__(self, color="red", parent=None):
@@ -343,7 +345,8 @@ class Quattrodlg(QMainWindow):
                 self.file["signal"]["muscle"][0, 0] = muscle_obj
 
             except Exception as e:
-                logger.exception(f"Error with specific case, trying general solution: {e}")
+                logger.exception(
+                    f"Error with specific case, trying general solution: {e}")
                 try:
                     # Just replace the entire field
                     self.file["signal"]["gridname"] = np.array(

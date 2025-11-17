@@ -3,7 +3,9 @@ import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QDialog, QLabel, QPushButton, QStyle, QVBoxLayout
+
 from core.logger import logger
+
 
 class SuccessDialog(QDialog):
     def __init__(self, title_label="Success!", text="Please change text."):

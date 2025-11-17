@@ -5,7 +5,9 @@ from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import (QApplication, QFrame, QGraphicsDropShadowEffect,
                              QHBoxLayout, QLabel, QPushButton, QSizePolicy,
                              QSpacerItem, QStyle, QVBoxLayout, QWidget)
+
 from core.logger import logger
+
 
 def get_icon(standard_icon):
     """Gets a standard Qt icon."""

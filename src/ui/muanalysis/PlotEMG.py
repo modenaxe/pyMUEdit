@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import (QDialog, QHBoxLayout, QLineEdit, QVBoxLayout,
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.PlotEMGFunc import (parse_channel_input,
                                                  parse_mu_input)
+from core.logger import logger
 from ui.components import ActionButton
 from ui.components.muAnalysisComponents.AnalysisCheckboxDark import \
     AnalysisCheckboxDark
@@ -25,7 +26,7 @@ from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
 from ui.components.muAnalysisComponents.SubsectionTitle import SubsectionTitle
-from core.logger import logger
+
 
 class PlotEMGToolDialog(QDialog):
 
@@ -558,7 +559,9 @@ class PlotEMGToolDialog(QDialog):
 
         except Exception as e:
             logger.exception(f'Error plotting Derivation:\n{str(e)}')
-            ErrorDialog(f'Error plotting Derivation:\n{str(e)}', 'Error').exec_()
+            ErrorDialog(
+                f'Error plotting Derivation:\n{str(e)}',
+                'Error').exec_()
 
     def handle_muaps_clicked(self):
         """Function that plots MUAPs as long as the correct inputs are defined
@@ -575,12 +578,14 @@ class PlotEMGToolDialog(QDialog):
                     logger.error("Invalid mu number")
                     raise ValueError()
             except ValueError as e:
-                logger.error("Please enter a valid MU number from 0 to " + str(max_mu - 1))
+                logger.error(
+                    "Please enter a valid MU number from 0 to " + str(max_mu - 1))
                 ErrorDialog(
                     "Please enter a valid MU number from 0 to " + str(max_mu - 1)).exec_()
                 return
             except KeyError as e:
-                logger.error("Your file isn't formatted properly. Include the NUMBER_OF_MUS")
+                logger.error(
+                    "Your file isn't formatted properly. Include the NUMBER_OF_MUS")
                 ErrorDialog(
                     "Your file isn't formatted properly. Include the NUMBER_OF_MUS").exec_()
                 return

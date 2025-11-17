@@ -5,7 +5,9 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QApplication, QComboBox, QFrame, QHBoxLayout,
                              QLabel, QPushButton, QStackedWidget, QStyle,
                              QVBoxLayout, QWidget)
+
 from core.logger import logger
+
 
 def get_icon(standard_icon):
     """Helper function to get standard icons."""
