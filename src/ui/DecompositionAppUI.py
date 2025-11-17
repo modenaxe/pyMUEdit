@@ -11,6 +11,7 @@ from torch import cuda
 from ui.components import (ActionButton, CleanScrollBar, CleanTheme,
                            CollapsiblePanel, FormDoubleSpinBox, FormDropdown,
                            FormSpinBox, SettingsGroup, VisualizationPanel)
+from ui.components.Footer import Footer
 
 
 def setup_ui(main_window):
@@ -57,7 +58,28 @@ def setup_ui(main_window):
 
     main_window.main_layout.addWidget(content_widget)
 
-    setup_bottom_navigation(main_window)
+    def go_to_import_data():
+        main_window.window().show_import_data_view()
+
+    def go_to_editing():
+        main_window.open_editing_mode()
+    main_window.footer = Footer(
+        on_prev=go_to_import_data,
+        on_next=go_to_editing
+    )
+    main_window.footer.setFixedHeight(64)
+    main_window.main_layout.addWidget(main_window.footer)
+    main_window.footer.next_btn.setEnabled(False)
+
+    # Get file info from ImportDataWindow
+    parent = main_window.parent()
+    if parent and hasattr(parent, "current_file_info"):
+        file_info = parent.current_file_info
+        main_window.footer.footer_file_info.setText(
+            f"File: {file_info['name']}")
+        main_window.footer.size_info.setText(f"Size: {file_info['size']}")
+        main_window.footer.format_info.setText(
+            f"Format: {file_info['format']}")
 
 
 def setup_left_panel(main_window, parent_layout):
@@ -520,10 +542,6 @@ def setup_right_panel(main_window, parent_layout):
         "💾 Save Output", primary=False)
     main_window.save_output_button.setEnabled(False)
     results_group.add_field(main_window.save_output_button)
-
-    main_window.next_button = ActionButton("Next", primary=True)
-    main_window.next_button.setEnabled(False)
-    results_group.add_field(main_window.next_button)
 
     right_layout.addWidget(results_group)
 

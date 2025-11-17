@@ -398,6 +398,14 @@ class ImportDataWindow(QMainWindow):
                 # Change file label to green if success
                 self.file_info_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
 
+                # Store file info globally in ImportDataWindow instance
+                self.current_file_info = {
+                    "path": os.path.join(path, file),
+                    "name": file,
+                    "size": filesize_formatter(os.path.join(path, file)),
+                    "format": os.path.splitext(file)[1].upper().replace(".", "")
+                }
+                
                 # Get or create session for this dataset
                 if ext != ".h5": # temporary dont create session with h5 for now due to using load_file for loading a session
                     sessionid = get_or_create_session_for_file(full_path)
@@ -581,6 +589,7 @@ class ImportDataWindow(QMainWindow):
                 )
 
             # Emit signal to request showing decomposition view
+            self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, self.config, self.raw_fileid)
             self.show_decomposition_view()
 
         except Exception as e:
