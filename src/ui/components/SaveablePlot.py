@@ -7,7 +7,7 @@ from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QFont, QIcon
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QFrame, QHBoxLayout,
                              QLabel, QPushButton, QVBoxLayout, QWidget)
-
+from core.logger import logger
 
 class SaveablePlot(QWidget):
     """
@@ -71,8 +71,8 @@ class SaveablePlot(QWidget):
             return QApplication.style().standardIcon(
                 QApplication.style().SP_DialogSaveButton
             )
-        except BaseException:
-            # Fallback to text if icon not available
+        except Exception as e:
+            logger.warning(f"Failed to load save icon: {e}")
             return QIcon()
 
     def set_figure(self, figure):
@@ -179,7 +179,7 @@ class SaveablePlot(QWidget):
                 self.figure.savefig(
                     file_path, dpi=300, bbox_inches="tight", facecolor="white"
                 )
-                print(f"Plot saved successfully to: {file_path}")
+                logger.debug(f"Plot saved successfully to: {file_path}")
             except Exception as e:
-                print(f"Error saving plot: {e}")
+                logger.exception(f"Error saving plot: {e}")
                 # Could add a proper error dialog here

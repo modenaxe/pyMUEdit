@@ -3,6 +3,7 @@
 import torch
 from scipy.signal import butter, filtfilt
 from numba import jit, njit
+from core.logger import logger
 
 from ..config.structures import set_random_seed
 
@@ -22,7 +23,7 @@ def notch_filter(emg: torch.Tensor, f_samp: float, notch_params: tuple, cutoff_l
     if filt_harms:
         freqs_to_filter.extend([f_notch * i for i in range(2, cutoff_lowpass // f_notch + 1)]) # harmonics up to the low pass cutoff
 
-    print(f"freqs_to_filter: {freqs_to_filter}")
+    logger.debug(f"freqs_to_filter: {freqs_to_filter}")
     # Filter
     for f in freqs_to_filter:
         b, a = butter(2, [2 * (f - bw) / f_samp, 2 * (f + bw) / f_samp], btype="bandstop")
@@ -114,6 +115,7 @@ def whiten(x: torch.Tensor, method: str = "zca") -> torch.Tensor:
         corr = v_inv_sqrt.matmul(cov).matmul(v_inv_sqrt)
         u, s, _ = torch.linalg.svd(corr)
     else:
+        logger.error(f"Invalid whitening method specified: {method}", exc_info=True)
         raise Exception("Specified method not in list.")
 
     if method == "chol":

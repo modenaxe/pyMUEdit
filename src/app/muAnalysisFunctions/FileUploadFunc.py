@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QFileDialog, QMessageBox, QDialog
 from ui.components.muAnalysisComponents.ConfirmationDialog import ConfirmationDialog
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
-
+from core.logger import logger
 from matplotlib import pyplot as plt
 
 import openhdemg.library as emg
@@ -81,6 +81,7 @@ class FileUploadFunc:
                     f"{e}",
                     "NotImplementedError",
                 ).exec_()
+                logger.error("Function not implemented")
                 error = 1
             except:
                 self.import_data(None, None)
@@ -126,7 +127,7 @@ class FileUploadFunc:
         """
         # Check if there's a file loaded to reset
         if self.file_path is None:
-            print("No file loaded to reset.")
+            logger.warning("No file loaded to reset.")
             return
 
         dialog = ConfirmationDialog(
@@ -143,10 +144,10 @@ class FileUploadFunc:
         Returns: None
         """
         if self.file_path is None:
-            print("No original file path stored. Cannot reset.")
+            logger.warning("No original file path stored. Cannot reset.")
             return
 
-        print("--- DEBUG: Resetting analysis data by reloading original file ---")
+        logger.debug("Resetting analysis data by reloading original file")
 
         # Clear any transformation data (MVC value, etc.)
         self.mvc_value = None
@@ -155,9 +156,9 @@ class FileUploadFunc:
         # Reload the original file to reset any transformations
         error = self.load_file(analysis_plot, self.file_path, self.json)
         if error == 0:
-            print("File successfully reloaded, transformations cleared.")
+            logger.debug("File successfully reloaded, transformations cleared.")
         else:
-            print("Error reloading file during reset.")
+            logger.error("Error reloading file during reset.")
             # If reload fails, show error but keep the original file path
             error_dialog = QMessageBox()
             error_dialog.setIcon(QMessageBox.Critical)

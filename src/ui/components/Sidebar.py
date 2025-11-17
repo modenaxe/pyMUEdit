@@ -11,6 +11,7 @@ from .CleanTheme import CleanTheme
 from .DatasetItem import DatasetItem
 from .SectionHeader import SectionHeader
 from .SidebarButton import SidebarButton
+from core.logger import logger
 
 # defining absolute path for icons
 ABS_PATH = Path(__file__).parent.parent.parent
@@ -101,7 +102,7 @@ class Sidebar(QFrame):
             icon_path = ICONS_PATH / f"{icon_name}.svg"
             # If file doesn't exist, show a warning
             if not icon_path.exists():
-                print(f"Warning: Icon {icon_path} not found")
+                logger.warning(f"Warning: Icon {icon_path} not found")
                 icon_path = None
 
         # Create button with icon and text

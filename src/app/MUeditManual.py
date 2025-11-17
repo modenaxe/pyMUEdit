@@ -24,6 +24,7 @@ from PyQt5.QtWidgets import (
     QShortcut,
 )
 from PyQt5.QtGui import QKeySequence
+from core.logger import logger
 from types import MethodType
 
 import h5py
@@ -326,12 +327,12 @@ class MUeditManual(QMainWindow):
         """Exit spike editing mode and reset selection state."""
 
         if hasattr(self, "add_spikes_btn") and self.add_spikes_btn.get_active():
-            print("ESC: deactivating add_spikes button")
+            logger.debug("ESC: deactivating add_spikes button")
             add_spikes_button_pushed(self)
             return
 
         elif hasattr(self, "delete_spikes_btn") and self.delete_spikes_btn.get_active():
-            print("ESC: deactivating delete_spikes button")
+            logger.debug("ESC: deactivating delete_spikes button")
             delete_spikes_button_pushed(self)
             return
 
@@ -340,7 +341,7 @@ class MUeditManual(QMainWindow):
             self.selection_tool.cleanup()
             self.selection_tool = None
 
-        print("Exited editing mode (via ESC)")
+        logger.debug("Exited editing mode (via ESC)")
 
     def _create_shortcuts(self):
         # Short cut
@@ -495,7 +496,7 @@ class MUeditManual(QMainWindow):
             # Update the current view based on checkboxes
             mu_checkbox_state_changed(self)
         except Exception as e:
-            print(f"Error setting reference: {e}")
+            logger.exception(f"Error setting reference: {e}")
 
     def sil_checkbox_value_changed(self):
         """Toggle SIL plot visibility."""
@@ -714,7 +715,7 @@ class MUeditManual(QMainWindow):
     # Editing actions
     def disable_action_buttons(self):
         """Temporarily disable action buttons during selection."""
-        print("disable_action_buttons")
+        logger.debug("disable_action_buttons")
         self.add_spikes_btn.setEnabled(False)
         self.delete_spikes_btn.setEnabled(False)
         self.delete_dr_btn.setEnabled(False)
@@ -724,7 +725,7 @@ class MUeditManual(QMainWindow):
 
     def enable_action_buttons(self):
         """Re-enable action buttons after selection is complete."""
-        print("enable_action_buttons")
+        logger.debug("enable_action_buttons")
         self.add_spikes_btn.setEnabled(True)
         self.delete_spikes_btn.setEnabled(True)
         self.delete_dr_btn.setEnabled(True)
@@ -734,8 +735,35 @@ class MUeditManual(QMainWindow):
 
     def handle_selection_complete(self, action_type, array_idx, mu_idx, x_min, x_max, y_min, y_max):
         """Handle the completion of a selection and process it."""
-        # Process the selection
+            # ==== 1. Save old discharge times BEFORE modification ====
+        old_times = np.array(
+            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), []),
+            copy=True
+        )
+
+        # ==== 2. Perform the actual selection action ====
         process_selection(self.MUedition, action_type, array_idx, mu_idx, x_min, x_max, y_min, y_max)
+
+        # ==== 3. Retrieve new discharge times AFTER modification ====
+        new_times = np.array(
+            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), [])
+        )
+
+        # ==== 4. Compute delta ====
+        delta = len(new_times) - len(old_times)
+
+        # ==== 5. Show user feedback ====
+        if action_type == "add_spikes" and delta > 0:
+            self.show_tip(f"Added {delta} spike(s)", duration_ms=4000)
+            logger.info(f"Added {delta} spike(s)")
+
+        elif action_type == "delete_spikes" and delta < 0:
+            self.show_tip(f"Deleted {-delta} spike(s)", duration_ms=4000)
+            logger.info(f"Deleted {-delta} spike(s)")
+
+        elif action_type == "delete_dr":
+            self.show_tip("Deleted discharge rate points", duration_ms=4000)
+            logger.info("Deleted discharge rate points")
 
         # Update the display
         # for checkbox in self.mu_checkboxes:
@@ -961,7 +989,7 @@ class MUeditManual(QMainWindow):
                 )
 
             except Exception as e:
-                print(f"Error calculating SIL for array {array_idx}, MU {mu_idx}: {e}")
+                logger.exception(f"Error calculating SIL for array {array_idx}, MU {mu_idx}: {e}")
                 self.MUedition["edition"]["silval"][(array_idx, mu_idx)] = 0
                 self.MUedition["edition"]["silvalcon"][(array_idx, mu_idx)] = np.zeros((1, 2))
         else:

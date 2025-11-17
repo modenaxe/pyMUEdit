@@ -1,7 +1,7 @@
 """Functions to postprocess the results of the model."""
 
 import pickle as pkl
-
+from core.logger import logger
 
 def save_results(output_datafile, dictionary_result):
     """
@@ -19,4 +19,4 @@ def save_results(output_datafile, dictionary_result):
         with open(output_datafile, "wb") as f:
             pkl.dump(dictionary_result, f)
     except Exception as e:
-        print(f"Error occurred while saving results: {e}")
+        logger.exception(f"Error occurred while saving results: {e}")

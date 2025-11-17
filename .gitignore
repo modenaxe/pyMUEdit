@@ -8,6 +8,7 @@ data/*.h5
 data/*.mat
 tests/*.mat
 tests/*.otb+
+src/logs/*
 .DS_Store
 .vscode
 .idea

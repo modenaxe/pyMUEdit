@@ -3,7 +3,7 @@ import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QDialog, QLabel, QPushButton, QStyle, QVBoxLayout
-
+from core.logger import logger
 
 class ErrorDialog(QDialog):
     def __init__(
@@ -29,7 +29,7 @@ class ErrorDialog(QDialog):
         if not os.path.exists(icon_path) or not pixmap or pixmap.isNull():
             icon = self.style().standardIcon(QStyle.SP_MessageBoxCritical)
             icon_label.setPixmap(icon.pixmap(48, 48))
-            print("❌ Image not found")
+            logger.debug("❌ Image not found")
         else:
             icon_label.setPixmap(
                 pixmap.scaled(

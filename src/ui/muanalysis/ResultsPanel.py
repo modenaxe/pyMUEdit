@@ -9,7 +9,7 @@ from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ConfirmationDialog import \
     ConfirmationDialog
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
-
+from core.logger import logger
 
 class ResultsPanel(QFrame):
 
@@ -59,9 +59,9 @@ class ResultsPanel(QFrame):
                     writer.writeheader()
                     writer.writerows(results)
 
-                print(f"Data saved to {file_path}")
+                logger.debug(f"Data saved to {file_path}")
             except Exception as e:
-                print(f"Error saving file: {e}")
+                logger.exception(f"Error saving file: {e}")
 
     def clear_results(self):
         store.clear_results()

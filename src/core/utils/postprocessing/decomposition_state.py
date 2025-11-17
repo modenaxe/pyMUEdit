@@ -3,6 +3,7 @@ import pickle
 import numpy as np
 import time
 import copy
+from core.logger import logger
 
 from core.database.database import upsert_file_versions
 
@@ -17,20 +18,20 @@ class DecompositionState:
     @staticmethod
     def ensure_state_directory():
         """Ensures that the states directory exists."""
-        global STATES_DIR
-
+        global STATES_DIR 
+        logger.debug(f"Ensuring state directory exists at: {STATES_DIR}")
         if not os.path.exists(STATES_DIR):
             try:
                 os.makedirs(STATES_DIR)
-                print(f"Created states directory at {STATES_DIR}")
+                logger.info(f"Created states directory at {STATES_DIR}")
             except Exception as e:
-                print(f"Error creating states directory: {e}")
+                logger.exception(f"Error creating states directory: {e}")
                 # Fallback to temp directory if home directory is not writable
                 STATES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "saved_states")
                 if not os.path.exists(STATES_DIR):
                     os.makedirs(STATES_DIR)
-                print(f"Using fallback states directory: {STATES_DIR}")
-
+                logger.exception(f"Using fallback states directory: {STATES_DIR}")
+    
     @staticmethod
     def save_state(decomp_app, state_name=None, raw_fileid=None):
         """
@@ -40,11 +41,14 @@ class DecompositionState:
             decomp_app: The DecompositionApp instance
             state_name: Optional name for the state, defaults to timestamp + filename
         """
+        logger.debug("Starting save_state()")
         DecompositionState.ensure_state_directory()
         # Generate default state name if none provided
         if not state_name:
             timestamp = time.strftime("%Y%m%d_%H%M%S")
             state_name = f"{timestamp}_{decomp_app.filename}"
+            logger.debug(f"Generated default state name: {state_name}")
+        logger.debug(f"Preparing state for file: {decomp_app.filename}")
         # Count total motor units
         total_mus = 0
         if hasattr(decomp_app, 'decomposition_result') and decomp_app.decomposition_result:
@@ -82,6 +86,12 @@ class DecompositionState:
         # Save pulse train plot data
         if hasattr(decomp_app, 'ui_plot_pulsetrain'):
             plot_data['pulsetrain'] = DecompositionState._extract_plot_data(decomp_app.ui_plot_pulsetrain)
+        
+        logger.info(f"Detected {total_mus} motor units")
+        if sil_value is None:
+            logger.warning("SIL value missing in decomposition app")
+        if cov_value is None:
+            logger.warning("CoV value missing in decomposition app")
 
         # Create a dictionary with all the important state information
         state = {
@@ -125,9 +135,9 @@ class DecompositionState:
                         'fsamp': decomp_app.emg_obj.signal_dict.get('fsamp', None),
                         'nChan': decomp_app.emg_obj.signal_dict.get('nChan', None)
                     }
-                    print(f"EMG data extracted for channel viewer: {state['emg_data']['data'].shape if state['emg_data']['data'] is not None else 'None'}")
+                    logger.info(f"EMG data extracted for channel viewer: {state['emg_data']['data'].shape if state['emg_data']['data'] is not None else 'None'}")
         except Exception as e:
-            print(f"Warning: Failed to extract EMG data for channel viewer: {e}")
+            logger.exception(f"Warning: Failed to extract EMG data for channel viewer: {e}")
             # This is not critical, so continue with saving anyway
 
         # Create a special object for storing NumPy arrays
@@ -135,18 +145,15 @@ class DecompositionState:
 
         # Save the state
         state_path = os.path.join(STATES_DIR, f"{state_name}.decomp")
-        print(f"Saving state to {state_path}")
+        logger.debug(f"Saving serialized state to {state_path}")
         try:
             with open(state_path, 'wb') as f:
                 pickle.dump(serializable_state, f)
-            print(f"Successfully saved state with {total_mus} motor units")
-
-            # save to db
+            logger.info(f"State saved successfully to {state_path}")
             versionid = upsert_file_versions(state_path, raw_fileid, "decomposed")
         except Exception as e:
-            print(f"Error saving state: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.exception(f"Error saving state: {e}")
+        
         # Return metadata for the saved state
         return {
             'state_name': state_name,
@@ -271,7 +278,7 @@ class DecompositionState:
                         'brush': brush,
                     }
                 except Exception as e:
-                    print(f"Error extracting scatter plot data: {e}")
+                    logger.exception(f"Error extracting scatter plot data: {e}")
                     # Create a minimal scatter item entry that won't cause problems
                     item_data = {
                         'type': 'scatter',
@@ -330,7 +337,7 @@ class DecompositionState:
                         states.append(metadata)
                     except Exception as e:
                         # Skip corrupted state files
-                        print(f"Error reading state file {filename}: {e}")
+                        logger.exception(f"Error reading state file {filename}: {e}")
                         continue
 
         # Sort by timestamp, newest first
@@ -343,10 +350,10 @@ class DecompositionState:
         if os.path.exists(state_path):
             try:
                 os.remove(state_path)
-                print(f"Deleted state file: {state_path}")
+                logger.debug(f"Deleted state file: {state_path}")
                 return True
             except Exception as e:
-                print(f"Error deleting state file {state_path}: {e}")
+                logger.exception(f"Error deleting state file {state_path}: {e}")
         return False
     @staticmethod
     def _make_serializable(obj):

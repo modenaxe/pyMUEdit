@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import (QCheckBox, QDialog, QFileDialog, QHBoxLayout,
 
 from ui.components.ActionButtonedit import ActionButtonedit
 from ui.components.ErrorDialog import ErrorDialog
-
+from core.logger import logger
 
 class PlotDialog(QDialog):
     def __init__(self, title):
@@ -246,7 +246,8 @@ class PlotDialog(QDialog):
                     filepath, dpi=300, bbox_inches='tight')
                 self.save_success()
             except Exception as e:
-                ErrorDialog(f"Oops! Something went wrong: {e}")
+                logger.exception("Failed to save plot as PNG.")
+                ErrorDialog(f"Failed to save the plot.\n\nDetails: {e}")
 
     def save_success(self):
         self.save_btn.setStyleSheet(

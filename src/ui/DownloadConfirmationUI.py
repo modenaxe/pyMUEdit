@@ -6,6 +6,7 @@ from PyQt5.QtGui import QColor, QFont, QIcon, QPixmap
 from PyQt5.QtWidgets import (QApplication, QFrame, QGraphicsDropShadowEffect,
                              QHBoxLayout, QLabel, QPushButton, QSizePolicy,
                              QSpacerItem, QStyle, QVBoxLayout, QWidget)
+from core.logger import logger
 
 # defining absolute path for icons
 ABS_PATH = Path(__file__).parent.parent
