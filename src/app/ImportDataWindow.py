@@ -800,7 +800,7 @@ class ImportDataWindow(QMainWindow):
     def navigate_to_editing_with_data(self, filename, pathname):
         """load data into muedit and navigate to editing view"""
         try:
-            print(f"navigating to editing mode with file: {filename}")
+            print(f"Navigating to editing mode with file: {filename}")
 
             # ensure manual editing view exists
             if not hasattr(self, "manual_editing_page") or not self.manual_editing_page:

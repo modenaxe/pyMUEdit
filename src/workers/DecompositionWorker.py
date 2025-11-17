@@ -272,7 +272,7 @@ class DecompositionWorker(QThread):
 
             # Signal completion
             if not self.should_stop:
-                self.progress.emit("Decomposition complete", 1.0)
+                # self.progress.emit("Decomposition complete, saving output", 1.0)
                 self.finished.emit(result)
             else:
                 print("Decomposition was stopped by user")
