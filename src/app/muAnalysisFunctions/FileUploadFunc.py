@@ -60,25 +60,10 @@ class FileUploadFunc:
                 None, "Select file", "", "MAT Files (*.mat);;All Files (*.*)"
             )
         if file_path:
-            if json:
-                valid = self.emg_from_json(file_path)
-                self.original_file_path = file_path
-                self.import_data(file_path, analysis_plot, valid)
-                if valid:
-                    if self.parent and hasattr(self.parent, "update_footer_file_info"):
-                        self.parent.update_footer_file_info(file_path)
-            else:
-                try:
-                    valid = self.emg_from_otb(file_path)
-                except:
-                    self.import_data(None, None, valid)
-                else:
-                    self.original_file_path = file_path
-                    self.import_data(file_path, analysis_plot, valid)
-                    if valid:
-                        if self.parent and hasattr(self.parent, "update_footer_file_info"):
-                            self.parent.update_footer_file_info(file_path)
-            # self.load_file(analysis_plot, file_path, json)
+            # If there is no error with loading file, udpate file info in footer
+            error = self.load_file(analysis_plot, file_path, json)
+            if error == 0:
+                self.parent.update_footer_file_info(file_path)
 
     def load_file(self, analysis_plot, file_path, json):
         """Load EMG file from specified path and plot the data
