@@ -49,18 +49,47 @@ Inside signal editing, there are 5 buttons the user can interact with, each butt
 - Convert: The reference signal is multiplied/divided by the factor specified in the operator and factor text boxes respectively
 - To Percent: Converts the MVC value to a percentage and divides the reference signal by the percentage
 
+## Force Analysis
+
+Relevant openHDEMG documentation: <https://www.giacomovalli.com/openhdemg/gui_basics#analyse-force-signal>
+
+The respective RFD values between the stated timepoint ranges (ms) in the RFD milliseconds
+text input are displayed in the Result Output. In example, specifying
+
+- RFD milliseconds: 50,100,150,200
+
+will result in RFD value calculation between the intervals 0-50ms, 0-100ms, 0-150ms and 0-200ms. You can also specify less or more values in the RFD milliseconds textbox.
+
+## Motor Unit Properties
+
+![muproperties](images/muproperties.png)
+
+Refer to openHDEMG documentation: <https://www.giacomovalli.com/openhdemg/gui_basics/#motor-unit-properties>
+
+## Plot EMG
+
+![plotemg](images/plotemg.png)
+
+Refer to openHDEMG documentation: <https://www.giacomovalli.com/openhdemg/gui_basics/#plot-motor-units>
+
 ## Advanced tools
 
 Please refer to the openHDEMG documentation for functions in this section: <https://www.giacomovalli.com/openhdemg/gui_advanced/>
 
 ### Motor Unit Tracking
 
+![mutracking](images/mutracking.png)
+
 Calls the openHDEMG GUI to perform this function. Please refer to the openHDEMG documentation for this feature. <https://www.giacomovalli.com/openhdemg/gui_advanced/#motor-unit-tracking>
 
 ### Persistent Inward Currents
 
+![pic](images/pic.png)
+
 Computes PIC based on parameters. Please refer to the openHDEMG documentation for this feature. <https://www.giacomovalli.com/openhdemg/gui_advanced/#persistent-inward-currents>
 
 ### Conduction Velocity
+
+![cv](images/cv.png)
 
 Please refer to the openHDEMG documentation for this feature. <https://www.giacomovalli.com/openhdemg/gui_advanced/#conduction-velocity>
