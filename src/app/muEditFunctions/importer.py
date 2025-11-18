@@ -301,8 +301,7 @@ def import_decomposed_file(self, files):
         for mu_idx in range(pulse_train.shape[0]):
             if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
                 if not getattr(self, "is_overlay", False):
-                    calculate_silval(self, array_idx, mu_idx)
-
+                                calculate_silval(self, array_idx, mu_idx)
             # Give every MU a Flag tag
             self.MUedition["edition"]["Flag"][array_idx].append(0)
 
@@ -447,13 +446,12 @@ def import_h5py_decomposed_file(self, files):
 
         for mu_idx in range(pulse_train.shape[0]):
             if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
-                if not getattr(self, "is_overlay", False):
+               if not getattr(self, "is_overlay", False):
                     cur_progress += 1
                     calculate_silval(self, array_idx, mu_idx)
                     progress.setValue(cur_progress)
                     progress.setLabelText(f"Calculating for Array {array_idx}: MU {mu_idx}")
                     QApplication.processEvents()
-
             # Give every MU a Flag tag
             self.MUedition["edition"]["Flag"][array_idx].append(0)
 

@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 from pathlib import Path
 from tkinter.filedialog import FileDialog
 
@@ -335,7 +336,6 @@ def restore_sidebar(import_window):
     if sidebar and hasattr(sidebar, "clear_recent_files_section"):
         sidebar.clear_recent_files_section()
 
-
 def create_placeholder_page(title, import_window):
     """Creates a placeholder page with a title and back button."""
     page = QWidget()
@@ -386,6 +386,19 @@ def _create_left_sidebar(import_window):
     import_window.sidebar_buttons["export_session_button"] = export_session_button
 
     sidebar.layout.insertWidget(1, export_session_button)
+
+    spacer = QSpacerItem(0, 15, QSizePolicy.Minimum, QSizePolicy.Fixed)
+    sidebar.layout.insertSpacerItem(2, spacer)
+
+
+    upload_session_button = ActionButton("Load Session", primary=True)
+    upload_session_button.setMinimumHeight(40)
+    upload_session_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    upload_session_button.setCursor(QCursor(Qt.PointingHandCursor))
+    upload_session_button.clicked.connect(import_window.load_session)
+    import_window.sidebar_buttons["upload_session_button"] = upload_session_button
+
+    sidebar.layout.insertWidget(1, upload_session_button)
 
     spacer = QSpacerItem(0, 15, QSizePolicy.Minimum, QSizePolicy.Fixed)
     sidebar.layout.insertSpacerItem(2, spacer)

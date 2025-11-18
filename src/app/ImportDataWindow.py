@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 import sys
 import os
@@ -16,7 +17,7 @@ from core.logger import logger
 # Import UI setup function
 from core.database.database import create_new_session, get_fileid_by_path, get_or_create_session_for_file, get_session_files, insert_files, upsert_file_versions
 from core.utils.io.filesize_formatter import filesize_formatter
-from core.utils.session.convert_h5 import save_as_h5
+from core.utils.session.convert_h5 import load_from_h5, save_as_h5
 from core.utils.io.filesize_formatter import filesize_formatter
 from ui.ImportDataWindowUI import setup_ui, update_sidebar_selection
 from ui.components.SegmentSessionPage import SegmentSessionPage
@@ -96,7 +97,7 @@ class ImportDataWindow(QMainWindow):
         self.recent_files = []
 
         # Set up the UI using our improved UI setup
-        setup_ui(self)
+        self.import_data_ui = setup_ui(self)
 
          # Now create the manual editing view
         self.create_manual_editing_view()
@@ -166,6 +167,15 @@ class ImportDataWindow(QMainWindow):
                     version_path = version.get("version_filepath")
                     if version_path and os.path.exists(version_path):
                         file_paths_to_zip.append(version_path)
+                    log = version.get("log")
+                    if log and log != "None":
+                        stage = version.get("stage", "unknown")
+                        json_filename = f"{stage}_config.json"
+                        json_filepath = os.path.join(os.path.dirname(version_path) if version_path else ".", json_filename)
+                        with open(json_filepath, 'w') as f:
+                            json.dump(log, f, indent=4)
+                        logger.debug(f"Saved {stage} config to {json_filepath}")
+                        file_paths_to_zip.append(json_filepath)
 
             if not file_paths_to_zip:
                 logger.warning("No valid files found to zip")
@@ -181,6 +191,52 @@ class ImportDataWindow(QMainWindow):
             return True
         else:
             logger.debug("Export cancelled")
+
+    def load_session(self):
+        file, _ = QFileDialog.getOpenFileName(
+            self, "Select session .zip File", "", "ZIP Files (*.zip)"
+        )
+
+        zip_path = Path(file)
+        zip_name = zip_path.stem
+
+        extract_dir = Path("..") / "loaded_sessions" / zip_name
+        extract_dir.mkdir(parents=True, exist_ok=True)
+
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_dir)
+
+            readin_name = None
+            decomp_name = None
+
+            for name in zip_ref.namelist():
+                if name.endswith("_readin.h5"):
+                    readin_name = name
+                elif name.endswith("_decomp.h5"):
+                    decomp_name = name
+
+            if readin_name:
+                readin_path = extract_dir / readin_name
+                self.update_ui_for_file(readin_path, readin_name)
+
+            if decomp_name:
+                decomp_path = extract_dir / decomp_name
+                signal_dict, raw_filepath, config_dict = load_from_h5(str(decomp_path))
+
+                # create decomposition view
+                if not hasattr(self, "decomp_app") or not self.decomp_app:
+                    self.create_decomposition_view(
+                        self.emg_obj, self.filename, self.pathname,
+                        self.imported_signal, self.config, self.raw_fileid
+                    )
+
+                # Emit signal to request showing decomposition view
+                self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, config_dict, self.raw_fileid)
+                self.show_decomposition_view()
+                self.decomp_app.imported_h5_session_decomp(signal_dict, config_dict)
+
+            logger.debug(f"Files extracted to: {extract_dir}")
+
 
     def select_file(self):
         """Open file dialog to select a file."""
@@ -249,7 +305,7 @@ class ImportDataWindow(QMainWindow):
         # Reset failure messages
         self.failure_message.setVisible(False)
 
-        if ext == ".otb+" or ext == ".mat":
+        if ext == ".otb+" or ext == ".mat" or ext == ".h5":
             try:
                 # Construct the full file path
                 full_path = os.path.join(path, file)
@@ -268,19 +324,52 @@ class ImportDataWindow(QMainWindow):
 
                     # Create a default save name for .mat files
                     savename = os.path.join(path, f"{base_name}_processed.mat")
-                    h5_processed_savename = os.path.join(path, f"{base_name}_processed.h5")
                     h5_readin_savename = os.path.join(path, f"{base_name}_readin.h5")
 
                     # Save the data as a .mat file in the background
                     if self.emg_obj.signal_dict:
                         self.save_mat_in_background(savename, {"signal": self.emg_obj.signal_dict}, True, True)
-                        save_as_h5(self.emg_obj.signal_dict, h5_processed_savename, raw_filepath=full_path)
                         save_as_h5(self.emg_obj.signal_dict, h5_readin_savename, raw_filepath=full_path)
 
                 elif ext == '.mat':
                     # Call the open_otb_plus function with the correct parameters
                     self.emg_obj.open_mat(full_path)
 
+                    base_name = os.path.splitext(file)[0]
+                    savename = os.path.join(path, f"{base_name}_processed.mat")
+                    h5_readin_savename = os.path.join(path, f"{base_name}_readin.h5")
+
+                    try:
+                        if self.emg_obj.signal_dict:
+                            save_as_h5(self.emg_obj.signal_dict, h5_readin_savename)
+                    except Exception as e:
+                        logger.debug(f"Error saving .h5 file: {e}")
+
+                elif ext == ".h5":
+                    full_path = os.path.join(path, file)
+                    try:
+                        signal_dict, raw_filepath, config_dict = load_from_h5(full_path)
+                        self.emg_obj.signal_dict = signal_dict
+                        self.imported_signal = signal_dict
+                        self.raw_file_path = raw_filepath
+
+                        if "data" in signal_dict and "fsamp" in signal_dict:
+                            self.cur_electrode_preview_idx = 0
+                            self.update_preview_plot()
+                            self.update_buttons()
+
+                        self.file_info_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
+                        self.footer.next_btn.setEnabled(True)
+
+                    except Exception as e:
+                        self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
+                        self.preview_message.setText(f"Error loading H5 file: {str(e)}")
+                        self.play_error_popup("Error loading file", str(e))
+                        traceback.print_exc()
+                        self.footer.next_btn.setEnabled(False)
+                        self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
+
+                    fileid = None # temp
                 # Store the imported signal
                 signal = self.emg_obj.signal_dict
                 self.imported_signal = signal
@@ -318,7 +407,7 @@ class ImportDataWindow(QMainWindow):
                 self.update_recent_files()
 
                 if ext == ".mat":
-                    self.segment_session = SegmentSessionPage(full_path, self.add_file_to_recent_files, self.update_recent_files)
+                    self.segment_session = SegmentSessionPage(full_path, self.add_file_to_recent_files, self.update_recent_files, self.raw_fileid)
                     self.segment_session_button.setEnabled(True)
                     self.set_configuration_button.setEnabled(False)
                 else:
@@ -334,16 +423,16 @@ class ImportDataWindow(QMainWindow):
                     "size": filesize_formatter(os.path.join(path, file)),
                     "format": os.path.splitext(file)[1].upper().replace(".", "")
                 }
-                
-                # Get or create session for this dataset
-                sessionid = get_or_create_session_for_file(full_path)
-                self.sessionid = sessionid
-                fileid = get_fileid_by_path(full_path)
-                if not fileid:
-                    fileid = insert_files(full_path, file, sessionid)
 
-                versionid_readin = upsert_file_versions(h5_readin_savename, fileid, "readin")
-                versionid_processed = upsert_file_versions(h5_processed_savename, fileid, "processed")
+                # Get or create session for this dataset
+                if ext != ".h5": # temporary dont create session with h5 for now due to using load_file for loading a session
+                    sessionid = get_or_create_session_for_file(full_path)
+                    self.sessionid = sessionid
+                    fileid = get_fileid_by_path(full_path)
+                    if not fileid:
+                        fileid = insert_files(full_path, file, sessionid)
+
+                    upsert_file_versions(h5_readin_savename, fileid, "readin")
 
                 self.raw_fileid = fileid
 
@@ -482,7 +571,7 @@ class ImportDataWindow(QMainWindow):
         if self.segment_session_button and self.pathname and self.filename:
             base_name = os.path.splitext(self.filename)[0]
             filename = os.path.join(self.pathname, f"{base_name}_processed.mat")
-            self.segment_session = SegmentSessionPage(filename, self.add_file_to_recent_files, self.update_recent_files)
+            self.segment_session = SegmentSessionPage(filename, self.add_file_to_recent_files, self.update_recent_files, self.raw_fileid)
 
             self.segment_session_button.setEnabled(True)
 
@@ -510,7 +599,7 @@ class ImportDataWindow(QMainWindow):
             if self.pathname and self.filename:
                 savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
                 self.save_mat_in_background(savename, {"signal": self.imported_signal}, True)
-            
+
             # create decomposition view
             if not hasattr(self, "decomp_app") or not self.decomp_app:
                 self.create_decomposition_view(
@@ -794,8 +883,8 @@ class ImportDataWindow(QMainWindow):
 
         except Exception as e:
             logger.exception(f"error creating manual editing view: {e}")
-    
-    def navigate_to_editing_with_data(self, filename, pathname):
+
+    def navigate_to_editing_with_data(self, filename, pathname, raw_fileid):
         """load data into muedit and navigate to editing view"""
         try:
             logger.debug(f"navigating to editing mode with file: {filename}")
@@ -803,7 +892,7 @@ class ImportDataWindow(QMainWindow):
             # ensure manual editing view exists
             if not hasattr(self, "manual_editing_page") or not self.manual_editing_page:
                 self.create_manual_editing_view()
-            
+
             # check if the file exists
             full_file_path = os.path.join(pathname, filename)
             if not os.path.exists(full_file_path):
@@ -813,13 +902,14 @@ class ImportDataWindow(QMainWindow):
             # load data into the existing mu edit instance
             self.manual_editing_page.filename = filename
             self.manual_editing_page.pathname = pathname
-            
+            self.manual_editing_page.raw_fileid = raw_fileid
+
             # update the file path field in the ui
             if hasattr(self.manual_editing_page, 'file_path_field'):
                 self.manual_editing_page.file_path_field.setText(filename)
 
             # update file info in the top upload file button
-            self.manual_editing_page.select_file_title_btn.setText(filename) 
+            self.manual_editing_page.select_file_title_btn.setText(filename)
 
             # update footer file info
             self.manual_editing_page.update_footer_file_info(full_file_path)
@@ -831,7 +921,7 @@ class ImportDataWindow(QMainWindow):
             self.show_manual_editing_view()
 
             logger.debug("successfully navigated to MU editing view with data loaded")
-        
+
         except Exception as e:
             logger.exception(f"error navigating to mu edit: {e}")
 
@@ -933,6 +1023,24 @@ class ImportDataWindow(QMainWindow):
                 logger.exception(f"Error displaying/activating ExportResultsWindow: {e}")
         else:
             logger.error("self.export_results_window is None even after creation attempt.")
+
+    def update_ui_for_file(self, full_path, filename):
+        self.filename = filename
+        self.pathname = os.path.dirname(full_path) + "/"
+
+        self.file_info_label.setText(f"Selected: {filename}")
+        self.file_info_label.setVisible(True)
+        self.footer.footer_file_info.setText(f"File: {filename}")
+
+        try:
+            size_str = filesize_formatter(full_path)
+            self.footer.size_info.setText(f"Size: {size_str}")
+        except:
+            self.footer.size_info.setText("Size: --")
+        ext = os.path.splitext(filename)[1].upper().replace('.', '')
+        self.footer.format_info.setText(f"Format: {ext}")
+
+        self.load_file(os.path.dirname(full_path), filename)
 
 # For testing the window independently
 if __name__ == "__main__":

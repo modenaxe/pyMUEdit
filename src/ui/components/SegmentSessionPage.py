@@ -1,3 +1,4 @@
+import os
 import matplotlib.cm as cm
 import numpy as np
 import pandas as pd
@@ -7,7 +8,9 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout,
                              QWidget)
 
+from core.database.database import upsert_file_versions
 from core.utils.data_processing.segmenttargets import segmenttargets
+from core.utils.session.convert_h5 import save_as_h5
 from ui.components import ActionButton
 from ui.components.CleanTheme import CleanTheme
 from ui.components.CollapsiblePanel import CollapsiblePanel
@@ -19,7 +22,7 @@ from .VisualizationPanel import VisualizationPanel
 
 
 class SegmentSessionPage(QWidget):
-    def __init__(self, filename, on_new_segment, on_done_clicked, parent=None):
+    def __init__(self, filename, on_new_segment, on_done_clicked, raw_fileid, parent=None):
         super().__init__(parent)
         self.rois = []
         self.coordinates = []
@@ -29,6 +32,8 @@ class SegmentSessionPage(QWidget):
         self.setMinimumSize(1024, 700)
         self.on_new_segment = on_new_segment
         self.on_done_clicked = on_done_clicked
+
+        self.raw_fileid = raw_fileid
 
         # left panel
         left_container = QWidget()
@@ -303,6 +308,16 @@ class SegmentSessionPage(QWidget):
         signal = self.file["signal"][0, 0]
         save_filename = f"{self.filename.split('.')[0]}_concatenated.mat"
         sio.savemat(save_filename, {"signal": signal}, do_compression=True)
+
+        # save as .h5 file
+        savename_h5 = f"{self.filename.split('.')[0]}_concatenated.h5"
+        save_as_h5(
+            {"signal": signal},
+            savename_h5,
+            raw_filepath=save_filename
+        )
+
+        versionid = upsert_file_versions(savename_h5, self.raw_fileid, "segmented")
         self.on_new_segment(save_filename)
 
     def split_clicked(self):
@@ -333,6 +348,16 @@ class SegmentSessionPage(QWidget):
             save_filename = f"{self.filename.split('.')[0]}_split_segment_{i + 1}.mat"
             signal = self.file["signal"][0, 0]
             sio.savemat(save_filename, {"signal": signal}, do_compression=True)
+
+            # save as .h5 file
+            savename_h5 = f"{self.filename.split('.')[0]}_split_segment_{i + 1}.h5"
+            save_as_h5(
+                {"signal": signal},
+                savename_h5,
+                raw_filepath=save_filename
+            )
+
+            versionid = upsert_file_versions(savename_h5, self.raw_fileid, "segmented")
             self.on_new_segment(save_filename)
 
         self.vis_plot.clear()

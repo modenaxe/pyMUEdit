@@ -12,6 +12,7 @@ src/logs/*
 .DS_Store
 .vscode
 .idea
-*.h5
+database.db
 *.zip
-*.db
+*.txt
+*.json
