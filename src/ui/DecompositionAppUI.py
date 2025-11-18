@@ -220,11 +220,11 @@ def setup_left_panel(main_window, parent_layout):
     use_threshold_field = FormCheckBox("Use Threshold", True)
     main_window.use_threshold_target_field = use_threshold_field.checkbox
     params_panel.add_widget(use_threshold_field)
-    
+
     use_threshold_field.checkbox.toggled.connect(
         lambda checked: threshold_field.spinbox.setEnabled(checked)
     )
-    
+
     threshold_field = FormDoubleSpinBox("Threshold Target", 0.9, 0, 1, 0.1)
     main_window.threshold_target_field = threshold_field.spinbox
     params_panel.add_widget(threshold_field)

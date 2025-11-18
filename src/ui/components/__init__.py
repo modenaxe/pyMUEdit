@@ -6,8 +6,8 @@ from .CleanTheme import CleanTheme
 from .CollapsiblePanel import CollapsiblePanel
 from .DatasetItem import DatasetItem
 from .ErrorDialog import ErrorDialog
-from .FormDoubleSpinBox import FormDoubleSpinBox
 from .FormCheckBox import FormCheckBox
+from .FormDoubleSpinBox import FormDoubleSpinBox
 from .FormDropdown import FormDropdown
 from .FormField import FormField
 from .FormSpinBox import FormSpinBox
