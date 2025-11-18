@@ -558,6 +558,36 @@ def setup_right_panel(main_window, parent_layout):
     parent_layout.addWidget(right_panel, 1)
 
 
+def load_config(self, config):
+    if not config:
+        return
+    if "contrast_function" in config:
+        self.contrast_function_dropdown.setCurrentText(
+            config["contrast_function"])
+    if "initialization" in config:
+        self.initialisation_dropdown.setCurrentText(config["initialization"])
+    if "peeloff" in config:
+        self.peeloff_dropdown.setCurrentText(config["peeloff"])
+    if "refine_mu" in config:
+        self.refine_mus_dropdown.setCurrentText(config["refine_mu"])
+    if "iterations" in config:
+        self.number_iterations_field.setValue(config["iterations"])
+    if "windows" in config:
+        self.number_windows_field.setValue(config["windows"])
+    if "threshold_target" in config:
+        self.threshold_target_field.setValue(config["threshold_target"])
+    if "extended_channels" in config:
+        self.nb_extended_channels_field.setValue(config["extended_channels"])
+    if "duplicates_threshold" in config:
+        self.duplicate_threshold_field.setValue(config["duplicates_threshold"])
+    if "sil_threshold" in config:
+        self.sil_threshold_field.setValue(config["sil_threshold"])
+    if "cov_threshold" in config:
+        self.cov_threshold_field.setValue(config["cov_threshold"])
+    if "method" in config:
+        self.algo_combo.setCurrentText(config["method"])
+
+
 def setup_bottom_navigation(main_window):
     """set up the bottom navigation bar with next and previous buttons"""
     # create the bottom navigation container

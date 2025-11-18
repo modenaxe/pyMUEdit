@@ -18,7 +18,7 @@ class DecompositionState:
     @staticmethod
     def ensure_state_directory():
         """Ensures that the states directory exists."""
-        global STATES_DIR 
+        global STATES_DIR
         logger.debug(f"Ensuring state directory exists at: {STATES_DIR}")
         if not os.path.exists(STATES_DIR):
             try:
@@ -31,7 +31,7 @@ class DecompositionState:
                 if not os.path.exists(STATES_DIR):
                     os.makedirs(STATES_DIR)
                 logger.exception(f"Using fallback states directory: {STATES_DIR}")
-    
+
     @staticmethod
     def save_state(decomp_app, state_name=None, raw_fileid=None):
         """
@@ -86,7 +86,7 @@ class DecompositionState:
         # Save pulse train plot data
         if hasattr(decomp_app, 'ui_plot_pulsetrain'):
             plot_data['pulsetrain'] = DecompositionState._extract_plot_data(decomp_app.ui_plot_pulsetrain)
-        
+
         logger.info(f"Detected {total_mus} motor units")
         if sil_value is None:
             logger.warning("SIL value missing in decomposition app")
@@ -122,6 +122,7 @@ class DecompositionState:
 
             # Path to the saved output file for reference
             'output_file': os.path.join(decomp_app.pathname, decomp_app.filename + "_output_decomp.mat") if decomp_app.pathname and decomp_app.filename else None,
+
         }
 
         # Try to safely extract EMG data for channel viewer
@@ -150,10 +151,9 @@ class DecompositionState:
             with open(state_path, 'wb') as f:
                 pickle.dump(serializable_state, f)
             logger.info(f"State saved successfully to {state_path}")
-            versionid = upsert_file_versions(state_path, raw_fileid, "decomposed")
         except Exception as e:
             logger.exception(f"Error saving state: {e}")
-        
+
         # Return metadata for the saved state
         return {
             'state_name': state_name,

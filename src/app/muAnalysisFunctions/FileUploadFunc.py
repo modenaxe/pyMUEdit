@@ -15,11 +15,13 @@ class FileUploadFunc:
     # global instance of file
     file = None
 
-    def __init__(self):
+    def __init__(self, parent=None):
         """Initialises class instance
         Params: None
         Returns: class instance
         """
+        self.parent = parent
+        self.original_file_path = None
         self.file_path = None
         self.coords = []
         self.cid = None
@@ -58,7 +60,10 @@ class FileUploadFunc:
                 None, "Select file", "", "MAT Files (*.mat);;All Files (*.*)"
             )
         if file_path:
-            self.load_file(analysis_plot, file_path, json)
+            # If there is no error with loading file, update file info in footer
+            error = self.load_file(analysis_plot, file_path, json)
+            if error == 0:
+                self.parent.update_footer_file_info(file_path)
 
     def load_file(self, analysis_plot, file_path, json):
         """Load EMG file from specified path and plot the data
