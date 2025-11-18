@@ -548,11 +548,13 @@ def setup_right_panel(main_window, parent_layout):
     right_layout.addStretch(1)
     parent_layout.addWidget(right_panel, 1)
 
+
 def load_config(self, config):
     if not config:
         return
     if "contrast_function" in config:
-        self.contrast_function_dropdown.setCurrentText(config["contrast_function"])
+        self.contrast_function_dropdown.setCurrentText(
+            config["contrast_function"])
     if "initialization" in config:
         self.initialisation_dropdown.setCurrentText(config["initialization"])
     if "peeloff" in config:
@@ -575,6 +577,7 @@ def load_config(self, config):
         self.cov_threshold_field.setValue(config["cov_threshold"])
     if "method" in config:
         self.algo_combo.setCurrentText(config["method"])
+
 
 def setup_bottom_navigation(main_window):
     """set up the bottom navigation bar with next and previous buttons"""
