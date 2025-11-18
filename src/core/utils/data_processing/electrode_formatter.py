@@ -2,6 +2,7 @@ import numpy as np
 from core.utils.preprocessing.notch_filter import notch_filter
 from core.utils.preprocessing.bandpass_filter import bandpass_filter
 from typing import TYPE_CHECKING, Any, Dict, List, Union, Tuple
+from core.logger import logger
 
 if TYPE_CHECKING:
     from EmgDecomposition import offline_EMG
@@ -16,7 +17,7 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
         emg_obj: Instance of offline_EMG class
     """
     grid_names = emg_obj.signal_dict["gridname"]
-    print(f"Grid names: {grid_names}")
+    logger.debug(f"Grid names: {grid_names}")
     ElChannelMap = []
     coordinates = []
     emg_obj.emgopt = []
@@ -27,13 +28,13 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
     emg_obj.signal_dict["filtered_data"] = np.zeros(
         [np.shape(emg_obj.signal_dict["data"])[0], np.shape(emg_obj.signal_dict["data"])[1]]
     )
-    print(f"Initialized filtered_data with shape {emg_obj.signal_dict['filtered_data'].shape}")
+    logger.debug(f"Initialized filtered_data with shape {emg_obj.signal_dict['filtered_data'].shape}")
 
     for i in range(emg_obj.signal_dict["ngrid"]):
-        print(f"\nProcessing grid {i+1}/{emg_obj.signal_dict['ngrid']}: {grid_names[i]}")
+        logger.debug(f"\nProcessing grid {i+1}/{emg_obj.signal_dict['ngrid']}: {grid_names[i]}")
 
         if grid_names[i] == "GR04MM1305":
-            print(f"Configuring {grid_names[i]} (4mm grid)")
+            logger.debug(f"Configuring {grid_names[i]} (4mm grid)")
             ElChannelMap.append(
                 [
                     [0, 24, 25, 50, 51],
@@ -58,7 +59,7 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
             emg_obj.emgopt.append("surface")
 
         elif grid_names[i] == "ELSCH064NM2":
-            print(f"Configuring {grid_names[i]} (non-mapped EMG)")
+            logger.debug(f"Configuring {grid_names[i]} (non-mapped EMG)")
             ElChannelMap.append(
                 [
                     [0, 0, 1, 2, 3],
@@ -83,7 +84,7 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
             emg_obj.emgopt.append("surface")
 
         elif grid_names[i] == "GR08MM1305":
-            print(f"Configuring {grid_names[i]} (8mm grid)")
+            logger.debug(f"Configuring {grid_names[i]} (8mm grid)")
             ElChannelMap.append(
                 [
                     [0, 24, 25, 50, 51],
@@ -108,7 +109,7 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
             emg_obj.emgopt.append("surface")
 
         elif grid_names[i] == "GR10MM0808":
-            print(f"Configuring {grid_names[i]} (10mm grid)")
+            logger.debug(f"Configuring {grid_names[i]} (10mm grid)")
             ElChannelMap.append(
                 [
                     [7, 15, 23, 31, 39, 47, 55, 63],
@@ -128,7 +129,7 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
             emg_obj.emgopt.append("surface")
 
         elif grid_names[i] == "other":
-            print(f"Configuring {grid_names[i]} (other type - assuming thin-film)")
+            logger.debug(f"Configuring {grid_names[i]} (other type - assuming thin-film)")
             # TO DO: match up to the relevant configuration for a thin-film
             ElChannelMap.append(
                 [
@@ -154,7 +155,7 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
             emg_obj.emgopt.append("intra")
 
         elif grid_names[i] == "Thin film":
-            print(f"Configuring {grid_names[i]} (thin film)")
+            logger.debug(f"Configuring {grid_names[i]} (thin film)")
             ElChannelMap.append(
                 [
                     [0, 10, 20, 30],
@@ -176,7 +177,7 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
             emg_obj.emgopt.append("intra")
 
         elif grid_names[i] == "4-wire needle":
-            print(f"Configuring {grid_names[i]} (4-wire needle)")
+            logger.debug(f"Configuring {grid_names[i]} (4-wire needle)")
             ElChannelMap.append([[0, 8], [1, 9], [2, 10], [3, 11], [4, 12], [5, 13], [6, 14], [7, 15]])
 
             IED.append(4)
@@ -185,7 +186,7 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
             emg_obj.emgopt.append("intra")
 
         elif grid_names[i] == "Myomatrix Monopolar":
-            print(f"Configuring {grid_names[i]} (Myomatrix Monopolar)")
+            logger.debug(f"Configuring {grid_names[i]} (Myomatrix Monopolar)")
             ElChannelMap.append(
                 [
                     [0, 8, 16, 24],
@@ -205,7 +206,7 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
             emg_obj.emgopt.append("intra")
 
         else:
-            print(f"Unknown electrode type {grid_names[i]} - assuming intramuscular array")
+            logger.debug(f"Unknown electrode type {grid_names[i]} - assuming intramuscular array")
             # assume that it is some variation of an intramusuclar array
             ElChannelMap.append([[0, 8], [1, 9], [2, 10], [3, 11], [4, 12], [5, 13], [6, 14], [7, 15]])
 
@@ -219,17 +220,17 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
         row_indices, col_indices = np.unravel_index(np.arange(ElChannelMap[i].size), (rows, cols))
         coordinates[i][:, 0] = row_indices[1:]
         coordinates[i][:, 1] = col_indices[1:]
-        print(f"Set coordinates for electrode {i}, shape: {coordinates[i].shape}")
+        logger.debug(f"Set coordinates for electrode {i}, shape: {coordinates[i].shape}")
 
         c_map.append(np.shape(ElChannelMap[i])[1])
         r_map.append(np.shape(ElChannelMap[i])[0])
-        print(f"Electrode {i} dimensions: rows={r_map[i]}, columns={c_map[i]}")
+        logger.debug(f"Electrode {i} dimensions: rows={r_map[i]}, columns={c_map[i]}")
 
         electrode = i + 1
-        print(f"Filtering data for electrode {electrode}...")
+        logger.debug(f"Filtering data for electrode {electrode}...")
 
         # notch filtering
-        print(f"Applying notch filter to electrode {electrode}...")
+        logger.debug(f"Applying notch filter to electrode {electrode}...")
         emg_obj.signal_dict["filtered_data"][
             chans_per_electrode[i] * (electrode - 1) : electrode * chans_per_electrode[i], :
         ] = notch_filter(
@@ -240,7 +241,7 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
         )
 
         # bandpass filtering
-        print(f"Applying bandpass filter to electrode {electrode} with type {emg_obj.emgopt[i]}...")
+        logger.debug(f"Applying bandpass filter to electrode {electrode} with type {emg_obj.emgopt[i]}...")
         emg_obj.signal_dict["filtered_data"][
             chans_per_electrode[i] * (electrode - 1) : electrode * chans_per_electrode[i], :
         ] = bandpass_filter(
@@ -256,9 +257,9 @@ def electrode_formatter(emg_obj: "offline_EMG") -> None:
     emg_obj.ied = IED
     emg_obj.chans_per_electrode = chans_per_electrode
     emg_obj.coordinates = coordinates
-    print(f"Electrode formatting results:")
-    print(f"  - c_maps: {emg_obj.c_maps}")
-    print(f"  - r_maps: {emg_obj.r_maps}")
-    print(f"  - IEDs: {emg_obj.ied}")
-    print(f"  - Channels per electrode: {emg_obj.chans_per_electrode}")
-    print(f"  - EMG types: {emg_obj.emgopt}")
+    logger.debug(f"Electrode formatting results:")
+    logger.debug(f"  - c_maps: {emg_obj.c_maps}")
+    logger.debug(f"  - r_maps: {emg_obj.r_maps}")
+    logger.debug(f"  - IEDs: {emg_obj.ied}")
+    logger.debug(f"  - Channels per electrode: {emg_obj.chans_per_electrode}")
+    logger.debug(f"  - EMG types: {emg_obj.emgopt}")

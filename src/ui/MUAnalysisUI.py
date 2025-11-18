@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
 from app.muAnalysisFunctions.ResizeFunc import Resize
+from core.logger import logger
 from core.muAnalysisCore.AnalysisResultsHist import store
 from core.utils.io.filesize_formatter import filesize_formatter
 from ui.components import ActionButton, CleanScrollBar
@@ -166,8 +167,10 @@ class MUAnalysis(QWidget):
     def handle_save_as(self):
         if hasattr(self, "results_section"):
             self.results_section.save_results()
+            logger.debug(
+                "Save As: Results successfully saved via ResultsPanel.")
         else:
-            print("Save as: ResultsPanel not found")
+            logger.warning("Save as: ResultsPanel not found")
 
     # dropdown order for matrix code
     # the border on the right sidebar

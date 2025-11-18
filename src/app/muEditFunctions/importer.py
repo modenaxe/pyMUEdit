@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt
 
 from core.utils.manual_editing.h5_import import h5py_convert
+from core.logger import logger
 
 # Import custom components
 from ui.components import (
@@ -47,15 +48,12 @@ def import_data(self):
         except NotImplementedError:
             try:
                 f = h5py.File(filepath, "r")
-                print("h5py File load success")
+                logger.debug("h5py File load success")
                 self.ish5 = True
                 files = h5py_convert().h5py_to_dict(f)
-                print("h5py File convert complete")
+                logger.debug("h5py File convert complete")
             except Exception:
-                import traceback
-                traceback.print_exc()
-            # f.close()
-
+                logger.exception("Error converting h5py file")
         if not self.ish5:
             #check the data with "signal" and "Pulsetrain"
             if "signal" not in files or (
@@ -63,6 +61,7 @@ def import_data(self):
                     and "Pulsetrain" not in files
             ):
                 QApplication.restoreOverrideCursor()  # Restore Mouse State
+                logger.error("Missing 'signal' or 'Pulsetrain'")
                 raise KeyError("Missing 'signal' or 'Pulsetrain'")
         else:
             #check the data with "signal" and "Pulsetrain"
@@ -70,6 +69,7 @@ def import_data(self):
                     "Pulsetrain" not in files["signal"].keys()
             ):
                 QApplication.restoreOverrideCursor()  # Restore Mouse State
+                logger.error("Missing 'signal' or 'Pulsetrain'")
                 raise KeyError("Missing 'signal' or 'Pulsetrain'")
 
         # Initialize the MUedition data structure
@@ -94,7 +94,7 @@ def import_data(self):
             else:
                 import_h5py_decomposed_file(self, files)
 
-        print("File import complete")
+        logger.debug("File import complete")
 
         # Overlay skips the setup
         if getattr(self, "is_overlay", False):
@@ -154,14 +154,14 @@ def import_data(self):
 
     except KeyError as ke:
         QApplication.restoreOverrideCursor()
+        logger.error(f"The .mat file is missing required fields:\n{ke}")
         ErrorDialog(title_label="Missing Field", text=f"The .mat file is missing required fields:\n{ke}")
         import traceback
         traceback.print_exc()
         return False
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         QApplication.restoreOverrideCursor()
+        logger.exception(f"Failed to load the file:\n{str(e)}")
         ErrorDialog(title_label="Import Error", text=f"Failed to load the file:\n{str(e)}")
         return False
 
@@ -206,7 +206,7 @@ def import_edited_file(self, files):
                         new_dict[idx] = v
                 self.MUedition["edition"][field] = new_dict
             except Exception as e:
-                print(f"Error loading field {field}: {e}")
+                logger.exception(f"Error loading field {field}: {e}")
                 self.MUedition["edition"][field] = {}
 
         # Process pulsetrain

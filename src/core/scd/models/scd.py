@@ -24,6 +24,7 @@ from ..models.timestamping import (
 
 from ..utils.plotting import plot_accepted_source
 from ..config.structures import set_random_seed
+from core.logger import logger
 
 set_random_seed(seed=42)
 
@@ -99,7 +100,7 @@ class SwarmContrastiveDecomposition(torch.nn.Module):
 
         # Return the emg shape if in verbose mode
         if self.config.verbose_mode:
-            print(f"EMG shape: {emg.shape}")
+           logger.info(f"EMG shape: {emg.shape}")
 
         return emg
 
@@ -473,7 +474,7 @@ class SwarmContrastiveDecomposition(torch.nn.Module):
 
             # Print the message if mode is verbose
             if self.config.verbose_mode:
-                print(message)
+                logger.info(message)
 
             if self.logging_function:
                 self.logging_function(message)

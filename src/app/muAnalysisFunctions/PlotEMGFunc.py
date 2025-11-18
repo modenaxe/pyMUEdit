@@ -1,3 +1,5 @@
+from core.logger import logger
+
 def parse_mu_input(raw_text):
     """Parses the MU input text and returns a sorted list of MU numbers.
 

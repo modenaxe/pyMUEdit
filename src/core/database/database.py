@@ -3,6 +3,7 @@ import sqlite3
 from pathlib import Path
 from datetime import datetime
 import json
+from core.logger import logger
 
 PATH_TO_SCHEMA = Path("./core/database/schema.sql")
 PATH_TO_DATABASE = Path("./core/database/database.db")
@@ -20,7 +21,7 @@ def init_db():
     """
     try:
         with sqlite3.connect(PATH_TO_DATABASE) as connection:
-            print(f"Set up SQLite database successfully")
+            logger.debug(f"Set up SQLite database successfully")
 
             cursor = connection.cursor()
             schema = PATH_TO_SCHEMA.read_text()
@@ -29,7 +30,7 @@ def init_db():
 
             load_stage_map()
     except (sqlite3.OperationalError) as e:
-        print("Failed to initialise database:", e)
+        logger.exception("Failed to initialise database:")
         return None
 
 def get_connection():
@@ -255,7 +256,7 @@ def get_stageid(stage: str) -> id:
     try:
         return STAGES[stage]
     except Exception as e:
-        print(f"Invalid stage '{e}': must be one of {STAGES}")
+        logger.exception(f"Invalid stage '{e}': must be one of {STAGES}")
 
 def get_fileid_by_path(filepath: str):
     """Return fileid if the file already exists in the database, else None"""

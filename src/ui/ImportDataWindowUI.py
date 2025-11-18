@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
                              QPushButton, QScrollArea, QSizePolicy,
                              QSpacerItem, QStackedWidget, QVBoxLayout, QWidget)
 
+from core.logger import logger
 # Import custom components
 from ui.components import (ActionButton, CleanCard, CleanTheme, SectionHeader,
                            Sidebar, VisualizationPanel)
@@ -160,7 +161,7 @@ def create_preview_section(import_window):
     upload_icon_path = ICONS_PATH / "upload_icon.svg"
 
     if not upload_icon_path.exists():
-        print(f"Warning: Icon not found at {upload_icon_path}")
+        logger.warning(f"Icon not found at {upload_icon_path}")
     else:
         cloud_icon = QSvgWidget(str(upload_icon_path))
         cloud_icon.setStyleSheet("""

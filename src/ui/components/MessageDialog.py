@@ -5,6 +5,8 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (QCheckBox, QDialog, QHBoxLayout, QLabel,
                              QPushButton, QStyle, QToolButton, QVBoxLayout)
 
+from core.logger import logger
+
 
 class MessageDialog(QDialog):
     def __init__(
@@ -61,7 +63,7 @@ class MessageDialog(QDialog):
         if not os.path.exists(icon_path) or not pixmap or pixmap.isNull():
             icon = self.style().standardIcon(QStyle.SP_MessageBoxQuestion)
             icon_label.setPixmap(icon.pixmap(48, 48))
-            print("❓ Image not found")
+            logger.debug("❓ Image not found")
         else:
             icon_label.setPixmap(
                 pixmap.scaled(
