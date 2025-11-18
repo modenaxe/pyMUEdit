@@ -570,8 +570,14 @@ class ImportDataWindow(QMainWindow):
     def enable_segment_session(self):
         if self.segment_session_button and self.pathname and self.filename:
             base_name = os.path.splitext(self.filename)[0]
-            filename = os.path.join(self.pathname, f"{base_name}_processed.mat")
-            self.segment_session = SegmentSessionPage(filename, self.add_file_to_recent_files, self.update_recent_files, self.raw_fileid)
+
+            if base_name.endswith("_processed"):
+                processed_filename = self.filename
+            else:
+                processed_filename = f"{base_name}_processed.mat"
+
+            filename = os.path.join(self.pathname, processed_filename)
+            self.segment_session = SegmentSessionPage(filename, self.add_file_to_recent_files, self.update_recent_files)
 
             self.segment_session_button.setEnabled(True)
 
