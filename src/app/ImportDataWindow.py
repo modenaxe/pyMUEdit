@@ -128,14 +128,14 @@ class ImportDataWindow(QMainWindow):
                 # Update UI to show selected file
                 self.file_info_label.setText(f"Selected: {self.filename}")
                 self.file_info_label.setVisible(True)
-                self.footer_file_info.setText(f"File: {self.filename}")
+                self.footer.footer_file_info.setText(f"File: {self.filename}")
 
                 # Update file size and format
                 size_str = filesize_formatter(file_path)
                 file_format = os.path.splitext(self.filename)[1].upper().replace(".", "")
 
-                self.size_info.setText(f"Size: {size_str}")
-                self.format_info.setText(f"Format: {file_format}")
+                self.footer.size_info.setText(f"Size: {size_str}")
+                self.footer.format_info.setText(f"Format: {file_format}")
 
                 # Load the file
                 self.load_file(self.pathname, self.filename)
@@ -261,13 +261,13 @@ class ImportDataWindow(QMainWindow):
         # Update UI to show selected file
         self.file_info_label.setText(f"Selected: {self.filename}")
         self.file_info_label.setVisible(True)
-        self.footer_file_info.setText(f"File: {self.filename}")
+        self.footer.footer_file_info.setText(f"File: {self.filename}")
 
         file_format = os.path.splitext(self.filename)[1].upper().replace(".", "")
         size_str = filesize_formatter(file)
 
-        self.size_info.setText(f"Size: {size_str}")
-        self.format_info.setText(f"Format: {file_format}")
+        self.footer.size_info.setText(f"Size: {size_str}")
+        self.footer.format_info.setText(f"Format: {file_format}")
 
         # Load the file (passing the whole path)
         self.load_file(self.pathname, self.filename)
@@ -281,16 +281,16 @@ class ImportDataWindow(QMainWindow):
         self.pathname = os.path.dirname(filename) + "/"
 
         # Update UI to show selected file
-        self.file_info_label.setText(f"Selected: {self.filename}")
-        self.file_info_label.setVisible(True)
-        self.footer_file_info.setText(f"File: {self.filename}")
+        self.footer.file_info_label.setText(f"Selected: {self.filename}")
+        self.footer.lfile_info_label.setVisible(True)
+        self.footer.footer_file_info.setText(f"File: {self.filename}")
 
         # Get file size in bytes
         size_str = filesize_formatter(filename)
         file_format = os.path.splitext(self.filename)[1].upper().replace(".", "")
 
-        self.size_info.setText(f"Size: {size_str}")
-        self.format_info.setText(f"Format: {file_format}")
+        self.footer.size_info.setText(f"Size: {size_str}")
+        self.footer.format_info.setText(f"Format: {file_format}")
 
         # Load the file (passing the whole path)
         self.load_file(self.pathname, self.filename)
@@ -396,7 +396,7 @@ class ImportDataWindow(QMainWindow):
 
                 # Resize app window to show the plot properly, then display the plot in the preview pane
                 self.preview_stacked_frame.setCurrentIndex(PreviewElement.GRAPH.value)
-                self.next_btn.setEnabled(True)
+                self.footer.next_btn.setEnabled(True)
 
                 # Signal that we've imported a file with more details
                 file_info = {
@@ -447,7 +447,10 @@ class ImportDataWindow(QMainWindow):
             except Exception as e:
                 self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
                 self.preview_message.setText(f"Error loading file: {str(e)}")
-                self.next_btn.setEnabled(False)
+                self.play_error_popup("Error loading file", str(e))
+                print(f"Error loading OTB+ file: {e}")
+                traceback.print_exc()
+                self.footer.next_btn.setEnabled(False)
                 # Change file label to red if failure
                 self.file_info_label.setText(f"Failed uploading: {self.filename}")
                 self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
@@ -456,7 +459,7 @@ class ImportDataWindow(QMainWindow):
             self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
             self.preview_message.setText(f"File type {ext} not supported in this demo.\nPlease select an OTB+ file.")
             self.play_error_popup(f"File type error", f"File type {ext} not supported in this demo.\nPlease select an OTB+ file.")
-            self.next_btn.setEnabled(False)
+            self.footer.next_btn.setEnabled(False)
             self.file_info_label.setText(f"Failed uploading: {self.filename}")
             self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
             self.failure_message.setVisible(True)
@@ -912,6 +915,12 @@ class ImportDataWindow(QMainWindow):
             # update the file path field in the ui
             if hasattr(self.manual_editing_page, 'file_path_field'):
                 self.manual_editing_page.file_path_field.setText(filename)
+
+            # update file info in the top upload file button
+            self.manual_editing_page.select_file_title_btn.setText(filename) 
+
+            # update footer file info
+            self.manual_editing_page.update_footer_file_info(full_file_path)
 
             # import the data using the existing import function
             from app.muEditFunctions.importer import import_data
