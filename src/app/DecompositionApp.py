@@ -568,8 +568,6 @@ class DecompositionApp(QMainWindow):
     def on_save_finished(self, worker):
         self.edit_field.setText("Data saved successfully")
         self.cleanup_thread(worker)
-        # self.next_button.setEnabled(True)
-        # self.next_to_editing_btn.setEnabled(True)
         self.footer.next_btn.setEnabled(True)
 
     def on_save_error(self, worker, error_msg):

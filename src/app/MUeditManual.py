@@ -26,6 +26,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QKeySequence
 from core.logger import logger
 from types import MethodType
+from pathlib import Path
 
 import h5py
 
@@ -51,6 +52,8 @@ from core.utils.manual_editing.smart_button_pushed import smart_button_pushed
 from core.utils.manual_editing.batch_filter_worker import batch_filter_worker
 from core.utils.manual_editing.duplicates_within_grids_worker import duplicates_within_grids_worker
 from core.utils.manual_editing.duplicates_between_grids_worker import duplicates_between_grids_worker
+
+from core.utils.io.filesize_formatter import filesize_formatter
 
 from app.muEditFunctions.importer import import_data
 from app.muEditFunctions.plotting import *
@@ -371,20 +374,49 @@ class MUeditManual(QMainWindow):
             sc.setContext(Qt.WindowShortcut)
             sc.activated.connect(slot)
 
+    def update_footer_file_info(self, file_path):
+        if not file_path:
+            self.footer.footer_file_info.setText("No file selected")
+            self.footer.size_info.setText("Size: --")
+            self.footer.format_info.setText("Format: --")
+            return
+    
+        file_name = Path(file_path).name
+        file_ext = Path(file_path).suffix
+        try:
+            file_size = filesize_formatter(file_path)
+            size_str = f"{file_size}"
+        except Exception:
+            size_str = "--"
+    
+        self.footer.footer_file_info.setText(f"File: {file_name}")
+        self.footer.size_info.setText(f"Size: {size_str}")
+        self.footer.format_info.setText(f"Format: {file_ext}")
+
     # Event handlers
     def select_file_button_pushed(self):
         """Open file dialog to select file for editing and automatically import it."""
         file_dialog = QFileDialog()
         file_path, _ = file_dialog.getOpenFileName(self, "Select file", "", "MAT Files (*.mat);;All Files (*.*)")
 
-        if file_path:
-            self.pathname = os.path.dirname(file_path) + "/"
-            self.filename = os.path.basename(file_path)
-            self.file_path_field.setText(self.filename)
-            self.select_file_title_btn.setText(self.filename)
+        if not file_path:
+            return 
+        
+        self.pathname = os.path.dirname(file_path) + "/"
+        self.filename = os.path.basename(file_path)
+        self.file_path_field.setText(self.filename)
+        self.select_file_title_btn.setText(self.filename)
+        
+        valid = import_data(self)
 
-            import_data(self)
-                    
+        if not valid:
+            return 
+
+        # Update footer file info only if file imported successfully
+        file_info = os.path.join(self.pathname, self.filename)
+        if hasattr(self, "update_footer_file_info"):
+            self.update_footer_file_info(file_info)
+
     def update_action_button_states(self):
         enabled = self.plot_display_mode == 0
         self.add_spikes_btn.setEnabled(enabled)

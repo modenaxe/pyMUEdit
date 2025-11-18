@@ -16,6 +16,8 @@ from ui.components import (ActionButton, CleanCard, CleanTheme, SectionHeader,
                            Sidebar, VisualizationPanel)
 from ui.components.CleanScrollBar import CleanScrollBar
 
+from ui.components.Footer import Footer
+
 # Define absolute path to the public icons folder (same logic as Sidebar.py)
 ABS_PATH = Path(__file__).parent.parent
 ICONS_PATH = ABS_PATH / "public"
@@ -253,7 +255,7 @@ def create_configuration_section(import_window):
     config_group.addWidget(import_window.channel_view_button)
     return config_group
 
-
+'''
 def create_footer(import_window):
     """Create the footer with file info and navigation buttons."""
     footer = QFrame()
@@ -289,16 +291,20 @@ def create_footer(import_window):
     footer_layout.addSpacing(20)
 
     # Create navigation buttons
+    # prev_btn = ActionButton("← Previous", primary=False)
+    # prev_btn.clicked.connect(import_window.go_back)
+
     import_window.next_btn = ActionButton("Next →", primary=True)
     import_window.next_btn.clicked.connect(
         import_window.go_to_algorithm_screen)
     import_window.next_btn.setEnabled(False)
 
     # Add navigation buttons to layout
+    # footer_layout.addWidget(prev_btn)
     footer_layout.addSpacing(10)
     footer_layout.addWidget(import_window.next_btn)
     return footer
-
+'''
 
 def find_sidebar(import_window):
     """Find the sidebar component in the application hierarchy."""
@@ -482,10 +488,15 @@ def _create_import_page(import_window):
 
     right_v.addWidget(scroll_area, 1)
 
-    footer = create_footer(import_window)
-    footer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-    footer.setFixedHeight(64)
-    right_v.addWidget(footer, 0)
+    import_window.footer = Footer(
+        on_prev=None,
+        on_next=import_window.go_to_algorithm_screen
+    )
+    import_window.footer.next_btn.setEnabled(False)
+    import_window.footer.prev_btn.hide() 
+    import_window.footer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    import_window.footer.setFixedHeight(64)
+    right_v.addWidget(import_window.footer, 0)
 
     return right_layout
 
