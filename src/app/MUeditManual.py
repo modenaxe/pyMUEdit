@@ -155,7 +155,7 @@ class MUeditManual(QMainWindow):
             "action": message
         }
         self.action_logs.append(log_entry)
-        print(message)
+        logger.info(message)
 
     def get_action_logs(self):
         return self.action_logs
@@ -385,7 +385,6 @@ class MUeditManual(QMainWindow):
 
     # Event handlers
     def select_file_button_pushed(self):
-        print(self.raw_fileid)
         """Open file dialog to select file for editing and automatically import it."""
         file_dialog = QFileDialog()
         file_path, _ = file_dialog.getOpenFileName(
@@ -776,14 +775,17 @@ class MUeditManual(QMainWindow):
         if action_type == "add_spikes" and delta > 0:
             self.show_tip(f"Added {delta} spike(s)", duration_ms=4000)
             logger.info(f"Added {delta} spike(s)")
+            self.log_action(f"Selection completed: action={action_type}, array={array_idx+1}, MU={mu_idx+1}, "f"X=({x_min},{x_max}), Y=({y_min},{y_max})")
 
         elif action_type == "delete_spikes" and delta < 0:
             self.show_tip(f"Deleted {-delta} spike(s)", duration_ms=4000)
             logger.info(f"Deleted {-delta} spike(s)")
+            self.log_action(f"Selection completed: action={action_type}, array={array_idx+1}, MU={mu_idx+1}, "f"X=({x_min},{x_max}), Y=({y_min},{y_max})")
 
         elif action_type == "delete_dr":
             self.show_tip("Deleted discharge rate points", duration_ms=4000)
             logger.info("Deleted discharge rate points")
+            self.log_action(f"Selection completed: action={action_type}, array={array_idx+1}, MU={mu_idx+1}, "f"X=({x_min},{x_max}), Y=({y_min},{y_max})")
 
         # Update the display
         # for checkbox in self.mu_checkboxes:
@@ -796,8 +798,6 @@ class MUeditManual(QMainWindow):
         pulse_train_array = self.MUedition["edition"]["Pulsetrain"][array_idx]
         pulse_train = pulse_train_array[mu_idx, :]  # Use 2D indexing to get the full row
         discharge_times = self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
-
-        self.log_action(f"Selection completed: action={action_type}, array={array_idx+1}, MU={mu_idx+1}, "f"X=({x_min},{x_max}), Y=({y_min},{y_max})")
 
         self.update_save_button()
         update_dr_plot(self, discharge_times)

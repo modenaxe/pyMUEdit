@@ -172,9 +172,9 @@ class ImportDataWindow(QMainWindow):
                         stage = version.get("stage", "unknown")
                         json_filename = f"{stage}_config.json"
                         json_filepath = os.path.join(os.path.dirname(version_path) if version_path else ".", json_filename)
-
                         with open(json_filepath, 'w') as f:
                             json.dump(log, f, indent=4)
+                        logger.debug(f"Saved {stage} config to {json_filepath}")
                         file_paths_to_zip.append(json_filepath)
 
             if not file_paths_to_zip:
@@ -235,7 +235,7 @@ class ImportDataWindow(QMainWindow):
                 self.show_decomposition_view()
                 self.decomp_app.imported_h5_session_decomp(signal_dict, config_dict)
 
-            print(f"Files extracted to: {extract_dir}")
+            logger.debug(f"Files extracted to: {extract_dir}")
 
 
     def select_file(self):
@@ -343,7 +343,7 @@ class ImportDataWindow(QMainWindow):
                         if self.emg_obj.signal_dict:
                             save_as_h5(self.emg_obj.signal_dict, h5_readin_savename)
                     except Exception as e:
-                        print(f"Error saving .h5 file: {e}")
+                        logger.debug(f"Error saving .h5 file: {e}")
 
                 elif ext == ".h5":
                     full_path = os.path.join(path, file)

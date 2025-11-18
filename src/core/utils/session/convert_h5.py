@@ -4,6 +4,7 @@ import numpy as np
 import traceback
 import os
 import ast
+from core.logger import logger
 
 def save_as_h5(signal_dict, output_path, raw_filepath=None, config=None):
     """
@@ -21,12 +22,12 @@ def save_as_h5(signal_dict, output_path, raw_filepath=None, config=None):
                 try:
                     f.attrs['config'] = json.dumps(config)
                 except Exception as e:
-                    print(f"Error saving 'config' attribute: {e}")
+                    logger.warning(f"Error saving 'config' attribute: {e}")
                     traceback.print_exc()
 
-        print(f"Successfully saved HDF5 file at {output_path}")
+        logger.debug(f"Successfully saved HDF5 file at {output_path}")
     except Exception as e:
-        print(f"Error during saving HDF5 file at {output_path}:")
+        logger.warning(f"Error during saving HDF5 file at {output_path}:")
         traceback.print_exc()
 
 
@@ -84,7 +85,7 @@ def _save_dict_to_h5(h5_group, data_dict):
                     h5_group.attrs[key] = str(value)
 
         except Exception as e:
-            print(f"Error saving key '{key}': {e}")
+            logger.warning(f"Error saving key '{key}': {e}")
             traceback.print_exc()
 
 
@@ -110,11 +111,11 @@ def load_from_h5(filepath):
                 try:
                     config_dict = json.loads(config_str)
                 except json.JSONDecodeError:
-                    print("Warning: Could not parse config JSON")
+                    logger.warning("Warning: Could not parse config JSON")
                     config_dict = None
 
     except Exception as e:
-        print(f"Error loading HDF5 file: {e}")
+        logger.warning(f"Error loading HDF5 file: {e}")
         traceback.print_exc()
 
     return signal_dict, raw_filepath, config_dict

@@ -54,7 +54,6 @@ def save_button_pushed(self):
     save_file(self, savename)
 
 def save_file(self, filepath):
-    print(filepath)
     if not self.MUedition:
         return
 
@@ -205,7 +204,6 @@ def save_file(self, filepath):
     }
 
     log = self.get_action_logs()
-    print(log)
     # h5_readin_savename = os.path.join(path, f"{base_name}_readin.h5")
     base_name = os.path.splitext(os.path.basename(filepath))[0]
     h5_save_filename = os.path.join(self.pathname, f"{base_name}_edited.h5")

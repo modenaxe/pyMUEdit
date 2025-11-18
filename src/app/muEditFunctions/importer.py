@@ -461,4 +461,4 @@ def import_h5py_decomposed_file(self, files):
 
     self.MUedition["signal"]["auxiliaryname"] = np.array([auxname_list])
 
-    self.MUedition["signal"]["auxiliary"] = self.MUedition["signal"]["auxiliary"].Ts
+    self.MUedition["signal"]["auxiliary"] = self.MUedition["signal"]["auxiliary"].T
