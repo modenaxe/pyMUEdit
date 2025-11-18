@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
 from app.muAnalysisFunctions.ResizeFunc import Resize
+from core.logger import logger
 from core.muAnalysisCore.AnalysisResultsHist import store
 from ui.components import ActionButton, CleanScrollBar
 from ui.components import CleanTheme as Theme
@@ -25,7 +26,7 @@ from ui.muanalysis.ResultSelection import ResultSelection
 from ui.muanalysis.ResultsPanel import ResultsPanel
 from ui.muanalysis.ResultsTable import ResultsTable
 from ui.muanalysis.SignalEditing import SignalEditing
-from core.logger import logger
+
 
 # legacy code
 def get_icon(standard_icon):
@@ -132,7 +133,8 @@ class MUAnalysis(QWidget):
     def handle_save_as(self):
         if hasattr(self, "results_section"):
             self.results_section.save_results()
-            logger.debug("Save As: Results successfully saved via ResultsPanel.")
+            logger.debug(
+                "Save As: Results successfully saved via ResultsPanel.")
         else:
             logger.warning("Save as: ResultsPanel not found")
 

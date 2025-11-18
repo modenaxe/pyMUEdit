@@ -29,8 +29,6 @@ def update_spike_train_plot(
     red with slight opacity.
     """
 
-    logger.debug(f"update_spike_train_plot {'(overlay)' if overlay else ''}")
-
     time_vector = self.MUedition["edition"]["time"]
 
     # Clear existing plots only if not overlaying

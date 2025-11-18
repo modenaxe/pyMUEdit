@@ -4,7 +4,9 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (QCheckBox, QDialog, QHBoxLayout, QLabel,
                              QPushButton, QStyle, QToolButton, QVBoxLayout)
+
 from core.logger import logger
+
 
 class MessageDialog(QDialog):
     def __init__(

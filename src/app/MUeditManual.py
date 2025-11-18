@@ -735,8 +735,35 @@ class MUeditManual(QMainWindow):
 
     def handle_selection_complete(self, action_type, array_idx, mu_idx, x_min, x_max, y_min, y_max):
         """Handle the completion of a selection and process it."""
-        # Process the selection
+            # ==== 1. Save old discharge times BEFORE modification ====
+        old_times = np.array(
+            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), []),
+            copy=True
+        )
+
+        # ==== 2. Perform the actual selection action ====
         process_selection(self.MUedition, action_type, array_idx, mu_idx, x_min, x_max, y_min, y_max)
+
+        # ==== 3. Retrieve new discharge times AFTER modification ====
+        new_times = np.array(
+            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), [])
+        )
+
+        # ==== 4. Compute delta ====
+        delta = len(new_times) - len(old_times)
+
+        # ==== 5. Show user feedback ====
+        if action_type == "add_spikes" and delta > 0:
+            self.show_tip(f"Added {delta} spike(s)", duration_ms=4000)
+            logger.info(f"Added {delta} spike(s)")
+
+        elif action_type == "delete_spikes" and delta < 0:
+            self.show_tip(f"Deleted {-delta} spike(s)", duration_ms=4000)
+            logger.info(f"Deleted {-delta} spike(s)")
+
+        elif action_type == "delete_dr":
+            self.show_tip("Deleted discharge rate points", duration_ms=4000)
+            logger.info("Deleted discharge rate points")
 
         # Update the display
         # for checkbox in self.mu_checkboxes:

@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QHBoxLayout, QLineEdit, QVBoxLayout, QWidget
 
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
+from core.logger import logger
 from core.muAnalysisCore.AnalysisResultsHist import store
 from ui.components import ActionButton
 from ui.components.muAnalysisComponents.AnalysisDropdownDialog import \
@@ -15,7 +16,7 @@ from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
 from ui.components.muAnalysisComponents.PropertiesInnerDialogText import \
     PropertiesInnerDialogText
 from ui.muanalysis.ComputeThresholdSection import ComputeThresholdSection
-from core.logger import logger
+
 
 class MotorUnitPropertiesDialog(QWidget):
 
