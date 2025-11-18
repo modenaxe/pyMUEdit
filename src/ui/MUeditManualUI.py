@@ -29,6 +29,7 @@ from ui.components import (ActionButton, CleanCard, CleanScrollBar, CleanTheme,
 from ui.components.ActionButtonedit import ActionButtonedit
 from ui.components.Footer import Footer
 
+
 class FixedPopupComboBox(QComboBox):  # set a new class for dropout moy
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -47,6 +48,7 @@ class FixedPopupComboBox(QComboBox):  # set a new class for dropout moy
             self.rect().bottomLeft()
         ))
         popup.setGeometry(geo)
+
 
 def setup_ui(main_window):
     """Setup the modern UI components for the MUedit Manual application."""
@@ -112,6 +114,8 @@ def setup_ui(main_window):
     main_layout.addWidget(main_window.footer)
 
 # Apply Sil
+
+
 def set_standard_label_style(label, size=10, bold=False):
     font = QFont("Segoe UI")
     font.setPointSize(size)

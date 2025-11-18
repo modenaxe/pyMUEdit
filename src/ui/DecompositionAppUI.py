@@ -13,7 +13,6 @@ from ui.components import (ActionButton, CleanScrollBar, CleanTheme,
                            FormSpinBox, SettingsGroup, VisualizationPanel)
 from ui.components.Footer import Footer
 
-from ui.components.Footer import Footer
 
 def setup_ui(main_window):
     """

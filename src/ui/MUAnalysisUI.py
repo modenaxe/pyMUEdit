@@ -1,5 +1,6 @@
-import sys
 import os
+import sys
+from pathlib import Path
 
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QColor
@@ -16,6 +17,7 @@ from core.utils.io.filesize_formatter import filesize_formatter
 from ui.components import ActionButton, CleanScrollBar
 from ui.components import CleanTheme as Theme
 from ui.components import CollapsiblePanel, SectionHeader
+from ui.components.Footer import Footer
 from ui.components.muAnalysisComponents.AnalysisPlot import AnalysisPlot
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.muanalysis.AdvancedTools import AdvancedTools
@@ -28,9 +30,7 @@ from ui.muanalysis.ResultSelection import ResultSelection
 from ui.muanalysis.ResultsPanel import ResultsPanel
 from ui.muanalysis.ResultsTable import ResultsTable
 from ui.muanalysis.SignalEditing import SignalEditing
-from ui.components.Footer import Footer
 
-from pathlib import Path
 
 # legacy code
 def get_icon(standard_icon):
@@ -95,11 +95,12 @@ class MUAnalysis(QWidget):
             on_prev=go_to_editing,
             on_next=None
         )
-        self.footer.next_btn.hide() 
+        self.footer.next_btn.hide()
         self.footer.setFixedHeight(64)
         self.widget_layout.addWidget(self.footer)
 
-    # Update footer information if a new file is uploaded successfully in analysis tab
+    # Update footer information if a new file is uploaded successfully in
+    # analysis tab
     def update_footer_file_info(self, file_path):
         if not file_path:
             self.footer.footer_file_info.setText("No file selected")
