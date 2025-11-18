@@ -145,7 +145,7 @@ class ImportDataWindow(QMainWindow):
             return False
 
         session_files = get_session_files(self.sessionid)
-        print(session_files)
+
         if not session_files:
             print("No files in this session to export")
             return False
@@ -165,6 +165,15 @@ class ImportDataWindow(QMainWindow):
                     version_path = version.get("version_filepath")
                     if version_path and os.path.exists(version_path):
                         file_paths_to_zip.append(version_path)
+                    log = version.get("log")
+                    if log and log != "None":
+                        stage = version.get("stage", "unknown")
+                        json_filename = f"{stage}_config.json"
+                        json_filepath = os.path.join(os.path.dirname(version_path) if version_path else ".", json_filename)
+
+                        with open(json_filepath, 'w') as f:
+                            json.dump(log, f, indent=4)
+                        file_paths_to_zip.append(json_filepath)
 
             if not file_paths_to_zip:
                 print("No valid files found to zip")
@@ -211,11 +220,18 @@ class ImportDataWindow(QMainWindow):
             if decomp_name:
                 decomp_path = extract_dir / decomp_name
                 signal_dict, raw_filepath, config_dict = load_from_h5(str(decomp_path))
-                self.decomposition_requested.emit(
-                    self.emg_obj, self.filename, self.pathname,
-                    self.imported_signal, config_dict, self.raw_fileid
-                )
-                self.decomp_app.on_decomposition_complete_2(signal_dict, config_dict)
+
+                # create decomposition view
+                if not hasattr(self, "decomp_app") or not self.decomp_app:
+                    self.create_decomposition_view(
+                        self.emg_obj, self.filename, self.pathname,
+                        self.imported_signal, self.config, self.raw_fileid
+                    )
+
+                # Emit signal to request showing decomposition view
+                self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, self.config, self.raw_fileid)
+                self.show_decomposition_view()
+                self.decomp_app.imported_h5_session_decomp(signal_dict, config_dict)
 
             print(f"Files extracted to: {extract_dir}")
 
@@ -405,7 +421,7 @@ class ImportDataWindow(QMainWindow):
                     "size": filesize_formatter(os.path.join(path, file)),
                     "format": os.path.splitext(file)[1].upper().replace(".", "")
                 }
-                
+
                 # Get or create session for this dataset
                 if ext != ".h5": # temporary dont create session with h5 for now due to using load_file for loading a session
                     sessionid = get_or_create_session_for_file(full_path)

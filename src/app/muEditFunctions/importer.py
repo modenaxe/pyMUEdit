@@ -16,7 +16,6 @@ from PyQt5.QtCore import Qt
 from core.utils.manual_editing.h5_import import h5py_convert
 
 # Import custom components
-from core.utils.session.convert_h5 import load_from_h5
 from ui.components import (
     WarningDialog,
     ErrorDialog,
@@ -35,168 +34,75 @@ def import_data(self):
     self.ish5 = False
 
     # Wrong Format
-    if not (self.filename.lower().endswith(".mat") or self.filename.lower().endswith(".h5")):
-        ErrorDialog(title_label="File Format Error", text="Selected file is not a valid .mat or .h5 file.\nPlease choose a .mat or .h5 file.")
+    if not self.filename.lower().endswith(".mat"):
+        ErrorDialog(title_label="File Format Error", text="Selected file is not a valid .mat file.\nPlease choose a .mat file.")
         return
 
 
     # Set Mouse State to Wait
     QApplication.setOverrideCursor(Qt.WaitCursor)
-    if self.filename.lower().endswith(".mat"):
+    try:
+        filepath = os.path.join(self.pathname, self.filename)
         try:
-            filepath = os.path.join(self.pathname, self.filename)
+            files = sio.loadmat(filepath)
+        except NotImplementedError:
             try:
-                files = sio.loadmat(filepath)
-            except NotImplementedError:
-                try:
-                    f = h5py.File(filepath, "r")
-                    print("h5py File load success")
-                    self.ish5 = True
-                    files = h5py_convert().h5py_to_dict(f)
-                    print("h5py File convert complete")
-                except Exception:
-                    import traceback
-                    traceback.print_exc()
-                # f.close()
+                f = h5py.File(filepath, "r")
+                print("h5py File load success")
+                self.ish5 = True
+                files = h5py_convert().h5py_to_dict(f)
+                print("h5py File convert complete")
+            except Exception:
+                import traceback
+                traceback.print_exc()
+            # f.close()
 
-            if not self.ish5:
-                #check the data with "signal" and "Pulsetrain"
-                if "signal" not in files or (
-                        "Pulsetrain" not in files["signal"].dtype.names
-                        and "Pulsetrain" not in files
-                ):
-                    QApplication.restoreOverrideCursor()  # Restore Mouse State
-                    raise KeyError("Missing 'signal' or 'Pulsetrain'")
-            else:
-                #check the data with "signal" and "Pulsetrain"
-                if "signal" not in files or (
-                        "Pulsetrain" not in files["signal"].keys()
-                ):
-                    QApplication.restoreOverrideCursor()  # Restore Mouse State
-                    raise KeyError("Missing 'signal' or 'Pulsetrain'")
+        if not self.ish5:
+            #check the data with "signal" and "Pulsetrain"
+            if "signal" not in files or (
+                    "Pulsetrain" not in files["signal"].dtype.names
+                    and "Pulsetrain" not in files
+            ):
+                QApplication.restoreOverrideCursor()  # Restore Mouse State
+                raise KeyError("Missing 'signal' or 'Pulsetrain'")
+        else:
+            #check the data with "signal" and "Pulsetrain"
+            if "signal" not in files or (
+                    "Pulsetrain" not in files["signal"].keys()
+            ):
+                QApplication.restoreOverrideCursor()  # Restore Mouse State
+                raise KeyError("Missing 'signal' or 'Pulsetrain'")
 
-            # Initialize the MUedition data structure
-            self.MUedition = {"edition": {}, "signal": {}, "parameters": {}}
-            #edition contains all the data to be edit
+        # Initialize the MUedition data structure
+        self.MUedition = {"edition": {}, "signal": {}, "parameters": {}}
+        #edition contains all the data to be edit
 
-            if not self.ish5:
-                if "edition" in files:   #edited file, recover edition
-                    import_edited_file(self, files)
-                else:   #new file
-                    import_decomposed_file(self, files)
-            else:
-                if "edition" in files:
-                    arr = files['edition']['Dischargetimes']
-                    if isinstance(arr, np.ndarray) and arr.shape == (2,) and arr.dtype == np.uint64:
-                        WarningDialog(text="We detected that the edition section does not contain any Dischargetimes data; therefore, it has fallen back to the unedited version.",
-                                enableHelpButton=False,
-                                enableCheckBox=False)
-                        import_h5py_decomposed_file(self, files)
-                    else:
-                        import_h5py_edited_file(self, files)
-                else:
+        if not self.ish5:
+            if "edition" in files:   #edited file, recover edition
+                import_edited_file(self, files)
+            else:   #new file
+                import_decomposed_file(self, files)
+        else:
+            if "edition" in files:
+                arr = files['edition']['Dischargetimes']
+                if isinstance(arr, np.ndarray) and arr.shape == (2,) and arr.dtype == np.uint64:
+                    WarningDialog(text="We detected that the edition section does not contain any Dischargetimes data; therefore, it has fallen back to the unedited version.",
+                            enableHelpButton=False,
+                            enableCheckBox=False)
                     import_h5py_decomposed_file(self, files)
-            print("File import complete")
+                else:
+                    import_h5py_edited_file(self, files)
+            else:
+                import_h5py_decomposed_file(self, files)
 
-            # Overlay skips the setup
-            if getattr(self, "is_overlay", False):
-                QApplication.restoreOverrideCursor()
-                return self.MUedition
-
-            # Calculate array numbers for each channel
-            self.MUedition["edition"]["arraynb"] = np.zeros(self.MUedition["signal"]["data"].shape[0], dtype=int)
-            ch1 = 0
-
-            # Use scalar ngrid value
-            ngrid = int(self.MUedition["signal"]["ngrid"][0, 0])
-
-            for i in range(ngrid):
-                mask = self.MUedition["signal"]["EMGmask"][0, i]
-                mask_length = len(mask)
-                self.MUedition["edition"]["arraynb"][ch1 : ch1 + mask_length] = i
-                ch1 += mask_length
-
-            # Update reference dropdown
-            self.reference_dropdown.clear()
-            if "auxiliary" in self.MUedition["signal"] and self.MUedition["signal"]["auxiliary"].size > 0:
-                if "auxiliaryname" in self.MUedition["signal"]:
-                    aux_names = self.MUedition["signal"]["auxiliaryname"][0]
-                    aux_accel_count = 0 # add number moy
-                    for i in range(aux_names.shape[0]):
-                        raw  = aux_names[i]
-                        base = str(raw[0]) if isinstance(raw, np.ndarray) and raw.size else str(raw)
-
-                        if base.strip() == "AUX  Acceleration":
-                            aux_accel_count += 1
-                            label = f"{base} {aux_accel_count}" # AUX  Acceleration 1
-                        else:
-                            label = base
-
-                        self.reference_dropdown.addItem(label)
-
-            # Update MU checkboxes
-            self.resetPlot = True
-            update_mu_checkboxes(self)
-
-            # Set initial view limits
-            self.graphstart = self.MUedition["edition"]["time"][0]
-            if hasattr(self, "pan_slider"):# moy
-                self.center_pan_slider()
-            self.graphend = self.MUedition["edition"]["time"][-1]
-
-            self.update_plot_limits()
-            self._sync_pan_slider()#moy
-
-            QApplication.restoreOverrideCursor()  # Restore Mouse State
-
-            # Set current data as clear data
-            self.initial_data = copy.deepcopy(self.MUedition["edition"])
-        except KeyError as ke:
-            QApplication.restoreOverrideCursor()
-            ErrorDialog(title_label="Missing Field", text=f"The .mat file is missing required fields:\n{ke}")
-            import traceback
-            traceback.print_exc()
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            QApplication.restoreOverrideCursor()
-            ErrorDialog(title_label="Import Error", text=f"Failed to load the file:\n{str(e)}")
-
-    elif self.filename.lower().endswith(".h5"):
-        try:
-            filepath = os.path.join(self.pathname, self.filename)
-            files, raw_filepath, config = load_from_h5(filepath)
-
-            self.MUedition = {
-                "signal": files["signal"],
-                "parameters": files["parameters"],
-                "edition": {}}
-
-            import_decomposed_file(self, files)
-            # if "data" in self.MUedition["signal"]:
-            #     self.MUedition["edition"]["arraynb"] = np.zeros(
-            #         self.MUedition["signal"]["data"].shape[0], dtype=int
-            #     )
-            # else:
-            #     pass
-        except Exception as e:
-            print(f"Error with loading .h5 file: {e}")
-
-
-        print(self.MUedition)
         print("File import complete")
-
-        # Overlay skips the setup
-        if getattr(self, "is_overlay", False):
-            QApplication.restoreOverrideCursor()
-            return self.MUedition
 
         # Calculate array numbers for each channel
         self.MUedition["edition"]["arraynb"] = np.zeros(self.MUedition["signal"]["data"].shape[0], dtype=int)
         ch1 = 0
 
         # Use scalar ngrid value
-        ngrid = int(self.MUedition["signal"]["ngrid"])
+        ngrid = int(self.MUedition["signal"]["ngrid"][0, 0])
 
         for i in range(ngrid):
             mask = self.MUedition["signal"]["EMGmask"][0, i]
@@ -239,6 +145,17 @@ def import_data(self):
 
         # Set current data as clear data
         self.initial_data = copy.deepcopy(self.MUedition["edition"])
+
+    except KeyError as ke:
+        QApplication.restoreOverrideCursor()
+        ErrorDialog(title_label="Missing Field", text=f"The .mat file is missing required fields:\n{ke}")
+        import traceback
+        traceback.print_exc()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        QApplication.restoreOverrideCursor()
+        ErrorDialog(title_label="Import Error", text=f"Failed to load the file:\n{str(e)}")
 
 def import_edited_file(self, files):
     """Import data from a previously edited file."""
@@ -375,8 +292,7 @@ def import_decomposed_file(self, files):
 
         for mu_idx in range(pulse_train.shape[0]):
             if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
-                if not getattr(self, "is_overlay", False):
-                    calculate_silval(self, array_idx, mu_idx)
+                calculate_silval(self, array_idx, mu_idx)
 
             # Give every MU a Flag tag
             self.MUedition["edition"]["Flag"][array_idx].append(0)
@@ -522,12 +438,11 @@ def import_h5py_decomposed_file(self, files):
 
         for mu_idx in range(pulse_train.shape[0]):
             if (array_idx, mu_idx) in self.MUedition["edition"]["Dischargetimes"]:
-                if not getattr(self, "is_overlay", False):
-                    cur_progress += 1
-                    calculate_silval(self, array_idx, mu_idx)
-                    progress.setValue(cur_progress)
-                    progress.setLabelText(f"Calculating for Array {array_idx}: MU {mu_idx}")
-                    QApplication.processEvents()
+                cur_progress += 1
+                calculate_silval(self, array_idx, mu_idx)
+                progress.setValue(cur_progress)
+                progress.setLabelText(f"Calculating for Array {array_idx}: MU {mu_idx}")
+                QApplication.processEvents()
 
             # Give every MU a Flag tag
             self.MUedition["edition"]["Flag"][array_idx].append(0)
@@ -548,4 +463,4 @@ def import_h5py_decomposed_file(self, files):
 
     self.MUedition["signal"]["auxiliaryname"] = np.array([auxname_list])
 
-    self.MUedition["signal"]["auxiliary"] = self.MUedition["signal"]["auxiliary"].T
+    self.MUedition["signal"]["auxiliary"] = self.MUedition["signal"]["auxiliary"].Ts

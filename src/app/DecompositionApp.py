@@ -783,16 +783,7 @@ class DecompositionApp(QMainWindow):
             # Save the state and get metadata
             state_meta = DecompositionState.save_state(self, raw_fileid=self.raw_fileid)
 
-            # Add to dashboard's recent visualizations if parent exists
-            if hasattr(self, 'parent') and callable(self.parent):
-                parent = self.parent()
-                if parent is not None and hasattr(parent, 'add_recent_visualization'):
-                    parent.add_recent_visualization(state_meta)
-                    print(f"Successfully added visualization to dashboard: {state_meta['title']}")
-                else:
-                    print("Parent exists but does not have add_recent_visualization method")
-            else:
-                print("No parent available to add visualization to dashboard")
+
         except Exception as e:
             print(f"Error saving decomposition state: {e}")
             import traceback
@@ -801,7 +792,7 @@ class DecompositionApp(QMainWindow):
         if hasattr(self, "decomp_worker") and self.decomp_worker in self.threads:
             self.threads.remove(self.decomp_worker)
 
-    def on_decomposition_complete_2(self, result, config_dict):
+    def imported_h5_session_decomp(self, result, config_dict):
 
         self.decomposition_state = "idle"
         self.show_start_stop_buttons(start_enabled=True, stop_enabled=False)
@@ -819,7 +810,7 @@ class DecompositionApp(QMainWindow):
         self.status_progress.setValue(100)
         self.start_button.setEnabled(True)
         self.save_output_button.setEnabled(True)
-        self.next_button.setEnabled(True)
+        self.footer.next_btn.setEnabled(True)
 
         # Count total motor units
         total_mus = 0
@@ -876,16 +867,6 @@ class DecompositionApp(QMainWindow):
             # Save the state and get metadata
             state_meta = DecompositionState.save_state(self, raw_fileid=self.raw_fileid)
 
-            # Add to dashboard's recent visualizations if parent exists
-            if hasattr(self, 'parent') and callable(self.parent):
-                parent = self.parent()
-                if parent is not None and hasattr(parent, 'add_recent_visualization'):
-                    parent.add_recent_visualization(state_meta)
-                    print(f"Successfully added visualization to dashboard: {state_meta['title']}")
-                else:
-                    print("Parent exists but does not have add_recent_visualization method")
-            else:
-                print("No parent available to add visualization to dashboard")
         except Exception as e:
             print(f"Error saving decomposition state: {e}")
             import traceback

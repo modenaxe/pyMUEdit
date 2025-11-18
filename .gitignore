@@ -13,3 +13,5 @@ tests/*.otb+
 .idea
 database.db
 *.zip
+*.txt
+*.json
