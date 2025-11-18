@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QFileDialog, QMessageBox, QDialog
 from ui.components.muAnalysisComponents.ConfirmationDialog import ConfirmationDialog
 from ui.components.muAnalysisComponents.SaveablePlot import SaveablePlot
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
-
+from core.logger import logger
 from matplotlib import pyplot as plt
 
 import openhdemg.library as emg
@@ -15,11 +15,13 @@ class FileUploadFunc:
     # global instance of file
     file = None
 
-    def __init__(self):
+    def __init__(self, parent=None):
         """Initialises class instance
         Params: None
         Returns: class instance
         """
+        self.parent = parent
+        self.original_file_path = None
         self.file_path = None
         self.coords = []
         self.cid = None
@@ -58,7 +60,10 @@ class FileUploadFunc:
                 None, "Select file", "", "MAT Files (*.mat);;All Files (*.*)"
             )
         if file_path:
-            self.load_file(analysis_plot, file_path, json)
+            # If there is no error with loading file, update file info in footer
+            error = self.load_file(analysis_plot, file_path, json)
+            if error == 0:
+                self.parent.update_footer_file_info(file_path)
 
     def load_file(self, analysis_plot, file_path, json):
         """Load EMG file from specified path and plot the data
@@ -81,6 +86,7 @@ class FileUploadFunc:
                     f"{e}",
                     "NotImplementedError",
                 ).exec_()
+                logger.error("Function not implemented")
                 error = 1
             except:
                 self.import_data(None, None)
@@ -126,7 +132,7 @@ class FileUploadFunc:
         """
         # Check if there's a file loaded to reset
         if self.file_path is None:
-            print("No file loaded to reset.")
+            logger.warning("No file loaded to reset.")
             return
 
         dialog = ConfirmationDialog(
@@ -143,10 +149,10 @@ class FileUploadFunc:
         Returns: None
         """
         if self.file_path is None:
-            print("No original file path stored. Cannot reset.")
+            logger.warning("No original file path stored. Cannot reset.")
             return
 
-        print("--- DEBUG: Resetting analysis data by reloading original file ---")
+        logger.debug("Resetting analysis data by reloading original file")
 
         # Clear any transformation data (MVC value, etc.)
         self.mvc_value = None
@@ -155,9 +161,9 @@ class FileUploadFunc:
         # Reload the original file to reset any transformations
         error = self.load_file(analysis_plot, self.file_path, self.json)
         if error == 0:
-            print("File successfully reloaded, transformations cleared.")
+            logger.debug("File successfully reloaded, transformations cleared.")
         else:
-            print("Error reloading file during reset.")
+            logger.error("Error reloading file during reset.")
             # If reload fails, show error but keep the original file path
             error_dialog = QMessageBox()
             error_dialog.setIcon(QMessageBox.Critical)

@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QHBoxLayout, QLineEdit, QVBoxLayout, QWidget
 
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
+from core.logger import logger
 from core.muAnalysisCore.AnalysisResultsHist import store
 from ui.components import ActionButton
 from ui.components.muAnalysisComponents.AnalysisDropdownDialog import \
@@ -131,6 +132,7 @@ class MotorUnitPropertiesDialog(QWidget):
             ErrorDialog(
                 f"Error computing discharge rate: {str(e)}",
                 "Error").exec_()
+            logger.exception(f"Error computing discharge rate: {str(e)}")
             return
         # Append result to results panel (top of history)
         store.append_analysis_hist(
@@ -223,7 +225,7 @@ class MotorUnitPropertiesButton(QWidget):
     def update_mvc(self, mvc_value):
         # Update the MVC value
         self.current_mvc = mvc_value
-        print(f"MVC updated to: {mvc_value} N")
+        logger.debug(f"MVC updated to: {mvc_value} N")
         self.mvc_updated.emit(mvc_value)
 
     def get_mvc(self):

@@ -8,6 +8,7 @@ from ui.components.muAnalysisComponents.AnalysisCheckboxDark import \
     AnalysisCheckboxDark
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
+from core.logger import logger
 
 from ui.components import ActionButton
 from openhdemg.library import (
@@ -342,6 +343,7 @@ class MotorUnitTrackingDialog(QDialog):
 
         except Exception as e:
             ErrorDialog(f"{e}", 'Error').exec_()
+            logger.exception(f"Tracking process failed for files {file_1} and {file_2}: {e}")
             return
 
     """ LEGACY CODE - to be deleted upon client approval """

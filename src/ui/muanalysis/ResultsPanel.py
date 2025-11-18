@@ -3,6 +3,7 @@ import csv
 from PyQt5.QtWidgets import (QDialog, QFileDialog, QFrame, QTableView,
                              QVBoxLayout)
 
+from core.logger import logger
 from core.muAnalysisCore.AnalysisResultsHist import store
 from ui.components import ActionButton
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
@@ -59,9 +60,9 @@ class ResultsPanel(QFrame):
                     writer.writeheader()
                     writer.writerows(results)
 
-                print(f"Data saved to {file_path}")
+                logger.debug(f"Data saved to {file_path}")
             except Exception as e:
-                print(f"Error saving file: {e}")
+                logger.exception(f"Error saving file: {e}")
 
     def clear_results(self):
         store.clear_results()

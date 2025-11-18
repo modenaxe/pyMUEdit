@@ -9,8 +9,9 @@ from torch import cuda
 
 # Import custom components
 from ui.components import (ActionButton, CleanScrollBar, CleanTheme,
-                           CollapsiblePanel, FormDoubleSpinBox, FormDropdown,
-                           FormSpinBox, SettingsGroup, VisualizationPanel)
+                           CollapsiblePanel, FormCheckBox, FormDoubleSpinBox,
+                           FormDropdown, FormSpinBox, SettingsGroup,
+                           VisualizationPanel)
 from ui.components.Footer import Footer
 
 
@@ -215,6 +216,14 @@ def setup_left_panel(main_window, parent_layout):
     windows_field = FormSpinBox("Windows", 1, 1, 100)
     main_window.number_windows_field = windows_field.spinbox
     params_panel.add_widget(windows_field)
+
+    use_threshold_field = FormCheckBox("Use Threshold", True)
+    main_window.use_threshold_target_field = use_threshold_field.checkbox
+    params_panel.add_widget(use_threshold_field)
+
+    use_threshold_field.checkbox.toggled.connect(
+        lambda checked: threshold_field.spinbox.setEnabled(checked)
+    )
 
     threshold_field = FormDoubleSpinBox("Threshold Target", 0.9, 0, 1, 0.1)
     main_window.threshold_target_field = threshold_field.spinbox
@@ -547,6 +556,36 @@ def setup_right_panel(main_window, parent_layout):
 
     right_layout.addStretch(1)
     parent_layout.addWidget(right_panel, 1)
+
+
+def load_config(self, config):
+    if not config:
+        return
+    if "contrast_function" in config:
+        self.contrast_function_dropdown.setCurrentText(
+            config["contrast_function"])
+    if "initialization" in config:
+        self.initialisation_dropdown.setCurrentText(config["initialization"])
+    if "peeloff" in config:
+        self.peeloff_dropdown.setCurrentText(config["peeloff"])
+    if "refine_mu" in config:
+        self.refine_mus_dropdown.setCurrentText(config["refine_mu"])
+    if "iterations" in config:
+        self.number_iterations_field.setValue(config["iterations"])
+    if "windows" in config:
+        self.number_windows_field.setValue(config["windows"])
+    if "threshold_target" in config:
+        self.threshold_target_field.setValue(config["threshold_target"])
+    if "extended_channels" in config:
+        self.nb_extended_channels_field.setValue(config["extended_channels"])
+    if "duplicates_threshold" in config:
+        self.duplicate_threshold_field.setValue(config["duplicates_threshold"])
+    if "sil_threshold" in config:
+        self.sil_threshold_field.setValue(config["sil_threshold"])
+    if "cov_threshold" in config:
+        self.cov_threshold_field.setValue(config["cov_threshold"])
+    if "method" in config:
+        self.algo_combo.setCurrentText(config["method"])
 
 
 def setup_bottom_navigation(main_window):

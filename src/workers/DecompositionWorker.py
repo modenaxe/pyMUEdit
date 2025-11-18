@@ -3,7 +3,7 @@ import numpy as np
 import traceback
 import os
 import time
-
+from core.logger import logger
 
 class DecompositionWorker(QThread):
     """
@@ -31,20 +31,20 @@ class DecompositionWorker(QThread):
     
     def stop(self):
         """Stop the decomposition worker"""
-        print("DecompositionWorker.stop() called")
+        logger.info("DecompositionWorker.stop() called")
         self.should_stop = True
         
         # set stop flag on the EMG object so FastICA can see it
         if hasattr(self, 'emg_obj'):
             setattr(self.emg_obj, 'should_stop', True)
-            print("Stop flag set on EMG object for FastICA")
+            logger.debug("Stop flag set on EMG object for FastICA")
         
-        print("Stop flag set for decomposition worker")
+        logger.debug("Stop flag set for decomposition worker")
 
     def cleanup_incomplete_decomposition(self):
         """Clean up incomplete decomposition data to prevent errors"""
         try:
-            print("cleaning up incoplete decomposition data")
+            logger.info("cleaning up incoplete decomposition data")
 
             # reset mu directories to prevent index error
             if hasattr(self.emg_obj, 'mu_dict'):
@@ -58,16 +58,16 @@ class DecompositionWorker(QThread):
                 # initialise the discharge_times list for each electrode
                 self.emg_obj.mu_dict["discharge_times"] = [[] for _ in range(num_electrodes)]
 
-                print(f"reset mu dictionaries for {num_electrodes} electrodes")
+                logger.info(f"reset mu dictionaries for {num_electrodes} electrodes")
 
             # reset decomposition dictioniaries
             if hasattr(self.emg_obj, 'decomp_dict'):
                 self.emg_obj.decomp_dict["masked_mu_filters"] = []
 
-            print("clean up completed successfully")
+            logger.debug("clean up completed successfully")
         
         except Exception as cleanup_error:
-            print(f"error during clean up: {cleanup_error}")
+            logger.exception(f"error during clean up: {cleanup_error}")
 
     def run(self):
         """Run the decomposition process in a separate thread."""
@@ -79,7 +79,7 @@ class DecompositionWorker(QThread):
             os.environ["OPENBLAS_NUM_THREADS"] = "4"
 
             if self.should_stop:
-                print("Decomposition stoppped before starting")
+                logger.info("Decomposition stoppped before starting")
                 self.cleanup_incomplete_decomposition()
                 return
 
@@ -87,7 +87,7 @@ class DecompositionWorker(QThread):
             self.map_parameters_to_emg_obj()
 
             if self.should_stop:
-                print("Decomposition stoppped after parameter mapping")
+                logger.info("Decomposition stoppped after parameter mapping")
                 self.cleanup_incomplete_decomposition()
                 return
 
@@ -98,7 +98,7 @@ class DecompositionWorker(QThread):
             self.emg_obj.electrode_formatter()  # adds spatial context, and additional filtering
 
             if self.should_stop:
-                print("Decomposition stoppped after electrode formatting")
+                logger.info("Decomposition stoppped after electrode formatting")
                 self.cleanup_incomplete_decomposition()
                 return
 
@@ -108,7 +108,7 @@ class DecompositionWorker(QThread):
                 self.emg_obj.manual_rejection()
 
             if self.should_stop:
-                print("Decomposition stoppped after manual rejection")
+                logger.info("Decomposition stoppped after manual rejection")
                 self.cleanup_incomplete_decomposition()
                 return
 
@@ -117,12 +117,17 @@ class DecompositionWorker(QThread):
 
             if "target" in self.emg_obj.signal_dict and self.emg_obj.signal_dict["target"] is not None:
                 self.progress.emit("Target used for batching", 0.2)
+                logger.info("Target detected — using target-based batching")
+                logger.debug(f"Target shape: {self.emg_obj.signal_dict['target'].shape}")
+                logger.debug(f"Target max value: {np.max(self.emg_obj.signal_dict['target'])}")
                 self.emg_obj.batch_w_target()
             else:
+                logger.info("No target present — using batching without target")
+                logger.debug("Signal keys present: %s", list(self.emg_obj.signal_dict.keys()))
                 self.emg_obj.batch_wo_target()
 
             if self.should_stop:
-                print("Decomposition stoppped after batching")
+                logger.info("Decomposition stoppped after batching")
                 self.cleanup_incomplete_decomposition()
                 return
 
@@ -206,7 +211,7 @@ class DecompositionWorker(QThread):
                     self.emg_obj.decomp_dict["masked_mu_filters"] = []  # Initialize empty list
 
                     if self.should_stop:
-                        print(f"Decomposition stoppped before convolutive sphering at electrode {g+1}, interval {interval+1}")
+                        logger.info(f"Decomposition stoppped before convolutive sphering at electrode {g+1}, interval {interval+1}")
                         self.cleanup_incomplete_decomposition()
                         return
 
@@ -214,7 +219,7 @@ class DecompositionWorker(QThread):
                     self.emg_obj.convul_sphering(g, interval, tracker)
 
                     if self.should_stop:
-                        print(f"Decomposition stoppped before FastICA at electrode {g+1}, interval {interval+1}")
+                        logger.info(f"Decomposition stoppped before FastICA at electrode {g+1}, interval {interval+1}")
                         self.cleanup_incomplete_decomposition()
                         return
 
@@ -228,7 +233,7 @@ class DecompositionWorker(QThread):
                     )
 
                     if self.should_stop:
-                        print(f"Decomposition stoppped after FastICA at electrode {g+1}, interval {interval+1}")
+                        logger.info(f"Decomposition stoppped after FastICA at electrode {g+1}, interval {interval+1}")
                         self.cleanup_incomplete_decomposition()
                         return
 
@@ -243,7 +248,7 @@ class DecompositionWorker(QThread):
                     tracker += 1
 
                 if self.should_stop:
-                    print(f"Decomposition stoppped before post-processing electrode {g+1}")
+                    logger.info(f"Decomposition stoppped before post-processing electrode {g+1}")
                     self.cleanup_incomplete_decomposition()
                     return
 
@@ -252,7 +257,7 @@ class DecompositionWorker(QThread):
                 self.emg_obj.post_process_EMG(g)
             
             if self.should_stop:
-                print(f"Decomposition stoppped before processing across arrays")
+                logger.info(f"Decomposition stoppped before processing across arrays")
                 self.cleanup_incomplete_decomposition()
                 return
 
@@ -262,7 +267,7 @@ class DecompositionWorker(QThread):
                 self.emg_obj.post_process_across_arrays()
 
             if self.should_stop:
-                print(f"Decomposition stoppped before formatting results")
+                logger.info(f"Decomposition stoppped before formatting results")
                 self.cleanup_incomplete_decomposition()
                 return
 
@@ -272,28 +277,28 @@ class DecompositionWorker(QThread):
 
             # Signal completion
             if not self.should_stop:
-                self.progress.emit("Decomposition complete", 1.0)
+                # self.progress.emit("Decomposition complete, saving output", 1.0)
                 self.finished.emit(result)
             else:
-                print("Decomposition was stopped by user")
+                logger.info("Decomposition was stopped by user")
 
         except Exception as e:
             if not self.should_stop:
-                print(f"Exception in DecompositionWorker: {str(e)}")
-                traceback.print_exc()
+                logger.exception(f"Exception in DecompositionWorker: {str(e)}")
                 self.error.emit(str(e))
             else:
-                print("Decomposition stopped by user during processing")
+                logger.debug("Decomposition stopped by user during processing")
 
     def send_plot_update(self, fICA_source, spikes, time2, sil, cov):
         """Send plot update signals to the main UI thread"""
         
         # CHECK FOR STOP FLAG IN PLOT CALLBACK (called during each FastICA iteration)
         if getattr(self, 'should_stop', False):
-            print("Plot update detected stop flag - stopping FastICA")
+            logger.info("Plot update detected stop flag - stopping FastICA")
             # Set stop flag on EMG object so FastICA iterations will stop
             if hasattr(self, 'emg_obj'):
                 setattr(self.emg_obj, 'should_stop', True)
+                logger.debug("Stop flag propagated to EMG object")
             return  # Don't send plot update, just return to stop the iteration
         
         # Send the plot update if not stopping

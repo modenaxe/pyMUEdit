@@ -4,6 +4,8 @@ from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton,
                              QVBoxLayout)
 
+from core.logger import logger
+
 from .CleanTheme import CleanTheme
 
 

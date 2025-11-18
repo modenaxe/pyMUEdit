@@ -47,3 +47,4 @@ docs/
 # Project specific
 data/*
 !data/.gitkeep
+src/logs/*
