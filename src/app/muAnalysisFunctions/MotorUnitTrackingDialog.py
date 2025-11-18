@@ -341,7 +341,7 @@ class MotorUnitTrackingDialog(QDialog):
             )
 
         except Exception as e:
-            ErrorDialog(e, 'Error').exec_()
+            ErrorDialog(f"{e}", 'Error').exec_()
             return
 
     """ LEGACY CODE - to be deleted upon client approval """

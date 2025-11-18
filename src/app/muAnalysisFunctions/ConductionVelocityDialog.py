@@ -193,11 +193,6 @@ class ConductionVelocityDialog(QDialog):
         )
         self.mu_dropdown.setObjectName("mu_dropdown")
 
-        col_group, self.col_dropdown = self._create_dropdown_group(
-            "Grid Column", []
-        )
-        self.col_dropdown.setObjectName("col_dropdown")
-
         # Row selection group
         row_group = QGroupBox("Grid Rows")
         row_layout = QHBoxLayout()
@@ -225,7 +220,7 @@ class ConductionVelocityDialog(QDialog):
         self.estimate_btn.setMinimumHeight(40)
 
         # Add to controls
-        for widget in [mu_group, col_group, row_group, self.estimate_btn]:
+        for widget in [mu_group, row_group, self.estimate_btn]:
             controls_layout.addWidget(widget)
         main_layout.addLayout(controls_layout)
 
@@ -315,15 +310,11 @@ class ConductionVelocityDialog(QDialog):
             # Refresh dropdowns
             dropdowns_data = [
                 (self.mu_dropdown, get_available_mus()),
-                (self.col_dropdown, get_available_grid_columns(self.sta)),
             ]
 
             for dropdown, data in dropdowns_data:
                 dropdown.clear()
                 if data:
-                    if dropdown.objectName() == "col_dropdown":
-                        dropdown.addItems(["col" + str(item) for item in data])
-                    else:
                         dropdown.addItems([str(item) for item in data])
                 else:
                     dropdown.addItem("No data loaded")
@@ -378,7 +369,6 @@ class ConductionVelocityDialog(QDialog):
 
         return {
             "mu": safe_int(self.mu_dropdown.currentText(), 0),
-            "col": safe_int(self.col_dropdown.currentText(), 0),
             "from_row": safe_int(self.from_row_dropdown.currentText(), 0),
             "to_row": safe_int(self.to_row_dropdown.currentText(), 10),
         }
@@ -408,7 +398,7 @@ class ConductionVelocityDialog(QDialog):
         try:
             values = self._get_ui_values()
             table_data = self._compute_results(
-                values["mu"], values["col"], values["from_row"], values["to_row"]
+                values["mu"], values["from_row"], values["to_row"]
             )
             self._fill_results_table(table_data)
         except Exception as e:
@@ -439,7 +429,7 @@ class ConductionVelocityDialog(QDialog):
 
         MUcv_gui(emgfile, sorted_rawemg)
 
-    def _compute_results(self, mu, selected_col, from_row, to_row):
+    def _compute_results(self, mu, from_row, to_row):
         """Compute CV estimation results using reference method.
 
         Args:
