@@ -7,6 +7,7 @@ from PyQt5.QtGui import QGuiApplication
 import ctypes
 from ctypes import wintypes
 import subprocess
+from core.logger import logger
 
 def get_xft_scale():
     out = subprocess.check_output(['xrdb','-query']).decode()
@@ -57,13 +58,13 @@ def apply_qt_scaling():
 
     scale = get_adaptive_scale()
     if scale is None:
-        print("[INFO] macOS detected, skipping adaptive QT scaling.")
+        logger.debug("[INFO] macOS detected, skipping adaptive QT scaling.")
         return
-    print(scale)
+    logger.debug(scale)
 
     # Apply fixed scaling
 
     os.environ["QT_SCALE_FACTOR"] = f"{1/float(scale):.2f}"
     os.environ["QT_SCREEN_SCALE_FACTORS"] = scale
 
-    print(f"[INFO] Adaptive QT scale factor applied: {scale}")
+    logger.debug(f"[INFO] Adaptive QT scale factor applied: {scale}")

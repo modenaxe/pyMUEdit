@@ -5,6 +5,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QFrame, QLabel, QVBoxLayout
 
+from core.logger import logger
 from core.utils.io.filesize_formatter import filesize_formatter
 
 from .CleanTheme import CleanTheme
@@ -101,7 +102,7 @@ class Sidebar(QFrame):
             icon_path = ICONS_PATH / f"{icon_name}.svg"
             # If file doesn't exist, show a warning
             if not icon_path.exists():
-                print(f"Warning: Icon {icon_path} not found")
+                logger.warning(f"Warning: Icon {icon_path} not found")
                 icon_path = None
 
         # Create button with icon and text

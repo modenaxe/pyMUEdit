@@ -7,6 +7,7 @@ import copy # moy
 from PyQt5.QtWidgets import QProgressDialog
 from PyQt5.QtCore import Qt
 
+from core.logger import logger
 from core.utils.manual_editing.batch_filter_worker import batch_filter_worker
 from core.utils.manual_editing.duplicates_between_grids_worker import duplicates_between_grids_worker
 from core.utils.manual_editing.duplicates_within_grids_worker import duplicates_within_grids_worker
@@ -31,7 +32,7 @@ def remove_all_outliers_button_pushed(self):
     original_dischargetimes = copy.deepcopy(self.MUedition["edition"]["Dischargetimes"])
     original_silval = copy.deepcopy(self.MUedition["edition"]["silval"])
     original_silvalcon = copy.deepcopy(self.MUedition["edition"]["silvalcon"])
-    print("deep copy complete!")
+    logger.debug("deep copy complete!")
 
     progress = QProgressDialog("Removing outliers...", "Cancel", 0, 100, self)
     progress.setWindowModality(Qt.WindowModality.WindowModal)
@@ -58,7 +59,7 @@ def remove_all_outliers_button_pushed(self):
                 self.MUedition["edition"]["silval"] = original_silval
                 self.MUedition["edition"]["silvalcon"] = original_silvalcon
                 progress.close()
-                print("Batch processing interruption!")
+                logger.debug("Batch processing interruption!")
                 return
 
             # Create dummy arrays for remoutliers function
@@ -92,7 +93,7 @@ def remove_all_outliers_button_pushed(self):
             self.MUedition["edition"]["silval"] = original_silval
             self.MUedition["edition"]["silvalcon"] = original_silvalcon
             progress.close()
-            print("Batch processing interruption!")
+            logger.debug("Batch processing interruption!")
             return
 
     progress.setValue(100)
@@ -178,7 +179,7 @@ def update_all_mu_filters_button_pushed(self):
     ))
     # Update the current MU display
     self._filterWorker.finished.connect(lambda: (progress.close(), self.update_save_button(), mu_checkbox_state_changed(self)))
-    self._filterWorker.error.connect(lambda msg: (progress.close(), print("Error:", msg)))
+    self._filterWorker.error.connect(lambda msg: (progress.close(), logger.error(f"Error: {msg}")))
 
     progress.canceled.connect(self._filterWorker.cancel)
     self._filterWorker.start()
@@ -212,7 +213,7 @@ def remove_flagged_mu_button_pushed(self):
 
         if progress.wasCanceled():
             progress.close()
-            print("Batch processing interruption!")
+            logger.debug("Batch processing interruption!")
             return
 
         # Get the pulse trains for this array
@@ -309,7 +310,7 @@ def remove_duplicates_within_grids_button_pushed(self):
     ))
     # Update the current MU display
     self._duplicatesInGridsWorker.finished.connect(lambda: (progress.close(), self.update_save_button(), mu_checkbox_state_changed(self)))
-    self._duplicatesInGridsWorker.error.connect(lambda msg: (progress.close(), print("Error:", msg)))
+    self._duplicatesInGridsWorker.error.connect(lambda msg: (progress.close(), logger.error(f"Duplicate detection worker error: {msg}")))
 
     progress.canceled.connect(self._duplicatesInGridsWorker.cancel)
     self._duplicatesInGridsWorker.start()
@@ -349,7 +350,7 @@ def remove_duplicates_between_grids_button_pushed(self):
 
     # Update the current MU display
     self._duplicatesWithGridsWorker.finished.connect(lambda: (progress.close(), self.update_save_button(), mu_checkbox_state_changed(self)))
-    self._duplicatesWithGridsWorker.error.connect(lambda msg: (progress.close(), print("Error:", msg)))
+    self._duplicatesWithGridsWorker.error.connect(lambda msg: (progress.close(), logger.error(f"Duplicate-between-grids worker error: {msg}")))
 
     progress.canceled.connect(self._duplicatesWithGridsWorker.cancel)
     self._duplicatesWithGridsWorker.start()

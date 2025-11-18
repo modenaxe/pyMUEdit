@@ -6,6 +6,7 @@ import numpy as np
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
 from core.utils.manual_editing.extendfilter import extendfilter
+from core.logger import logger
 from app.muEditFunctions.plotting import update_spike_train_plot
 from app.muEditFunctions.mu_selection import (
     calculate_silval,
@@ -116,7 +117,7 @@ def update_mu_filter_button_pushed(self):
             # Reset the lock
             if self.Backup["lock_changable"] == 0:
                 self.Backup["lock"] = 0
-            print("Reset lock")
+            logger.debug("Reset lock")
         else:
             # Update both pulse train and discharge times
             self.MUedition["edition"]["Pulsetrain"][array_idx][mu_idx, :] = updated_pulse_train
@@ -137,10 +138,8 @@ def update_mu_filter_button_pushed(self):
         self.show_tip("Update filter successfully! Green means SIL improve. Blue means SIL decrease.", duration_ms=4000)
         #SuccessDialog(text="Update filter successfully!\nGreen means SIL improve. Blue means SIL decrease.")
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         QApplication.restoreOverrideCursor()
-        print(e)
+        logger.exception("Fail to update filter.")
         ErrorDialog(text="Fail to update filter.")
     self.update_save_button()
 
@@ -289,6 +288,6 @@ def extend_mu_filter_button_pushed(self):
             #SuccessDialog(text="extend filter successfully!\nGreen means SIL improve. Blue means SIL decrease.")
         except Exception as e:
             QApplication.restoreOverrideCursor()
-            print(e)
+            logger.exception("Fail to extend filter.")
             ErrorDialog(text="Fail to extend filter.")
         self.update_save_button()

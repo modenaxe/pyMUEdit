@@ -9,6 +9,8 @@ from PyQt5.QtWidgets import (QCheckBox, QComboBox, QGroupBox, QHBoxLayout,
                              QLabel, QLineEdit, QMainWindow, QPushButton,
                              QSpinBox, QVBoxLayout, QWidget)
 
+from core.logger import logger
+
 
 class ColoredCircle(QWidget):
     def __init__(self, color="red", parent=None):
@@ -295,7 +297,7 @@ class Quattrodlg(QMainWindow):
 
             # Set the number of grids
             if "signal" not in self.file:
-                print("Error: No signal data in file")
+                logger.error("No signal data in file")
                 return
 
             # Update the number of active grids
@@ -343,7 +345,7 @@ class Quattrodlg(QMainWindow):
                 self.file["signal"]["muscle"][0, 0] = muscle_obj
 
             except Exception as e:
-                print(
+                logger.exception(
                     f"Error with specific case, trying general solution: {e}")
                 try:
                     # Just replace the entire field
@@ -351,7 +353,7 @@ class Quattrodlg(QMainWindow):
                         [gridname_array])
                     self.file["signal"]["muscle"] = np.array([muscle_array])
                 except Exception as e:
-                    print(f"All update attempts failed: {e}")
+                    logger.exception(f"All update attempts failed: {e}")
                     raise
 
             # Save the updated file
@@ -364,5 +366,4 @@ class Quattrodlg(QMainWindow):
             self.close()
 
         except Exception as e:
-            print(f"Error in OK button handler: {e}")
-            traceback.print_exc()
+            logger.exception(f"Error in OK button handler: {e}")

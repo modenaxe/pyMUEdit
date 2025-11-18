@@ -2,7 +2,7 @@ import numpy as np
 import scipy
 from sklearn.cluster import KMeans
 from core.utils.decomposition.get_spikes import maxk
-
+from core.logger import logger
 
 def batch_process_filters(whit_sig, mu_filters, plateau, extender, diff, orig_sig_size, fsamp):
     """
@@ -43,7 +43,7 @@ def batch_process_filters(whit_sig, mu_filters, plateau, extender, diff, orig_si
             )
             spikes_ind = np.argmax(kmeans.cluster_centers_)
             discharge_times[mu_batch_count] = peaks[np.where(kmeans.labels_ == spikes_ind)]
-            print(f"Batch processing MU#{mu_batch_count+1} out of {mu_count} MUs")
+            logger.debug(f"Batch processing MU#{mu_batch_count+1} out of {mu_count} MUs")
             mu_batch_count += 1
 
     return pulse_trains, discharge_times
