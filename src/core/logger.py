@@ -7,7 +7,7 @@ os.makedirs(LOG_DIR, exist_ok=True)
 LOG_FILE = os.path.join(LOG_DIR, "app.log")
 
 # Option to enable/disable console logging
-ENABLE_CONSOLE_LOG = False
+ENABLE_CONSOLE_LOG = True
 
 # Create logger
 logger = logging.getLogger("core")

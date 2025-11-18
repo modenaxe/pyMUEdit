@@ -151,7 +151,6 @@ class DecompositionState:
             with open(state_path, 'wb') as f:
                 pickle.dump(serializable_state, f)
             logger.info(f"State saved successfully to {state_path}")
-            versionid = upsert_file_versions(state_path, raw_fileid, "decomposed")
         except Exception as e:
             logger.exception(f"Error saving state: {e}")
 

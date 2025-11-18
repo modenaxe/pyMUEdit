@@ -51,7 +51,6 @@ class FixedPopupComboBox(QComboBox):  # set a new class for dropout moy
 
 def setup_ui(main_window):
     """Setup the modern UI components for the MUedit Manual application."""
-
     # Set window properties
     main_window.setWindowTitle("MUedit - Manual Editing")
     main_window.setGeometry(100, 100, 1200, 800)

@@ -93,7 +93,7 @@ class MUeditManual(QMainWindow):
     # Add signal to return to dashboard if needed
     return_to_dashboard_requested = pyqtSignal()
 
-    def __init__(self, filename=None, pathname=None, parent=None):
+    def __init__(self, filename=None, pathname=None, raw_fileid=None, parent=None):
         super().__init__(parent)
 
         # Initialize main data structures
@@ -121,6 +121,7 @@ class MUeditManual(QMainWindow):
         self._ish5 = False
         self.overlay_data = None
         self.action_logs = []
+        self.raw_fileid = raw_fileid
 
         # Connected methods to class
         self.add_spikes_button_pushed = MethodType(add_spikes_button_pushed, self)
@@ -134,7 +135,6 @@ class MUeditManual(QMainWindow):
 
         # Set up the UI
         setup_ui(self)
-
         self.dirty = False
         self.update_save_button()
         self.dirty_depth = 0
@@ -385,6 +385,7 @@ class MUeditManual(QMainWindow):
 
     # Event handlers
     def select_file_button_pushed(self):
+        print(self.raw_fileid)
         """Open file dialog to select file for editing and automatically import it."""
         file_dialog = QFileDialog()
         file_path, _ = file_dialog.getOpenFileName(

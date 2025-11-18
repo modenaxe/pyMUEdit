@@ -881,7 +881,7 @@ class ImportDataWindow(QMainWindow):
         except Exception as e:
             logger.exception(f"error creating manual editing view: {e}")
 
-    def navigate_to_editing_with_data(self, filename, pathname):
+    def navigate_to_editing_with_data(self, filename, pathname, raw_fileid):
         """load data into muedit and navigate to editing view"""
         try:
             logger.debug(f"navigating to editing mode with file: {filename}")
@@ -899,6 +899,7 @@ class ImportDataWindow(QMainWindow):
             # load data into the existing mu edit instance
             self.manual_editing_page.filename = filename
             self.manual_editing_page.pathname = pathname
+            self.manual_editing_page.raw_fileid = raw_fileid
 
             # update the file path field in the ui
             if hasattr(self.manual_editing_page, 'file_path_field'):

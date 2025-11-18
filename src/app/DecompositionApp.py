@@ -34,7 +34,7 @@ from core.logger import logger
 
 class DecompositionApp(QMainWindow):
     # add signal for navigation
-    editing_requested = pyqtSignal(str, str)
+    editing_requested = pyqtSignal(str, str, int)
     import_requested = pyqtSignal()
 
     def __init__(self, emg_obj=None, filename=None, pathname=None, imported_signal=None, raw_fileid = None, config=None, parent=None):
@@ -493,7 +493,6 @@ class DecompositionApp(QMainWindow):
             else:
                 self.edit_field.setText(f"Output file {output_filename} not found")
                 return
-            print(signal)
             # Create the proper data structure for MUeditManual
             edition_data = {
                 "time": np.linspace(
@@ -551,7 +550,7 @@ class DecompositionApp(QMainWindow):
 
             def on_file_ready():
                 # signal to parent to nav to editing mode
-                self.editing_requested.emit(self.filename + "_fixed_for_editing.mat", self.pathname)
+                self.editing_requested.emit(self.filename + "_output_decomp.mat", self.pathname, self.raw_fileid)
                 self.edit_field.setText("navigating to mu editing screen...")
 
             # save the fixed file and then navigate

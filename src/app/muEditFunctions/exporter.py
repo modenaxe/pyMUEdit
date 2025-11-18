@@ -211,7 +211,7 @@ def save_file(self, filepath):
     h5_save_filename = os.path.join(self.pathname, f"{base_name}_edited.h5")
     save_as_h5(signal_dict, h5_save_filename, raw_filepath=filepath, config=log)
 
-    versionid = upsert_file_versions(h5_save_filename, self.raw_fileid, "decomposed")
+    versionid = upsert_file_versions(h5_save_filename, self.raw_fileid, "edited")
 
     insert_log(versionid, log, None)
 
