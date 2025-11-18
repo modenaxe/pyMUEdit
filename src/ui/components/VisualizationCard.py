@@ -6,8 +6,10 @@ from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import (QApplication, QFrame, QGraphicsDropShadowEffect,
                              QLabel, QSizePolicy, QVBoxLayout, QWidget)
 
-from .CleanTheme import CleanTheme
 from core.logger import logger
+
+from .CleanTheme import CleanTheme
+
 
 class VisualizationCard(QFrame):
     """A card specifically for visualizations with icon and text below"""

@@ -1,4 +1,3 @@
-from PyQt5.QtWidgets import QMessageBox
 from core.logger import logger
 
 class MUAnalysisFunc:

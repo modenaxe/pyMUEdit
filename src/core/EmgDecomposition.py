@@ -596,6 +596,12 @@ class offline_EMG(EMG):
 
         for i in range(self.its):
 
+            # stop flag check
+            if hasattr(self, 'should_stop') and self.should_stop:
+                logger.info(f"FastICA stopped at iteration {i+1}/{self.its} due to stop flag")
+                logger.info(f"Decomposition stoppped before FastICA at electrode {g+1}, interval {interval+1}")
+                return
+
             #################### FIXED POINT ALGORITHM #################################
             if self.initialisation:
                 # generate a random vector
@@ -779,6 +785,12 @@ class offline_EMG(EMG):
                         self.decomp_dict["SILs"][interval, i],
                         self.decomp_dict["CoVs"][interval, i],
                     )
+
+                # stop check
+                if hasattr(self, 'should_stop') and self.should_stop:
+                    logger.info(f"FastICA stopped during iteration {i+1}/{self.its} after plot callback")
+                    logger.info(f"Decomposition stoppped before FastICA at electrode {g+1}, interval {interval+1}")
+                    return
 
             else:
                 logger.info(f"Electrode #{g+1} - Iteration #{i+1} - less than 10 spikes")
@@ -1201,16 +1213,31 @@ class offline_EMG(EMG):
                 },
                 "post_process_across_arrays", 0
             )
+    
+        if not hasattr(self, 'mu_dict') or not isinstance(self.mu_dict, dict):
+            logger.warning("mu_dict not properly initialized")
+            self.mu_dict = {"pulse_trains": [], "discharge_times": []}
+        
+        if "pulse_trains" not in self.mu_dict or not isinstance(self.mu_dict["pulse_trains"], list):
+            logger.warning("pulse_trains not properly initialized")
+            self.mu_dict["pulse_trains"] = []
+            
+        if "discharge_times" not in self.mu_dict or not isinstance(self.mu_dict["discharge_times"], list):
+            logger.warning("discharge_times not properly initialized")
+            self.mu_dict["discharge_times"] = []
 
         mu_count = 0
         no_arrays = len(self.mu_dict["pulse_trains"])
         logger.info(f"Found {no_arrays} electrode arrays with data")
 
-        # Save array counts
+        # save array counts with bounds checking
         array_motor_unit_counts = []
 
         for i in range(no_arrays):
-            if isinstance(self.mu_dict["pulse_trains"][i], np.ndarray) and self.mu_dict["pulse_trains"][i].size > 0:
+            if (i < len(self.mu_dict["pulse_trains"]) and 
+                isinstance(self.mu_dict["pulse_trains"][i], np.ndarray) and 
+                self.mu_dict["pulse_trains"][i].size > 0):
+                
                 motor_unit_count = (
                     self.mu_dict["pulse_trains"][i].shape[0]
                     if hasattr(self.mu_dict["pulse_trains"][i], "shape")
@@ -1237,28 +1264,59 @@ class offline_EMG(EMG):
             )
 
         if mu_count == 0:
-            logger.info("No motor units found, skipping cross-array processing")
+            logger.debug("No motor units found, skipping cross-array processing")
+            self.mu_dict["muscle"] = np.array([])
             return
 
-        all_pulse_trains = np.zeros([mu_count, np.shape(self.signal_dict["target"])[0]])
-        all_discharge_times = []  # different mus will have discharge time arrays of different lengths
+        # ensure signal target exists and has proper shape
+        if "target" not in self.signal_dict or self.signal_dict["target"] is None:
+            logger.warning("No target signal found, using default size")
+            if "data" in self.signal_dict and self.signal_dict["data"] is not None:
+                signal_length = self.signal_dict["data"].shape[1]
+            else:
+                signal_length = 1000
+        else:
+            signal_length = np.shape(self.signal_dict["target"])[0]
+
+        all_pulse_trains = np.zeros([mu_count, signal_length])
+        all_discharge_times = []
         muscle = np.zeros(mu_count, dtype=int)
 
         mu = 0
         logger.debug("Consolidating motor units from all arrays...")
         for i in range(no_arrays):  # iterating over arrays
-            if isinstance(self.mu_dict["pulse_trains"][i], np.ndarray) and self.mu_dict["pulse_trains"][i].size > 0:
+            # bounds check for pulse_trains
+            if (i < len(self.mu_dict["pulse_trains"]) and 
+                isinstance(self.mu_dict["pulse_trains"][i], np.ndarray) and 
+                self.mu_dict["pulse_trains"][i].size > 0):
+                
                 motor_unit_count = (
                     self.mu_dict["pulse_trains"][i].shape[0]
                     if hasattr(self.mu_dict["pulse_trains"][i], "shape")
                     else len(self.mu_dict["pulse_trains"][i])
                 )
 
-                for j in range(motor_unit_count):  # iterating over the mus per array
-                    all_pulse_trains[mu, :] = self.mu_dict["pulse_trains"][i][j]
-                    all_discharge_times.append(self.mu_dict["discharge_times"][i][j])
-                    muscle[mu] = i
-                    mu += 1
+                # iterating over the mus per array
+                for j in range(motor_unit_count):
+                    # bounds check for both pulse_trains and discharge_times
+                    if (mu < mu_count and 
+                        j < self.mu_dict["pulse_trains"][i].shape[0] and
+                        i < len(self.mu_dict["discharge_times"]) and
+                        j < len(self.mu_dict["discharge_times"][i])):
+                        
+                        # additional shape check for pulse train
+                        pulse_train = self.mu_dict["pulse_trains"][i][j]
+                        if len(pulse_train) <= signal_length:
+                            all_pulse_trains[mu, :len(pulse_train)] = pulse_train
+                        else:
+                            # truncate if pulse train is longer than expected
+                            all_pulse_trains[mu, :] = pulse_train[:signal_length]
+                        
+                        all_discharge_times.append(self.mu_dict["discharge_times"][i][j])
+                        muscle[mu] = i
+                        mu += 1
+                    else:
+                        logger.warning(f"Skipping MU {j} in array {i} due to bounds check failure")
 
         # Save consolidated data
         if self.save_intermediate:
@@ -1319,7 +1377,13 @@ class offline_EMG(EMG):
             idx = np.where(muscle_new == i)[0]  # find the indices for mu -> array mapping
             logger.info(f"Found {len(idx)} MUs for array {i+1}")
 
-            self.mu_dict["pulse_trains"].append(pulse_trains_new[idx])
+            # bounds check for pulse_trains_new
+            if len(idx) > 0 and all(j < len(pulse_trains_new) for j in idx):
+                self.mu_dict["pulse_trains"].append(pulse_trains_new[idx])
+            else:
+                # create empty array with proper dimensions
+                self.mu_dict["pulse_trains"].append(np.zeros((0, signal_length)))
+                logger.warning(f"Created empty pulse_trains for array {i+1}")
 
             # Get number of motor units safely
             motor_unit_count = 0
@@ -1328,9 +1392,16 @@ class offline_EMG(EMG):
             elif hasattr(self.mu_dict["pulse_trains"][i], "__len__"):
                 motor_unit_count = len(self.mu_dict["pulse_trains"][i])
 
+            # bounds check for discharge_times access
             for j in range(motor_unit_count):
-                if j < len(idx) and idx[j] < len(discharge_times_new):
+                if (j < len(idx) and 
+                    idx[j] < len(discharge_times_new) and
+                    i < len(self.mu_dict["discharge_times"])):
                     self.mu_dict["discharge_times"][i].append(discharge_times_new[idx[j]])
+                else:
+                    # add empty discharge times if bounds check fails
+                    self.mu_dict["discharge_times"][i].append(np.array([]))
+                    logger.warning(f"Added empty discharge_times for array {i+1}, MU {j}")
 
             # Save per-electrode regrouping
             if self.save_intermediate:

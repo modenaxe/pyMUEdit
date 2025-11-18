@@ -5,6 +5,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (QCheckBox, QDialog, QHBoxLayout, QLabel,
                              QPushButton, QSizePolicy, QStyle, QToolButton,
                              QVBoxLayout)
+
 from core.logger import logger
 
 """

@@ -1,31 +1,24 @@
-import numpy as np
-import pandas as pd
+from openhdemg.library import compute_dr
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QCursor, QFont
-from PyQt5.QtWidgets import (QComboBox, QDialog, QHBoxLayout, QLabel,
-                             QLineEdit, QPushButton, QVBoxLayout, QWidget)
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QHBoxLayout, QLineEdit, QVBoxLayout, QWidget
 
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
+from core.logger import logger
 from core.muAnalysisCore.AnalysisResultsHist import store
-from core.muAnalysisCore.SelectRange import SelectRange
-from ui.components.muAnalysisComponents.AnalysisDropdown import \
-    AnalysisDropdown
+from ui.components import ActionButton
 from ui.components.muAnalysisComponents.AnalysisDropdownDialog import \
     AnalysisDropdownDialog
-from ui.components.muAnalysisComponents.AnalysisLabeledDropdownDialog import \
-    AnalysisLabeledDropdownDialog
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
-from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.components.muAnalysisComponents.PropertiesInnerDialogText import \
     PropertiesInnerDialogText
-from ui.components.muAnalysisComponents.SubsectionTitle import SubsectionTitle
 from ui.muanalysis.ComputeThresholdSection import ComputeThresholdSection
-from core.logger import logger
 
-class MotorUnitPropertiesDialog(QDialog):
+
+class MotorUnitPropertiesDialog(QWidget):
 
     """Dialog for entering Motor Unit Properties including MVC value"""
 
@@ -45,13 +38,13 @@ class MotorUnitPropertiesDialog(QDialog):
 
     def init_ui(self, func):
         self.setWindowTitle("Motor Unit Properties")
-        self.setMinimumWidth(550)
-        self.setModal(True)
+        self.setFixedHeight(300)
+        self.setFixedWidth(650)
         self.setWindowFlags(
-            Qt.Window | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint
+            Qt.Window | Qt.WindowCloseButtonHint
         )
         self.setStyleSheet(
-            f"background-color: {CleanTheme.ANALYSIS_DIALOG_BACKGROUND};")
+            f"background-color: {CleanTheme.BG_CARD};")
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
         layout.setContentsMargins(30, 20, 30, 20)
@@ -73,9 +66,11 @@ class MotorUnitPropertiesDialog(QDialog):
 
         dr_section = QHBoxLayout()
 
-        dr_button = GeneralButton(
-            "Discharge Rate", lambda: self.handle_discharge_rate()
+        dr_button = ActionButton(
+            "Discharge Rate"
         )
+        dr_button.clicked.connect(lambda: self.handle_discharge_rate())
+        dr_button.setMinimumHeight(40)
         dr_section.addWidget(dr_button)
 
         self.dr_event_dropdown = AnalysisDropdownDialog(
@@ -83,6 +78,7 @@ class MotorUnitPropertiesDialog(QDialog):
             items=["rec", "derec", "rec_derec", "steady", "rec_derec_steady"],
             parent=self,
         )
+        self.dr_event_dropdown.setCurrentIndex(0)
         self.dr_event_dropdown.setMinimumHeight(32)
         dr_section.addWidget(self.dr_event_dropdown)
 
@@ -102,8 +98,9 @@ class MotorUnitPropertiesDialog(QDialog):
         layout.addLayout(dr_section)
         func.set_mvc(self.mvc_input)
 
-        basic_prop = MotorUnitPropertiesBasic(self.analysis_plot, func, self)
+        basic_prop = MotorUnitPropertiesBasic(func)
         layout.addLayout(basic_prop)
+        layout.addStretch(1)
 
     def handle_discharge_rate(self):
         event = self.dr_event_dropdown.currentText()
@@ -124,32 +121,12 @@ class MotorUnitPropertiesDialog(QDialog):
             ErrorDialog("EMG data not loaded.", "Error").exec_()
             return
 
-        if event in ["steady", "rec_derec_steady"]:
-            self.accept()
-            # Show the range selection dialog
-            SelectRange(self.analysis_plot,
-                        lambda start, end: self.compute_and_display_dr(
-                            n_firings_RecDerec, n_firings_steady, event, (start, end)
-                        ), False)
-
-        else:
-            # For non-steady events, just compute normally
-            self.compute_and_display_dr(
-                n_firings_RecDerec, n_firings_steady, event, None
-            )
-
-    def compute_and_display_dr(
-        self, n_firings_RecDerec, n_firings_steady, event, time_range
-    ):
-        # Compute discharge rate
-        func = MUPropertiesFunc()
         try:
-            dr_df = func.compute_dr(
+            dr_df = compute_dr(
                 emgfile=self.emgfile,
                 n_firings_RecDerec=n_firings_RecDerec,
                 n_firings_steady=n_firings_steady,
                 event_=event,
-                time_range=time_range,
             )
         except Exception as e:
             ErrorDialog(
@@ -162,24 +139,21 @@ class MotorUnitPropertiesDialog(QDialog):
             f"Discharge Rate (event: {event})", dr_df.to_dict("records")
         )
 
-    def save_mvc(self):
-        pass
-
 
 class MotorUnitPropertiesBasic(QHBoxLayout):
 
     """Basic Properties analysis layout"""
 
-    def __init__(self, analysis_plot, func, over):
+    def __init__(self, func):
         super().__init__()
-        button = GeneralButton(
-            "Basic Properties",
+        button = ActionButton("Basic Properties")
+        button.clicked.connect(
             lambda: func.basic_prop(
-                analysis_plot,
                 rec_input,
-                steady_input,
-                over),
+                steady_input
+            )
         )
+        button.setMinimumHeight(40)
         rec_input = PropertiesInnerDialogText("Firings at Rec")
         steady_input = PropertiesInnerDialogText("Firings at Start/End Steady")
         self.addWidget(button)
@@ -228,26 +202,25 @@ class MotorUnitPropertiesButton(QWidget):
 
     def init_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 0, 10, 0)
+        layout.setContentsMargins(0, 0, 0, 0)
 
-        # Subtitle
-        subtitle_label = SubsectionTitle("MOTOR UNIT ANALYSIS")
-        subtitle_label.setObjectName("motorUnitAnalysisSubTitle")
-        layout.addWidget(subtitle_label)
-
-        mu_properties_btn = GeneralButton(
-            "Motor Unit Properties", lambda: self.open_mu_properties()
-        )
+        mu_properties_btn = ActionButton("Motor Unit Properties")
+        mu_properties_btn.clicked.connect(
+            lambda: self.open_mu_properties())
+        mu_properties_btn.setMinimumHeight(40)
         layout.addWidget(mu_properties_btn)
 
     def open_mu_properties(self):
         # Open the Motor Unit Properties dialog
         emgfile = FileUploadFunc.file
+        if not emgfile:
+            ErrorDialog("No file has been loaded", "Error").exec_()
+            return
         dialog = MotorUnitPropertiesDialog(
             self, self.analysis_plot, self.current_mvc, emgfile=emgfile
         )
         dialog.mvc_updated.connect(self.update_mvc)
-        dialog.exec_()
+        dialog.show()
 
     def update_mvc(self, mvc_value):
         # Update the MVC value

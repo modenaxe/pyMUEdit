@@ -4,8 +4,10 @@ from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton,
                              QVBoxLayout)
 
-from .CleanTheme import CleanTheme
 from core.logger import logger
+
+from .CleanTheme import CleanTheme
+
 
 class DatasetItem(QFrame):
     """A clean list item for displaying dataset information"""
@@ -36,6 +38,9 @@ class DatasetItem(QFrame):
             }}
             QFrame#datasetItem:hover {{
                 background-color: rgba(0, 0, 0, 0.05);
+            }}
+            QLabel {{
+                background-color: transparent;
             }}
         """
         )

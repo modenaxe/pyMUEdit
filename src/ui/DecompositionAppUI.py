@@ -9,8 +9,10 @@ from torch import cuda
 
 # Import custom components
 from ui.components import (ActionButton, CleanScrollBar, CleanTheme,
-                           CollapsiblePanel, FormDoubleSpinBox, FormDropdown,
-                           FormSpinBox, SettingsGroup, VisualizationPanel)
+                           CollapsiblePanel, FormCheckBox, FormDoubleSpinBox,
+                           FormDropdown, FormSpinBox, SettingsGroup,
+                           VisualizationPanel)
+from ui.components.Footer import Footer
 
 
 def setup_ui(main_window):
@@ -28,29 +30,60 @@ def setup_ui(main_window):
     # Main widget and layout
     main_window.central_widget = QWidget()
     main_window.setCentralWidget(main_window.central_widget)
-    main_window.main_layout = QHBoxLayout(main_window.central_widget)
+    main_window.main_layout = QVBoxLayout(main_window.central_widget)
     main_window.main_layout.setContentsMargins(0, 0, 0, 0)
     main_window.main_layout.setSpacing(0)
 
-    # Create the left panel for settings with a scroll area
-    setup_left_panel(main_window)
-
-    # Create the content area (center + right panels)
+    # main content area
     content_widget = QWidget()
     content_layout = QHBoxLayout(content_widget)
-    content_layout.setContentsMargins(20, 20, 20, 20)
-    content_layout.setSpacing(20)
+    content_layout.setContentsMargins(0, 0, 0, 0)
+    content_layout.setSpacing(0)
+
+    # Create the left panel for settings with a scroll area
+    setup_left_panel(main_window, content_layout)
+
+    # Create the content area (center + right panels)
+    centre_right_widget = QWidget()
+    centre_right_layout = QHBoxLayout(centre_right_widget)
+    centre_right_layout.setContentsMargins(20, 20, 20, 20)
+    centre_right_layout.setSpacing(20)
 
     # Create the center panel for visualization
-    setup_center_panel(main_window, content_layout)
+    setup_center_panel(main_window, centre_right_layout)
 
     # Create the right panel for status and results
-    setup_right_panel(main_window, content_layout)
+    setup_right_panel(main_window, centre_right_layout)
+
+    content_layout.addWidget(centre_right_widget)
 
     main_window.main_layout.addWidget(content_widget)
 
+    def go_to_import_data():
+        main_window.window().show_import_data_view()
 
-def setup_left_panel(main_window):
+    def go_to_editing():
+        main_window.open_editing_mode()
+    main_window.footer = Footer(
+        on_prev=go_to_import_data,
+        on_next=go_to_editing
+    )
+    main_window.footer.setFixedHeight(64)
+    main_window.main_layout.addWidget(main_window.footer)
+    main_window.footer.next_btn.setEnabled(False)
+
+    # Get file info from ImportDataWindow
+    parent = main_window.parent()
+    if parent and hasattr(parent, "current_file_info"):
+        file_info = parent.current_file_info
+        main_window.footer.footer_file_info.setText(
+            f"File: {file_info['name']}")
+        main_window.footer.size_info.setText(f"Size: {file_info['size']}")
+        main_window.footer.format_info.setText(
+            f"Format: {file_info['format']}")
+
+
+def setup_left_panel(main_window, parent_layout):
     """Set up the left panel with settings and controls."""
     # Create a container for the scroll area to control positioning
     left_container = QWidget()
@@ -184,6 +217,14 @@ def setup_left_panel(main_window):
     main_window.number_windows_field = windows_field.spinbox
     params_panel.add_widget(windows_field)
 
+    use_threshold_field = FormCheckBox("Use Threshold", True)
+    main_window.use_threshold_target_field = use_threshold_field.checkbox
+    params_panel.add_widget(use_threshold_field)
+    
+    use_threshold_field.checkbox.toggled.connect(
+        lambda checked: threshold_field.spinbox.setEnabled(checked)
+    )
+    
     threshold_field = FormDoubleSpinBox("Threshold Target", 0.9, 0, 1, 0.1)
     main_window.threshold_target_field = threshold_field.spinbox
     params_panel.add_widget(threshold_field)
@@ -323,7 +364,7 @@ def setup_left_panel(main_window):
     left_container_layout.addWidget(scroll_area)
 
     # Add the container to the main layout
-    main_window.main_layout.addWidget(left_container)
+    parent_layout.addWidget(left_container)
 
 
 def setup_center_panel(main_window, parent_layout):
@@ -362,11 +403,54 @@ def setup_center_panel(main_window, parent_layout):
 
     controls_layout.addStretch(1)
 
+    # container for button switching
+    main_window.button_container = QWidget()
+    main_window.button_layout = QHBoxLayout(main_window.button_container)
+    main_window.button_layout.setContentsMargins(0, 0, 0, 0)
+    main_window.button_layout.setSpacing(10)
+
+    # start decomposition button
     main_window.start_button = ActionButton(
         "▶ Start Decomposition", primary=True)
     main_window.start_button.setEnabled(False)
-    controls_layout.addWidget(main_window.start_button)
 
+    # stop decomposition button
+    main_window.stop_button = ActionButton(
+        "⏹ Stop Decomposition", primary=False)
+    main_window.stop_button.setStyleSheet(
+        """
+        ActionButton {
+            background-color: #f44336;
+            border: 1px;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+        }
+        ActionButton:hover {
+            background-color: #d32f2f;
+        }
+        ActionButton:disabled {
+            background-color: #cccccc;
+            color: #666666;
+        }
+        """
+    )
+
+    main_window.stop_button.setEnabled(False)
+    main_window.continue_button = ActionButton(
+        "▶ Continue Decomposition", primary=True)
+    main_window.restart_button = ActionButton(
+        "Restart Decomposition", primary=False)
+
+    # initially show start and stop buttons
+    main_window.button_layout.addWidget(main_window.start_button)
+    main_window.button_layout.addWidget(main_window.stop_button)
+
+    # initially hide continue and restart buttons
+    main_window.continue_button.hide()
+    main_window.restart_button.hide()
+
+    controls_layout.addWidget(main_window.button_container)
     center_layout.addLayout(controls_layout)
 
     # NOTE: Code for window to replicate for preview
@@ -468,14 +552,45 @@ def setup_right_panel(main_window, parent_layout):
     main_window.save_output_button.setEnabled(False)
     results_group.add_field(main_window.save_output_button)
 
-    main_window.next_button = ActionButton("Next", primary=True)
-    main_window.next_button.setEnabled(False)
-    results_group.add_field(main_window.next_button)
-
     right_layout.addWidget(results_group)
 
     right_layout.addStretch(1)
     parent_layout.addWidget(right_panel, 1)
+
+
+def setup_bottom_navigation(main_window):
+    """set up the bottom navigation bar with next and previous buttons"""
+    # create the bottom navigation container
+    bottom_nav = QWidget()
+    bottom_nav.setObjectName("bottom_navigation")
+    bottom_nav.setStyleSheet(f"""
+        #bottom_navigation {{
+            background-color: {CleanTheme.BG_CARD};
+            border-top: 1px solid {CleanTheme.BORDER};
+        }}
+    """)
+    bottom_nav.setFixedHeight(64)
+
+    # create layout for bottom navigation
+    bottom_layout = QHBoxLayout(bottom_nav)
+    bottom_layout.setContentsMargins(30, 15, 30, 15)
+    bottom_layout.setSpacing(20)
+
+    # previous button
+    main_window.back_to_import_btn = ActionButton("← Previous", primary=False)
+    main_window.back_to_import_btn.setMinimumWidth(90)
+    bottom_layout.addWidget(main_window.back_to_import_btn)
+
+    bottom_layout.addStretch()
+
+    # next button
+    main_window.next_to_editing_btn = ActionButton("Next →", primary=True)
+    main_window.next_to_editing_btn.setEnabled(False)
+    main_window.next_to_editing_btn.setMinimumWidth(90)
+    bottom_layout.addWidget(main_window.next_to_editing_btn)
+
+    # add the bottom navigation to the main layout
+    main_window.main_layout.addWidget(bottom_nav)
 
 
 if __name__ == "__main__":

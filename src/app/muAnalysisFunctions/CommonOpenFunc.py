@@ -13,6 +13,7 @@ import warnings
 import os
 import copy
 import itertools
+from core.logger import logger
 
 class CommonOpenFunc():
     
@@ -117,6 +118,8 @@ class CommonOpenFunc():
                 "data must be one of pd.series, pd.dataframe or np.ndarray. " +
                 f"{type(data)} was passed instead."
             )
+            logger.error("data must be one of pd.series, pd.dataframe or np.ndarray. " +
+                f"{type(data)} was passed instead.")
             
     def compute_sil(self, ipts, mupulses, ignore_negative_ipts=False):
         """From openHDEMG computes sil

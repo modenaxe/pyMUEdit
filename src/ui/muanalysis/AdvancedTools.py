@@ -1,33 +1,26 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QMessageBox, QPushButton,
-                             QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from app.muAnalysisFunctions.ConductionVelocityDialog import \
     ConductionVelocityDialog
 from app.muAnalysisFunctions.MotorUnitTrackingDialog import \
     MotorUnitTrackingDialog
-from ui.components.CleanTheme import CleanTheme
+from ui.components import ActionButton
 from ui.components.muAnalysisComponents.AnalysisDropdown import \
     AnalysisDropdown
-from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
+from ui.components.muAnalysisComponents.AnalysisInput import AnalysisInput
 from ui.components.muAnalysisComponents.ErrorDialog import ErrorDialog
-from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.SubsectionTitle import SubsectionTitle
 from ui.muanalysis.PIC import PICDialog
 
 
 class AdvancedTools(QWidget):
     """Dialog and drops down for advanced tool analysis"""
 
-    def __init__(self, items=None, parent=None):
+    def __init__(self, parent=None):
         super().__init__(parent)
 
         adv_layout = QVBoxLayout(self)
-        adv_layout.setContentsMargins(10, 10, 10, 0)
-        # the title
-        advanced_label = AnalysisText.create_major_title("Advanced Tools")
-        adv_layout.addWidget(advanced_label)
+        adv_layout.setContentsMargins(0, 0, 0, 0)
+        adv_layout.setSpacing(8)
 
         # declaring the dropdown options
         self.analysis_tool = "Analysis Tool"
@@ -53,6 +46,7 @@ class AdvancedTools(QWidget):
         analysis_tools_dropdown = AnalysisDropdown(
             self.analysis_tool, items=self.analysis_tools_options, parent=self
         )
+        analysis_tools_dropdown.setCurrentIndex(0)
         adv_layout.addWidget(analysis_tools_dropdown)
         self.analysis_tools_dropdown = analysis_tools_dropdown
 
@@ -61,18 +55,34 @@ class AdvancedTools(QWidget):
             self.matrix_orientation, items=self.matrix_orientation_options, parent=self)
         adv_layout.addWidget(matrix_orientation_dropdown)
         self.matrix_orientation_dropdown = matrix_orientation_dropdown
+        self.matrix_orientation_dropdown.setCurrentIndex(1)
 
         # matrix selection dropdown
         matrix_code_dropdown = AnalysisDropdown(
             self.matrix_code, items=self.matrix_code_options, parent=self
         )
+        matrix_code_dropdown.setCurrentIndex(1)
         adv_layout.addWidget(matrix_code_dropdown)
         self.matrix_code_dropdown = matrix_code_dropdown
+        self.matrix_code_dropdown.currentTextChanged.connect(
+            self.on_matrix_code_selection)
+
+        # Column and Rows input for None type matrix code
+        channels_section = QWidget()
+        channels_layout = QHBoxLayout(channels_section)
+        self.rows_input = AnalysisInput(placeholder="Rows")
+        self.columns_input = AnalysisInput(placeholder="Columns")
+        channels_layout.addWidget(self.rows_input)
+        channels_layout.addWidget(self.columns_input)
+        adv_layout.addWidget(channels_section)
+
+        self.rows_input.hide()
+        self.columns_input.hide()
 
         # advanced analysis button
-        advanced_analysis_btn = GeneralButton(
-            "Advanced Analysis", lambda: self.show_popup(), parent=self
-        )
+        advanced_analysis_btn = ActionButton("Advanced Analysis", parent=self)
+        advanced_analysis_btn.clicked.connect(lambda: self.show_popup())
+        advanced_analysis_btn.setMinimumHeight(40)
         adv_layout.addWidget(advanced_analysis_btn, stretch=1)
 
         self.analysis_tools_dropdown.currentTextChanged.connect(
@@ -88,6 +98,18 @@ class AdvancedTools(QWidget):
         self.matrix_orientation_dropdown.setDisabled(disable)
         self.matrix_code_dropdown.setDisabled(disable)
 
+    def on_matrix_code_selection(self):
+        """
+        Show or hide rows and columns input fields based on the selected
+        matrix code.
+        """
+        if self.matrix_code_dropdown.currentText() == "None":
+            self.rows_input.show()
+            self.columns_input.show()
+        else:
+            self.rows_input.hide()
+            self.columns_input.hide()
+
     def show_popup(self):
         if self.analysis_tools_dropdown.currentText() == "Persistent Inward Currents":
             self.show_analysis()
@@ -98,22 +120,56 @@ class AdvancedTools(QWidget):
         elif self.matrix_code_dropdown.currentText() == "":
             self.show_error("Please choose a matrix code.")
         else:
-            self.show_analysis()
+            if self.matrix_code_dropdown.currentText() == "None":
+                self.rows = self.rows_input.get()
+                self.columns = self.columns_input.get()
+                if not self.rows_input.get() or not self.columns_input.get():
+                    self.show_error(
+                        "Please enter both rows and columns for the matrix.")
+                else:
+                    try:
+                        self.rows = int(self.rows)
+                        self.columns = int(self.columns)
+                        self.show_analysis()
+                    except BaseException:
+                        self.show_error("Rows and Columns must be integers.")
+            else:
+                self.show_analysis()
 
     def show_error(self, message=""):
         ErrorDialog(message, "Error").exec_()
 
     def show_analysis(self):
         selected_tool = self.analysis_tools_dropdown.currentText()
+
+        matrix_orientation_string = self.matrix_orientation_dropdown.currentText()
+        matrix_code_string = self.matrix_code_dropdown.currentText()
+
+        matrix_orientation = int(
+            matrix_orientation_string) if matrix_orientation_string else 180
+        matrix_code = None if matrix_code_string in (
+            None, "", "None") else matrix_code_string
+
+        rows = self.rows if matrix_code is None else None
+        columns = self.columns if matrix_code is None else None
+
         if selected_tool == "Motor Unit Tracking":
             dialog = MotorUnitTrackingDialog(
                 parent=self,
-                matrix_orientation=self.matrix_orientation_dropdown.currentText(),
-                matrix_code=self.matrix_code_dropdown.currentText(),
+                matrix_orientation=matrix_orientation,
+                matrix_code=matrix_code,
+                n_rows=rows,
+                n_cols=columns
             )
             dialog.exec_()
         elif selected_tool == "Conduction Velocity Estimation":
-            dialog = ConductionVelocityDialog(self)
+            dialog = ConductionVelocityDialog(
+                parent=self,
+                matrix_orientation=matrix_orientation,
+                matrix_code=matrix_code,
+                n_rows=rows,
+                n_cols=columns
+            )
             dialog.exec_()
         elif selected_tool == "Persistent Inward Currents":
             dialog = PICDialog(self)

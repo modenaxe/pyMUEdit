@@ -4,9 +4,10 @@ from PyQt5.QtWidgets import (QCheckBox, QDialog, QFileDialog, QHBoxLayout,
                              QLabel, QPushButton, QSizePolicy, QSpacerItem,
                              QStyle, QToolButton, QVBoxLayout, QWidget)
 
+from core.logger import logger
 from ui.components.ActionButtonedit import ActionButtonedit
 from ui.components.ErrorDialog import ErrorDialog
-from core.logger import logger
+
 
 class PlotDialog(QDialog):
     def __init__(self, title):

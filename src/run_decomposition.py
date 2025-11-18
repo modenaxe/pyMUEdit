@@ -57,6 +57,7 @@ def run_decomposition(input_file, output_dir=None, save_intermediate=True):
             "drawingmode": 0,  # 0 = Output in the command window ; 1 = Output in a figure
             "duplicatesbgrids": 1,  # 0 = do not consider duplicates between grids ; 1 = Remove duplicates between grids
             # SPECIFIC VALUES
+            "usethreshold": True,
             "thresholdtarget": 0.8,  # threshold to segment the target displayed to the participant, 1 being the maxima of the target (e.g., plateau)
             "nbextchan": 1000,  # nb of extended channels (1000 in Negro 2016, can be higher to improve the decomposition)
             "edges": 0.2,  # edges of the signal to remove after preprocessing the signal (in sec)
@@ -69,7 +70,7 @@ def run_decomposition(input_file, output_dir=None, save_intermediate=True):
         }
         emg.apply_muedit_params(parameters)
 
-        logger.debug(f"Starting decomposition of {input_file}")
+        logger.info(f"Starting decomposition of {input_file}")
 
         # Open the OTB+ file
         emg.open_otb_plus(input_file)

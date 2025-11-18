@@ -1,7 +1,9 @@
+import re
 import sqlite3
 from pathlib import Path
 from datetime import datetime
 import json
+from core.logger import logger
 
 PATH_TO_SCHEMA = Path("./core/database/schema.sql")
 PATH_TO_DATABASE = Path("./core/database/database.db")
@@ -19,8 +21,8 @@ def init_db():
     """
     try:
         with sqlite3.connect(PATH_TO_DATABASE) as connection:
-            print(f"Set up SQLite database successfully")
-            
+            logger.debug(f"Set up SQLite database successfully")
+
             cursor = connection.cursor()
             schema = PATH_TO_SCHEMA.read_text()
             cursor.executescript(schema)
@@ -28,13 +30,13 @@ def init_db():
 
             load_stage_map()
     except (sqlite3.OperationalError) as e:
-        print("Failed to initialise database:", e)
+        logger.exception("Failed to initialise database:")
         return None
 
 def get_connection():
     """
     Starts connection to the database
-    
+
     Returns a dictionary cursor
     """
     conn = sqlite3.connect(PATH_TO_DATABASE)
@@ -57,8 +59,8 @@ def load_stage_map():
 
 def create_new_session() -> int:
     """
-    Creates a new session 
-    
+    Creates a new session
+
     Returns sessionid of created session
     """
     with get_connection() as conn:
@@ -77,7 +79,7 @@ def get_session_files(sessionid: int):
     """
     with get_connection() as conn:
         rows = conn.execute("""
-            SELECT 
+            SELECT
                 f.fileid,
                 f.filename,
                 f.filepath AS original_filepath,
@@ -131,8 +133,8 @@ def insert_files(filepath: str, filename: str, sessionid: int):
     """
     Insert original, raw files into database.
     note: we will handle files under file_versions
-    
-    Returns fileid 
+
+    Returns fileid
     """
     with get_connection() as conn:
         cur = conn.execute("""
@@ -141,7 +143,7 @@ def insert_files(filepath: str, filename: str, sessionid: int):
         """, (filepath, filename, sessionid, get_timestamp()))
         conn.commit()
         return cur.lastrowid
-        
+
 def upsert_file_versions(filepath: str, fileid: int, stage: str):
     """
     Inserts file version if not present in database
@@ -155,7 +157,7 @@ def upsert_file_versions(filepath: str, fileid: int, stage: str):
     with get_connection() as conn:
         curr = conn.execute("""
             INSERT INTO file_versions (fileid, stageid, filepath, last_opened)
-            VALUES (?, ?, ?, ?)                
+            VALUES (?, ?, ?, ?)
             ON CONFLICT(filepath) DO UPDATE SET
             last_opened = excluded.last_opened
             """, (fileid, stageid, filepath, get_timestamp()))
@@ -254,4 +256,31 @@ def get_stageid(stage: str) -> id:
     try:
         return STAGES[stage]
     except Exception as e:
-        print(f"Invalid stage '{e}': must be one of {STAGES}")
+        logger.exception(f"Invalid stage '{e}': must be one of {STAGES}")
+
+def get_fileid_by_path(filepath: str):
+    """Return fileid if the file already exists in the database, else None"""
+    from core.database.database import get_connection
+    with get_connection() as conn:
+        row = conn.execute("SELECT fileid FROM files WHERE filepath = ?", (filepath,)).fetchone()
+        return row["fileid"] if row else None
+
+def get_or_create_session_for_file(filepath: str) -> int:
+    """
+    Get existing session for a file, or create a new one if it doesn't exist.
+    Returns sessionid.
+    """
+    with get_connection() as conn:
+        row = conn.execute("""
+            SELECT sessionid FROM files WHERE filepath = ?
+        """, (filepath,)).fetchone()
+
+        if row:
+            return row["sessionid"]
+        else:
+            cur = conn.execute("""
+                INSERT INTO sessions (created_at)
+                VALUES (?)
+            """, (get_timestamp(),))
+            conn.commit()
+            return cur.lastrowid

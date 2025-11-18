@@ -32,6 +32,7 @@ import h5py
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from types import MethodType
 
 from ui.MUeditManualUI import setup_ui
 from core.utils.manual_editing.getsil import getsil
@@ -58,9 +59,18 @@ from app.muEditFunctions.mu_selection import (
     calculate_silval
 )
 from app.muEditFunctions.edit_actions import (
+    add_spikes_button_pushed,
     delete_spikes_button_pushed,
-    add_spikes_button_pushed
+    delete_dr_button_pushed,
+    remove_outliers_button_pushed,
+    lock_spikes_button_pushed
 )
+from app.muEditFunctions.mu_filter_actions import (
+    update_mu_filter_button_pushed,
+    extend_mu_filter_button_pushed,
+)
+from app.muEditFunctions.mu_selection import update_display_mus
+
 # Import custom components
 from ui.components import (
     WarningDialog,
@@ -109,6 +119,17 @@ class MUeditManual(QMainWindow):
         self._save_flag = True
         self._on_save = 0
         self._ish5 = False
+        self.overlay_data = None
+
+        # Connected methods to class
+        self.add_spikes_button_pushed = MethodType(add_spikes_button_pushed, self)
+        self.delete_spikes_button_pushed = MethodType(delete_spikes_button_pushed, self)
+        self.delete_dr_button_pushed = MethodType(delete_dr_button_pushed, self)
+        self.remove_outliers_button_pushed = MethodType(remove_outliers_button_pushed, self)
+        self.lock_spikes_button_pushed = MethodType(lock_spikes_button_pushed, self)
+        self.update_mu_filter_button_pushed = MethodType(update_mu_filter_button_pushed, self)
+        self.extend_mu_filter_button_pushed = MethodType(extend_mu_filter_button_pushed, self)
+        self.update_display_mus = MethodType(update_display_mus, self)
 
         # Set up the UI
         setup_ui(self)
@@ -714,8 +735,35 @@ class MUeditManual(QMainWindow):
 
     def handle_selection_complete(self, action_type, array_idx, mu_idx, x_min, x_max, y_min, y_max):
         """Handle the completion of a selection and process it."""
-        # Process the selection
+            # ==== 1. Save old discharge times BEFORE modification ====
+        old_times = np.array(
+            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), []),
+            copy=True
+        )
+
+        # ==== 2. Perform the actual selection action ====
         process_selection(self.MUedition, action_type, array_idx, mu_idx, x_min, x_max, y_min, y_max)
+
+        # ==== 3. Retrieve new discharge times AFTER modification ====
+        new_times = np.array(
+            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), [])
+        )
+
+        # ==== 4. Compute delta ====
+        delta = len(new_times) - len(old_times)
+
+        # ==== 5. Show user feedback ====
+        if action_type == "add_spikes" and delta > 0:
+            self.show_tip(f"Added {delta} spike(s)", duration_ms=4000)
+            logger.info(f"Added {delta} spike(s)")
+
+        elif action_type == "delete_spikes" and delta < 0:
+            self.show_tip(f"Deleted {-delta} spike(s)", duration_ms=4000)
+            logger.info(f"Deleted {-delta} spike(s)")
+
+        elif action_type == "delete_dr":
+            self.show_tip("Deleted discharge rate points", duration_ms=4000)
+            logger.info("Deleted discharge rate points")
 
         # Update the display
         # for checkbox in self.mu_checkboxes:
@@ -941,7 +989,7 @@ class MUeditManual(QMainWindow):
                 )
 
             except Exception as e:
-                print(f"Error calculating SIL for array {array_idx}, MU {mu_idx}: {e}")
+                logger.exception(f"Error calculating SIL for array {array_idx}, MU {mu_idx}: {e}")
                 self.MUedition["edition"]["silval"][(array_idx, mu_idx)] = 0
                 self.MUedition["edition"]["silvalcon"][(array_idx, mu_idx)] = np.zeros((1, 2))
         else:
