@@ -231,7 +231,7 @@ class ImportDataWindow(QMainWindow):
                     )
 
                 # Emit signal to request showing decomposition view
-                self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, self.config, self.raw_fileid)
+                self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, config_dict, self.raw_fileid)
                 self.show_decomposition_view()
                 self.decomp_app.imported_h5_session_decomp(signal_dict, config_dict)
 
@@ -359,14 +359,14 @@ class ImportDataWindow(QMainWindow):
                             self.update_buttons()
 
                         self.file_info_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
-                        self.next_btn.setEnabled(True)
+                        self.footer.next_btn.setEnabled(True)
 
                     except Exception as e:
                         self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
                         self.preview_message.setText(f"Error loading H5 file: {str(e)}")
                         self.play_error_popup("Error loading file", str(e))
                         traceback.print_exc()
-                        self.next_btn.setEnabled(False)
+                        self.footer.next_btn.setEnabled(False)
                         self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
 
                     fileid = None # temp
@@ -909,7 +909,7 @@ class ImportDataWindow(QMainWindow):
                 self.manual_editing_page.file_path_field.setText(filename)
 
             # update file info in the top upload file button
-            self.manual_editing_page.select_file_title_btn.setText(filename) 
+            self.manual_editing_page.select_file_title_btn.setText(filename)
 
             # update footer file info
             self.manual_editing_page.update_footer_file_info(full_file_path)
@@ -1030,15 +1030,15 @@ class ImportDataWindow(QMainWindow):
 
         self.file_info_label.setText(f"Selected: {filename}")
         self.file_info_label.setVisible(True)
-        self.footer_file_info.setText(f"File: {filename}")
+        self.footer.footer_file_info.setText(f"File: {filename}")
 
         try:
             size_str = filesize_formatter(full_path)
-            self.size_info.setText(f"Size: {size_str}")
+            self.footer.size_info.setText(f"Size: {size_str}")
         except:
-            self.size_info.setText("Size: --")
+            self.footer.size_info.setText("Size: --")
         ext = os.path.splitext(filename)[1].upper().replace('.', '')
-        self.format_info.setText(f"Format: {ext}")
+        self.footer.format_info.setText(f"Format: {ext}")
 
         self.load_file(os.path.dirname(full_path), filename)
 
