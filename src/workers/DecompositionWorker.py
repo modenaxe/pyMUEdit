@@ -117,8 +117,13 @@ class DecompositionWorker(QThread):
 
             if "target" in self.emg_obj.signal_dict and self.emg_obj.signal_dict["target"] is not None:
                 self.progress.emit("Target used for batching", 0.2)
+                logger.info("Target detected — using target-based batching")
+                logger.debug(f"Target shape: {self.emg_obj.signal_dict['target'].shape}")
+                logger.debug(f"Target max value: {np.max(self.emg_obj.signal_dict['target'])}")
                 self.emg_obj.batch_w_target()
             else:
+                logger.info("No target present — using batching without target")
+                logger.debug("Signal keys present: %s", list(self.emg_obj.signal_dict.keys()))
                 self.emg_obj.batch_wo_target()
 
             if self.should_stop:
