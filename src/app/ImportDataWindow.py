@@ -208,16 +208,20 @@ class ImportDataWindow(QMainWindow):
 
             readin_name = None
             decomp_name = None
+            edited_name = None
 
             for name in zip_ref.namelist():
                 if name.endswith("_readin.h5"):
                     readin_name = name
                 elif name.endswith("_decomp.h5"):
                     decomp_name = name
+                elif name.endswith("edited.h5"):
+                    decomp_name = name
 
             if readin_name:
                 readin_path = extract_dir / readin_name
                 self.update_ui_for_file(readin_path, readin_name)
+                logger.debug(f"Loaded readin file onto Import tab")
 
             if decomp_name:
                 decomp_path = extract_dir / decomp_name
@@ -234,6 +238,10 @@ class ImportDataWindow(QMainWindow):
                 self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, self.config, self.raw_fileid)
                 self.show_decomposition_view()
                 self.decomp_app.imported_h5_session_decomp(signal_dict, config_dict)
+                logger.debug(f"Loaded decomp file onto Decomposition tab")
+
+            if edited_name:
+                logger.debug(f".h5 edited file loading not implemented yet")
 
             logger.debug(f"Files extracted to: {extract_dir}")
 
