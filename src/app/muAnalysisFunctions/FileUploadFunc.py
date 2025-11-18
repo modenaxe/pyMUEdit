@@ -60,7 +60,7 @@ class FileUploadFunc:
                 None, "Select file", "", "MAT Files (*.mat);;All Files (*.*)"
             )
         if file_path:
-            # If there is no error with loading file, udpate file info in footer
+            # If there is no error with loading file, update file info in footer
             error = self.load_file(analysis_plot, file_path, json)
             if error == 0:
                 self.parent.update_footer_file_info(file_path)
