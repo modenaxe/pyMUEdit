@@ -1,4 +1,5 @@
 import os
+
 import matplotlib.cm as cm
 import numpy as np
 import pandas as pd
@@ -22,7 +23,13 @@ from .VisualizationPanel import VisualizationPanel
 
 
 class SegmentSessionPage(QWidget):
-    def __init__(self, filename, on_new_segment, on_done_clicked, raw_fileid, parent=None):
+    def __init__(
+            self,
+            filename,
+            on_new_segment,
+            on_done_clicked,
+            raw_fileid,
+            parent=None):
         super().__init__(parent)
         self.rois = []
         self.coordinates = []
@@ -317,7 +324,8 @@ class SegmentSessionPage(QWidget):
             raw_filepath=save_filename
         )
 
-        versionid = upsert_file_versions(savename_h5, self.raw_fileid, "segmented")
+        versionid = upsert_file_versions(
+            savename_h5, self.raw_fileid, "segmented")
         self.on_new_segment(save_filename)
 
     def split_clicked(self):
@@ -357,7 +365,8 @@ class SegmentSessionPage(QWidget):
                 raw_filepath=save_filename
             )
 
-            versionid = upsert_file_versions(savename_h5, self.raw_fileid, "segmented")
+            versionid = upsert_file_versions(
+                savename_h5, self.raw_fileid, "segmented")
             self.on_new_segment(save_filename)
 
         self.vis_plot.clear()
