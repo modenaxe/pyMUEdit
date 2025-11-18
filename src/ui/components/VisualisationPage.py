@@ -65,6 +65,17 @@ class VisualisationPage(QWidget):
 
         left_sidebar_layout.addSpacing(5)
 
+        # subsampling step input panel
+        self.subsample_input = FormSpinBox(
+            "Subsampling Step", 10, 1, 1000)
+        left_sidebar_layout.addWidget(self.subsample_input)
+
+        subsample_input_label = QLabel("(Max: 1000)")
+        subsample_input_label.setStyleSheet("color: gray; font-size: 11px;")
+        left_sidebar_layout.addWidget(subsample_input_label)
+
+        left_sidebar_layout.addSpacing(5)
+
         # signal range dropdown panel
         self.range_dropdown = FormDropdown(
             "Select Reference Signal",
@@ -115,6 +126,10 @@ class VisualisationPage(QWidget):
         self.setLayout(main_layout)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+        # connect subsample input change to subsample_change function
+        self.subsample_input.spinbox.valueChanged.connect(
+            self.subsample_change)
+
         # connect the range input change to the channel_group_change function
         self.range_dropdown.dropdown.currentIndexChanged.connect(
             self.channel_group_change)
@@ -141,6 +156,11 @@ class VisualisationPage(QWidget):
 
         self.max_index = index - 1
         return groups
+
+    # Update plot as per subsample step
+    def subsample_change(self, value):
+        self.viewer.subsample_step = value
+        self.viewer.update_plot()
 
     # Update the channel viewer based on channel range option selected
     def channel_group_change(self, index):

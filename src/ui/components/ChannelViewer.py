@@ -22,6 +22,7 @@ class ChannelViewer(QWidget):
         self.num_indices = 8
         self.rejected_channels = []
         self.channel_group_change = channel_group_change
+        self.subsample_step = 10
 
         self.layout = QHBoxLayout()
         self.layout.setContentsMargins(40, 0, 50, 30)
@@ -76,12 +77,9 @@ class ChannelViewer(QWidget):
             y = self.entire_emg_data[index]
             x = np.arange(len(y)) / fs # Time in seconds
 
-            # Subsample every nth point to improve performance
-            subsample_step = 10 # Change this value as needed
-
-            # Use splicing to keep every nth sample
-            y_sub = y[::subsample_step]
-            x_sub = x[::subsample_step]
+            # Subsample every nth point to improve performance and use splicing to keep every nth sample
+            y_sub = y[::self.subsample_step]
+            x_sub = x[::self.subsample_step]
 
             curve = p.plot(
                 x_sub, y_sub, pen=pg.mkPen(
