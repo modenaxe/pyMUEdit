@@ -273,8 +273,8 @@ class ImportDataWindow(QMainWindow):
         self.pathname = os.path.dirname(filename) + "/"
 
         # Update UI to show selected file
-        self.footer.file_info_label.setText(f"Selected: {self.filename}")
-        self.footer.lfile_info_label.setVisible(True)
+        self.file_info_label.setText(f"Selected: {self.filename}")
+        self.file_info_label.setVisible(True)
         self.footer.footer_file_info.setText(f"File: {self.filename}")
 
         # Get file size in bytes
@@ -577,7 +577,11 @@ class ImportDataWindow(QMainWindow):
                 processed_filename = f"{base_name}_processed.mat"
 
             filename = os.path.join(self.pathname, processed_filename)
-            self.segment_session = SegmentSessionPage(filename, self.add_file_to_recent_files, self.update_recent_files)
+            self.segment_session = SegmentSessionPage(
+                filename, 
+                self.add_file_to_recent_files, 
+                self.update_recent_files,
+                self.raw_fileid)
 
             self.segment_session_button.setEnabled(True)
 
