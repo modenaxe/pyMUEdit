@@ -30,6 +30,7 @@ class FormCheckBox(FormField):
             f"""
             QCheckBox {{
                 spacing: 8px;
+                background: transparent;
             }}
 
             QCheckBox::indicator {{
