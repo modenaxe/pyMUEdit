@@ -1,17 +1,18 @@
 from functools import wraps
+from core.logger import logger
 
 def smart_button_pushed(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         if not self.MUedition:
-            print("NO MUedition")
+            logger.warning("NO MUedition")
             return
         func_name = func.__name__
         btn = self.action_buttons.get(func_name)
         
         if not btn:
-            print(f"Warning NO '{func_name}' Matched Button")
-            print(self.action_buttons)
+            logger.warning(f"Warning NO '{func_name}' Matched Button")
+            logger.debug(self.action_buttons)
             return
 
         if btn.get_active():

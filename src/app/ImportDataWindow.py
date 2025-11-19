@@ -1,7 +1,7 @@
+import json
 from pathlib import Path
 import sys
 import os
-import traceback
 import zipfile
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox
 from PyQt5.QtCore import pyqtSignal
@@ -11,10 +11,13 @@ import numpy as np
 import pandas as pd
 import pyqtgraph as pg
 
+# import logging
+from core.logger import logger
+
 # Import UI setup function
 from core.database.database import create_new_session, get_fileid_by_path, get_or_create_session_for_file, get_session_files, insert_files, upsert_file_versions
 from core.utils.io.filesize_formatter import filesize_formatter
-from core.utils.session.convert_h5 import save_as_h5
+from core.utils.session.convert_h5 import load_from_h5, save_as_h5
 from core.utils.io.filesize_formatter import filesize_formatter
 from ui.ImportDataWindowUI import setup_ui, update_sidebar_selection
 from ui.components.SegmentSessionPage import SegmentSessionPage
@@ -94,7 +97,7 @@ class ImportDataWindow(QMainWindow):
         self.recent_files = []
 
         # Set up the UI using our improved UI setup
-        setup_ui(self)
+        self.import_data_ui = setup_ui(self)
 
          # Now create the manual editing view
         self.create_manual_editing_view()
@@ -125,14 +128,14 @@ class ImportDataWindow(QMainWindow):
                 # Update UI to show selected file
                 self.file_info_label.setText(f"Selected: {self.filename}")
                 self.file_info_label.setVisible(True)
-                self.footer_file_info.setText(f"File: {self.filename}")
+                self.footer.footer_file_info.setText(f"File: {self.filename}")
 
                 # Update file size and format
                 size_str = filesize_formatter(file_path)
                 file_format = os.path.splitext(self.filename)[1].upper().replace(".", "")
 
-                self.size_info.setText(f"Size: {size_str}")
-                self.format_info.setText(f"Format: {file_format}")
+                self.footer.size_info.setText(f"Size: {size_str}")
+                self.footer.format_info.setText(f"Format: {file_format}")
 
                 # Load the file
                 self.load_file(self.pathname, self.filename)
@@ -140,13 +143,13 @@ class ImportDataWindow(QMainWindow):
 
     def export_session(self):
         if not self.sessionid:
-            print("Warning: No session has been initialised")
+            logger.warning("No session has been initialised")
             return False
 
         session_files = get_session_files(self.sessionid)
-        print(session_files)
+        logger.debug(f"Session files found: {session_files}")
         if not session_files:
-            print("No files in this session to export")
+            logger.warning("No files in this session to export")
             return False
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -164,21 +167,76 @@ class ImportDataWindow(QMainWindow):
                     version_path = version.get("version_filepath")
                     if version_path and os.path.exists(version_path):
                         file_paths_to_zip.append(version_path)
+                    log = version.get("log")
+                    if log and log != "None":
+                        stage = version.get("stage", "unknown")
+                        json_filename = f"{stage}_config.json"
+                        json_filepath = os.path.join(os.path.dirname(version_path) if version_path else ".", json_filename)
+                        with open(json_filepath, 'w') as f:
+                            json.dump(log, f, indent=4)
+                        logger.debug(f"Saved {stage} config to {json_filepath}")
+                        file_paths_to_zip.append(json_filepath)
 
             if not file_paths_to_zip:
-                print("No valid files found to zip")
+                logger.warning("No valid files found to zip")
                 return False
 
             with zipfile.ZipFile(save_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
                 for filepath in file_paths_to_zip:
                     arcname = os.path.basename(filepath)
                     zipf.write(filepath, arcname)
-                    print(f"Added {filepath} as {arcname}")
+                    logger.debug(f"Added {filepath} as {arcname}")
 
-            print(f"Session exported successfully to {save_path}")
+            logger.debug(f"Session exported successfully to {save_path}")
             return True
         else:
-            print("Export cancelled")
+            logger.debug("Export cancelled")
+
+    def load_session(self):
+        file, _ = QFileDialog.getOpenFileName(
+            self, "Select session .zip File", "", "ZIP Files (*.zip)"
+        )
+
+        zip_path = Path(file)
+        zip_name = zip_path.stem
+
+        extract_dir = Path("..") / "loaded_sessions" / zip_name
+        extract_dir.mkdir(parents=True, exist_ok=True)
+
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_dir)
+
+            readin_name = None
+            decomp_name = None
+
+            for name in zip_ref.namelist():
+                if name.endswith("_readin.h5"):
+                    readin_name = name
+                elif name.endswith("_decomp.h5"):
+                    decomp_name = name
+
+            if readin_name:
+                readin_path = extract_dir / readin_name
+                self.update_ui_for_file(readin_path, readin_name)
+
+            if decomp_name:
+                decomp_path = extract_dir / decomp_name
+                signal_dict, raw_filepath, config_dict = load_from_h5(str(decomp_path))
+
+                # create decomposition view
+                if not hasattr(self, "decomp_app") or not self.decomp_app:
+                    self.create_decomposition_view(
+                        self.emg_obj, self.filename, self.pathname,
+                        self.imported_signal, self.config, self.raw_fileid
+                    )
+
+                # Emit signal to request showing decomposition view
+                self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, config_dict, self.raw_fileid)
+                self.show_decomposition_view()
+                self.decomp_app.imported_h5_session_decomp(signal_dict, config_dict)
+
+            logger.debug(f"Files extracted to: {extract_dir}")
+
 
     def select_file(self):
         """Open file dialog to select a file."""
@@ -195,13 +253,13 @@ class ImportDataWindow(QMainWindow):
         # Update UI to show selected file
         self.file_info_label.setText(f"Selected: {self.filename}")
         self.file_info_label.setVisible(True)
-        self.footer_file_info.setText(f"File: {self.filename}")
+        self.footer.footer_file_info.setText(f"File: {self.filename}")
 
         file_format = os.path.splitext(self.filename)[1].upper().replace(".", "")
         size_str = filesize_formatter(file)
 
-        self.size_info.setText(f"Size: {size_str}")
-        self.format_info.setText(f"Format: {file_format}")
+        self.footer.size_info.setText(f"Size: {size_str}")
+        self.footer.format_info.setText(f"Format: {file_format}")
 
         # Load the file (passing the whole path)
         self.load_file(self.pathname, self.filename)
@@ -217,14 +275,14 @@ class ImportDataWindow(QMainWindow):
         # Update UI to show selected file
         self.file_info_label.setText(f"Selected: {self.filename}")
         self.file_info_label.setVisible(True)
-        self.footer_file_info.setText(f"File: {self.filename}")
+        self.footer.footer_file_info.setText(f"File: {self.filename}")
 
         # Get file size in bytes
         size_str = filesize_formatter(filename)
         file_format = os.path.splitext(self.filename)[1].upper().replace(".", "")
 
-        self.size_info.setText(f"Size: {size_str}")
-        self.format_info.setText(f"Format: {file_format}")
+        self.footer.size_info.setText(f"Size: {size_str}")
+        self.footer.format_info.setText(f"Format: {file_format}")
 
         # Load the file (passing the whole path)
         self.load_file(self.pathname, self.filename)
@@ -247,7 +305,7 @@ class ImportDataWindow(QMainWindow):
         # Reset failure messages
         self.failure_message.setVisible(False)
 
-        if ext == ".otb+" or ext == ".mat":
+        if ext == ".otb+" or ext == ".mat" or ext == ".h5":
             try:
                 # Construct the full file path
                 full_path = os.path.join(path, file)
@@ -266,19 +324,52 @@ class ImportDataWindow(QMainWindow):
 
                     # Create a default save name for .mat files
                     savename = os.path.join(path, f"{base_name}_processed.mat")
-                    h5_processed_savename = os.path.join(path, f"{base_name}_processed.h5")
                     h5_readin_savename = os.path.join(path, f"{base_name}_readin.h5")
 
                     # Save the data as a .mat file in the background
                     if self.emg_obj.signal_dict:
                         self.save_mat_in_background(savename, {"signal": self.emg_obj.signal_dict}, True, True)
-                        save_as_h5(self.emg_obj.signal_dict, h5_processed_savename, raw_filepath=full_path)
                         save_as_h5(self.emg_obj.signal_dict, h5_readin_savename, raw_filepath=full_path)
 
                 elif ext == '.mat':
                     # Call the open_otb_plus function with the correct parameters
                     self.emg_obj.open_mat(full_path)
 
+                    base_name = os.path.splitext(file)[0]
+                    savename = os.path.join(path, f"{base_name}_processed.mat")
+                    h5_readin_savename = os.path.join(path, f"{base_name}_readin.h5")
+
+                    try:
+                        if self.emg_obj.signal_dict:
+                            save_as_h5(self.emg_obj.signal_dict, h5_readin_savename)
+                    except Exception as e:
+                        logger.debug(f"Error saving .h5 file: {e}")
+
+                elif ext == ".h5":
+                    full_path = os.path.join(path, file)
+                    try:
+                        signal_dict, raw_filepath, config_dict = load_from_h5(full_path)
+                        self.emg_obj.signal_dict = signal_dict
+                        self.imported_signal = signal_dict
+                        self.raw_file_path = raw_filepath
+
+                        if "data" in signal_dict and "fsamp" in signal_dict:
+                            self.cur_electrode_preview_idx = 0
+                            self.update_preview_plot()
+                            self.update_buttons()
+
+                        self.file_info_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
+                        self.footer.next_btn.setEnabled(True)
+
+                    except Exception as e:
+                        self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
+                        self.preview_message.setText(f"Error loading H5 file: {str(e)}")
+                        self.play_error_popup("Error loading file", str(e))
+                        traceback.print_exc()
+                        self.footer.next_btn.setEnabled(False)
+                        self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
+
+                    fileid = None # temp
                 # Store the imported signal
                 signal = self.emg_obj.signal_dict
                 self.imported_signal = signal
@@ -291,13 +382,13 @@ class ImportDataWindow(QMainWindow):
                         self.update_preview_plot()
                         self.update_buttons()
                     except Exception as e:
-                        print(f"Error creating preview plot: {e}")
+                        logger.exception(f"Error creating preview plot: {e}")
                 else:
-                    print("Error cannot display data")
+                    logger.error("Error cannot display data")
 
                 # Resize app window to show the plot properly, then display the plot in the preview pane
                 self.preview_stacked_frame.setCurrentIndex(PreviewElement.GRAPH.value)
-                self.next_btn.setEnabled(True)
+                self.footer.next_btn.setEnabled(True)
 
                 # Signal that we've imported a file with more details
                 file_info = {
@@ -316,7 +407,7 @@ class ImportDataWindow(QMainWindow):
                 self.update_recent_files()
 
                 if ext == ".mat":
-                    self.segment_session = SegmentSessionPage(full_path, self.add_file_to_recent_files, self.update_recent_files)
+                    self.segment_session = SegmentSessionPage(full_path, self.add_file_to_recent_files, self.update_recent_files, self.raw_fileid)
                     self.segment_session_button.setEnabled(True)
                     self.set_configuration_button.setEnabled(False)
                 else:
@@ -325,15 +416,23 @@ class ImportDataWindow(QMainWindow):
                 # Change file label to green if success
                 self.file_info_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
 
-                # Get or create session for this dataset
-                sessionid = get_or_create_session_for_file(full_path)
-                self.sessionid = sessionid
-                fileid = get_fileid_by_path(full_path)
-                if not fileid:
-                    fileid = insert_files(full_path, file, sessionid)
+                # Store file info globally in ImportDataWindow instance
+                self.current_file_info = {
+                    "path": os.path.join(path, file),
+                    "name": file,
+                    "size": filesize_formatter(os.path.join(path, file)),
+                    "format": os.path.splitext(file)[1].upper().replace(".", "")
+                }
 
-                versionid_readin = upsert_file_versions(h5_readin_savename, fileid, "readin")
-                versionid_processed = upsert_file_versions(h5_processed_savename, fileid, "processed")
+                # Get or create session for this dataset
+                if ext != ".h5": # temporary dont create session with h5 for now due to using load_file for loading a session
+                    sessionid = get_or_create_session_for_file(full_path)
+                    self.sessionid = sessionid
+                    fileid = get_fileid_by_path(full_path)
+                    if not fileid:
+                        fileid = insert_files(full_path, file, sessionid)
+
+                    upsert_file_versions(h5_readin_savename, fileid, "readin")
 
                 self.raw_fileid = fileid
 
@@ -343,15 +442,16 @@ class ImportDataWindow(QMainWindow):
                 self.play_error_popup("Error loading file", str(e))
                 print(f"Error loading OTB+ file: {e}")
                 traceback.print_exc()
-                self.next_btn.setEnabled(False)
+                self.footer.next_btn.setEnabled(False)
                 # Change file label to red if failure
                 self.file_info_label.setText(f"Failed uploading: {self.filename}")
                 self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
+                logger.exception(f"Error loading OTB+ file: {e}")
         else:
             self.preview_stacked_frame.setCurrentIndex(PreviewElement.LABEL.value)
             self.preview_message.setText(f"File type {ext} not supported in this demo.\nPlease select an OTB+ file.")
             self.play_error_popup(f"File type error", f"File type {ext} not supported in this demo.\nPlease select an OTB+ file.")
-            self.next_btn.setEnabled(False)
+            self.footer.next_btn.setEnabled(False)
             self.file_info_label.setText(f"Failed uploading: {self.filename}")
             self.file_info_label.setStyleSheet(f"color: #FA0000; font-weight: bold;")
             self.failure_message.setVisible(True)
@@ -379,7 +479,7 @@ class ImportDataWindow(QMainWindow):
         # Get valid channels
         valid_indices = [i for i in range(data.shape[0]) if i not in self.emg_obj.rejected_channel_indices and i in all_indices]
         if not valid_indices:
-            print("No valid channels to process.")
+            logger.error("No valid channels to process.")
             return
 
         # Prepare temporary array for smoothed data
@@ -464,20 +564,30 @@ class ImportDataWindow(QMainWindow):
 
     def on_save_finished(self, worker):
         """Handle completion of background save."""
-        print("Data saved successfully")
+        logger.debug("Data saved successfully")
         self.cleanup_thread(worker)
 
     def enable_segment_session(self):
         if self.segment_session_button and self.pathname and self.filename:
             base_name = os.path.splitext(self.filename)[0]
-            filename = os.path.join(self.pathname, f"{base_name}_processed.mat")
-            self.segment_session = SegmentSessionPage(filename, self.add_file_to_recent_files, self.update_recent_files)
+
+            if base_name.endswith("_processed"):
+                processed_filename = self.filename
+            else:
+                processed_filename = f"{base_name}_processed.mat"
+
+            filename = os.path.join(self.pathname, processed_filename)
+            self.segment_session = SegmentSessionPage(
+                filename, 
+                self.add_file_to_recent_files, 
+                self.update_recent_files,
+                self.raw_fileid)
 
             self.segment_session_button.setEnabled(True)
 
     def on_save_error(self, worker, error_msg):
         """Handle error in background save."""
-        print(f"Error saving data: {error_msg}")
+        logger.error(f"Error saving data: {error_msg}")
         self.cleanup_thread(worker)
 
     def cleanup_thread(self, worker):
@@ -499,7 +609,7 @@ class ImportDataWindow(QMainWindow):
             if self.pathname and self.filename:
                 savename = os.path.join(self.pathname, self.filename + "_decomp.mat")
                 self.save_mat_in_background(savename, {"signal": self.imported_signal}, True)
-            
+
             # create decomposition view
             if not hasattr(self, "decomp_app") or not self.decomp_app:
                 self.create_decomposition_view(
@@ -508,11 +618,11 @@ class ImportDataWindow(QMainWindow):
                 )
 
             # Emit signal to request showing decomposition view
+            self.decomposition_requested.emit(self.emg_obj, self.filename, self.pathname, self.imported_signal, self.config, self.raw_fileid)
             self.show_decomposition_view()
 
         except Exception as e:
-            print(f"Error requesting decomposition view: {e}")
-            traceback.print_exc()
+            logger.exception(f"Error requesting decomposition view: {e}")
 
     def showEvent(self, event):
         """Event triggered when the widget is shown."""
@@ -553,7 +663,7 @@ class ImportDataWindow(QMainWindow):
     def open_channel_viewer(self):
         """Open the Channel Viewer window with the current EMG data"""
         if not self.emg_obj or "data" not in self.emg_obj.signal_dict:
-            print("No EMG data loaded for channel viewer.")
+            logger.warning("No EMG data loaded for channel viewer.")
             return
 
         try:
@@ -565,7 +675,7 @@ class ImportDataWindow(QMainWindow):
                 self.visualisation_page = VisualisationPage(emg_obj=self.emg_obj, import_window=self)
                 self.visualisation_page.show()
         except Exception as e:
-            print(f"Failed to load channel viewer: {e}")
+            logger.exception(f"Failed to load channel viewer: {e}")
 
     def config_callback(self, signal):
         if self.pathname and self.filename and self.emg_obj:
@@ -589,10 +699,9 @@ class ImportDataWindow(QMainWindow):
                 # Show the dialog
                 self.config_panel.show()
             except Exception as e:
-                print(f"Error showing configuration dialog: {e}")
-                traceback.print_exc()
+                logger.exception(f"Error showing configuration dialog: {e}")
         else:
-            print("No configuration dialog available")
+            logger.warning("No configuration dialog available")
 
     def segment_session_button_pushed(self):
         if not self.emg_obj or "data" not in self.emg_obj.signal_dict or not self.pathname or not self.filename:
@@ -606,6 +715,7 @@ class ImportDataWindow(QMainWindow):
                 self.segment_session.show()
         except Exception as e:
             self.edit_field.setText(f"Failed to load segment session: {e}")
+            logger.exception(f"Failed to load segment session: {e}")
 
     def add_file_to_recent_files(self, filename):
         if filename not in self.recent_files:
@@ -631,7 +741,7 @@ class ImportDataWindow(QMainWindow):
             if hasattr(self.mu_analysis_page, "set_export_window_opener"):
                 self.mu_analysis_page.set_export_window_opener(self.open_export_results_window)
             else:
-                print("WARNING: MotorUnitAnalysisWidget does not have 'set_export_window_opener' method.")
+                logger.warning("MotorUnitAnalysisWidget does not have 'set_export_window_opener' method.")
 
         if DecompositionApp:
             self.decomposition_page = DecompositionApp()
@@ -644,7 +754,7 @@ class ImportDataWindow(QMainWindow):
         """
         Handle the fileImported signal from the ImportDataWindow
         """
-        print(f"Dashboard received fileImported signal for {file_info.get('filename')}")
+        logger.debug(f"Dashboard received fileImported signal for {file_info.get('filename')}")
         # Extract information from the signal
         filename = file_info.get("filename", "Unknown file")
         pathname = file_info.get("pathname", "")
@@ -684,13 +794,12 @@ class ImportDataWindow(QMainWindow):
             self.central_stacked_widget.addWidget(wrapper)
 
         except Exception as e:
-            print(f"Error creating import view: {e}")
-            traceback.print_exc()
+            logger.exception(f"Error creating import view: {e}")
 
     def create_manual_editing_view(self):
         """Creates a manual editing view and adds it to the stacked widget."""
         try:
-            print("Creating manual editing view")
+            logger.debug("Creating manual editing view")
 
             # Create a wrapper widget to hold the MUeditManual
             # wrapper = QWidget()
@@ -720,13 +829,12 @@ class ImportDataWindow(QMainWindow):
             self.central_stacked_widget.addWidget(manual_edit_app)
 
         except Exception as e:
-            print(f"Error creating manual editing view: {e}")
-            traceback.print_exc()
+            logger.exception(f"Error creating manual editing view: {e}")
 
     def create_decomposition_view(self, emg_obj, filename, pathname, imported_signal, config, raw_fileid):
         """Creates a decomposition view with the provided data and adds it to the stacked widget."""
         try:
-            print("Creating decomposition view with provided data")
+            logger.debug("Creating decomposition view with provided data")
 
             # Create a wrapper widget to hold the DecompositionApp
             wrapper = QWidget()
@@ -762,13 +870,12 @@ class ImportDataWindow(QMainWindow):
             self.central_stacked_widget.addWidget(wrapper)
 
         except Exception as e:
-            print(f"Error creating decomposition view: {e}")
-            traceback.print_exc()
+            logger.error(f"Error creating decomposition view: {e}")
 
     def create_manual_editing_view(self):
         """creates a manual editing view and adds it to the stacked widget"""
         try:
-            print("creating manual editing view")
+            logger.debug("creating manual editing view")
 
             # create MUeditManual instance
             manual_edit_app = MUeditManual()
@@ -785,31 +892,37 @@ class ImportDataWindow(QMainWindow):
             self.central_stacked_widget.addWidget(manual_edit_app)
 
         except Exception as e:
-            print(f"error creating manual editing view: {e}")
-            traceback.print_exc()
-    
-    def navigate_to_editing_with_data(self, filename, pathname):
+            logger.exception(f"error creating manual editing view: {e}")
+
+    def navigate_to_editing_with_data(self, filename, pathname, raw_fileid):
         """load data into muedit and navigate to editing view"""
         try:
-            print(f"navigating to editing mode with file: {filename}")
+            logger.debug(f"navigating to editing mode with file: {filename}")
 
             # ensure manual editing view exists
             if not hasattr(self, "manual_editing_page") or not self.manual_editing_page:
                 self.create_manual_editing_view()
-            
+
             # check if the file exists
             full_file_path = os.path.join(pathname, filename)
             if not os.path.exists(full_file_path):
-                print(f"error: file {full_file_path} does not exist")
+                logger.error(f"error: file {full_file_path} does not exist")
                 return
 
             # load data into the existing mu edit instance
             self.manual_editing_page.filename = filename
             self.manual_editing_page.pathname = pathname
-            
+            self.manual_editing_page.raw_fileid = raw_fileid
+
             # update the file path field in the ui
             if hasattr(self.manual_editing_page, 'file_path_field'):
                 self.manual_editing_page.file_path_field.setText(filename)
+
+            # update file info in the top upload file button
+            self.manual_editing_page.select_file_title_btn.setText(filename)
+
+            # update footer file info
+            self.manual_editing_page.update_footer_file_info(full_file_path)
 
             # import the data using the existing import function
             from app.muEditFunctions.importer import import_data
@@ -817,53 +930,52 @@ class ImportDataWindow(QMainWindow):
 
             self.show_manual_editing_view()
 
-            print("successfully navigated to MU editing view with data loaded")
-        
+            logger.debug("successfully navigated to MU editing view with data loaded")
+
         except Exception as e:
-            print(f"error navigating to mu edit: {e}")
-            traceback.print_exc()
+            logger.exception(f"error navigating to mu edit: {e}")
 
     def show_mu_analysis_view(self):
         """Switches the central widget to the MU Analysis page."""
         if hasattr(self, "mu_analysis_page") and self.mu_analysis_page:
-            print("Switching to MU Analysis View")
+            logger.debug("Switching to MU Analysis View")
             self.central_stacked_widget.setCurrentWidget(self.mu_analysis_page)
             update_sidebar_selection(self, "mu_analysis")
         else:
-            print("MU Analysis view is not available.")
+            logger.debug("MU Analysis view is not available.")
 
     def show_import_data_view(self):
         """Switches the central widget to the Import Data page."""
-        print("Switching to Import Data view")
+        logger.debug("Switching to Import Data view")
         if hasattr(self, "import_data_page") and self.import_data_page:
             self.central_stacked_widget.setCurrentWidget(self.import_data_page)
             update_sidebar_selection(self, "import")
         else:
-            print("ImportDataWindow not available.")
+            logger.debug("ImportDataWindow not available.")
 
     def show_manual_editing_view(self):
         """Switches to Manual Editing view."""
-        print("Switching to Manual Editing View")
+        logger.debug("Switching to Manual Editing View")
         if hasattr(self, "manual_editing_page") and self.manual_editing_page:
             self.central_stacked_widget.setCurrentWidget(self.manual_editing_page)
             update_sidebar_selection(self, "manual_edit")
         else:
-            print("Manual Editing view widget not found.")
+            logger.debug("Manual Editing view widget not found.")
 
     def show_decomposition_view(self):
         """Switches to Decomposition view."""
-        print("Switching to Decomposition View")
+        logger.debug("Switching to Decomposition View")
         if hasattr(self, "decomposition_page") and self.decomposition_page:
             self.central_stacked_widget.setCurrentWidget(self.decomposition_page)
             update_sidebar_selection(self, "decomposition")
         else:
-            print("Decomposition view widget not found.")
+            logger.debug("Decomposition view widget not found.")
 
     def open_export_results_window(self):
         """Opens the Export Results window, creating it if necessary."""
-        print(">>> Main Window: Request received to open Export Results window.")
+        logger.debug(">>> Main Window: Request received to open Export Results window.")
         if ExportResultsWindow is None:
-            print("ERROR: ExportResultsWindow class is not available (check import).")
+            logger.error("ERROR: ExportResultsWindow class is not available (check import).")
             return
 
         window_exists = False
@@ -872,25 +984,25 @@ class ImportDataWindow(QMainWindow):
                 # Check if the window still exists and hasn't been closed/deleted
                 if self.export_results_window.isVisible() or not self.export_results_window.isHidden():
                     window_exists = True
-                    print(">>> Main Window: Existing ExportResultsWindow instance seems valid.")
+                    logger.debug(">>> Main Window: Existing ExportResultsWindow instance seems valid.")
                 else:
-                    print(
+                    logger.debug(
                         ">>> Main Window: Existing window reference present but window is hidden/closed; will create new."
                     )
                     self.export_results_window = None  # Force recreation
                     window_exists = False
             except RuntimeError:  # Window was likely deleted
-                print(">>> Main Window: Existing window reference invalid (RuntimeError); will create new.")
+                logger.error("Main Window: Existing window reference invalid (RuntimeError); will create new.")
                 self.export_results_window = None
                 window_exists = False
             except Exception as e:  # Catch other potential issues
-                print(f">>> Main Window: Error checking existing window ({type(e).__name__}); will create new.")
+                logger.exception(f"Main Window: Error checking existing window ({type(e).__name__}); will create new.")
                 self.export_results_window = None
                 window_exists = False
 
         if not window_exists:
             try:
-                print(">>> Main Window: Creating NEW ExportResultsWindow instance.")
+                logger.debug("Main Window: Creating NEW ExportResultsWindow instance.")
                 # Ensure it's created as a top-level window (parent=None)
                 self.export_results_window = ExportResultsWindow(parent=None)
                 # Position it relative to the main window for convenience
@@ -900,30 +1012,45 @@ class ImportDataWindow(QMainWindow):
                 width = 600  # Define desired size
                 height = 550
                 self.export_results_window.setGeometry(new_x, new_y, width, height)
-                print(f">>> Set geometry for new window to ({new_x}, {new_y}, {width}, {height})")
+                logger.debug(f"Set geometry for new window to ({new_x}, {new_y}, {width}, {height})")
             except Exception as e:
-                print(f"FATAL ERROR during ExportResultsWindow creation: {e}")
-                traceback.print_exc()
+                logger.exception(f"FATAL ERROR during ExportResultsWindow creation: {e}")
                 self.export_results_window = None  # Ensure it's None if creation failed
                 return  # Stop execution here
 
         # After potentially creating or confirming existence, try to show/activate
         if self.export_results_window:
             try:
-                print(">>> Main Window: Attempting to show and activate ExportResultsWindow.")
                 self.export_results_window.show()
                 self.export_results_window.raise_()  # Bring to front
                 self.export_results_window.activateWindow()  # Give focus
                 QApplication.processEvents()  # Ensure UI updates
-                print(">>> ExportResultsWindow shown and activated.")
+                logger.debug("ExportResultsWindow shown and activated.")
             except RuntimeError:  # Catch if window was deleted between check and show
-                print(">>> Error: ExportResultsWindow was deleted before it could be shown.")
+                logger.error("ExportResultsWindow was deleted before it could be shown.")
                 self.export_results_window = None
             except Exception as e:
-                print(f"Error displaying/activating ExportResultsWindow: {e}")
-                traceback.print_exc()
+                logger.exception(f"Error displaying/activating ExportResultsWindow: {e}")
         else:
-            print("ERROR - self.export_results_window is None even after creation attempt.")
+            logger.error("self.export_results_window is None even after creation attempt.")
+
+    def update_ui_for_file(self, full_path, filename):
+        self.filename = filename
+        self.pathname = os.path.dirname(full_path) + "/"
+
+        self.file_info_label.setText(f"Selected: {filename}")
+        self.file_info_label.setVisible(True)
+        self.footer.footer_file_info.setText(f"File: {filename}")
+
+        try:
+            size_str = filesize_formatter(full_path)
+            self.footer.size_info.setText(f"Size: {size_str}")
+        except:
+            self.footer.size_info.setText("Size: --")
+        ext = os.path.splitext(filename)[1].upper().replace('.', '')
+        self.footer.format_info.setText(f"Format: {ext}")
+
+        self.load_file(os.path.dirname(full_path), filename)
 
 # For testing the window independently
 if __name__ == "__main__":

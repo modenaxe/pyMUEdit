@@ -6,6 +6,8 @@ from PyQt5.QtWidgets import (QCheckBox, QDialog, QHBoxLayout, QLabel,
                              QPushButton, QSizePolicy, QStyle, QToolButton,
                              QVBoxLayout)
 
+from core.logger import logger
+
 """
 TODO: does this file need to exist?
 """
@@ -67,7 +69,7 @@ class WarningDialog(QDialog):
         if not os.path.exists(icon_path) or not pixmap or pixmap.isNull():
             icon = self.style().standardIcon(QStyle.SP_MessageBoxWarning)
             icon_label.setPixmap(icon.pixmap(48, 48))
-            print("⚠️ Image not found")
+            logger.warning("⚠️ Image not found")
         else:
             icon_label.setPixmap(
                 pixmap.scaled(

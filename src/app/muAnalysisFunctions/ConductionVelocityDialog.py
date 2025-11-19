@@ -2,6 +2,9 @@ from PyQt5.QtWidgets import *
 import numpy as np
 import traceback
 import matplotlib.pyplot as plt
+from core.logger import logger
+from scipy.signal import correlate
+from scipy.optimize import minimize
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -171,7 +174,7 @@ class ConductionVelocityDialog(QDialog):
             else:
                 dropdown.addItem("No data loaded")
         except Exception as e:
-            print(f"Error loading {title}: {e}")
+            logger.exception(f"Error loading {title}: {e}")
             dropdown.addItem("Error loading data")
 
         layout.addWidget(dropdown)
@@ -210,7 +213,7 @@ class ConductionVelocityDialog(QDialog):
             self.from_row_dropdown.addItem("No data loaded")
             self.to_row_dropdown.addItem("No data loaded")
         except Exception as e:
-            print(f"Error loading grid rows: {e}")
+            logger.exception(f"Error loading grid rows: {e}")
             self.from_row_dropdown.addItem("Error loading data")
             self.to_row_dropdown.addItem("Error loading data")
 
@@ -298,6 +301,7 @@ class ConductionVelocityDialog(QDialog):
             self._refresh_dropdowns()
             self._update_plot()
         except Exception as e:
+            logger.exception("Error initializing conduction velocity analysis")
             self._show_message(f"Error initializing: {str(e)}")
 
     def _refresh_dropdowns(self):
@@ -348,7 +352,7 @@ class ConductionVelocityDialog(QDialog):
                 self.to_row_dropdown.addItem("No data loaded")
 
         except Exception as e:
-            print(f"Error refreshing dropdowns: {e}")
+            logger.exception(f"Error refreshing dropdowns: {e}")
 
     def _show_message(self, message):
         """Show message in plot area when no data is available or error occurs.
@@ -397,7 +401,7 @@ class ConductionVelocityDialog(QDialog):
             else:
                 self._show_message("No EMG file loaded\nPlease load data first")
         except Exception as e:
-            print(f"Error updating plot: {e}")
+            logger.exception(f"Error updating plot: {e}")
             self._show_message(f"Error: {str(e)}")
 
     def _on_estimate(self):
@@ -416,8 +420,7 @@ class ConductionVelocityDialog(QDialog):
             self.results_table.setRowCount(1)
             for i, text in enumerate(["Error", str(e), "", ""]):
                 self.results_table.setItem(0, i, QTableWidgetItem(text))
-            print(f"Error in estimation: {e}")
-            traceback.print_exc()
+            logger.exception(f"Error in estimation: {e}")
 
     def _on_estimate_openhdemg(self):
         """
@@ -498,7 +501,7 @@ class ConductionVelocityDialog(QDialog):
                 table_data.append((col_name, cv_value, avg_rms, avg_xcc))
 
             except Exception as e:
-                print(f"Error processing column {col_name}: {e}")
+                logger.exception(f"Error processing column {col_name}: {e}")
                 continue
 
         return table_data

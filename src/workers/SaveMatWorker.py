@@ -1,6 +1,6 @@
 from PyQt5.QtCore import QThread, pyqtSignal
 import scipy.io as sio
-
+from core.logger import logger
 
 class SaveMatWorker(QThread):
     finished = pyqtSignal()
@@ -17,4 +17,5 @@ class SaveMatWorker(QThread):
             sio.savemat(self.filename, self.data, do_compression=self.compression)
             self.finished.emit()
         except Exception as e:
+            logger.exception(f"failed to save file {self.filename}")
             self.error.emit(str(e))

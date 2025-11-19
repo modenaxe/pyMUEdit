@@ -2,6 +2,7 @@ from PyQt5.QtCore import QThread, pyqtSignal, QObject
 from core.utils.preprocessing.extend_emg import extend_emg
 from core.utils.preprocessing.whiten_emg import whiten_emg
 import numpy as np
+from core.logger import logger
 
 class batch_filter_worker(QThread):
     progress_changed = pyqtSignal(int, str) 
@@ -43,7 +44,7 @@ class batch_filter_worker(QThread):
                         self.MUedition["edition"]["Dischargetimes"] = self.original_data[1]
                         self.MUedition["edition"]["silval"] = self.original_data[2]
                         self.MUedition["edition"]["silvalcon"] = self.original_data[3]
-                        print("Batch processing interruption!")
+                        logger.warning("Batch processing interruption!")
                         return
 
                     percent = int(processed_mus / total_mus * 100)
@@ -65,6 +66,7 @@ class batch_filter_worker(QThread):
             self.finished.emit()
 
         except Exception as e:
+            logger.exception("MU processing failed")
             self.error.emit(str(e))
 
     def process_single_mu(self, emg_data, array_idx, mu_idx, discharge_times):

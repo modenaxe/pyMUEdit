@@ -1,3 +1,5 @@
+from core.logger import logger
+
 class MUAnalysisFunc:
     """Functionality handler for motor unit analysis operations.
 
@@ -112,4 +114,4 @@ class MUAnalysisFunc:
 
         # This function should ideally trigger updates in the UI,
         # e.g., by emitting a signal that the main window connects to.
-        print("MUs removed, UI should be updated.")
+        logger.debug("MUs removed, UI should be updated.")
