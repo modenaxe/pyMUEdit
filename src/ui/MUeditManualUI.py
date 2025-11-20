@@ -56,13 +56,7 @@ def setup_ui(main_window):
     main_window.setWindowTitle("MUedit - Manual Editing")
     main_window.setGeometry(100, 100, 1200, 800)
     main_window.setObjectName("main_window")
-    main_window.setStyleSheet(
-        f"""
-            #main_window {{
-                background-color: {CleanTheme.BG_MAIN};
-            }}
-        """
-    )
+    main_window.setStyleSheet(f"background-color: {CleanTheme.BG_MAIN};")
 
     # Configure PyQtGraph globally
     pg.setConfigOption("background", "w")  # White background
