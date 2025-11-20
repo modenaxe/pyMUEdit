@@ -1,10 +1,7 @@
 from PyQt5.QtWidgets import *
 import numpy as np
-import traceback
 import matplotlib.pyplot as plt
 from core.logger import logger
-from scipy.signal import correlate
-from scipy.optimize import minimize
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
