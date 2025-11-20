@@ -1,14 +1,10 @@
 from PyQt5.QtWidgets import *
 import numpy as np
-import traceback
 import matplotlib.pyplot as plt
 from core.logger import logger
-from scipy.signal import correlate
-from scipy.optimize import minimize
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-from app.muAnalysisFunctions.electrode_layouts import get_electrode_grid
 
 from ui.components import ActionButton
 
@@ -197,11 +193,6 @@ class ConductionVelocityDialog(QDialog):
         )
         self.mu_dropdown.setObjectName("mu_dropdown")
 
-        col_group, self.col_dropdown = self._create_dropdown_group(
-            "Grid Column", []
-        )
-        self.col_dropdown.setObjectName("col_dropdown")
-
         # Row selection group
         row_group = QGroupBox("Grid Rows")
         row_layout = QHBoxLayout()
@@ -229,7 +220,7 @@ class ConductionVelocityDialog(QDialog):
         self.estimate_btn.setMinimumHeight(40)
 
         # Add to controls
-        for widget in [mu_group, col_group, row_group, self.estimate_btn]:
+        for widget in [mu_group, row_group, self.estimate_btn]:
             controls_layout.addWidget(widget)
         main_layout.addLayout(controls_layout)
 
@@ -320,15 +311,11 @@ class ConductionVelocityDialog(QDialog):
             # Refresh dropdowns
             dropdowns_data = [
                 (self.mu_dropdown, get_available_mus()),
-                (self.col_dropdown, get_available_grid_columns(self.sta)),
             ]
 
             for dropdown, data in dropdowns_data:
                 dropdown.clear()
                 if data:
-                    if dropdown.objectName() == "col_dropdown":
-                        dropdown.addItems(["col" + str(item) for item in data])
-                    else:
                         dropdown.addItems([str(item) for item in data])
                 else:
                     dropdown.addItem("No data loaded")
@@ -383,7 +370,6 @@ class ConductionVelocityDialog(QDialog):
 
         return {
             "mu": safe_int(self.mu_dropdown.currentText(), 0),
-            "col": safe_int(self.col_dropdown.currentText(), 0),
             "from_row": safe_int(self.from_row_dropdown.currentText(), 0),
             "to_row": safe_int(self.to_row_dropdown.currentText(), 10),
         }
@@ -413,7 +399,7 @@ class ConductionVelocityDialog(QDialog):
         try:
             values = self._get_ui_values()
             table_data = self._compute_results(
-                values["mu"], values["col"], values["from_row"], values["to_row"]
+                values["mu"], values["from_row"], values["to_row"]
             )
             self._fill_results_table(table_data)
         except Exception as e:
@@ -443,7 +429,7 @@ class ConductionVelocityDialog(QDialog):
 
         MUcv_gui(emgfile, sorted_rawemg)
 
-    def _compute_results(self, mu, selected_col, from_row, to_row):
+    def _compute_results(self, mu, from_row, to_row):
         """Compute CV estimation results using reference method.
 
         Args:
@@ -603,235 +589,3 @@ class ConductionVelocityDialog(QDialog):
         self._electrode_positions_cache = None
         self._refresh_dropdowns()
         self._update_plot()
-
-
-    """ DEPRECATED FUNCTIONS - to be removed when client approval """
-
-
-    # def _get_electrode_grid_cached(self):
-    #     """Get electrode grid with caching for performance optimization.
-
-    #     Returns:
-    #         Tuple of (electrode_grid, electrode_positions_dict) with cached electrode layout data
-    #     """
-    #     if self._electrode_grid_cache is None:
-    #         try:
-    #             self._electrode_grid_cache = get_electrode_grid(
-    #                 code="GR08MM1305", orientation=180
-    #             )
-    #             self._electrode_positions_cache = {}
-    #             for r in range(len(self._electrode_grid_cache)):
-    #                 for c in range(len(self._electrode_grid_cache[0])):
-    #                     ch = self._electrode_grid_cache[r][c]
-    #                     if not np.isnan(ch):
-    #                         self._electrode_positions_cache[int(ch)] = (r, c)
-    #         except:
-    #             self._electrode_grid_cache = None
-    #             self._electrode_positions_cache = {}
-    #     return self._electrode_grid_cache, self._electrode_positions_cache
-
-    #     def _compute_sta(self, emgfile, mu, from_row, to_row):
-    #     """Compute spike-triggered average for all columns within specified row range.
-
-    #     Args:
-    #         emgfile: EMG file dictionary containing RAW_SIGNAL and MUPULSES
-    #         mu: Motor unit index for pulse extraction
-    #         from_row: Starting row index for channel selection
-    #         to_row: Ending row index for channel selection
-
-    #     Returns:
-    #         Dictionary with column names as keys and DataFrames of spike-triggered averages as values
-    #     """
-    #     raw_signal = emgfile.get("RAW_SIGNAL")
-    #     mu_pulses = emgfile.get("MUPULSES")
-
-    #     if raw_signal is None or mu_pulses is None:
-    #         return {}
-
-    #     if isinstance(raw_signal, dict):
-    #         raw_signal = pd.DataFrame(raw_signal)
-
-    #     # Get pulses
-    #     if isinstance(mu_pulses, (list, tuple)) and mu < len(mu_pulses):
-    #         pulses = np.array(mu_pulses[mu], dtype=int)
-    #     else:
-    #         return {}
-
-    #     if len(pulses) == 0:
-    #         return {}
-
-    #     window = 50
-    #     grid, _ = self._get_electrode_grid_cached()
-
-    #     # Organize channels by columns
-    #     column_channels = {}
-    #     if grid is not None:
-    #         for r in range(max(0, from_row), min(11, to_row + 1)):
-    #             for c in range(len(grid[0])):
-    #                 ch = grid[r][c]
-    #                 if not np.isnan(ch):
-    #                     col_name = f"col{c}"
-    #                     if col_name not in column_channels:
-    #                         column_channels[col_name] = []
-    #                     column_channels[col_name].append(int(ch))
-    #     else:
-    #         # Fallback organization
-    #         for c in range(5):
-    #             col_name = f"col{c}"
-    #             channels = [
-    #                 r * 5 + c
-    #                 for r in range(max(0, from_row), min(11, to_row + 1))
-    #                 if r * 5 + c < raw_signal.shape[1]
-    #             ]
-    #             if channels:
-    #                 column_channels[col_name] = channels
-
-    #     # Filter valid pulses
-    #     valid_pulses = pulses[
-    #         (pulses >= window) & (pulses + window < raw_signal.shape[0])
-    #     ]
-    #     if len(valid_pulses) < 3:
-    #         return {}
-
-    #     raw_signal_array = raw_signal.values
-    #     sta_data = {}
-
-    #     # Compute STA for each column
-    #     for col_name, channels in column_channels.items():
-    #         if len(channels) < 2:
-    #             continue
-
-    #         valid_channels = [ch for ch in channels if ch < raw_signal_array.shape[1]]
-    #         if len(valid_channels) < 2:
-    #             continue
-
-    #         # Extract and average segments
-    #         sta_by_channel = {}
-    #         for ch in valid_channels:
-    #             segments = []
-    #             for pulse in valid_pulses:
-    #                 start, end = pulse - window, pulse + window + 1
-    #                 segment = raw_signal_array[start:end, ch]
-    #                 segments.append(segment - np.mean(segment))
-
-    #             if len(segments) >= 3:
-    #                 sta_by_channel[ch] = np.mean(segments, axis=0)
-
-    #         if len(sta_by_channel) >= 2:
-    #             sta_data[col_name] = pd.DataFrame(sta_by_channel)
-
-    #     return sta_data
-
-    # def _compute_xcc(self, sta_data):
-    #     """Compute cross-correlation between adjacent channels in each column.
-
-    #     Args:
-    #         sta_data: Dictionary containing spike-triggered average data by column
-
-    #     Returns:
-    #         Dictionary with same structure as sta_data but containing cross-correlation values
-    #     """
-    #     xcc_sta = copy.deepcopy(sta_data)
-
-    #     for col_name in sta_data:
-    #         df = sta_data[col_name]
-    #         reversed_col = list(reversed(df.columns))
-
-    #         for pos, col in enumerate(reversed_col):
-    #             if pos != len(reversed_col) - 1:
-    #                 sig1 = df.loc[:, reversed_col[pos]].values
-    #                 sig2 = df.loc[:, reversed_col[pos + 1]].values
-    #                 xcc = norm_xcorr(sig1, sig2, out="max")
-    #             else:
-    #                 xcc = np.nan
-
-    #             xcc_sta[col_name][col] = [xcc] * len(df)
-
-    #         xcc_sta[col_name] = xcc_sta[col_name].drop_duplicates()
-
-    #     return xcc_sta
-
-# def norm_xcorr(sig1, sig2, out="max"):
-#     """Calculate normalized cross-correlation between two signals.
-
-#     Args:
-#         sig1: First signal array
-#         sig2: Second signal array
-#         out: Output type, either "max" to return maximum correlation or "full" for full correlation array
-
-#     Returns:
-#         Maximum absolute correlation value if out="max", otherwise full correlation array
-#     """
-#     sig1, sig2 = sig1 - np.mean(sig1), sig2 - np.mean(sig2)
-#     corr = correlate(sig1, sig2, mode="full")
-#     norm_factor = np.sqrt(np.sum(sig1**2) * np.sum(sig2**2))
-#     if norm_factor > 0:
-#         corr = corr / norm_factor
-#     return np.max(np.abs(corr)) if out == "max" else corr
-
-
-# def find_mle_teta(sig1, sig2, ied, fsamp):
-#     """Find initial theta estimate for MLE CV estimation.
-
-#     Args:
-#         sig1: First signal array
-#         sig2: Second signal array
-#         ied: Inter-electrode distance in mm
-#         fsamp: Sampling frequency in Hz
-
-#     Returns:
-#         Initial theta estimate (1/cv_estimate) for optimization
-#     """
-#     corr = correlate(sig1, sig2, mode="full")
-#     lags = np.arange(-len(sig1) + 1, len(sig1))
-#     delay_samples = max(1, abs(lags[np.argmax(np.abs(corr))]))
-#     cv_estimate = (ied / 1000) / (delay_samples / fsamp)
-#     return 1.0 / cv_estimate if cv_estimate > 0 else 1.0
-
-
-# def mle_cv_est(sig, initial_teta, ied, fsamp):
-#     """Maximum likelihood estimation of conduction velocity.
-
-#     Args:
-#         sig: Signal array for CV estimation
-#         initial_teta: Initial theta value for optimization
-#         ied: Inter-electrode distance in mm
-#         fsamp: Sampling frequency in Hz
-
-#     Returns:
-#         Tuple of (estimated_cv, optimized_teta) where cv is in m/s
-#     """
-
-#     def objective(teta):
-#         cv = 1.0 / teta if teta > 0 else 0.1
-#         return abs(cv - 3.0)  # Bias towards physiological range
-
-#     try:
-#         result = minimize(objective, initial_teta, method="BFGS")
-#         teta_opt = result.x[0] if result.success else initial_teta
-#         cv = 1.0 / teta_opt if teta_opt > 0 else 1.0 / initial_teta
-#     except:
-#         cv = 1.0 / initial_teta if initial_teta > 0 else 3.0
-#         teta_opt = initial_teta
-#     return cv, teta_opt
-
-
-# def estimate_cv_via_mle(emgfile, signal):
-#     """Estimate conduction velocity via maximum likelihood estimation.
-
-#     Args:
-#         emgfile: EMG file dictionary containing IED and FSAMP parameters
-#         signal: Signal data for CV estimation (DataFrame or array)
-
-#     Returns:
-#         Estimated conduction velocity in m/s, or NaN if estimation fails
-#     """
-#     ied, fsamp = emgfile.get("IED", 8.0), emgfile.get("FSAMP", 2048)
-#     sig = (signal.values if hasattr(signal, "values") else signal).T
-#     if sig.ndim == 1:
-#         return np.nan
-
-#     sig1, sig2 = (sig[1, :], sig[2, :]) if sig.shape[0] > 3 else (sig[0, :], sig[1, :])
-#     teta = find_mle_teta(sig1, sig2, ied, fsamp)
-#     cv, _ = mle_cv_est(sig, teta, ied, fsamp)
-#     return abs(cv)

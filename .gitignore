@@ -16,3 +16,4 @@ database.db
 *.zip
 *.txt
 *.json
+/src/core/database/database.db
