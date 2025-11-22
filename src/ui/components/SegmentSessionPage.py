@@ -62,32 +62,47 @@ class SegmentSessionPage(QWidget):
         vis_panel = VisualizationPanel(plot_widget=self.vis_plot)
         vis_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        # reference signal dropdown panel
-        reference_signal_panel = CollapsiblePanel("Reference Signal")
+        # segmentation options dropdown panel
+        segmentation_options_panel = CollapsiblePanel("Segmentation Options")
         self.reference_dropdown = FormDropdown(
             "Select Reference Signal",
             self.generate_signal_reference_options())
-        reference_signal_panel.add_widget(self.reference_dropdown)
-        reference_signal_panel.setSizePolicy(
-            QSizePolicy.Preferred, QSizePolicy.Fixed)
+        segmentation_options_panel.add_widget(self.reference_dropdown)
         self.reference_dropdown.dropdown.currentIndexChanged.connect(
             self.on_reference_signal_change)
 
-        # segmentation parameters dropdown panel
-        segmentation_param_panel = CollapsiblePanel("Segmentation Parameters")
-        self.threshold_dropdown = FormDoubleSpinBox("Threshold", 0, 0, 1, 0.1)
+        # segmentation_options_panel.addSpacing(5)
+
+        self.threshold_dropdown = FormDoubleSpinBox("Automatic: Select Threshold", 0, 0, 1, 0.1)
         self.threshold_dropdown.spinbox.valueChanged.connect(
             self.threshold_edit_field_value_changed)
-        segmentation_param_panel.add_widget(self.threshold_dropdown)
-        self.windows_dropdown = FormSpinBox("Windows", 0, 0, 10)
+        segmentation_options_panel.add_widget(self.threshold_dropdown)
+
+        # segmentation_options_panel.addSpacing(5)
+
+        self.windows_dropdown = FormSpinBox("Manual: Select Windows", 0, 0, 10)
         self.windows_dropdown.spinbox.valueChanged.connect(
             self.windows_edit_field_value_changed)
-        segmentation_param_panel.add_widget(self.windows_dropdown)
-        segmentation_param_panel.setSizePolicy(
+        segmentation_options_panel.add_widget(self.windows_dropdown)
+
+        segmentation_options_panel.setSizePolicy(
             QSizePolicy.Preferred, QSizePolicy.Fixed)
 
-        left_layout.addWidget(reference_signal_panel)
-        left_layout.addWidget(segmentation_param_panel)
+        # segmentation parameters dropdown panel
+        # segmentation_param_panel = CollapsiblePanel("Segmentation Parameters")
+        # self.threshold_dropdown = FormDoubleSpinBox("Threshold", 0, 0, 1, 0.1)
+        # self.threshold_dropdown.spinbox.valueChanged.connect(
+        #     self.threshold_edit_field_value_changed)
+        # segmentation_param_panel.add_widget(self.threshold_dropdown)
+        # self.windows_dropdown = FormSpinBox("Windows", 0, 0, 10)
+        # self.windows_dropdown.spinbox.valueChanged.connect(
+        #     self.windows_edit_field_value_changed)
+        # segmentation_param_panel.add_widget(self.windows_dropdown)
+        # segmentation_param_panel.setSizePolicy(
+        #     QSizePolicy.Preferred, QSizePolicy.Fixed)
+
+        left_layout.addWidget(segmentation_options_panel)
+        # left_layout.addWidget(segmentation_param_panel)
 
         # concatenate button
         self.concat_button = ActionButton("Concatenate", primary=False)
