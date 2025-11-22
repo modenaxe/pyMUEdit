@@ -73,14 +73,14 @@ class SegmentSessionPage(QWidget):
 
         # segmentation_options_panel.addSpacing(5)
 
-        self.threshold_dropdown = FormDoubleSpinBox("Automatic: Select Threshold", 0, 0, 1, 0.1)
+        self.threshold_dropdown = FormDoubleSpinBox("Automatic (Select Threshold)", 0, 0, 1, 0.1)
         self.threshold_dropdown.spinbox.valueChanged.connect(
             self.threshold_edit_field_value_changed)
         segmentation_options_panel.add_widget(self.threshold_dropdown)
 
         # segmentation_options_panel.addSpacing(5)
 
-        self.windows_dropdown = FormSpinBox("Manual: Select Windows", 0, 0, 10)
+        self.windows_dropdown = FormSpinBox("Manual (Select Windows)", 0, 0, 10)
         self.windows_dropdown.spinbox.valueChanged.connect(
             self.windows_edit_field_value_changed)
         segmentation_options_panel.add_widget(self.windows_dropdown)
