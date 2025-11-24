@@ -15,6 +15,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 # Install system dependencies (no Python libs here)
 RUN apt-get update && apt-get install -y --no-install-recommends \
         fonts-recommended \
+        qt5-qmake \
         python3-pyqt5 \
         tk-dev \
         xorg \
