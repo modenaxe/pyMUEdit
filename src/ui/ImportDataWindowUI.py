@@ -5,8 +5,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QCursor, QFont
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
-                             QScrollArea, QSizePolicy,
-                             QSpacerItem, QStackedWidget, QVBoxLayout, QWidget)
+                             QScrollArea, QSizePolicy, QSpacerItem,
+                             QStackedWidget, QVBoxLayout, QWidget)
 
 from core.logger import logger
 # Import custom components
