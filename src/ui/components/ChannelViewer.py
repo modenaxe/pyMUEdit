@@ -77,7 +77,8 @@ class ChannelViewer(QWidget):
             y = self.entire_emg_data[index]
             x = np.arange(len(y)) / fs  # Time in seconds
 
-            # Subsample every nth point to improve performance and use splicing to keep every nth sample
+            # Subsample every nth point to improve performance and use splicing
+            # to keep every nth sample
             y_sub = y[::self.subsample_step]
             x_sub = x[::self.subsample_step]
 
