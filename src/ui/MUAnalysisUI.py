@@ -55,6 +55,8 @@ class MUAnalysis(QWidget):
         self.analysis_plot = AnalysisPlot()
         self.prop = MUPropertiesFunc()
 
+        self.setStyleSheet("background-color: white;")
+
         self.colors = {
             "bg_main": Theme.BG_MAIN,
             "bg_card": Theme.BG_CARD,

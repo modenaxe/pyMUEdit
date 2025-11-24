@@ -6,7 +6,6 @@ import zipfile
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent
-from PyQt5.QtMultimedia import QSound
 import numpy as np
 import pandas as pd
 import pyqtgraph as pg
