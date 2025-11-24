@@ -7,7 +7,7 @@ from .config.structures import set_random_seed, Config
 from .models.scd import SwarmContrastiveDecomposition
 from .processing.postprocess import save_results
 from PyQt5.QtCore import QThread, pyqtSignal
-
+from core.logger import logger
 
 set_random_seed(seed=42)
 
@@ -64,8 +64,8 @@ class SCDDecompositionWorker(QThread):
 
             # Get data from EMG object
             data_array = np.array(self.emg_obj.signal_dict["data"].astype(float))
-            print(f"Number of channels: {data_array.shape[0]}, number of values per channel: {data_array.shape[1]}")
-            print(data_array)
+            logger.info(f"Number of channels: {data_array.shape[0]}, number of values per channel: {data_array.shape[1]}")
+            logger.info(data_array)
             neural_data = (
                 torch.from_numpy(data_array).t().to(device=device, dtype=torch.float32)
             )  # time, channels
@@ -109,14 +109,13 @@ class SCDDecompositionWorker(QThread):
             # print("---------------END PREDICTED TIMESTAMPS---------------")
 
             self.progress.emit("Formatting results...", 0.9)
-            print(self.decomp)
+            logger.info(self.decomp)
             #TODO: Figure out formatting results and saving
             result = self.format_results()
             self.finished.emit(result)
 
         except Exception as e:
-            print(f"Exception in SCDDecompositionWorker: {str(e)}")
-            traceback.print_exc()
+            logger.exception(f"Exception in SCDDecompositionWorker: {str(e)}")
             self.error.emit(str(e))
     
     def send_plot_update(self, fICA_source, spikes, time2, sil, cov):

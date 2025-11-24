@@ -1,10 +1,8 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QComboBox, QFrame, QLabel, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QVBoxLayout, QWidget
 
 from ui.components.muAnalysisComponents.AnalysisDropdownDialog import \
     AnalysisDropdownDialog
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
 
 
 class AnalysisLabeledDropdownDialog(QWidget):

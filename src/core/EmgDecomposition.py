@@ -5,6 +5,7 @@ import scipy.io as sio
 from typing import TYPE_CHECKING, Dict, List, Tuple, Any, Optional, Union
 
 from core.utils.io.open_mat import open_mat
+from core.logger import logger
 
 from .utils.io.open_otb_plus import open_otb_plus
 from .utils.data_processing.electrode_formatter import electrode_formatter
@@ -35,6 +36,7 @@ from .utils.decomposition.mathematical_functions import (
     dot_exp,
     dot_logcosh,
 )
+from core.logger import logger
 
 if TYPE_CHECKING:
     from app.ImportDataWindow import ImportDataWindow
@@ -44,7 +46,7 @@ np.random.seed(1337)  # Fixes random generation to get same results each time th
 
 class EMG:
     def __init__(self):
-        print("Initializing EMG base class")
+        logger.debug("Initializing EMG base class")
         self.its = 20  # number of iterations of the fixed point algorithm
         self.ref_exist = 1  # if ref_signal exist ref_exist = 1; if not ref_exist = 0 and manual selection of windows
         self.windows = 1  # number of segmented windows over each contraction
@@ -64,7 +66,7 @@ class EMG:
         self.cov_disch_rate_thr = 0.3
         self.refine_mu = 1
         self.dup_bgrids = 0
-        print(f"EMG initialization parameters: its={self.its}, sil_thr={self.sil_thr}, cov_thr={self.cov_thr}")
+        logger.info(f"EMG initialization parameters: its={self.its}, sil_thr={self.sil_thr}, cov_thr={self.cov_thr}")
 
     def apply_muedit_params(self, parameters):
         """Apply parameters in the format MUedit expects to this object."""
@@ -104,7 +106,7 @@ class EMG:
 
 class offline_EMG(EMG):
     def __init__(self, save_dir: str, to_filter: bool):
-        print(f"Initializing offline_EMG with save_dir={save_dir}, to_filter={to_filter}")
+        logger.debug(f"Initializing offline_EMG with save_dir={save_dir}, to_filter={to_filter}")
         super().__init__()
         self.save_dir = save_dir  # directory at which final discharges will be saved
         self.to_filter = to_filter  # whether or not you notch and butter filter the
@@ -175,9 +177,9 @@ class offline_EMG(EMG):
         # Save data to .mat file
         try:
             sio.savemat(filepath, data, do_compression=True)
-            print(f"Saved intermediate output to {filepath}")
+            logger.debug(f"Saved intermediate output to {filepath}")
         except Exception as e:
-            print(f"Error saving intermediate output to {filepath}: {str(e)}")
+            logger.exception(f"Error saving intermediate output to {filepath}: {str(e)}")
 
         return filepath
 
@@ -186,7 +188,7 @@ class offline_EMG(EMG):
         Opens OTB file and extracts data.
         This is now a wrapper around the standalone open_otb_plus function.
         """
-        print(f"Opening OTB file: {inputfile}")
+        logger.debug(f"Opening OTB file: {inputfile}")
 
         self.signal_dict = open_otb_plus(inputfile, import_window)
         self.decomp_dict = {}  # initialising this dictionary here for later use
@@ -205,7 +207,7 @@ class offline_EMG(EMG):
         """
         Opens MAT file and extracts data.
         """
-        print(f"Opening MAT file: {inputfile}")
+        logger.debug(f"Opening MAT file: {inputfile}")
 
         self.signal_dict = open_mat(inputfile)
         self.decomp_dict = {}  # initialising this dictionary here for later use
@@ -218,7 +220,7 @@ class offline_EMG(EMG):
         Match up the signals with the electrode shape and numbering.
         This is now a wrapper around the standalone electrode_formatter function.
         """
-        print("Starting electrode formatting")
+        logger.debug("Starting electrode formatting")
         result = electrode_formatter(self)
 
         # Save electrode formatting data for debugging
@@ -239,7 +241,7 @@ class offline_EMG(EMG):
 
     def manual_rejection(self):
         """Manual rejection for channels with noise/artificats (as configured in the Channel Viewer)"""
-        print("Starting channel rejection")
+        logger.debug("Starting channel rejection")
         prev_chans_per_electrode = 0
         total_chans_rejected = 0
         for i in range(self.signal_dict["ngrid"]):
@@ -259,7 +261,7 @@ class offline_EMG(EMG):
 
             prev_chans_per_electrode += num_channels
 
-        print(f"Channel rejection completed - {total_chans_rejected} channels rejected")
+        logger.debug(f"Channel rejection completed - {total_chans_rejected} channels rejected")
 
         # Save rejected channels data for debugging
         if self.save_intermediate:
@@ -269,15 +271,15 @@ class offline_EMG(EMG):
             )
 
     def batch_w_target(self):
-        print("Starting signal batching with target")
+        logger.debug("Starting signal batching with target")
 
         plateau = np.where(self.signal_dict["target"] >= max(self.signal_dict["target"]) * self.target_thres)[0]
-        print(f"Plateau range: {plateau[0]} to {plateau[-1]}, length: {len(plateau)}")
+        logger.info(f"Plateau range: {plateau[0]} to {plateau[-1]}, length: {len(plateau)}")
 
         discontinuity = np.where(np.diff(plateau) > 1)[0]
 
         if self.windows > 1 and not discontinuity.size:
-            print(f"Multiple windows ({self.windows}) with continuous plateau")
+            logger.info(f"Multiple windows ({self.windows}) with continuous plateau")
             plat_len = plateau[-1] - plateau[0]
             wind_len = np.floor(plat_len / self.windows)
             batch = np.zeros(self.windows * 2)
@@ -289,7 +291,7 @@ class offline_EMG(EMG):
             self.plateau_coords = batch
 
         elif self.windows >= 1 and discontinuity.any():
-            print(f"Multiple windows with discontinuous plateau")
+            logger.info(f"Multiple windows with discontinuous plateau")
             prebatch = np.zeros([len(discontinuity) + 1, 2])
 
             prebatch[0, :] = [plateau[0], plateau[discontinuity[0]]]
@@ -313,18 +315,18 @@ class offline_EMG(EMG):
 
         else:
             # the last option is having only one window and no discontinuity in the plateau; Here you leave as is
-            print(f"Single window with continuous plateau")
+            logger.info(f"Single window with continuous plateau")
             batch = [plateau[0], plateau[-1]]
             self.plateau_coords = batch
 
         # with the markers for windows and plateau discontinuities, batch the emg data ready for decomposition
         tracker = 0
         n_intervals = int(len(self.plateau_coords) / 2)
-        print(f"Number of intervals: {n_intervals}")
+        logger.info(f"Number of intervals: {n_intervals}")
         batched_data = [None] * (self.signal_dict["ngrid"] * n_intervals)
 
         for i in range(int(self.signal_dict["ngrid"])):
-            print(f"Batching grid {i+1}/{self.signal_dict['ngrid']}")
+            logger.debug(f"Batching grid {i+1}/{self.signal_dict['ngrid']}")
             electrode = i + 1
             for interval in range(n_intervals):
                 start_idx = int(self.plateau_coords[interval * 2])
@@ -341,7 +343,7 @@ class offline_EMG(EMG):
                 tracker += 1
 
         self.signal_dict["batched_data"] = batched_data
-        print(f"Created {len(batched_data)} batched data segments")
+        logger.debug(f"Created {len(batched_data)} batched data segments")
 
         # Save batch processing with target data for debugging
         if self.save_intermediate:
@@ -355,8 +357,8 @@ class offline_EMG(EMG):
             )
 
     def batch_wo_target(self):
-        print("Starting signal batching without target")
-        print("Warning: Manual window selection not implemented in non-interactive mode")
+        logger.debug("Starting signal batching without target")
+        logger.warning("Warning: Manual window selection not implemented in non-interactive mode")
 
         # Create default window using the entire signal
         start_idx = 0
@@ -370,7 +372,7 @@ class offline_EMG(EMG):
         batched_data = [None] * (self.signal_dict["ngrid"] * n_intervals)
 
         for i in range(int(self.signal_dict["ngrid"])):
-            print(f"Batching grid {i+1}/{self.signal_dict['ngrid']}")
+            logger.debug(f"Batching grid {i+1}/{self.signal_dict['ngrid']}")
             electrode = i + 1
             for interval in range(n_intervals):
                 start_idx = int(self.plateau_coords[interval * 2])
@@ -386,7 +388,7 @@ class offline_EMG(EMG):
                 tracker += 1
 
         self.signal_dict["batched_data"] = batched_data
-        print(f"Created {len(batched_data)} batched data segments")
+        logger.debug(f"Created {len(batched_data)} batched data segments")
 
         # Save batch processing without target data for debugging
         if self.save_intermediate:
@@ -401,7 +403,7 @@ class offline_EMG(EMG):
 
     ################################ CONVOLUTIVE SPHERING ########################################
     def convul_sphering(self, g, interval, tracker):
-        print(f"Starting convolutive sphering for electrode {g+1}, interval {interval+1}")
+        logger.debug(f"Starting convolutive sphering for electrode {g+1}, interval {interval+1}")
 
         """
         1) Filter the batched EMG data
@@ -560,12 +562,12 @@ class offline_EMG(EMG):
                     "convul_sphering", g, interval, 10
                 )
 
-        print(f"Completed convolutive sphering for electrode {g+1}, interval {interval+1}")
+        logger.debug(f"Completed convolutive sphering for electrode {g+1}, interval {interval+1}")
 
     ######################### FAST ICA AND CONVOLUTIVE KERNEL COMPENSATION  ############################################
 
     def fast_ICA_and_CKC(self, g, interval, tracker, cf_type="skew", plot_callback=None):
-        print(f"Starting FastICA for electrode {g+1}, interval {interval+1}, contrast={cf_type}, iterations={self.its}")
+        logger.debug(f"Starting FastICA for electrode {g+1}, interval {interval+1}, contrast={cf_type}, iterations={self.its}")
 
         init_its = np.zeros([self.its], dtype=int)  # tracker of initialisaitons of separation vectors across iterations
         fpa_its = 500  # maximum number of iterations for the fixed point algorithm
@@ -593,6 +595,12 @@ class offline_EMG(EMG):
             )
 
         for i in range(self.its):
+
+            # stop flag check
+            if hasattr(self, 'should_stop') and self.should_stop:
+                logger.info(f"FastICA stopped at iteration {i+1}/{self.its} due to stop flag")
+                logger.info(f"Decomposition stoppped before FastICA at electrode {g+1}, interval {interval+1}")
+                return
 
             #################### FIXED POINT ALGORITHM #################################
             if self.initialisation:
@@ -744,7 +752,7 @@ class offline_EMG(EMG):
                     #         "fast_ICA_and_CKC", g, interval, i+2, 11
                     #     )
 
-                print(
+                logger.debug(
                     f"Iteration {i+1}/{self.its} - SIL: {self.decomp_dict['SILs'][interval, i]:.4f}, "
                     f"CoV: {self.decomp_dict['CoVs'][interval, i]:.4f}, Spikes: {len(spikes)}"
                 )
@@ -778,8 +786,14 @@ class offline_EMG(EMG):
                         self.decomp_dict["CoVs"][interval, i],
                     )
 
+                # stop check
+                if hasattr(self, 'should_stop') and self.should_stop:
+                    logger.info(f"FastICA stopped during iteration {i+1}/{self.its} after plot callback")
+                    logger.info(f"Decomposition stoppped before FastICA at electrode {g+1}, interval {interval+1}")
+                    return
+
             else:
-                print(f"Electrode #{g+1} - Iteration #{i+1} - less than 10 spikes")
+                logger.info(f"Electrode #{g+1} - Iteration #{i+1} - less than 10 spikes")
                 # without enough spikes, we skip minimising the covariation of discharges
                 self.decomp_dict["B_sep_mat"][:, i] = self.decomp_dict["w_sep_vect"].real
 
@@ -793,7 +807,7 @@ class offline_EMG(EMG):
         ####################################### MU FILTER THRESHOLDING ###############################################
 
         # Apply thresholds
-        print("\nApplying thresholds to MU filters...")
+        logger.debug("\nApplying thresholds to MU filters...")
         SIL_condition = self.decomp_dict["SILs"][interval, :] >= self.sil_thr
         final_condition = SIL_condition.copy()
 
@@ -807,7 +821,7 @@ class offline_EMG(EMG):
         if self.cov_filter:
             CoV_condition = self.decomp_dict["CoVs"][interval, :] <= self.cov_thr
             final_condition = SIL_condition & CoV_condition
-            print(f"Units meeting both criteria: {np.sum(final_condition)}/{self.its}")
+            logger.info(f"Units meeting both criteria: {np.sum(final_condition)}/{self.its}")
 
             # Save CoV condition and final condition
             if self.save_intermediate:
@@ -837,7 +851,7 @@ class offline_EMG(EMG):
                 np.shape(self.decomp_dict["whitened_obvs"][interval])[0], np.sum(mask, axis=1)[0]
             )
             self.decomp_dict["masked_mu_filters"].append(masked_filters)
-            print(f"Extracted {np.sum(final_condition)} motor units that meet thresholds")
+            logger.info(f"Extracted {np.sum(final_condition)} motor units that meet thresholds")
 
             # Save masked filters
             if self.save_intermediate:
@@ -849,7 +863,7 @@ class offline_EMG(EMG):
             # Create an empty array with proper dimensions to avoid errors later
             empty_array = np.zeros((np.shape(self.decomp_dict["whitened_obvs"][interval])[0], 0))
             self.decomp_dict["masked_mu_filters"].append(empty_array)
-            print("WARNING: No motor units met the threshold criteria")
+            logger.warning("No motor units met the threshold criteria")
 
             # Save empty array
             if self.save_intermediate:
@@ -871,12 +885,12 @@ class offline_EMG(EMG):
                 "fast_ICA_and_CKC", g, interval, self.its+2, 5
             )
 
-        print(f"FastICA and CKC completed for electrode {g+1}, interval {interval+1}")
+        logger.debug(f"FastICA and CKC completed for electrode {g+1}, interval {interval+1}")
 
     ################################################## POST PROCESSING #######################################################
 
     def post_process_EMG(self, electrode):
-        print(f"Starting post-processing for electrode {electrode+1}")
+        logger.debug(f"Starting post-processing for electrode {electrode+1}")
 
         # Save initial state
         if self.save_intermediate:
@@ -917,7 +931,7 @@ class offline_EMG(EMG):
             )
 
         if pulse_trains.size > 0:  # if there are existing MUs
-            print(f"Found {np.shape(pulse_trains)[0]} motor units")
+            logger.info(f"Found {np.shape(pulse_trains)[0]} motor units")
             self.mus_in_array[electrode - 1] = 1
 
             # removing duplicate MUs
@@ -931,7 +945,7 @@ class offline_EMG(EMG):
                 self.dup_thr,
                 self.signal_dict["fsamp"],
             )
-            print(f"After duplicate removal: {len(discharge_times_new)} motor units")
+            logger.info(f"After duplicate removal: {len(discharge_times_new)} motor units")
 
             # Save duplicate removal results
             if self.save_intermediate:
@@ -996,10 +1010,10 @@ class offline_EMG(EMG):
                         "post_process_EMG", electrode, 5
                     )
 
-            print(f"Adding {np.shape(pulse_trains_new)[0]} pulse trains to results")
+            logger.info(f"Adding {np.shape(pulse_trains_new)[0]} pulse trains to results")
             self.mu_dict["pulse_trains"].append(pulse_trains_new)
         else:
-            print(f"No motor units found for electrode {electrode}")
+            logger.info(f"No motor units found for electrode {electrode}")
 
         if electrode != 1:
             self.mu_dict["discharge_times"].append([])
@@ -1021,10 +1035,10 @@ class offline_EMG(EMG):
                 "post_process_EMG", electrode, 6
             )
 
-        print(f"Post-processing completed for electrode {electrode}")
+        logger.debug(f"Post-processing completed for electrode {electrode}")
 
     def post_process_EMG_for_biofeedback(self, electrode, interval):
-        print(f"Starting biofeedback post-processing for electrode {electrode+1}")
+        logger.debug(f"Starting biofeedback post-processing for electrode {electrode+1}")
 
         # Save initial state
         if self.save_intermediate:
@@ -1075,7 +1089,7 @@ class offline_EMG(EMG):
             )
 
         if np.shape(pulse_trains)[0] > 0:  # if there are existing MUs
-            print(f"Found {np.shape(pulse_trains)[0]} motor units")
+            logger.info(f"Found {np.shape(pulse_trains)[0]} motor units")
             self.mus_in_array[electrode - 1] = 1
 
             # removing duplicate MUs
@@ -1089,7 +1103,7 @@ class offline_EMG(EMG):
                 self.dup_thr,
                 self.signal_dict["fsamp"],
             )
-            print(f"After duplicate removal: {len(discharge_times_new)} motor units")
+            logger.info(f"After duplicate removal: {len(discharge_times_new)} motor units")
 
             # Save after duplicate removal
             if self.save_intermediate:
@@ -1164,7 +1178,7 @@ class offline_EMG(EMG):
             self.mu_dict["centroids"].append(centroids)
             self.mu_dict["mu_filters"].append(new_mu_filters)
         else:
-            print(f"No motor units found for electrode {electrode}")
+            logger.info(f"No motor units found for electrode {electrode}")
 
         if electrode != 1:
             self.mu_dict["discharge_times"].append([])
@@ -1183,11 +1197,11 @@ class offline_EMG(EMG):
                 "post_process_EMG_for_biofeedback", electrode, interval, 7
             )
 
-        print(f"Biofeedback post-processing completed for electrode {electrode}")
+        logger.debug(f"Biofeedback post-processing completed for electrode {electrode}")
 
     def post_process_across_arrays(self):
-        print("Starting post-processing across arrays")
-        print(f"Duplicate between grids: {self.dup_bgrids}")
+        logger.debug("Starting post-processing across arrays")
+        logger.debug(f"Duplicate between grids: {self.dup_bgrids}")
 
         # Save initial parameters
         if self.save_intermediate:
@@ -1200,28 +1214,43 @@ class offline_EMG(EMG):
                 "post_process_across_arrays", 0
             )
 
+        if not hasattr(self, 'mu_dict') or not isinstance(self.mu_dict, dict):
+            logger.warning("mu_dict not properly initialized")
+            self.mu_dict = {"pulse_trains": [], "discharge_times": []}
+
+        if "pulse_trains" not in self.mu_dict or not isinstance(self.mu_dict["pulse_trains"], list):
+            logger.warning("pulse_trains not properly initialized")
+            self.mu_dict["pulse_trains"] = []
+
+        if "discharge_times" not in self.mu_dict or not isinstance(self.mu_dict["discharge_times"], list):
+            logger.warning("discharge_times not properly initialized")
+            self.mu_dict["discharge_times"] = []
+
         mu_count = 0
         no_arrays = len(self.mu_dict["pulse_trains"])
-        print(f"Found {no_arrays} electrode arrays with data")
+        logger.info(f"Found {no_arrays} electrode arrays with data")
 
-        # Save array counts
+        # save array counts with bounds checking
         array_motor_unit_counts = []
 
         for i in range(no_arrays):
-            if isinstance(self.mu_dict["pulse_trains"][i], np.ndarray) and self.mu_dict["pulse_trains"][i].size > 0:
+            if (i < len(self.mu_dict["pulse_trains"]) and
+                isinstance(self.mu_dict["pulse_trains"][i], np.ndarray) and
+                self.mu_dict["pulse_trains"][i].size > 0):
+
                 motor_unit_count = (
                     self.mu_dict["pulse_trains"][i].shape[0]
                     if hasattr(self.mu_dict["pulse_trains"][i], "shape")
                     else len(self.mu_dict["pulse_trains"][i])
                 )
-                print(f"Array {i+1} has {motor_unit_count} motor units")
+                logger.info(f"Array {i+1} has {motor_unit_count} motor units")
                 array_motor_unit_counts.append(motor_unit_count)
                 mu_count += motor_unit_count
             else:
-                print(f"Array {i+1} has no motor units")
+                logger.info(f"Array {i+1} has no motor units")
                 array_motor_unit_counts.append(0)
 
-        print(f"Total motor unit count: {mu_count}")
+        logger.info(f"Total motor unit count: {mu_count}")
 
         # Save motor unit counts
         if self.save_intermediate:
@@ -1235,28 +1264,59 @@ class offline_EMG(EMG):
             )
 
         if mu_count == 0:
-            print("No motor units found, skipping cross-array processing")
+            logger.debug("No motor units found, skipping cross-array processing")
+            self.mu_dict["muscle"] = np.array([])
             return
 
-        all_pulse_trains = np.zeros([mu_count, np.shape(self.signal_dict["target"])[0]])
-        all_discharge_times = []  # different mus will have discharge time arrays of different lengths
+        # ensure signal target exists and has proper shape
+        if "target" not in self.signal_dict or self.signal_dict["target"] is None:
+            logger.warning("No target signal found, using default size")
+            if "data" in self.signal_dict and self.signal_dict["data"] is not None:
+                signal_length = self.signal_dict["data"].shape[1]
+            else:
+                signal_length = 1000
+        else:
+            signal_length = np.shape(self.signal_dict["target"])[0]
+
+        all_pulse_trains = np.zeros([mu_count, signal_length])
+        all_discharge_times = []
         muscle = np.zeros(mu_count, dtype=int)
 
         mu = 0
-        print("Consolidating motor units from all arrays...")
+        logger.debug("Consolidating motor units from all arrays...")
         for i in range(no_arrays):  # iterating over arrays
-            if isinstance(self.mu_dict["pulse_trains"][i], np.ndarray) and self.mu_dict["pulse_trains"][i].size > 0:
+            # bounds check for pulse_trains
+            if (i < len(self.mu_dict["pulse_trains"]) and
+                isinstance(self.mu_dict["pulse_trains"][i], np.ndarray) and
+                self.mu_dict["pulse_trains"][i].size > 0):
+
                 motor_unit_count = (
                     self.mu_dict["pulse_trains"][i].shape[0]
                     if hasattr(self.mu_dict["pulse_trains"][i], "shape")
                     else len(self.mu_dict["pulse_trains"][i])
                 )
 
-                for j in range(motor_unit_count):  # iterating over the mus per array
-                    all_pulse_trains[mu, :] = self.mu_dict["pulse_trains"][i][j]
-                    all_discharge_times.append(self.mu_dict["discharge_times"][i][j])
-                    muscle[mu] = i
-                    mu += 1
+                # iterating over the mus per array
+                for j in range(motor_unit_count):
+                    # bounds check for both pulse_trains and discharge_times
+                    if (mu < mu_count and
+                        j < self.mu_dict["pulse_trains"][i].shape[0] and
+                        i < len(self.mu_dict["discharge_times"]) and
+                        j < len(self.mu_dict["discharge_times"][i])):
+
+                        # additional shape check for pulse train
+                        pulse_train = self.mu_dict["pulse_trains"][i][j]
+                        if len(pulse_train) <= signal_length:
+                            all_pulse_trains[mu, :len(pulse_train)] = pulse_train
+                        else:
+                            # truncate if pulse train is longer than expected
+                            all_pulse_trains[mu, :] = pulse_train[:signal_length]
+
+                        all_discharge_times.append(self.mu_dict["discharge_times"][i][j])
+                        muscle[mu] = i
+                        mu += 1
+                    else:
+                        logger.warning(f"Skipping MU {j} in array {i} due to bounds check failure")
 
         # Save consolidated data
         if self.save_intermediate:
@@ -1269,7 +1329,7 @@ class offline_EMG(EMG):
                 "post_process_across_arrays", 2
             )
 
-        print("Removing duplicates across arrays...")
+        logger.debug("Removing duplicates across arrays...")
         discharge_times_new, pulse_trains_new, muscle_new = remove_duplicates_between_arrays(
             all_pulse_trains,
             all_discharge_times,
@@ -1279,7 +1339,7 @@ class offline_EMG(EMG):
             self.dup_thr,
             self.signal_dict["fsamp"],
         )
-        print(f"After duplicate removal: {len(discharge_times_new)} motor units")
+        logger.info(f"After duplicate removal: {len(discharge_times_new)} motor units")
 
         # Save after duplicate removal
         if self.save_intermediate:
@@ -1293,7 +1353,7 @@ class offline_EMG(EMG):
             )
 
         # Regroup motor units by electrode
-        print("Regrouping motor units by electrode...")
+        logger.debug("Regrouping motor units by electrode...")
         del self.mu_dict["discharge_times"]
         self.mu_dict["discharge_times"] = [[]]  # empty nested list
 
@@ -1315,9 +1375,15 @@ class offline_EMG(EMG):
                 self.mu_dict["discharge_times"].append([])
 
             idx = np.where(muscle_new == i)[0]  # find the indices for mu -> array mapping
-            print(f"Found {len(idx)} MUs for array {i+1}")
+            logger.info(f"Found {len(idx)} MUs for array {i+1}")
 
-            self.mu_dict["pulse_trains"].append(pulse_trains_new[idx])
+            # bounds check for pulse_trains_new
+            if len(idx) > 0 and all(j < len(pulse_trains_new) for j in idx):
+                self.mu_dict["pulse_trains"].append(pulse_trains_new[idx])
+            else:
+                # create empty array with proper dimensions
+                self.mu_dict["pulse_trains"].append(np.zeros((0, signal_length)))
+                logger.warning(f"Created empty pulse_trains for array {i+1}")
 
             # Get number of motor units safely
             motor_unit_count = 0
@@ -1326,9 +1392,16 @@ class offline_EMG(EMG):
             elif hasattr(self.mu_dict["pulse_trains"][i], "__len__"):
                 motor_unit_count = len(self.mu_dict["pulse_trains"][i])
 
+            # bounds check for discharge_times access
             for j in range(motor_unit_count):
-                if j < len(idx) and idx[j] < len(discharge_times_new):
+                if (j < len(idx) and
+                    idx[j] < len(discharge_times_new) and
+                    i < len(self.mu_dict["discharge_times"])):
                     self.mu_dict["discharge_times"][i].append(discharge_times_new[idx[j]])
+                else:
+                    # add empty discharge times if bounds check fails
+                    self.mu_dict["discharge_times"][i].append(np.array([]))
+                    logger.warning(f"Added empty discharge_times for array {i+1}, MU {j}")
 
             # Save per-electrode regrouping
             if self.save_intermediate:
@@ -1354,7 +1427,7 @@ class offline_EMG(EMG):
                 "post_process_across_arrays", 6
             )
 
-        print("Processing across electrodes complete")
+        logger.debug("Processing across electrodes complete")
 
     # TODO: merge these, right now they've just been pulled out of their previous
     # tightly-coupled homes (DecompositionWorker and DecompositionApp) without any

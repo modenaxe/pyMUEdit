@@ -1,12 +1,10 @@
-import sys
-
-import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
 from PyQt5.QtCore import QSize, Qt
-from PyQt5.QtGui import QFont, QIcon
-from PyQt5.QtWidgets import (QApplication, QFileDialog, QFrame, QHBoxLayout,
-                             QLabel, QPushButton, QVBoxLayout, QWidget)
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import (QApplication, QFileDialog, QFrame, QLabel,
+                             QPushButton, QVBoxLayout, QWidget)
+
+from core.logger import logger
 
 
 # legacy code
@@ -141,7 +139,7 @@ class SaveablePlot(QWidget):
                     dpi=300,
                     bbox_inches='tight',
                     facecolor='white')
-                print(f"Plot saved successfully to: {file_path}")
+                logger.debug(f"Plot saved successfully to: {file_path}")
             except Exception as e:
-                print(f"Error saving plot: {e}")
+                logger.exception(f"Error saving plot: {e}")
                 # Could add a proper error dialog here

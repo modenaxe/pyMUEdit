@@ -15,7 +15,11 @@ def prepare_parameters(ui_params, algo_choice):
             # Set numeric parameters
             parameters["NITER"] = ui_params.get("iterations", 75)
             parameters["nwindows"] = ui_params.get("windows", 1)
-            parameters["thresholdtarget"] = ui_params.get("threshold_target", 0.8)
+            use_threshold = ui_params.get("use_threshold", True)
+            if use_threshold:
+                parameters["thresholdtarget"] = ui_params.get("threshold_target", 0.8)
+            else:
+                parameters["thresholdtarget"] = 0
             parameters["nbextchan"] = ui_params.get("extended_channels", 1000)
             parameters["duplicatesthresh"] = ui_params.get("duplicates_threshold", 0.3)
             parameters["silthr"] = ui_params.get("sil_threshold", 0.9)

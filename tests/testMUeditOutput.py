@@ -2,6 +2,7 @@
 
 import numpy as np
 from scipy.io import loadmat
+from src.core.logger import logger
 
 # === File Paths (CHANGE AS NEEDED) ===
 FILE_1 = 'python_output/trial1_20MVC_decomp.mat' #pymuedit output
@@ -87,7 +88,7 @@ if __name__ == "__main__":
         signal1 = load_mat_signal(FILE_1)
         signal2 = load_mat_signal(FILE_2)
     except Exception as e:
-        print(f"❌ Error loading files: {e}")
+        logger.exception(f"❌ Error loading files: {e}")
         exit(1)
 
     differences = compare_signals(signal1, signal2)

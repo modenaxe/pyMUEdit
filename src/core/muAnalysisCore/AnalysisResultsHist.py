@@ -2,7 +2,7 @@ import pandas as pd
 import time
 from PyQt5.QtCore import QObject, pyqtSignal
 import numpy as np
-import numbers 
+import numbers
 
 class AnalysisResultsHist(QObject):
     """
@@ -17,11 +17,11 @@ class AnalysisResultsHist(QObject):
         data_changed (pyqtSignal): Emitted whenever new data is added
         data_cleared (pyqtSignal): Emitted whenever all data is cleared
     """
-    
+
     _instance = None
     data_changed = pyqtSignal(object)  # signal that passes the updated DataFrame
     data_cleared = pyqtSignal()        # signal emitted when data is cleared
-    
+
     def __new__(cls):
         """
         Ensure that only one instance of AnalysisResultsHist exists (singleton pattern).
@@ -32,7 +32,7 @@ class AnalysisResultsHist(QObject):
             cls._instance.df = pd.DataFrame()
             QObject.__init__(cls._instance)
         return cls._instance
-        
+
     def set_analysis_hist(self, df):
         """
         Replace the stored analysis history with a new DataFrame.
@@ -41,7 +41,7 @@ class AnalysisResultsHist(QObject):
             df (pd.DataFrame): New DataFrame to store.
         """
         self.df = df
-        
+
     def append_analysis_hist(self, title, table):
         """
         Add a new analysis result entry to the history.
@@ -52,7 +52,7 @@ class AnalysisResultsHist(QObject):
         """
         timestamp = time.time()
         table = self.data_clean(table)
-        
+
         row = pd.DataFrame([{
             'title': title,
             'timestamp': timestamp,
@@ -61,13 +61,13 @@ class AnalysisResultsHist(QObject):
         self.df = pd.concat([self.df, row])
         # Emit signal to notify listeners that the data has changed
         self.data_changed.emit(self.df)
-        
+
     def get_analysis_hist(self):
         """
         Retrieve the full DataFrame of historical results.
         """
         return self.df
-    
+
     def get_lastest_data(self):
         """
         Retrieve the most recently added analysis result.
@@ -75,9 +75,9 @@ class AnalysisResultsHist(QObject):
             dict or pd.Series: Latest result row, or empty dict if no data exists.
         """
         if self.df.empty:
-            return {} 
+            return {}
         return self.df.iloc[-1]
-    
+
     def is_empty(self):
         """
         Check if there are any stored results.
@@ -85,14 +85,14 @@ class AnalysisResultsHist(QObject):
             bool: True if no data exists, otherwise False.
         """
         return self.df.empty
-    
+
     def clear_results(self):
         """
         Remove all stored results and emit the data_cleared signal.
         """
         self.df = pd.DataFrame()
         self.data_cleared.emit()
-        
+
     def data_clean(self, table):
         """
         Clean up the input result table:
@@ -112,12 +112,12 @@ class AnalysisResultsHist(QObject):
                 if isinstance(table[row][key], numbers.Number):
                     if np.isnan(table[row][key]):
                         table[row][key] = ""
-                
+
                     if isinstance(table[row][key], float):
                         table[row][key] = round(table[row][key], 2)
                 else:
                     # Ensure non-numeric values are strings so they can be displayed by the QAbstractTableModel
-                    table[row][key] = str(table[row][key])        
+                    table[row][key] = str(table[row][key])
         return table
 
 # Singleton instance for global use

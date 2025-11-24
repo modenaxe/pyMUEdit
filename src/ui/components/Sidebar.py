@@ -5,6 +5,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QFrame, QLabel, QVBoxLayout
 
+from core.logger import logger
 from core.utils.io.filesize_formatter import filesize_formatter
 
 from .CleanTheme import CleanTheme
@@ -39,10 +40,10 @@ class Sidebar(QFrame):
         self.setStyleSheet(
             f"""
             QFrame#cleanSidebar {{
-                background-color: {CleanTheme.BG_SIDEBAR};
+                background-color: {CleanTheme.BG_CARD};
                 border-right: 1px solid {CleanTheme.BORDER};
             }}
-        """
+            """
         )
 
         # Set up layout with more padding at the top
@@ -58,13 +59,16 @@ class Sidebar(QFrame):
         # App title
         app_title_label = QLabel(app_title)
         app_title_label.setFont(QFont("Segoe UI", 14, QFont.Bold))
-        app_title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+        app_title_label.setStyleSheet(
+            f"background-color: {CleanTheme.BG_CARD}; color: {CleanTheme.TEXT_PRIMARY}")
         title_layout.addWidget(app_title_label)
 
         self.layout.addLayout(title_layout)
 
         # Container for navigation buttons with proper margins
         self.nav_container = QFrame()
+        self.nav_container.setStyleSheet(
+            f"background-color: {CleanTheme.BG_CARD}")
         self.nav_layout = QVBoxLayout(self.nav_container)
         self.nav_layout.setContentsMargins(5, 0, 5, 0)  # Reduced side margins
         self.nav_layout.setSpacing(5)  # Space between buttons
@@ -98,7 +102,7 @@ class Sidebar(QFrame):
             icon_path = ICONS_PATH / f"{icon_name}.svg"
             # If file doesn't exist, show a warning
             if not icon_path.exists():
-                print(f"Warning: Icon {icon_path} not found")
+                logger.warning(f"Warning: Icon {icon_path} not found")
                 icon_path = None
 
         # Create button with icon and text
@@ -135,6 +139,8 @@ class Sidebar(QFrame):
 
         # Create container for recent files
         self.recent_files_section = QFrame()
+        self.recent_files_section.setStyleSheet(
+            f"background-color: {CleanTheme.BG_CARD}")
         recent_files_layout = QVBoxLayout(self.recent_files_section)
         recent_files_layout.setContentsMargins(5, 10, 5, 0)
         recent_files_layout.setSpacing(5)
@@ -142,7 +148,8 @@ class Sidebar(QFrame):
         # Add section header
         recent_header = SectionHeader("Recent Files")
         recent_header.setFont(QFont("Segoe UI", 14, QFont.Bold))
-        recent_header.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+        recent_header.setStyleSheet(
+            f"background-color: {CleanTheme.BG_CARD}; color: {CleanTheme.TEXT_PRIMARY}")
         recent_header.setContentsMargins(10, 15, 0, 0)
         recent_files_layout.addWidget(recent_header)
 

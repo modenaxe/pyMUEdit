@@ -15,7 +15,7 @@ from app.muEditFunctions.plotting import (
     update_dr_plot
 )
 import pyqtgraph as pg
-
+from core.logger import logger
 
 def update_mu_checkboxes(self):
     """Update the MU checkboxes based on loaded data using collapsible panels."""
@@ -269,7 +269,7 @@ def calculate_silval(self, array_idx, mu_idx):
             )
 
         except Exception as e:
-            print(f"Error calculating SIL for array {array_idx}, MU {mu_idx}: {e}")
+            logger.exception(f"Error calculating SIL for array {array_idx}, MU {mu_idx}: {e}")
             self.MUedition["edition"]["silval"][(array_idx, mu_idx)] = 0
             self.MUedition["edition"]["silvalcon"][(array_idx, mu_idx)] = np.zeros((1, 2))
     else:
@@ -287,7 +287,7 @@ def display_selected_mus(self, checked_mus, pluse_train_color="#D95535"):
     """Display the currently selected motor units."""
     if not self.MUedition:
         return
-    print("display_selected_mus ")
+    logger.debug(f"Displaying selected MUs: {checked_mus}")
 
     # Clear existing plots in the container
     for i in reversed(range(self.plots_layout.count())):
@@ -372,6 +372,17 @@ def display_selected_mus(self, checked_mus, pluse_train_color="#D95535"):
         self.plots_layout.addWidget(self.dr_plot, stretch=2)
         update_dr_plot(self, discharge_times)
 
+        if getattr(self, "overlay_data", None) is not None:
+            try:
+                pulsetrain_overlay = self.overlay_data["edition"]["Pulsetrain"][array_idx][mu_idx]
+                discharge_overlay = self.overlay_data["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
+
+                update_spike_train_plot(self, array_idx, mu_idx, pulsetrain_overlay,
+                                color="#1E90FF", overlay=True)
+                update_dr_plot(self, discharge_overlay, overlay=True, color="#1E90FF")
+            except Exception as e:
+                logger.exception(f"Failed to overlay for array {array_idx} and MU {mu_idx}: {e}")
+
         def on_xrange_changed(_, ranges):
             if self.update_plot_setRange:
                 return
@@ -379,7 +390,6 @@ def display_selected_mus(self, checked_mus, pluse_train_color="#D95535"):
 
         self.dr_plot.setXLink(self.spiketrain_plot)
 
-        # self.dr_plot.getViewBox().sigXRangeChanged.connect(on_xrange_changed, type=Qt.UniqueConnection) 
         self.spiketrain_plot.getViewBox().sigXRangeChanged.connect(on_xrange_changed, type=Qt.UniqueConnection)
 
         self.resetPlot = False

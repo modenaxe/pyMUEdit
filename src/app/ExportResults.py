@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (
     QPushButton,
 )
 from PyQt5.QtCore import Qt
+from core.logger import logger
 
 # Import UI setup function
 from ui.ExportResultsUI import setup_ui, create_export_setup_widget, get_icon
@@ -80,19 +81,19 @@ class ExportResultsWindow(QWidget):
         if self.setup_view.format_combo.currentIndex() < 0:
             QMessageBox.warning(self, "Format Required", "Please select a file format before exporting.")
             return
-        print(f"Setup Widget: Requesting export with format: {selected_format}")
+        logger.debug(f"Setup Widget: Requesting export with format: {selected_format}")
         self.show_confirmation_view(selected_format)
 
     def handle_download_recent(self, filename):
         """Handle download request from recent exports list."""
-        print(f"Download requested for recent file: {filename}")
+        logger.debug(f"Download requested for recent file: {filename}")
         QMessageBox.information(
             self, "Download", f"Download requested for:\n{filename}\n\n(Add actual download logic here)"
         )
 
     def show_setup_view(self):
         """Switch to the setup view."""
-        print("Switching to Setup View")
+        logger.debug("Switching to Setup View")
         self.stacked_widget.setCurrentWidget(self.setup_view)
         self.setWindowTitle("Export Results")
         self.main_title_label.setText("Export Results")
@@ -104,10 +105,10 @@ class ExportResultsWindow(QWidget):
     def show_confirmation_view(self, selected_format):
         """Switch to the confirmation view with the selected format."""
         if not isinstance(self.confirmation_view, ExportConfirm):
-            print("Error: Confirmation view not loaded.")
+            logger.error("Confirmation view not loaded.")
             return
 
-        print(f"Switching to Confirmation View. Format: {selected_format}")
+        logger.debug(f"Switching to Confirmation View. Format: {selected_format}")
         base_filename = "firing_patterns_export"
         ext = ".dat"  # Default
 
@@ -136,11 +137,11 @@ class ExportResultsWindow(QWidget):
     def show_complete_view(self, saved_filepath, saved_filesize_bytes):
         """Switch to the Export Complete view."""
         if not isinstance(self.complete_view, DownloadConfirmation):
-            print("Error: Cannot switch to complete view, it was not loaded.")
+            logger.error("Cannot switch to complete view, it was not loaded.")
             self.show_setup_view()  # Fallback
             return
 
-        print(f"Switching to Complete View for file: {saved_filepath}")
+        logger.debug(f"Switching to Complete View for file: {saved_filepath}")
         self.complete_view.set_export_details(saved_filepath, saved_filesize_bytes)
         self.stacked_widget.setCurrentWidget(self.complete_view)
         self.setWindowTitle("Export Complete")
@@ -151,7 +152,7 @@ class ExportResultsWindow(QWidget):
 
     def execute_final_export(self, file_format, filename):
         """Handle file dialog and saving of the export."""
-        print(f"--- FINAL EXPORT TRIGGERED --- Format: {file_format}, Suggested Filename: {filename}")
+        logger.debugt(f"--- FINAL EXPORT TRIGGERED --- Format: {file_format}, Suggested Filename: {filename}")
         options = QFileDialog.Options()
         suggested_path = os.path.join(os.path.expanduser("~"), filename)
 
@@ -171,10 +172,10 @@ class ExportResultsWindow(QWidget):
         )
 
         if filePath:
-            print(f"   User chose path: {filePath}")
+            logger.debug(f"   User chose path: {filePath}")
             try:
                 # --- !!! Replace with your ACTUAL data saving logic !!! ---
-                print("   (Simulating file save...)")
+                logger.debug("   (Simulating file save...)")
                 file_size = 0
                 with open(filePath, "w") as f:
                     f.write(f"Exported Data\nFormat: {file_format}\nSuggested Name: {filename}\n")
@@ -182,33 +183,32 @@ class ExportResultsWindow(QWidget):
                     dummy_content = "Dummy content " * 5000
                     f.write(dummy_content)
                     file_size = f.tell()  # Get approximate size after writing
-                print(f"   (Simulated save complete)")
+                logger.debug(f"   (Simulated save complete)")
                 # --- !!! End of saving logic placeholder !!! ---
 
                 # Get actual file size if simulation wasn't accurate
                 if file_size == 0:  # Fallback if tell() didn't work as expected
                     file_size = os.path.getsize(filePath)
 
-                print(f"--- Successfully saved data to {filePath} (Size: {file_size} bytes) ---")
+                logger.debug(f"--- Successfully saved data to {filePath} (Size: {file_size} bytes) ---")
                 self.show_complete_view(filePath, file_size)
 
             except Exception as e:
-                print(f"!!!!! ERROR during file save: {e}")
-                traceback.print_exc()
+                logger.exception(f"!!!!! ERROR during file save: {e}")
                 QMessageBox.critical(self, "Export Error", f"Could not save file to:\n{filePath}\n\nError: {e}")
         else:
-            print("   File save cancelled by user.")
+            logger.debug("   File save cancelled by user.")
 
     def handle_complete_download(self, filename):
         """Handle request to download the primary exported file again."""
-        print(f"Handling main download request for: {filename}")
+        logger.debug(f"Handling main download request for: {filename}")
         QMessageBox.information(
             self, "Download", f"Download requested for:\n{filename}\n\n(Add actual download/copy logic here)"
         )
 
     def handle_complete_recent_download(self, filename):
         """Handle request to download a file from the recent list shown on complete screen."""
-        print(f"Handling recent download request for: {filename}")
+        logger.debug(f"Handling recent download request for: {filename}")
         QMessageBox.information(
             self,
             "Download Recent",
@@ -217,7 +217,7 @@ class ExportResultsWindow(QWidget):
 
     def closeEvent(self, event):
         """Close the window."""
-        print("ExportResultsWindow: Closing window")
+        logger.debug("ExportResultsWindow: Closing window")
         event.accept()
 
 

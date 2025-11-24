@@ -24,13 +24,17 @@ from PyQt5.QtWidgets import (
     QShortcut,
 )
 from PyQt5.QtGui import QKeySequence
+from core.logger import logger
 from types import MethodType
+import datetime
+from pathlib import Path
 
 import h5py
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from types import MethodType
 
 from ui.MUeditManualUI import setup_ui
 from core.utils.manual_editing.getsil import getsil
@@ -50,6 +54,8 @@ from core.utils.manual_editing.batch_filter_worker import batch_filter_worker
 from core.utils.manual_editing.duplicates_within_grids_worker import duplicates_within_grids_worker
 from core.utils.manual_editing.duplicates_between_grids_worker import duplicates_between_grids_worker
 
+from core.utils.io.filesize_formatter import filesize_formatter
+
 from app.muEditFunctions.importer import import_data
 from app.muEditFunctions.plotting import *
 from app.muEditFunctions.mu_selection import (
@@ -57,9 +63,18 @@ from app.muEditFunctions.mu_selection import (
     calculate_silval
 )
 from app.muEditFunctions.edit_actions import (
+    add_spikes_button_pushed,
     delete_spikes_button_pushed,
-    add_spikes_button_pushed
+    delete_dr_button_pushed,
+    remove_outliers_button_pushed,
+    lock_spikes_button_pushed
 )
+from app.muEditFunctions.mu_filter_actions import (
+    update_mu_filter_button_pushed,
+    extend_mu_filter_button_pushed,
+)
+from app.muEditFunctions.mu_selection import update_display_mus
+
 # Import custom components
 from ui.components import (
     WarningDialog,
@@ -82,7 +97,7 @@ class MUeditManual(QMainWindow):
     # Add signal to return to dashboard if needed
     return_to_dashboard_requested = pyqtSignal()
 
-    def __init__(self, filename=None, pathname=None, parent=None):
+    def __init__(self, filename=None, pathname=None, raw_fileid=None, parent=None):
         super().__init__(parent)
 
         # Initialize main data structures
@@ -108,10 +123,22 @@ class MUeditManual(QMainWindow):
         self._save_flag = True
         self._on_save = 0
         self._ish5 = False
+        self.overlay_data = None
+        self.action_logs = []
+        self.raw_fileid = raw_fileid
+
+        # Connected methods to class
+        self.add_spikes_button_pushed = MethodType(add_spikes_button_pushed, self)
+        self.delete_spikes_button_pushed = MethodType(delete_spikes_button_pushed, self)
+        self.delete_dr_button_pushed = MethodType(delete_dr_button_pushed, self)
+        self.remove_outliers_button_pushed = MethodType(remove_outliers_button_pushed, self)
+        self.lock_spikes_button_pushed = MethodType(lock_spikes_button_pushed, self)
+        self.update_mu_filter_button_pushed = MethodType(update_mu_filter_button_pushed, self)
+        self.extend_mu_filter_button_pushed = MethodType(extend_mu_filter_button_pushed, self)
+        self.update_display_mus = MethodType(update_display_mus, self)
 
         # Set up the UI
         setup_ui(self)
-
         self.dirty = False
         self.update_save_button()
         self.dirty_depth = 0
@@ -125,6 +152,17 @@ class MUeditManual(QMainWindow):
             self.add_back_button()
 
         self._create_shortcuts()
+
+    def log_action(self, message):
+        log_entry = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "action": message
+        }
+        self.action_logs.append(log_entry)
+        logger.info(message)
+
+    def get_action_logs(self):
+        return self.action_logs
 
     def show_tip(self, text, duration_ms=3000):
         self.tip_bar.setText(text)
@@ -305,12 +343,12 @@ class MUeditManual(QMainWindow):
         """Exit spike editing mode and reset selection state."""
 
         if hasattr(self, "add_spikes_btn") and self.add_spikes_btn.get_active():
-            print("ESC: deactivating add_spikes button")
+            logger.debug("ESC: deactivating add_spikes button")
             add_spikes_button_pushed(self)
             return
 
         elif hasattr(self, "delete_spikes_btn") and self.delete_spikes_btn.get_active():
-            print("ESC: deactivating delete_spikes button")
+            logger.debug("ESC: deactivating delete_spikes button")
             delete_spikes_button_pushed(self)
             return
 
@@ -319,7 +357,7 @@ class MUeditManual(QMainWindow):
             self.selection_tool.cleanup()
             self.selection_tool = None
 
-        print("Exited editing mode (via ESC)")
+        logger.debug("Exited editing mode (via ESC)")
 
     def _create_shortcuts(self):
         # Short cut
@@ -349,20 +387,56 @@ class MUeditManual(QMainWindow):
             sc.setContext(Qt.WindowShortcut)
             sc.activated.connect(slot)
 
+    def update_footer_file_info(self, file_path):
+        if not file_path:
+            self.footer.footer_file_info.setText("No file selected")
+            self.footer.size_info.setText("Size: --")
+            self.footer.format_info.setText("Format: --")
+            return
+    
+        file_name = Path(file_path).name
+        file_ext = Path(file_path).suffix
+        try:
+            file_size = filesize_formatter(file_path)
+            size_str = f"{file_size}"
+        except Exception:
+            size_str = "--"
+    
+        self.footer.footer_file_info.setText(f"File: {file_name}")
+        self.footer.size_info.setText(f"Size: {size_str}")
+        self.footer.format_info.setText(f"Format: {file_ext}")
+
     # Event handlers
     def select_file_button_pushed(self):
         """Open file dialog to select file for editing and automatically import it."""
         file_dialog = QFileDialog()
-        file_path, _ = file_dialog.getOpenFileName(self, "Select file", "", "MAT Files (*.mat);;All Files (*.*)")
+        file_path, _ = file_dialog.getOpenFileName(
+            self,
+            "Select file",
+            "",
+            "MAT Files (*.mat);;HDF5 Files (*.h5);;All Files (*.*)"
+        )
 
-        if file_path:
-            self.pathname = os.path.dirname(file_path) + "/"
-            self.filename = os.path.basename(file_path)
-            self.file_path_field.setText(self.filename)
-            self.select_file_title_btn.setText(self.filename)
+        if not file_path:
+            return 
+        
+        self.pathname = os.path.dirname(file_path) + "/"
+        self.filename = os.path.basename(file_path)
+        self.file_path_field.setText(self.filename)
+        self.select_file_title_btn.setText(self.filename)
+        
+        valid = import_data(self)
+
+        if not valid:
+            return 
+
+        # Update footer file info only if file imported successfully
+        file_info = os.path.join(self.pathname, self.filename)
+        if hasattr(self, "update_footer_file_info"):
+            self.update_footer_file_info(file_info)
 
             import_data(self)
-                    
+
     def update_action_button_states(self):
         enabled = self.plot_display_mode == 0
         self.add_spikes_btn.setEnabled(enabled)
@@ -419,6 +493,8 @@ class MUeditManual(QMainWindow):
 
         # Get the array index from the sender's property
         array_idx = sender.property("array_idx")
+        if array_idx is not None:
+            self.log_action(f"Array {array_idx+1} checkbox changed to {'checked' if state == Qt.Checked else 'unchecked'}.")
         if array_idx is None:
             return
 
@@ -474,7 +550,7 @@ class MUeditManual(QMainWindow):
             # Update the current view based on checkboxes
             mu_checkbox_state_changed(self)
         except Exception as e:
-            print(f"Error setting reference: {e}")
+            logger.exception(f"Error setting reference: {e}")
 
     def sil_checkbox_value_changed(self):
         """Toggle SIL plot visibility."""
@@ -693,7 +769,7 @@ class MUeditManual(QMainWindow):
     # Editing actions
     def disable_action_buttons(self):
         """Temporarily disable action buttons during selection."""
-        print("disable_action_buttons")
+        logger.debug("disable_action_buttons")
         self.add_spikes_btn.setEnabled(False)
         self.delete_spikes_btn.setEnabled(False)
         self.delete_dr_btn.setEnabled(False)
@@ -703,7 +779,7 @@ class MUeditManual(QMainWindow):
 
     def enable_action_buttons(self):
         """Re-enable action buttons after selection is complete."""
-        print("enable_action_buttons")
+        logger.debug("enable_action_buttons")
         self.add_spikes_btn.setEnabled(True)
         self.delete_spikes_btn.setEnabled(True)
         self.delete_dr_btn.setEnabled(True)
@@ -713,8 +789,38 @@ class MUeditManual(QMainWindow):
 
     def handle_selection_complete(self, action_type, array_idx, mu_idx, x_min, x_max, y_min, y_max):
         """Handle the completion of a selection and process it."""
-        # Process the selection
+            # ==== 1. Save old discharge times BEFORE modification ====
+        old_times = np.array(
+            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), []),
+            copy=True
+        )
+
+        # ==== 2. Perform the actual selection action ====
         process_selection(self.MUedition, action_type, array_idx, mu_idx, x_min, x_max, y_min, y_max)
+
+        # ==== 3. Retrieve new discharge times AFTER modification ====
+        new_times = np.array(
+            self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), [])
+        )
+
+        # ==== 4. Compute delta ====
+        delta = len(new_times) - len(old_times)
+
+        # ==== 5. Show user feedback ====
+        if action_type == "add_spikes" and delta > 0:
+            self.show_tip(f"Added {delta} spike(s)", duration_ms=4000)
+            logger.info(f"Added {delta} spike(s)")
+            self.log_action(f"Selection completed: action={action_type}, array={array_idx+1}, MU={mu_idx+1}, "f"X=({x_min},{x_max}), Y=({y_min},{y_max})")
+
+        elif action_type == "delete_spikes" and delta < 0:
+            self.show_tip(f"Deleted {-delta} spike(s)", duration_ms=4000)
+            logger.info(f"Deleted {-delta} spike(s)")
+            self.log_action(f"Selection completed: action={action_type}, array={array_idx+1}, MU={mu_idx+1}, "f"X=({x_min},{x_max}), Y=({y_min},{y_max})")
+
+        elif action_type == "delete_dr":
+            self.show_tip("Deleted discharge rate points", duration_ms=4000)
+            logger.info("Deleted discharge rate points")
+            self.log_action(f"Selection completed: action={action_type}, array={array_idx+1}, MU={mu_idx+1}, "f"X=({x_min},{x_max}), Y=({y_min},{y_max})")
 
         # Update the display
         # for checkbox in self.mu_checkboxes:
@@ -727,6 +833,7 @@ class MUeditManual(QMainWindow):
         pulse_train_array = self.MUedition["edition"]["Pulsetrain"][array_idx]
         pulse_train = pulse_train_array[mu_idx, :]  # Use 2D indexing to get the full row
         discharge_times = self.MUedition["edition"]["Dischargetimes"].get((array_idx, mu_idx), np.array([]))
+
         self.update_save_button()
         update_dr_plot(self, discharge_times)
         update_spike_train_plot(self, array_idx, mu_idx, pulse_train)
@@ -754,6 +861,8 @@ class MUeditManual(QMainWindow):
         # Applying undo snapshots
         self.MUedition["edition"]["Pulsetrain"][a][m, :] = last["pulse"]
         self.MUedition["edition"]["Dischargetimes"][(a, m)] = last["times"]
+
+        self.log_action(f"Undo: array {last['array']+1}, MU {last['mu']+1}")
 
         # Refresh Display
         calculate_silval(self, a, m)
@@ -785,12 +894,14 @@ class MUeditManual(QMainWindow):
         self.MUedition["edition"]["Pulsetrain"][a][m, :] = action["pulse"]
         self.MUedition["edition"]["Dischargetimes"][(a, m)] = action["times"]
 
+        self.log_action(f"Redo: array {action['array']+1}, MU {action['mu']+1}")
+
         # Refresh Display
         calculate_silval(self, a, m)
         mu_checkbox_state_changed(self, update_act_btn=False)
         self.dirty_depth += 1
         self.update_save_button()
-    
+
     def flag_mu_for_deletion_button_pushed(self):
         """Flag the selected motor units for deletion."""
         if not self.MUedition:
@@ -831,6 +942,8 @@ class MUeditManual(QMainWindow):
 
                 origin_name = "_".join(mu_text.split("_")[-2:])
                 checkbox.setText(f"FLAGGED - {origin_name} (SIL: {sil_value:.4f})")
+
+                self.log_action(f"Flagged MU (Array {array_idx+1}, MU {mu_idx+1}) for deletion.")
 
         self.update_save_button()
         # Update the display
@@ -877,6 +990,8 @@ class MUeditManual(QMainWindow):
 
                 checkbox.setText(f"{origin_name} (SIL: {sil_value:.4f})")
 
+                self.log_action(f"Unflagged MU (Array {array_idx+1}, MU {mu_idx+1}) for deletion.")
+
         # Update the display
         self.update_save_button()
         mu_checkbox_state_changed(self)
@@ -904,7 +1019,7 @@ class MUeditManual(QMainWindow):
 
         # Call the parent method
         super().hideEvent(event)
-        
+
     def calculate_silval(self, array_idx, mu_idx):
         """Calculate silhouette value for a motor unit."""
         if not self.MUedition:
@@ -940,7 +1055,7 @@ class MUeditManual(QMainWindow):
                 )
 
             except Exception as e:
-                print(f"Error calculating SIL for array {array_idx}, MU {mu_idx}: {e}")
+                logger.exception(f"Error calculating SIL for array {array_idx}, MU {mu_idx}: {e}")
                 self.MUedition["edition"]["silval"][(array_idx, mu_idx)] = 0
                 self.MUedition["edition"]["silvalcon"][(array_idx, mu_idx)] = np.zeros((1, 2))
         else:

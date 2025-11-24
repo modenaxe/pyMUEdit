@@ -6,6 +6,8 @@ from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import (QApplication, QFrame, QGraphicsDropShadowEffect,
                              QLabel, QSizePolicy, QVBoxLayout, QWidget)
 
+from core.logger import logger
+
 from .CleanTheme import CleanTheme
 
 
@@ -79,7 +81,7 @@ class VisualizationCard(QFrame):
         if icon:
             icon = os.path.join("public", f"{icon}.svg")
             if not os.path.exists(icon):
-                print(f"Warning: Icon {icon} not found")
+                logger.warning(f"Icon {icon} not found")
                 icon = None
 
             icon_label = QLabel()

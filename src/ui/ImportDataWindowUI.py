@@ -1,17 +1,22 @@
+import os
+from datetime import datetime
 from pathlib import Path
+from tkinter.filedialog import FileDialog
 
 import pyqtgraph as pg
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QCursor, QFont
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
                              QPushButton, QScrollArea, QSizePolicy,
                              QSpacerItem, QStackedWidget, QVBoxLayout, QWidget)
 
+from core.logger import logger
 # Import custom components
 from ui.components import (ActionButton, CleanCard, CleanTheme, SectionHeader,
                            Sidebar, VisualizationPanel)
 from ui.components.CleanScrollBar import CleanScrollBar
+from ui.components.Footer import Footer
 
 # Define absolute path to the public icons folder (same logic as Sidebar.py)
 ABS_PATH = Path(__file__).parent.parent
@@ -97,10 +102,6 @@ def create_right_content(import_window):
     header = SectionHeader("Import HDEMG Data")
     right_layout.addWidget(header)
 
-    # Create dropzone card
-    dropzone_card = create_dropzone_card(import_window)
-    right_layout.addWidget(dropzone_card)
-
     # Create preview section
     preview_section = create_preview_section(import_window)
     right_layout.addWidget(preview_section)
@@ -160,7 +161,7 @@ def create_preview_section(import_window):
     upload_icon_path = ICONS_PATH / "upload_icon.svg"
 
     if not upload_icon_path.exists():
-        print(f"Warning: Icon not found at {upload_icon_path}")
+        logger.warning(f"Icon not found at {upload_icon_path}")
     else:
         cloud_icon = QSvgWidget(str(upload_icon_path))
         cloud_icon.setStyleSheet("""
@@ -255,6 +256,7 @@ def create_configuration_section(import_window):
     return config_group
 
 
+'''
 def create_footer(import_window):
     """Create the footer with file info and navigation buttons."""
     footer = QFrame()
@@ -290,15 +292,20 @@ def create_footer(import_window):
     footer_layout.addSpacing(20)
 
     # Create navigation buttons
+    # prev_btn = ActionButton("← Previous", primary=False)
+    # prev_btn.clicked.connect(import_window.go_back)
+
     import_window.next_btn = ActionButton("Next →", primary=True)
     import_window.next_btn.clicked.connect(
         import_window.go_to_algorithm_screen)
     import_window.next_btn.setEnabled(False)
 
     # Add navigation buttons to layout
+    # footer_layout.addWidget(prev_btn)
     footer_layout.addSpacing(10)
     footer_layout.addWidget(import_window.next_btn)
     return footer
+'''
 
 
 def find_sidebar(import_window):
@@ -370,6 +377,33 @@ def _create_left_sidebar(import_window):
     """Creates the improved left sidebar with SVG icons."""
     # Create sidebar with app title
     sidebar = Sidebar("HDEMG App")
+
+    export_session_button = ActionButton("Export Session", primary=True)
+    export_session_button.setMinimumHeight(40)  # Match SidebarButton height
+    export_session_button.setSizePolicy(
+        QSizePolicy.Expanding, QSizePolicy.Fixed)
+    export_session_button.setCursor(QCursor(Qt.PointingHandCursor))
+    export_session_button.clicked.connect(import_window.export_session)
+    import_window.sidebar_buttons["export_session_button"] = export_session_button
+
+    sidebar.layout.insertWidget(1, export_session_button)
+
+    spacer = QSpacerItem(0, 15, QSizePolicy.Minimum, QSizePolicy.Fixed)
+    sidebar.layout.insertSpacerItem(2, spacer)
+
+    upload_session_button = ActionButton("Load Session", primary=True)
+    upload_session_button.setMinimumHeight(40)
+    upload_session_button.setSizePolicy(
+        QSizePolicy.Expanding, QSizePolicy.Fixed)
+    upload_session_button.setCursor(QCursor(Qt.PointingHandCursor))
+    upload_session_button.clicked.connect(import_window.load_session)
+    import_window.sidebar_buttons["upload_session_button"] = upload_session_button
+
+    sidebar.layout.insertWidget(1, upload_session_button)
+
+    spacer = QSpacerItem(0, 15, QSizePolicy.Minimum, QSizePolicy.Fixed)
+    sidebar.layout.insertSpacerItem(2, spacer)
+
     # Define icon names
     icons = {
         "import": "import_data_icon",
@@ -469,10 +503,16 @@ def _create_import_page(import_window):
 
     right_v.addWidget(scroll_area, 1)
 
-    footer = create_footer(import_window)
-    footer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-    footer.setFixedHeight(64)
-    right_v.addWidget(footer, 0)
+    import_window.footer = Footer(
+        on_prev=None,
+        on_next=import_window.go_to_algorithm_screen
+    )
+    import_window.footer.next_btn.setEnabled(False)
+    import_window.footer.prev_btn.hide()
+    import_window.footer.setSizePolicy(
+        QSizePolicy.Expanding, QSizePolicy.Fixed)
+    import_window.footer.setFixedHeight(64)
+    right_v.addWidget(import_window.footer, 0)
 
     return right_layout
 

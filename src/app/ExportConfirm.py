@@ -4,7 +4,7 @@ from PyQt5.QtCore import pyqtSignal
 
 # Import the UI setup function
 from ui.ExportConfirmUI import setup_ui
-
+from core.logger import logger
 
 class ExportConfirm(QWidget):
     """
@@ -33,12 +33,12 @@ class ExportConfirm(QWidget):
         """Emits the export_confirmed signal."""
         selected_format = self.format_display_label.text()  # Get format from label
         filename = self.filename_label.text()
-        print(f"Confirmation Widget: Emitting export_confirmed for '{filename}', format '{selected_format}'")
+        logger.debug(f"Confirmation Widget: Emitting export_confirmed for '{filename}', format '{selected_format}'")
         self.export_confirmed.emit(selected_format, filename)
 
     def handle_cancel(self):
         """Emits the cancel_requested signal."""
-        print("Confirmation Widget: Emitting cancel_requested")
+        logger.debug("Confirmation Widget: Emitting cancel_requested")
         self.cancel_requested.emit()
 
 
@@ -62,9 +62,9 @@ if __name__ == "__main__":
 
     # Example connecting signals for testing
     confirm_widget.export_confirmed.connect(
-        lambda fmt, fn: print(f"TEST: Export Confirmed! Format: {fmt}, Filename: {fn}")
+        lambda fmt, fn: logger.debug(f"TEST: Export Confirmed! Format: {fmt}, Filename: {fn}")
     )
-    confirm_widget.cancel_requested.connect(lambda: print("TEST: Cancel Requested!"))
+    confirm_widget.cancel_requested.connect(lambda: logger.debug("TEST: Cancel Requested!"))
 
     test_win.resize(600, 500)
     test_win.show()
