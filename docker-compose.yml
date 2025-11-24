@@ -1,5 +1,6 @@
 services:
   hdemg-app:
+    platform: linux/amd64
     build: .
     image: hdemg-analysis-tool
     container_name: hdemg-analysis-tool
