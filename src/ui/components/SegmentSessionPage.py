@@ -234,6 +234,12 @@ class SegmentSessionPage(QWidget):
 
     def windows_edit_field_value_changed(self):
         num_windows = self.windows_dropdown.spinbox.value()
+
+        if num_windows > 0:
+            self.threshold_dropdown.setEnabled(False)
+        else:
+            self.threshold_dropdown.setEnabled(True)
+
         target = self.file["signal"][0, 0]["target"]
 
         # Update plot
