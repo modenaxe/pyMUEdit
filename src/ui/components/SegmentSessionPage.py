@@ -136,11 +136,12 @@ class SegmentSessionPage(QWidget):
 
     # Create the dropdown signal reference options
     def generate_signal_reference_options(self):
-        options = ["EMG amplitude"]
-        for name in self.file["signal"]["auxiliaryname"][0, 0]:
-            options.append(name.strip())
-
-        return options
+        return [
+            "EMG amplitude",
+            "AUX force",
+            "Target",
+            "Path"
+        ]
 
     def on_reference_signal_change(self):
         self.vis_plot.clear()
