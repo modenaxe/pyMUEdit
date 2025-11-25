@@ -153,6 +153,7 @@ class SegmentSessionPage(QWidget):
         self.vis_plot.clear()
         if self.reference_dropdown.dropdown.currentText() == "EMG amplitude":
             self.threshold_dropdown.setEnabled(False)
+            self.windows_dropdown.setEnabled(True)
             data = self.file["signal"][0, 0]["data"]
             fsamp = self.file["signal"][0, 0]["fsamp"][0, 0]
 
