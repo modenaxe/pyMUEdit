@@ -144,9 +144,11 @@ class SegmentSessionPage(QWidget):
         ]
 
     def on_reference_signal_change(self):
-        self.windows_dropdown.spinbox.blockSignals(True)
         self.windows_dropdown.spinbox.setValue(0)
-        self.windows_dropdown.spinbox.blockSignals(False)
+
+        self.threshold_dropdown.spinbox.blockSignals(True)
+        self.threshold_dropdown.spinbox.setValue(0)
+        self.threshold_dropdown.spinbox.blockSignals(False)
 
         self.vis_plot.clear()
         if self.reference_dropdown.dropdown.currentText() == "EMG amplitude":
