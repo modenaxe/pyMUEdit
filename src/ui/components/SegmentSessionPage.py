@@ -199,6 +199,12 @@ class SegmentSessionPage(QWidget):
 
     def threshold_edit_field_value_changed(self):
         threshold = self.threshold_dropdown.spinbox.value()
+
+        if threshold > 0:
+            self.windows_dropdown.setEnabled(False)
+        else:
+            self.windows_dropdown.setEnabled(True)
+
         target = self.file["signal"][0, 0]["target"]
         if self.reference_dropdown.dropdown.currentText() != "EMG amplitude":
             # Segment target using threshold
