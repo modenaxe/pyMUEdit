@@ -17,4 +17,5 @@ database.db
 *.txt
 *.json
 /src/core/database/database.db
+/src/supervisord.pid
 myvenv

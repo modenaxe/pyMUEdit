@@ -393,7 +393,7 @@ class MUeditManual(QMainWindow):
             self.footer.size_info.setText("Size: --")
             self.footer.format_info.setText("Format: --")
             return
-    
+
         file_name = Path(file_path).name
         file_ext = Path(file_path).suffix
         try:
@@ -401,7 +401,7 @@ class MUeditManual(QMainWindow):
             size_str = f"{file_size}"
         except Exception:
             size_str = "--"
-    
+
         self.footer.footer_file_info.setText(f"File: {file_name}")
         self.footer.size_info.setText(f"Size: {size_str}")
         self.footer.format_info.setText(f"Format: {file_ext}")
@@ -414,21 +414,21 @@ class MUeditManual(QMainWindow):
             self,
             "Select file",
             "",
-            "MAT Files (*.mat);;HDF5 Files (*.h5);;All Files (*.*)"
+            "MAT Files (*.mat);;HDF5 Files (*.h5);;All Files (*.*)",
         )
 
         if not file_path:
-            return 
-        
+            return
+
         self.pathname = os.path.dirname(file_path) + "/"
         self.filename = os.path.basename(file_path)
         self.file_path_field.setText(self.filename)
         self.select_file_title_btn.setText(self.filename)
-        
+
         valid = import_data(self)
 
         if not valid:
-            return 
+            return
 
         # Update footer file info only if file imported successfully
         file_info = os.path.join(self.pathname, self.filename)

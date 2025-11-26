@@ -1,5 +1,6 @@
 services:
   hdemg-app:
+    platform: linux/amd64
     build: .
     image: hdemg-analysis-tool
     container_name: hdemg-analysis-tool
@@ -9,4 +10,12 @@ services:
     volumes:
       - ./data:/app/data # Mount data directory for persistent storage
       - ./src:/app/src
+    environment:
+      - DISPLAY=:1
+      - HOME=/app
+      - PYTHONUNBUFFERED=1
+      - QT_X11_NO_MITSHM=1
+      - QT_QPA_PLATFORM=xcb
+      - XDG_RUNTIME_DIR=/tmp
+      - MPLBACKEND=Qt5Agg
     restart: unless-stopped

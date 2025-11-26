@@ -248,6 +248,7 @@ class MotorUnitTrackingDialog(QDialog):
         """
 
         return f"""
+        background-color: {CleanTheme.ANALYSIS_BG_MAIN};
         QDialog {{
             background-color: {CleanTheme.ANALYSIS_BG_CARD};
         }}
@@ -488,13 +489,13 @@ class MotorUnitTrackingDialog(QDialog):
             showimmediately=False,
             title="MUAP Overlay Grids",
             figsize=[8, 6],
-            tight_layout=False,
+            tight_layout=True,
         )
 
         canvas = FigureCanvas(fig)
         self.muap_canvas = canvas
         self.muap_grids_layout.addWidget(self.muap_canvas)
-        plt.close(fig)
+        plt.close("all")
 
     def update_plots(self, idx):
         """
@@ -610,17 +611,18 @@ class MotorUnitTrackingDialog(QDialog):
             mu1_str, mu2_str = text.split('-', 1)
             mu1 = int(mu1_str)
             mu2 = int(mu2_str)
-        except Exception:
-            ErrorDialog("Invalid Motor unit provided", 'Error').exec_()
+        except Exception as e:
+            ErrorDialog(f"Invalid Motor unit provided: {e}", 'Error').exec_()
             return
         # Find the index in results
         found_idx = -1
-        for idx, (ch1, ch2, _) in enumerate(self.results):
+        for idx, row in enumerate(self.results):
+            ch1, ch2, _ = row.values()
             if ch1 == mu1 and ch2 == mu2:
                 found_idx = idx
                 break
         if found_idx == -1:
-            ErrorDialog("Invalid Motor unit provided", 'Error').exec_()
+            ErrorDialog("Pairing not found", 'Error').exec_()
             return
         # Update selection
         self.mu_pair_selector.setCurrentIndex(found_idx)

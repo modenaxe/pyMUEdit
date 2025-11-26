@@ -1,15 +1,12 @@
-import os
-from datetime import datetime
 from pathlib import Path
-from tkinter.filedialog import FileDialog
 
 import pyqtgraph as pg
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QCursor, QFont
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
-                             QPushButton, QScrollArea, QSizePolicy,
-                             QSpacerItem, QStackedWidget, QVBoxLayout, QWidget)
+                             QScrollArea, QSizePolicy, QSpacerItem,
+                             QStackedWidget, QVBoxLayout, QWidget)
 
 from core.logger import logger
 # Import custom components
