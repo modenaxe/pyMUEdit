@@ -121,6 +121,43 @@ cd tests
 python testMUeditOutput.py
 ```
 
+### Manual Tesing Coverage
+Due to the GUI-intensive nature of pyMUEdit and limitations in automated testing for pyQt5 applications, we have developed comprehensive manual system testing procedures. The following sections detail our testing methodology, coverage and execution steps.
+
+**Complete Manual Testing Documentation:** [Manual_Testing_Documentation.pdf]capstone-project-25t3-3900-w14b-banana/Manual_Testing_Documentation.pdf
+
+### Test Categories
+Our manual testing suite covers the following areas:
+
+1. **Import Data Tab Tests** - File loafing, configuration, segmentation and channel management
+2. **Decomposition Tab Test** - Algorithm configuration, execution and result validation
+3. **Manual Editing Tab Test** - Motor unit editing and quality control
+4. **MU Analysis Tab Tests** - Force analysis, motor unit properties and visualisation.
+5. **End-to-End Testing** - Exporting and loading sessions.
+
+## Test Execution Requirements
+
+**Prerequisites:**
+- Python 3.13+ with all dependencies installed (`pip install -r requirements.txt`)
+- Test data files available in `/data/` directory (e.g., `trial1_20MVC.otb+`)
+- Application launched via `python src/main.py`
+
+**Environment Setup:**
+
+```bash
+# Navigate to project directory
+cd /path/to/capstone-project-25t3-3900-w14b-banana
+
+# Activate virtual environment
+source .venv/bin/activate  # Linux/macOS
+# or
+.venv\Scripts\activate     # Windows
+
+# Run application
+cd src
+python [main.py](http://_vscodecontentref_/0)
+```
+
 ## Application Features
 
 ### Importing Data
