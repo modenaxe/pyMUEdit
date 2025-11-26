@@ -124,7 +124,7 @@ python testMUeditOutput.py
 ### Manual Tesing Coverage
 Due to the GUI-intensive nature of pyMUEdit and limitations in automated testing for pyQt5 applications, we have developed comprehensive manual system testing procedures. The following sections detail our testing methodology, coverage and execution steps.
 
-**Complete Manual Testing Documentation:** [Manual_Testing_Documentation.pdf]capstone-project-25t3-3900-w14b-banana/Manual_Testing_Documentation.pdf
+**Complete Manual Testing Documentation:** [Manual_Testing_Documentation.pdf]capstone-project-25t3-3900-w14b-banana/docs/Manual_Testing_Documentation.pdf
 
 ### Test Categories
 Our manual testing suite covers the following areas:
