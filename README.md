@@ -24,7 +24,7 @@ https://drive.google.com/drive/folders/1nIpH1ksYWE-vQplEtilz843h2BuCuDmy
 1. Clone this repository:
 
    ```bash
-   git clone git@github.com:unsw-cse-comp99-3900/capstone-project-25t3-3900-w14b-banana.git
+   git clone git@github.com:modenaxe/pyMUEdit.git
    cd pyMUEdit
    ```
 
@@ -124,7 +124,7 @@ python testMUeditOutput.py
 ### Manual Tesing Coverage
 Due to the GUI-intensive nature of pyMUEdit and limitations in automated testing for pyQt5 applications, we have developed comprehensive manual system testing procedures. The following sections detail our testing methodology, coverage and execution steps.
 
-**Complete Manual Testing Documentation:** [Manual_Testing_Documentation.pdf]capstone-project-25t3-3900-w14b-banana/docs/Manual_Testing_Documentation.pdf
+**Complete Manual Testing Documentation:** [Manual_Testing_Documentation.pdf]/docs/Manual_Testing_Documentation.pdf
 
 ### Test Categories
 Our manual testing suite covers the following areas:
@@ -146,7 +146,7 @@ Our manual testing suite covers the following areas:
 
 ```bash
 # Navigate to project directory
-cd /path/to/capstone-project-25t3-3900-w14b-banana
+cd /path/to/pyMUEdit
 
 # Activate virtual environment
 source .venv/bin/activate  # Linux/macOS
