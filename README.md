@@ -476,3 +476,5 @@ UNSW Capstone 2025 teams:
   - T11A-BANANA (import and decomposition tab)
   - T09A-ALMOND (manual decomposition tab)
   - W18A-BANANA (analysis tab)
+- Team 25t3:
+   - W14B-BANANA (ui consolidation, cross-tab integration, database, session management, logging system, openHDEMG integration and code organisation)
