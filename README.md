@@ -155,7 +155,7 @@ source .venv/bin/activate  # Linux/macOS
 
 # Run application
 cd src
-python [main.py](http://_vscodecontentref_/0)
+python main.py
 ```
 
 ## Application Features
