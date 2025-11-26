@@ -7,7 +7,7 @@ import pyqtgraph as pg
 import scipy.io as sio
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout,
-                             QWidget)
+                             QWidget, QFrame)
 
 from core.database.database import upsert_file_versions
 from core.utils.data_processing.segmenttargets import segmenttargets
@@ -43,12 +43,20 @@ class SegmentSessionPage(QWidget):
         self.raw_fileid = raw_fileid
 
         # left panel
-        left_container = QWidget()
-        left_container.setMinimumWidth(250)
-        left_container.setMaximumWidth(300)
+        left_sidebar = QFrame()
+        left_sidebar.setObjectName("leftSidebar")
+        left_sidebar.setStyleSheet(f"""
+            #leftSidebar {{
+                background-color: {CleanTheme.BG_CARD};
+                border: 1px solid {CleanTheme.BORDER};
+                border-radius: 8px;
+            }}
+        """)
+        left_sidebar.setMinimumWidth(250)
+        left_sidebar.setMaximumWidth(300)
 
-        left_layout = QVBoxLayout(left_container)
-        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout = QVBoxLayout(left_sidebar)
+        left_layout.setContentsMargins(10, 10, 10, 10)
         left_layout.setSpacing(15)
 
         # signal visualisation plot
@@ -62,32 +70,28 @@ class SegmentSessionPage(QWidget):
         vis_panel = VisualizationPanel(plot_widget=self.vis_plot)
         vis_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        # reference signal dropdown panel
-        reference_signal_panel = CollapsiblePanel("Reference Signal")
+        # segmentation options side panel
+        left_sidebar_title = QLabel("Segmentation Options")
+        left_sidebar_title.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        left_sidebar_title.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+        left_layout.addWidget(left_sidebar_title)
+
         self.reference_dropdown = FormDropdown(
             "Select Reference Signal",
             self.generate_signal_reference_options())
-        reference_signal_panel.add_widget(self.reference_dropdown)
-        reference_signal_panel.setSizePolicy(
-            QSizePolicy.Preferred, QSizePolicy.Fixed)
+        left_layout.addWidget(self.reference_dropdown)
         self.reference_dropdown.dropdown.currentIndexChanged.connect(
             self.on_reference_signal_change)
 
-        # segmentation parameters dropdown panel
-        segmentation_param_panel = CollapsiblePanel("Segmentation Parameters")
-        self.threshold_dropdown = FormDoubleSpinBox("Threshold", 0, 0, 1, 0.1)
+        self.threshold_dropdown = FormDoubleSpinBox("Automatic (Select Threshold)", 0, 0, 1, 0.1)
         self.threshold_dropdown.spinbox.valueChanged.connect(
             self.threshold_edit_field_value_changed)
-        segmentation_param_panel.add_widget(self.threshold_dropdown)
-        self.windows_dropdown = FormSpinBox("Windows", 0, 0, 10)
+        left_layout.addWidget(self.threshold_dropdown)
+
+        self.windows_dropdown = FormSpinBox("Manual (Select Windows)", 0, 0, 10)
         self.windows_dropdown.spinbox.valueChanged.connect(
             self.windows_edit_field_value_changed)
-        segmentation_param_panel.add_widget(self.windows_dropdown)
-        segmentation_param_panel.setSizePolicy(
-            QSizePolicy.Preferred, QSizePolicy.Fixed)
-
-        left_layout.addWidget(reference_signal_panel)
-        left_layout.addWidget(segmentation_param_panel)
+        left_layout.addWidget(self.windows_dropdown)
 
         # concatenate button
         self.concat_button = ActionButton("Concatenate", primary=False)
@@ -120,7 +124,7 @@ class SegmentSessionPage(QWidget):
 
         # combine panels in layout
         content_layout = QHBoxLayout()
-        content_layout.addWidget(left_container, stretch=0)
+        content_layout.addWidget(left_sidebar, stretch=0)
         content_layout.addWidget(vis_panel, stretch=1)
         main_layout.addLayout(content_layout)
         self.setLayout(main_layout)
@@ -132,16 +136,21 @@ class SegmentSessionPage(QWidget):
 
     # Create the dropdown signal reference options
     def generate_signal_reference_options(self):
-        options = ["EMG amplitude"]
-        for name in self.file["signal"]["auxiliaryname"][0, 0]:
-            options.append(name.strip())
-
-        return options
+        return [
+            "EMG amplitude",
+            "AUX force",
+            "Target",
+            "Path"
+        ]
 
     def on_reference_signal_change(self):
+        self.windows_dropdown.spinbox.setValue(0)
+        self.threshold_dropdown.spinbox.setValue(0)
+
         self.vis_plot.clear()
         if self.reference_dropdown.dropdown.currentText() == "EMG amplitude":
             self.threshold_dropdown.setEnabled(False)
+            self.windows_dropdown.setEnabled(True)
             data = self.file["signal"][0, 0]["data"]
             fsamp = self.file["signal"][0, 0]["fsamp"][0, 0]
 
@@ -191,6 +200,12 @@ class SegmentSessionPage(QWidget):
 
     def threshold_edit_field_value_changed(self):
         threshold = self.threshold_dropdown.spinbox.value()
+
+        if threshold > 0:
+            self.windows_dropdown.setEnabled(False)
+        else:
+            self.windows_dropdown.setEnabled(True)
+
         target = self.file["signal"][0, 0]["target"]
         if self.reference_dropdown.dropdown.currentText() != "EMG amplitude":
             # Segment target using threshold
@@ -229,6 +244,12 @@ class SegmentSessionPage(QWidget):
 
     def windows_edit_field_value_changed(self):
         num_windows = self.windows_dropdown.spinbox.value()
+
+        if num_windows > 0:
+            self.threshold_dropdown.setEnabled(False)
+        else:
+            self.threshold_dropdown.setEnabled(True)
+
         target = self.file["signal"][0, 0]["target"]
 
         # Update plot
