@@ -6,8 +6,8 @@ import pandas as pd
 import pyqtgraph as pg
 import scipy.io as sio
 from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout,
-                             QWidget, QFrame)
+from PyQt5.QtWidgets import (QFrame, QHBoxLayout, QLabel, QSizePolicy,
+                             QVBoxLayout, QWidget)
 
 from core.database.database import upsert_file_versions
 from core.utils.data_processing.segmenttargets import segmenttargets
@@ -83,12 +83,14 @@ class SegmentSessionPage(QWidget):
         self.reference_dropdown.dropdown.currentIndexChanged.connect(
             self.on_reference_signal_change)
 
-        self.threshold_dropdown = FormDoubleSpinBox("Automatic (Select Threshold)", 0, 0, 1, 0.1)
+        self.threshold_dropdown = FormDoubleSpinBox(
+            "Automatic (Select Threshold)", 0, 0, 1, 0.1)
         self.threshold_dropdown.spinbox.valueChanged.connect(
             self.threshold_edit_field_value_changed)
         left_layout.addWidget(self.threshold_dropdown)
 
-        self.windows_dropdown = FormSpinBox("Manual (Select Windows)", 0, 0, 10)
+        self.windows_dropdown = FormSpinBox(
+            "Manual (Select Windows)", 0, 0, 10)
         self.windows_dropdown.spinbox.valueChanged.connect(
             self.windows_edit_field_value_changed)
         left_layout.addWidget(self.windows_dropdown)
