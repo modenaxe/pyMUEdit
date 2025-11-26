@@ -24,7 +24,7 @@ https://drive.google.com/drive/folders/1nIpH1ksYWE-vQplEtilz843h2BuCuDmy
 1. Clone this repository:
 
    ```bash
-   git clone git@github.com:modenaxe/pyMUEdit.git
+   git clone git@github.com:unsw-cse-comp99-3900/capstone-project-25t3-3900-w14b-banana.git
    cd pyMUEdit
    ```
 
