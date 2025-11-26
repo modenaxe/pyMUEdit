@@ -121,6 +121,43 @@ cd tests
 python testMUeditOutput.py
 ```
 
+### Manual Tesing Coverage
+Due to the GUI-intensive nature of pyMUEdit and limitations in automated testing for pyQt5 applications, we have developed comprehensive manual system testing procedures. The following sections detail our testing methodology, coverage and execution steps.
+
+**Complete Manual Testing Documentation:** [Manual_Testing_Documentation.pdf]capstone-project-25t3-3900-w14b-banana/docs/Manual_Testing_Documentation.pdf
+
+### Test Categories
+Our manual testing suite covers the following areas:
+
+1. **Import Data Tab Tests** - File loafing, configuration, segmentation and channel management
+2. **Decomposition Tab Test** - Algorithm configuration, execution and result validation
+3. **Manual Editing Tab Test** - Motor unit editing and quality control
+4. **MU Analysis Tab Tests** - Force analysis, motor unit properties and visualisation.
+5. **End-to-End Testing** - Exporting and loading sessions.
+
+## Test Execution Requirements
+
+**Prerequisites:**
+- Python 3.13+ with all dependencies installed (`pip install -r requirements.txt`)
+- Test data files available in `/data/` directory (e.g., `trial1_20MVC.otb+`)
+- Application launched via `python src/main.py`
+
+**Environment Setup:**
+
+```bash
+# Navigate to project directory
+cd /path/to/capstone-project-25t3-3900-w14b-banana
+
+# Activate virtual environment
+source .venv/bin/activate  # Linux/macOS
+# or
+.venv\Scripts\activate     # Windows
+
+# Run application
+cd src
+python [main.py](http://_vscodecontentref_/0)
+```
+
 ## Application Features
 
 ### Importing Data
@@ -224,28 +261,37 @@ The Docker setup mounts a `data` directory from your host machine to `/app/data`
 
 ```
 pyMUEdit/
-├── data/                  # Data directory mounted into the container
-├── docs/                  # Documentation
-├── src/                   # Source code
-│   ├── app/               # Main application modules
+├── data/                     # Data directory mounted into the container
+├── docs/                     # Documentation
+├── src/                      # Source code
+│   ├── app/                  # Main application modules
+|   |   ├── muAnalysisFunctions/
+|   |   ├── muEditFunctions/
 │   │   ├── DecompositionApp.py
 │   │   ├── DownloadConfirmation.py
 │   │   ├── ExportConfirm.py
 │   │   ├── ExportResults.py
-│   │   ├── HDEMGDashboard.py
 │   │   ├── ImportDataWindow.py
 │   │   └── MUeditManual.py
-│   ├── core/              # Core functionality
-│   ├── public/            # Static resources
-│   ├── ui/                # UI components
-│   ├── workers/           # Background worker threads
-│   └── main.py            # Main entry point
-├── docker-compose.yml     # Docker Compose configuration
-├── Dockerfile             # Docker container definition
-├── requirements.txt       # Python dependencies
-├── run-hdemg.bat          # Windows run script
-├── run-hdemg.sh           # Linux/macOS run script
-└── supervisord.conf       # Supervisor configuration
+│   ├── assets/               # Static Assets and Resources
+│   ├── core/                 # Core functionality
+|   |   ├── database/         # Database utilities
+|   |   ├── muAnalysisCore/   # Analysis core algorithms
+|   |   ├── scd/              # Swarm Contrastive Decomposition
+|   |   ├── utils/            # Utility functions
+|   |   ├── EmgDecomposition.py
+|   |   ├── logger.py
+│   ├── public/               # Static resources
+│   ├── ui/                   # UI components
+│   ├── workers/              # Background worker threads
+│   └── main.py               # Main entry point
+├── tests/                    # Test Suite
+├── docker-compose.yml        # Docker Compose configuration
+├── Dockerfile                # Docker container definition
+├── requirements.txt          # Python dependencies
+├── run-hdemg.bat             # Windows run script
+├── run-hdemg.sh              # Linux/macOS run script
+└── supervisord.conf          # Supervisor configuration
 ```
 
 ### Stopping the Application
@@ -430,3 +476,5 @@ UNSW Capstone 2025 teams:
   - T11A-BANANA (import and decomposition tab)
   - T09A-ALMOND (manual decomposition tab)
   - W18A-BANANA (analysis tab)
+- Team 25t3:
+   - W14B-BANANA (ui consolidation, cross-tab integration, database, session management, logging system, openHDEMG integration and code organisation)
