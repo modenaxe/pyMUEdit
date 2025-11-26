@@ -261,28 +261,37 @@ The Docker setup mounts a `data` directory from your host machine to `/app/data`
 
 ```
 pyMUEdit/
-├── data/                  # Data directory mounted into the container
-├── docs/                  # Documentation
-├── src/                   # Source code
-│   ├── app/               # Main application modules
+├── data/                     # Data directory mounted into the container
+├── docs/                     # Documentation
+├── src/                      # Source code
+│   ├── app/                  # Main application modules
+|   |   ├── muAnalysisFunctions/
+|   |   ├── muEditFunctions/
 │   │   ├── DecompositionApp.py
 │   │   ├── DownloadConfirmation.py
 │   │   ├── ExportConfirm.py
 │   │   ├── ExportResults.py
-│   │   ├── HDEMGDashboard.py
 │   │   ├── ImportDataWindow.py
 │   │   └── MUeditManual.py
-│   ├── core/              # Core functionality
-│   ├── public/            # Static resources
-│   ├── ui/                # UI components
-│   ├── workers/           # Background worker threads
-│   └── main.py            # Main entry point
-├── docker-compose.yml     # Docker Compose configuration
-├── Dockerfile             # Docker container definition
-├── requirements.txt       # Python dependencies
-├── run-hdemg.bat          # Windows run script
-├── run-hdemg.sh           # Linux/macOS run script
-└── supervisord.conf       # Supervisor configuration
+│   ├── assets/               # Static Assets and Resources
+│   ├── core/                 # Core functionality
+|   |   ├── database/         # Database utilities
+|   |   ├── muAnalysisCore/   # Analysis core algorithms
+|   |   ├── scd/              # Swarm Contrastive Decomposition
+|   |   ├── utils/            # Utility functions
+|   |   ├── EmgDecomposition.py
+|   |   ├── logger.py
+│   ├── public/               # Static resources
+│   ├── ui/                   # UI components
+│   ├── workers/              # Background worker threads
+│   └── main.py               # Main entry point
+├── tests/                    # Test Suite
+├── docker-compose.yml        # Docker Compose configuration
+├── Dockerfile                # Docker container definition
+├── requirements.txt          # Python dependencies
+├── run-hdemg.bat             # Windows run script
+├── run-hdemg.sh              # Linux/macOS run script
+└── supervisord.conf          # Supervisor configuration
 ```
 
 ### Stopping the Application
