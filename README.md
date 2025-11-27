@@ -191,6 +191,8 @@ Segment session provides the capability to inspect the imported EMG recording an
 
 Note: All segmented files will be populated in the **'Recent Files'** panel for easy access.
 
+4. When performing decomposition on segmented files, uncheck the Use Threshold checkbox in the parameters
+
 
 #### Channel Viewer
 Channel Viewer provides an interactive interface for exploring and managing signal channels in the HD-EMG dataset.\
@@ -208,6 +210,45 @@ It provides you with the following features:
 
 <img src="./src/public/channel-viewer.jpg" alt="Manual Segment Selection" width="500" height="400">
 
+#### Session Handling
+Whenever a new dataset file is imported, the system creates a new session. This session keeps track of all work performed on the dataset. There is one session per dataset file. If a readin file is segmented, all segmented files are associated with the same session.
+
+Each file can progress through the app’s full workflow:
+
+readin → processed → decomposed → edited → analysed
+
+At every stage, the system records a log history. These logs capture:
+- All parameters used during decomposition
+- All edit actions performed in the MU Editing tab
+
+#### Export Session
+The Export Session button packages the entire session—including all associated files and their log histories—into a .zip file.
+
+Note:
+Before exporting, ensure that you use Save or Save As in the Editing tab. Any unsaved changes will not be included in the export.
+
+The current version of the app does not include files for the Analysis tab.
+
+#### Load Session
+The Load Session button imports a .zip archive previously created with the Export Session feature. When loaded:
+- All files are restored into the app
+- All parameters from the .json metadata file are applied
+
+Due to how the Editing tab handles importing, the edited files are not restored into the app.
+
+#### Logging file
+All application logs are written to:
+
+``` bash
+core/logs/app.log
+```
+Each log entry is tagged with its level:
+- INFO
+- DEBUG
+- WARNING
+- ERROR
+
+During development, developers may enable console output. This setting controls the minimum log level displayed (default is INFO) and can be adjusted as needed.
 
 ## Dockerized Application (CPU ONLY)
 

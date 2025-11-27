@@ -46,7 +46,7 @@ def overlay_file_button_pushed(self, checked=True):
     logger.debug("[Overlay] Overlay file loaded successfully")
 
     try:
-        self.update_display_mus(pluse_train_color="#50D935")
+        self.update_display_mus(pluse_train_color="#D95535")
         logger.debug("[Overlay] Overlay plots drawn successfully")
         self.show_tip(f"Overlay added: {filename}")
     except Exception as e:
