@@ -480,16 +480,18 @@ class ImportDataWindow(QMainWindow):
                     "format": os.path.splitext(file)[1].upper().replace(".", "")
                 }
 
-                fileid = get_fileid_by_path(full_path)
-                if not fileid:
-                    fileid = insert_files(full_path, file, self.sessionid)
-
                 # Get or create session for this dataset
                 if ext != ".h5": # temporary dont create session with h5 for now due to using load_file for loading a session
                     sessionid = get_or_create_session_for_file(full_path)
                     self.sessionid = sessionid
+                    fileid = get_fileid_by_path(full_path)
+                    if not fileid:
+                        fileid = insert_files(full_path, file, self.sessionid)
                     upsert_file_versions(h5_readin_savename, fileid, "readin")
                 else:
+                    fileid = get_fileid_by_path(full_path)
+                    if not fileid and self.sessionid:
+                        fileid = insert_files(full_path, file, self.sessionid)
                     if decomp_name:
                         upsert_file_versions(decomp_name, fileid, "decomposed")
                     else:
