@@ -1,17 +1,28 @@
-from PyQt5.QtWidgets import QPushButton
-from PyQt5.QtGui import QFont, QIcon, QCursor
-from PyQt5.QtCore import Qt, QSize
-from .CleanTheme import CleanTheme
 from pathlib import Path
 
+from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QCursor, QFont, QIcon
+from PyQt5.QtWidgets import QPushButton
+
+from .CleanTheme import CleanTheme
+
 ICON_DIR = Path(__file__).resolve().parent.parent.parent / "public"
-def _ico(name):    
+
+
+def _ico(name):
     return QIcon(str(ICON_DIR / f"{name}"))
+
 
 class ActionButtonedit(QPushButton):
     """A clean, minimalist button for actions"""
 
-    def __init__(self, text, icon=None, primary=True, parent=None, tabs=False, blue=False):
+    def __init__(
+            self,
+            text,
+            icon=None,
+            primary=True,
+            parent=None,
+            tabs=False):
         """
         Initialize an action button
 
@@ -22,7 +33,6 @@ class ActionButtonedit(QPushButton):
             parent (QWidget): Parent widget
         """
         super().__init__(text, parent)
-        
 
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
@@ -43,7 +53,7 @@ class ActionButtonedit(QPushButton):
         # Style based on primary or secondary
         if primary:
             font = QFont("Segoe UI")
-            font.setPointSize(11)
+            font.setPointSize(10)
             self.setFont(font)
 
             self.setStyleSheet(
@@ -62,7 +72,7 @@ class ActionButtonedit(QPushButton):
                     background-color: #222222;
                 }}
                 QPushButton:disabled {{
-                    background-color: #999999;
+                    background-color: #888888;
                     color: #dddddd;
                 }}
                 QPushButton[active="true"] {{
@@ -70,11 +80,13 @@ class ActionButtonedit(QPushButton):
                 }}
             """
             )
-        
+
+        # for tab switching buttons
         elif tabs:
             font = QFont("Segoe UI")
-            font.setPointSize(12)
+            font.setPointSize(10)
             self.setFont(font)
+
             self.setStyleSheet(
                 f"""
                 QPushButton {{
@@ -85,31 +97,21 @@ class ActionButtonedit(QPushButton):
                 QPushButton:hover {{
                     background-color: #f5f5f5;
                 }}
-    
+
                 QPushButton:pressed {{
                     background-color: #e0e0e0;
                 }}
 
                 QPushButton[active="true"] {{
-                    background-color: #0072ee;
-                    color: white;
+                    background-color: #f5f5f5;
                 }}
 
-                QPushButton[active="true"]:hover {{
-                    background-color: #1565C0;
-                }}
             """
             )
-        
-        elif blue:
-            font = QFont("Segoe UI")
-            font.setPointSize(11)
-            self.setFont(font)
-            self.set_blue()
-            
+
         else:
             font = QFont("Segoe UI")
-            font.setPointSize(11)
+            font.setPointSize(10)
             self.setFont(font)
 
             self.setStyleSheet(
@@ -127,23 +129,24 @@ class ActionButtonedit(QPushButton):
                     background-color: #e0e0e0;
                 }}
                 QPushButton:disabled {{
-                    background-color: #f0f0f0;
+                    background-color: #888888;
                     color: #aaaaaa;
-                    border: 1px solid #e0e0e0;
+                    border: 1px solid #cccccc;
                 }}
                 QPushButton[active="true"] {{
-                    background-color: #c0ffc0;
-                    border: 1px solid green;
-                    color: darkgreen;
+                    background-color: #DEDEDE;
+                    border: 1px solid #C1C0C0;
+                    color: black;
                 }}
             """
             )
+
     def set_active(self, active: bool):
         """Set the active visual state of the button."""
         self.setProperty("active", active)
         self.style().unpolish(self)
         self.style().polish(self)
-        
+
     def get_active(self):
         return self.property("active")
 
@@ -151,14 +154,14 @@ class ActionButtonedit(QPushButton):
         self.setStyleSheet(
             f"""
             QPushButton {{
-                background: #0072ee;
+                background: #333333;
                 color: #ffffff;
                 border: none;
                 border-radius: 4px;
                 padding: 8px 0px;
             }}
             QPushButton:hover {{
-                background-color: #1565C0;
+                background-color: #555555;
                 color: #ffffff;
             }}
 
@@ -167,25 +170,25 @@ class ActionButtonedit(QPushButton):
             }}
 
             QPushButton:disabled {{
-                background-color: #f0f0f0;
+                background-color: #888888;
                 color: #aaaaaa;
                 border: 1px solid #e0e0e0;
             }}
-            
+
             QPushButton[active="true"] {{
-                background-color: #c0ffc0;
-                border: 1px solid green;
-                color: darkgreen;
+                background-color: #DEDEDE;
+                border: 1px solid #C1C0C0;
+                color: black;
             }}
             """
         )
-    
+
     def setIcon(self, icon, size=None):
-        if isinstance(icon, str): 
+        if isinstance(icon, str):
             icon = _ico(icon)
         if size:
             super().setIconSize(QSize(size[0], size[1]))
         super().setIcon(icon)
-    
+
     def clearIcon(self):
         super().setIcon(QIcon())

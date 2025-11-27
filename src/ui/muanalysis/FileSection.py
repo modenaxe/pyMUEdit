@@ -1,14 +1,8 @@
-from PyQt5.QtCore import QSize, Qt, pyqtSignal
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout
 
-from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from core.muAnalysisCore.ResetButton import ResetButton
+from ui.components import ActionButton
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
-from ui.components.muAnalysisComponents.GeneralRedButton import \
-    GeneralRedButton
 
 
 class FileSection(QFrame):
@@ -24,9 +18,13 @@ class FileSection(QFrame):
         layout.addWidget(title_label)
         button_row = QHBoxLayout()
         layout.addLayout(button_row)
-        browse_btn = GeneralButton(
-            'Load File', lambda: mu.select_file_button_pushed(
-                analysis_plot, False))
-        button_row.addWidget(browse_btn, stretch=1)
+        self.load_btn = ActionButton('Load File')
+        self.load_btn.clicked.connect(
+            lambda: mu.select_file_button_pushed(
+                analysis_plot, False)
+        )
+        self.load_btn.setMinimumHeight(40)
+        button_row.addWidget(self.load_btn, stretch=1)
         self.reset_btn = ResetButton('Reset')
+        self.reset_btn.setMinimumHeight(40)
         button_row.addWidget(self.reset_btn, stretch=1)

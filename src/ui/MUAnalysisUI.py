@@ -1,20 +1,25 @@
+import os
 import sys
+from pathlib import Path
 
-from PyQt5.QtCore import QSize, Qt, pyqtSignal
-from PyQt5.QtGui import QColor, QFont
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
-                             QMainWindow, QPushButton, QStyle, QVBoxLayout,
-                             QWidget)
+                             QMainWindow, QScrollArea, QSizePolicy, QStyle,
+                             QVBoxLayout, QWidget)
 
-from app.ExportResults import ExportResultsWindow
 from app.muAnalysisFunctions.FileUploadFunc import FileUploadFunc
 from app.muAnalysisFunctions.MUPropertiesFun import MUPropertiesFunc
 from app.muAnalysisFunctions.ResizeFunc import Resize
+from core.logger import logger
 from core.muAnalysisCore.AnalysisResultsHist import store
+from core.utils.io.filesize_formatter import filesize_formatter
+from ui.components import ActionButton, CleanScrollBar
+from ui.components import CleanTheme as Theme
+from ui.components import CollapsiblePanel, SectionHeader
+from ui.components.Footer import Footer
 from ui.components.muAnalysisComponents.AnalysisPlot import AnalysisPlot
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.CleanTheme import CleanTheme
-from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 from ui.muanalysis.AdvancedTools import AdvancedTools
 from ui.muanalysis.FileSection import FileSection
 from ui.muanalysis.ForceAnalysisSection import ForceAnalysisSection
@@ -46,20 +51,21 @@ class MUAnalysis(QWidget):
         self.result_combo = ResultSelection(self.results_table)
         # setting instance of function class from
         # src/app.muAnalysisFunctions.FileUploadFunc
-        self.mu = FileUploadFunc()
+        self.mu = FileUploadFunc(parent=self)
         self.analysis_plot = AnalysisPlot()
         self.prop = MUPropertiesFunc()
 
+        self.setStyleSheet("background-color: white;")
+
         self.colors = {
-            "bg_main": "#f8f9fa",
-            "bg_card": "#ffffff",
-            "bg_sidebar": "#f8f9fa",
-            "bg_topbar": "#ffffff",
-            "border_light": "#e9ecef",
+            "bg_main": Theme.BG_MAIN,
+            "bg_card": Theme.BG_CARD,
+            "bg_sidebar": Theme.BG_CARD,
+            "border_light": Theme.BORDER,
             "shadow": QColor(0, 0, 0, 25),
-            "text_primary": "#212529",
-            "text_secondary": "#6c757d",
-            "text_title": "#343a40",
+            "text_primary": Theme.TEXT_PRIMARY,
+            "text_secondary": Theme.TEXT_SECONDARY,
+            "text_title": Theme.TEXT_PRIMARY,
             "button_dark_bg": "#343a40",
             "button_dark_hover": "#495057",
             "button_grey_bg": "#e9ecee",
@@ -84,79 +90,90 @@ class MUAnalysis(QWidget):
             self.content_layout
         )  # Add main content below top bar
 
-    # legacy code
-    def request_return_to_dashboard(self):
-        """Emits a signal to tell the main window to switch views."""
-        print("Widget: Requesting return to dashboard")
-        self.return_to_dashboard_requested.emit()
+        def go_to_editing():
+            self.window().show_manual_editing_view()
+
+        self.footer = Footer(
+            on_prev=go_to_editing,
+            on_next=None
+        )
+        self.footer.next_btn.hide()
+        self.footer.setFixedHeight(64)
+        self.widget_layout.addWidget(self.footer)
+
+    # Update footer information if a new file is uploaded successfully in
+    # analysis tab
+    def update_footer_file_info(self, file_path):
+        if not file_path:
+            self.footer.footer_file_info.setText("No file selected")
+            self.footer.size_info.setText("Size: --")
+            self.footer.format_info.setText("Format: --")
+            return
+
+        file_name = Path(file_path).name
+        file_ext = Path(file_path).suffix
+        try:
+            file_size = filesize_formatter(file_path)
+        except Exception:
+            size_str = "--"
+
+        self.footer.footer_file_info.setText(f"File: {file_name}")
+        self.footer.size_info.setText(f"Size: {file_size}")
+        self.footer.format_info.setText(f"Format: {file_ext}")
 
     # --- UI Creation Methods ---
 
-    # legacy code
+    # heading for the page
     def _create_top_bar(self):
         top_bar = QFrame()
         top_bar.setObjectName("topBar")
-        top_bar.setFixedHeight(55)
+        top_bar.setFixedHeight(70)
         top_bar.setStyleSheet(
             f"""
             #topBar {{
-                background-color: {self.colors['bg_topbar']};
-                border-bottom: 1px solid {self.colors['border_light']};
+                background-color: {Theme.BG_CARD};
+                border: 1px solid {Theme.BORDER};
+                margin-top: 15px;
+                margin-left: 15px;
+                margin-right: 15px;
+                border-radius: 8px;
             }}
-            #topBar > QPushButton {{
-                background-color: transparent;
-                border: none;
-                color: {self.colors['text_secondary']};
-                font-size: 9pt;
-                padding: 5px 10px;
-            }}
-            #topBar > QPushButton:hover {{
-                color: {self.colors['text_primary']};
-            }}
-        """
+            """
         )
         top_bar_layout = QHBoxLayout(top_bar)
         top_bar_layout.setContentsMargins(15, 0, 15, 0)
         top_bar_layout.setSpacing(10)
-        icon_label = QLabel()
-        icon_pixmap = get_icon("SP_ComputerIcon").pixmap(QSize(24, 24))
-        icon_label.setPixmap(icon_pixmap)
-        icon_label.setFixedSize(QSize(28, 28))
-        title_label = QLabel("Motor Unit Analysis")
-        title_label.setFont(QFont("Arial", 11, QFont.Bold))
-        title_label.setStyleSheet(
-            f"color: {self.colors['text_title']}; border: none;")
-        top_bar_layout.addWidget(icon_label)
+
+        # title
+        title_label = SectionHeader("Motor Unit Analysis")
+        # title_label.setFont(QFont("Arial", 20, QFont.Bold))
+        # title_label.setStyleSheet(
+        #     f"color: {self.colors['text_title']}; border: none;")
+
         top_bar_layout.addWidget(title_label)
         top_bar_layout.addStretch(1)
-        dashboard_btn = QPushButton("Dashboard")
-        projects_btn = QPushButton("Projects")
-        settings_btn = QPushButton("Settings")
-        user_button = QPushButton()
-        user_button.setIcon(get_icon("SP_DialogOkButton"))
-        user_button.setIconSize(QSize(18, 18))
-        user_button.setFixedSize(30, 30)
-        user_button.setStyleSheet(
-            f"""
-            QPushButton {{
-                background-color: {self.colors['button_dark_bg']};
-                border-radius: 15px;
-                padding: 0px;
-            }}
-            QPushButton:hover {{
-                background-color: {self.colors['button_dark_hover']};
-            }}
-        """
-        )
-        top_bar_layout.addWidget(dashboard_btn)
-        top_bar_layout.addWidget(projects_btn)
-        top_bar_layout.addWidget(settings_btn)
-        top_bar_layout.addWidget(user_button)
-        if hasattr(self, "request_return_to_dashboard"):
-            dashboard_btn.clicked.connect(self.request_return_to_dashboard)
-        else:
-            print("ERROR: request_return_to_dashboard method missing!")
+
+        # load file button
+        file_section = FileSection(None, self.mu, self.analysis_plot)
+        self.load_file_button = file_section.load_btn
+        self.load_file_button.setText("Press here to select file")
+        top_bar_layout.addWidget(self.load_file_button)
+
+        # save as button
+        self.save_as_btn = ActionButton("Save as")
+        self.save_as_btn.clicked.connect(lambda: self.handle_save_as())
+        self.save_as_btn.setMinimumHeight(40)
+        top_bar_layout.addWidget(self.save_as_btn)
+
         return top_bar
+
+    def handle_save_as(self):
+        if hasattr(self, "results_section"):
+            self.results_section.save_results()
+            logger.debug(
+                "Save As: Results successfully saved via ResultsPanel.")
+        else:
+            logger.warning("Save as: ResultsPanel not found")
 
     # dropdown order for matrix code
     # the border on the right sidebar
@@ -168,60 +185,105 @@ class MUAnalysis(QWidget):
         sidebar.setStyleSheet(
             f"""
             #leftSidebar {{
-                background-color: {self.colors['bg_sidebar']};
+                background-color: {Theme.BG_MAIN};
             }}
+        """)
 
-        """
-        )
-        sidebar_layout = QVBoxLayout(sidebar)
-        sidebar_layout.setContentsMargins(10, 10, 10, 10)
-        sidebar_layout.setSpacing(10)
+        # enables scrolling
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        CleanScrollBar.apply(scroll)
 
-        # title
-        title_div = QWidget()  # creating layout for the margin spacing
-        title_div_layout = QVBoxLayout(title_div)
-        # tells it to keep left, top, right margins
-        title_div_layout.setContentsMargins(-1, -1, -1, 0)
-        title_label = AnalysisText.create_major_title("Analysis")
-        title_div_layout.addWidget(title_label)
-        sidebar_layout.addWidget(title_div)
+        scroll_content = QWidget()
+        scroll_layout = QVBoxLayout(scroll_content)
+        scroll_layout.setContentsMargins(0, 0, 10, 0)
+        scroll_layout.setSpacing(10)
 
-        # signal editing
-        # remove mu section
+        # MU view settings
+        mu_view_widget = QWidget()
+        mu_view_layout = QVBoxLayout(mu_view_widget)
+        mu_view_layout.setContentsMargins(0, 0, 0, 0)
+        mu_view_layout.setSpacing(5)
+        view_button = ActionButton("View MUs")
+        view_button.clicked.connect(
+            lambda: self.mu.plot_idr(
+                self.mu.file, self.analysis_plot))
+        view_button.setMinimumHeight(40)
+        mu_view_layout.addWidget(view_button)
+        sort_button = ActionButton("Sort MUs")
+        sort_button.clicked.connect(
+            lambda: self.mu.sort_mus(
+                self.analysis_plot,
+                self.mu.file))
+        sort_button.setMinimumHeight(40)
+        mu_view_layout.addWidget(sort_button)
+        mu_view_section = CollapsiblePanel("MU View")
+        mu_view_section.add_widget(mu_view_widget)
+        scroll_layout.addWidget(mu_view_section)
+
+        # signal editing + remove mu section
+        mu_editing_widget = QWidget()
+        mu_editing_layout = QVBoxLayout(mu_editing_widget)
+        mu_editing_layout.setContentsMargins(0, 0, 0, 0)
+        mu_editing_layout.setSpacing(5)
         remove_mu_section = RemoveMUSection(
-            self.mu, self.analysis_plot, self.colors, parent=sidebar
-        )
-        sidebar_layout.addWidget(remove_mu_section)
-
-        # signal editing
+            self.mu, self.analysis_plot, self.colors, parent=sidebar)
         signal_editing = SignalEditing(
             self.mu, self.analysis_plot, parent=sidebar)
-        sidebar_layout.addWidget(signal_editing)
+        mu_editing_layout.addWidget(remove_mu_section)
+        mu_editing_layout.addWidget(signal_editing)
+        mu_editing_section = CollapsiblePanel("MU Editing")
+        mu_editing_section.add_widget(mu_editing_widget)
+        mu_editing_section.toggle_collapsed()
+        scroll_layout.addWidget(mu_editing_section)
 
         # force anaylsis
-        force_analysis = ForceAnalysisSection(
-            sidebar, self.analysis_plot
-        )
-        sidebar_layout.addWidget(force_analysis)
+        force_analysis = ForceAnalysisSection(sidebar, self.analysis_plot)
+        force_analysis_section = CollapsiblePanel("Force Analysis")
+        force_analysis_section.add_widget(force_analysis)
+        force_analysis_section.toggle_collapsed()
+        scroll_layout.addWidget(force_analysis_section)
 
         # motor unit properties
         motor_unit_properties = MotorUnitPropertiesButton(
-            self.analysis_plot, parent=self
-        )
+            self.analysis_plot, parent=self)
         motor_unit_properties.mvc_updated.connect(self.prop.set_mvc)
-        sidebar_layout.addWidget(motor_unit_properties)
+        mu_properties_section = CollapsiblePanel(
+            "Motor Unit Properties")
+        mu_properties_section.add_widget(motor_unit_properties)
+        mu_properties_section.toggle_collapsed()
+        scroll_layout.addWidget(mu_properties_section)
         self.motor_unit_properties = motor_unit_properties
 
         # plot emg button
         plot_emg_tools = PlotEMGButton(self.analysis_plot, parent=self)
-        sidebar_layout.addWidget(plot_emg_tools)
+        plot_emg_section = CollapsiblePanel(
+            "Plot EMG")
+        plot_emg_section.add_widget(plot_emg_tools)
+        plot_emg_section.toggle_collapsed()
+        scroll_layout.addWidget(plot_emg_section)
         self.plot_emg_tools = plot_emg_tools
 
         # advanced tools
         advanced_tools = AdvancedTools(parent=sidebar)
-        sidebar_layout.addWidget(advanced_tools)
+        advanced_tools_section = CollapsiblePanel("Advanced Tools")
+        advanced_tools_section.add_widget(advanced_tools)
+        scroll_layout.addWidget(advanced_tools_section)
+        scroll_layout.addStretch(1)
+        scroll_content.setLayout(scroll_layout)
+        scroll.setWidget(scroll_content)
 
-        sidebar_layout.addStretch(1)
+        # width of left sidebar
+        sidebar.setFixedWidth(300)
+        scroll.setMinimumWidth(280)
+        scroll_content.setMinimumWidth(260)
+
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setContentsMargins(0, 0, 0, 0)
+        sidebar_layout.addWidget(scroll)
+
         return sidebar
 
     # center area where graph is initally loaded
@@ -230,15 +292,17 @@ class MUAnalysis(QWidget):
     def _create_center_area(self):
         center = QFrame()
         center.setObjectName("centerContent")
+        center.setStyleSheet(
+            f"""
+            #centerContent {{
+                background-color: {Theme.BG_CARD};
+                border: 1px solid {Theme.BORDER};
+                border-radius: 8px;
+            }}
+
+        """)
         center_layout = QVBoxLayout(center)
-
-        resize_file = Resize(self.mu, self.analysis_plot)
-        resize_btn = GeneralButton(
-            "Resize", lambda: resize_file.resize())
-        center_layout.addWidget(resize_btn)
-        self.analysis_plot.set_resize(resize_btn)
         center_layout.addWidget(self.analysis_plot)
-
         return center
 
     # side bar with load file button
@@ -249,24 +313,71 @@ class MUAnalysis(QWidget):
         sidebar.setStyleSheet(
             f"""
             #rightSidebar {{
-                background-color: {self.colors['bg_sidebar']};
+                background-color: {Theme.BG_CARD};
+                border: 1px solid {Theme.BORDER};
+                border-radius: 8px;
             }}
 
-        """
-        )
+        """)
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setContentsMargins(10, 10, 10, 10)
         sidebar_layout.setSpacing(10)
 
-        file_section = FileSection(sidebar, self.mu, self.analysis_plot)
-        # Connect the reset button's signal to the MUAnalysisFunc method
-        file_section.reset_btn.reset_requested.connect(
-            lambda: self.mu.handle_reset_workflow(self.analysis_plot)
-        )
+        file_section = FileSection(None, self.mu, self.analysis_plot)
+        file_section.load_btn.setParent(None)
+
+        title_label = file_section.findChild(QLabel, "sidebarTitle")
+        if title_label is None:
+            title_label = AnalysisText.create_major_title("File")
+            title_label.setObjectName("sidebarTitle")
+
+        if hasattr(file_section.reset_btn, "reset_requested"):
+            file_section.reset_btn.reset_requested.connect(
+                lambda: self.mu.handle_reset_workflow(self.analysis_plot)
+            )
+
+        file_section.reset_btn.setFixedWidth(250)
+        file_section.reset_btn.setSizePolicy(
+            QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        file_container = QWidget()
+        file_layout = QVBoxLayout(file_container)
+        file_layout.setContentsMargins(0, 15, 0, 0)
+        file_layout.setSpacing(8)
+
+        title_layout = QHBoxLayout()
+        title_layout.setContentsMargins(15, 0, 0, 0)
+        title_layout.addWidget(title_label)
+        file_layout.addLayout(title_layout)
+
+        file_layout.addSpacing(10)
+
+        reset_row = QHBoxLayout()
+        reset_row.addStretch(1)
+        reset_row.addWidget(file_section.reset_btn)
+        reset_row.addStretch(1)
+
+        file_layout.addLayout(reset_row)
+        sidebar_layout.addWidget(file_container)
+
+        # resize button
+        resize_file = Resize(self.mu, self.analysis_plot)
+        resize_btn = ActionButton(
+            "Resize")
+        resize_btn.clicked.connect(lambda: resize_file.resize())
+        resize_btn.setMinimumHeight(40)
+        resize_btn.setFixedWidth(250)
+        self.analysis_plot.set_resize(resize_btn)
+        resize_btn_row = QHBoxLayout()
+        resize_btn_row.addStretch(1)
+        resize_btn_row.addWidget(resize_btn)
+        resize_btn_row.addStretch(1)
+        sidebar_layout.addLayout(resize_btn_row)
+
         results_section = ResultsPanel(
             sidebar, self.result_combo, self.results_table)
+        self.results_section = results_section
 
-        sidebar_layout.addWidget(file_section, stretch=1)
         sidebar_layout.addWidget(results_section, stretch=15)
         sidebar_layout.addStretch(1)
         sidebar.setMaximumWidth(300)

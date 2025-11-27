@@ -1,5 +1,6 @@
 from PyQt5.QtCore import QThread, pyqtSignal
 import scipy.io as sio
+from core.logger import logger
 
 class Save_worker(QThread):
     """
@@ -34,6 +35,7 @@ class Save_worker(QThread):
             # do_compression=True enables compression
             sio.savemat(self.filepath, self.data, do_compression=True)
         except Exception as e:
+            logger.exception("save worker failed")
             self.error.emit(str(e))
         else:
             self.finished.emit()

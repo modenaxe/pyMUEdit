@@ -1,11 +1,9 @@
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (QApplication, QComboBox, QFrame, QHBoxLayout,
-                             QLabel, QMainWindow, QPushButton, QStyle,
-                             QVBoxLayout, QWidget)
+from PyQt5.QtWidgets import QVBoxLayout, QWidget
 
+from ui.components import ActionButton
 from ui.components.muAnalysisComponents.AnalysisText import AnalysisText
-from ui.components.muAnalysisComponents.GeneralButton import GeneralButton
 
 
 class AnalysisPlot(QWidget):
@@ -20,9 +18,11 @@ class AnalysisPlot(QWidget):
 
         # Setting up the buttons
         self.resize = None
-        self.toggle_btn = GeneralButton(
-            "Revert", lambda: self.revert(), parent=self)
-        self.toggle_btn.set_width(100)
+        self.toggle_btn = ActionButton(
+            "Revert", parent=self)
+        self.toggle_btn.clicked.connect(lambda: self.revert())
+        self.toggle_btn.setFixedWidth(100)
+        self.toggle_btn.setFixedHeight(40)
         self.toggle_btn.hide()
         self.layout.addWidget(self.toggle_btn)
 
@@ -37,7 +37,7 @@ class AnalysisPlot(QWidget):
         Returns: None
         """
         self.canvas = AnalysisText.create_prompt(
-            "Press Load File to View Data")
+            "Select a file to begin the analysis")
         self.layout.addWidget(self.canvas, alignment=Qt.AlignCenter)
 
     def set_resize(self, button):

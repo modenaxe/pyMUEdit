@@ -1,9 +1,12 @@
 import os
-from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QHBoxLayout
-from PyQt5.QtGui import QPixmap
+
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QSizePolicy
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout,
+                             QWidget)
+
 from ui.components.CircleButton import CircleButton
+
 
 class ImageSlider(QWidget):
     def __init__(self):
@@ -12,14 +15,24 @@ class ImageSlider(QWidget):
         # image path
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.images = {
-            "step1": os.path.abspath(os.path.join(current_dir, "../../public/WechatIMG1059.png")),
-            "step2": os.path.abspath(os.path.join(current_dir, "../../public/WechatIMG1065.jpg")),
-            "step3": os.path.abspath(os.path.join(current_dir, "../../public/WechatIMG1072.jpg")),
+            "step1": os.path.abspath(
+                os.path.join(
+                    current_dir,
+                    "../../public/WechatIMG1059.png")),
+            "step2": os.path.abspath(
+                os.path.join(
+                    current_dir,
+                    "../../public/WechatIMG1065.jpg")),
+            "step3": os.path.abspath(
+                os.path.join(
+                    current_dir,
+                    "../../public/WechatIMG1072.jpg")),
         }
 
         self.image_label = QLabel("Let's start\nClick button show image")
         self.image_label.setAlignment(Qt.AlignCenter)
-        self.image_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.image_label.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         # The list of all buttons
         self.buttons = []
@@ -31,9 +44,14 @@ class ImageSlider(QWidget):
             button = CircleButton(diameter=15)
             self.buttons.append(button)
             button.setToolTip(label)
-            button.clicked.connect(lambda _, p=path, btn=button: self.on_button_clicked(p, btn)) 
+            button.clicked.connect(
+                lambda _,
+                p=path,
+                btn=button: self.on_button_clicked(
+                    p,
+                    btn))
             button_layout.addWidget(button)
-            
+
         layout = QVBoxLayout(self)
         layout.addWidget(self.image_label)
         layout.addLayout(button_layout)
@@ -48,13 +66,18 @@ class ImageSlider(QWidget):
                 self.image_label.setText("fail to load image")
             else:
                 label_size = self.image_label.size()
-                scaled_pixmap = pixmap.scaled(label_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                scaled_pixmap = pixmap.scaled(
+                    label_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 self.image_label.setPixmap(scaled_pixmap)
+
     def resizeEvent(self, event):
         if not self.image_label.pixmap():
             return
         pixmap = self.image_label.pixmap()
         if pixmap:
             label_size = self.image_label.size()
-            scaled = pixmap.scaled(label_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            scaled = pixmap.scaled(
+                label_size,
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation)
             self.image_label.setPixmap(scaled)

@@ -1,6 +1,7 @@
 from PyQt5.QtCore import QThread, pyqtSignal, QObject
-from core.utils.decomposition.remove_duplicates_between_arrays import remove_duplicates_between_arrays
+from core.utils.postprocessing.remove_duplicates_between_arrays import remove_duplicates_between_arrays
 import numpy as np
+from core.logger import logger
 
 class duplicates_between_grids_worker(QThread):
     progress_changed = pyqtSignal(int, str) 
@@ -16,7 +17,7 @@ class duplicates_between_grids_worker(QThread):
 
     def cancel(self):
         self._cancelled = True
-        print("Click cancel")
+        logger.debug("Click cancel")
 
     def run(self):
         try:
@@ -59,14 +60,14 @@ class duplicates_between_grids_worker(QThread):
             )
             
             if self._cancelled:
-                print("Batch processing interruption!")
+                logger.info("Duplicates-between-grids worker cancelled by user.")
                 return
             # Remove duplicates between arrays
             unique_discharge_times, unique_pulse_train, unique_muscle = remove_duplicates_between_arrays(
                 all_pulse_trains, all_discharge_times, muscle, round(fsamp / 40), 0.00025, 0.3, fsamp  # Duplicate threshold
             )
             if self._cancelled:
-                print("Batch processing interruption!")
+                logger.info("Duplicates-between-grids worker cancelled by user.")
                 return
 
             self.progress_changed.emit(
@@ -118,7 +119,7 @@ class duplicates_between_grids_worker(QThread):
                     self.MUedition["edition"]["Dischargetimes"] = self.original_data[1]
                     self.MUedition["edition"]["silval"] = self.original_data[2]
                     self.MUedition["edition"]["silvalcon"] = self.original_data[3]
-                    print("Batch processing interruption!")
+                    logger.warning("Batch processing interruption!")
                     return
 
             # Update the data
@@ -129,4 +130,5 @@ class duplicates_between_grids_worker(QThread):
             self.finished.emit()
 
         except Exception as e:
+            logger.exception("Error while removing duplicates between arrays.")
             self.error.emit(str(e))

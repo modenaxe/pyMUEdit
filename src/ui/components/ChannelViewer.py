@@ -1,11 +1,15 @@
 import math
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QCheckBox, QHBoxLayout
-from PyQt5.QtCore import Qt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
+
 import matplotlib.cm as cm
+import numpy as np
+import pyqtgraph as pg
+from matplotlib.backends.backend_qt5agg import \
+    FigureCanvasQTAgg as FigureCanvas
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from ui.components.ElectrodeGrid import ElectrodeGrid
+
 
 class ChannelViewer(QWidget):
     def __init__(self, emg_obj, channel_group_change, parent=None):
@@ -18,23 +22,21 @@ class ChannelViewer(QWidget):
         self.num_indices = 8
         self.rejected_channels = []
         self.channel_group_change = channel_group_change
+        self.subsample_step = 10
 
         self.layout = QHBoxLayout()
+        self.layout.setContentsMargins(40, 0, 50, 30)
 
-        # Matplotlib canvas for plotting
-        self.figure = Figure(figsize=(8, 3), dpi=100)
-        self.canvas = FigureCanvas(self.figure)
-        self.figure.tight_layout()
-        self.layout.addWidget(self.canvas, stretch=5)
-
-        # Create checkbox list
-        self.checkBoxList = []
-        self.checkbox_layout = QVBoxLayout()
-        self.checkbox_layout.setContentsMargins(0, 55, 0, 55)
-        self.layout.addLayout(self.checkbox_layout)
+        # Use PyQt graph for plotting
+        self.plot_widget = pg.GraphicsLayoutWidget()
+        self.plot_widget.setBackground("w")
+        self.layout.addWidget(self.plot_widget, stretch=5)
 
         # Electrode grid
-        self.electrode_grid = ElectrodeGrid(self.emg_obj, self.channel_indices, self.set_channel_range_from_index)
+        self.electrode_grid = ElectrodeGrid(
+            self.emg_obj,
+            self.channel_indices,
+            self.set_channel_range_from_index)
         self.layout.addWidget(self.electrode_grid)
 
         self.setLayout(self.layout)
@@ -51,60 +53,54 @@ class ChannelViewer(QWidget):
         self.channel_group_change(math.floor(index / self.num_indices))
 
     def update_plot(self):
-        self.figure.clear()
-        self.clear_checkbox()
-        colours = get_n_colours(self.num_indices)
+        self.plot_widget.clear()
 
-        # Create one subplot for each channel in the index range
         n = len(self.channel_indices)
+        colours = get_n_colours(n)
+
+        self.curves = []
+        self.plot_items = []
+
+        # Sampling frequency in Hz, number of samples per second
+        fs = self.emg_obj.signal_dict.get("fsamp")
+
         for i, index in enumerate(self.channel_indices):
-            ax = self.figure.add_subplot(n, 1, i + 1)
-            ax.plot(self.entire_emg_data[index], linewidth=0.8, color=colours[i])
-            ax.set_ylabel(f"{index + 1}", fontsize=20, labelpad=25, rotation=0, va='center')
-            ax.grid(True)
-            ax.set_yticklabels([])
-            # Hide x-axis label (except for last plot)
+            p = self.plot_widget.addPlot(row=i, col=0)
+            # Show x axis grid lines only
+            p.showGrid(x=True, y=False, alpha=5.0)
+            # Channel numbers as y axis label
+            p.setLabel('left', f"{index + 1}", **
+                       {"color": "black", "font-size": "12pt"})
+            p.getAxis('left').setTicks([])  # Hide y axis ticks
+
+            # Plot data
+            y = self.entire_emg_data[index]
+            x = np.arange(len(y)) / fs  # Time in seconds
+
+            # Subsample every nth point to improve performance and use splicing
+            # to keep every nth sample
+            y_sub = y[::self.subsample_step]
+            x_sub = x[::self.subsample_step]
+
+            curve = p.plot(
+                x_sub, y_sub, pen=pg.mkPen(
+                    color=colours[i], width=1))
+            self.curves.append(curve)
+            self.plot_items.append(p)
+
+            # Hide x axis labels for all but last plot
             if i < n - 1:
-                ax.set_xticklabels([])
+                p.getAxis("bottom").setStyle(showValues=False)
+            else:
+                p.setLabel('bottom', "Time", **
+                           {"color": "black", "font-size": "12pt"})
 
-            # Add title for first plot only
-            if i == 0:
-                ax.set_title(f"Channels {self.channel_indices[0] + 1}-{self.channel_indices[len(self.channel_indices) - 1] + 1}", fontsize=20, pad=15)
+        # Place 'Channels Title' above the first plot
+        first_plot = self.plot_items[0]
+        first_plot.setTitle(
+            f"Channels {self.channel_indices[0] + 1}-{self.channel_indices[-1] + 1}", )
 
-            # Add a corresponding checkbox
-            checkbox = QCheckBox()
-            checkbox.setStyleSheet("QCheckBox::indicator"
-                                   "{"
-                                   "width: 40px;"
-                                   "height: 40px;"
-                                   "}")
-
-            # Handle persistance (if box was previously unchecked, remain unchecked)
-            if index not in self.rejected_channels:
-                checkbox.setChecked(True)
-            self.checkbox_layout.addWidget(checkbox)
-            self.checkBoxList.append(checkbox)
-            # Connect the checkbox state change to the checkbox_change function
-            checkbox.stateChanged.connect(lambda state, idx=index: self.checkbox_change(state, idx))
-
-        ax.set_xlabel("Time", fontsize=20, labelpad=15)
-        self.canvas.draw()
-
-    def clear_checkbox(self):
-        for checkbox in self.checkBoxList:
-            self.checkbox_layout.removeWidget(checkbox)
-
-        self.checkBoxList.clear()
-
-    def checkbox_change(self, state, index):
-        # TODO ensure the rejected_channels gets reflected in the decomposition algorithm
-        if state == Qt.Checked:
-            if index in self.rejected_channels:
-                self.rejected_channels.remove(index)
-        else:
-            # Add the channel index to the rejected_channels array
-            self.rejected_channels.append(index)
 
 def get_n_colours(n):
-    cmap = cm.get_cmap('hsv')
-    return [cmap(i / n) for i in range(n)]
+    cmap = pg.colormap.get("hsv", source="matplotlib")
+    return [cmap.map(i / n)[:3] for i in range(n)]

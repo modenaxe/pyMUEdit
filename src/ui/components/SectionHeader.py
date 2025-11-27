@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from .CleanTheme import CleanTheme
 
@@ -21,7 +21,7 @@ class SectionHeader(QWidget):
 
         # Create title label
         self.title_label = QLabel(title)
-        self.title_label.setFont(QFont("Segoe UI", 14, QFont.Normal))
+        self.title_label.setFont(QFont("Segoe UI", 12, QFont.Normal))
         self.title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
 
         self.layout.addWidget(self.title_label)

@@ -1,3 +1,5 @@
+[![Open in Visual Studio Code](https://classroom.github.com/assets/open-in-vscode-2e0aaae1b6195c2367325f4f02e2d04e9abb55f0b24a779b69b11b9e10269abc.svg)](https://classroom.github.com/online_ide?assignment_repo_id=20546479&assignment_repo_type=AssignmentRepo)
+
 # HDEMG Analysis Tool 🛑
 
 ⚠️ This project is a work in progress and should not be used for research until the first official release ⚠️
@@ -119,6 +121,43 @@ cd tests
 python testMUeditOutput.py
 ```
 
+### Manual Tesing Coverage
+Due to the GUI-intensive nature of pyMUEdit and limitations in automated testing for pyQt5 applications, we have developed comprehensive manual system testing procedures. The following sections detail our testing methodology, coverage and execution steps.
+
+**Complete Manual Testing Documentation:** [Manual_Testing_Documentation.pdf]/docs/Manual_Testing_Documentation.pdf
+
+### Test Categories
+Our manual testing suite covers the following areas:
+
+1. **Import Data Tab Tests** - File loafing, configuration, segmentation and channel management
+2. **Decomposition Tab Test** - Algorithm configuration, execution and result validation
+3. **Manual Editing Tab Test** - Motor unit editing and quality control
+4. **MU Analysis Tab Tests** - Force analysis, motor unit properties and visualisation.
+5. **End-to-End Testing** - Exporting and loading sessions.
+
+## Test Execution Requirements
+
+**Prerequisites:**
+- Python 3.13+ with all dependencies installed (`pip install -r requirements.txt`)
+- Test data files available in `/data/` directory (e.g., `trial1_20MVC.otb+`)
+- Application launched via `python src/main.py`
+
+**Environment Setup:**
+
+```bash
+# Navigate to project directory
+cd /path/to/pyMUEdit
+
+# Activate virtual environment
+source .venv/bin/activate  # Linux/macOS
+# or
+.venv\Scripts\activate     # Windows
+
+# Run application
+cd src
+python main.py
+```
+
 ## Application Features
 
 ### Importing Data
@@ -152,6 +191,8 @@ Segment session provides the capability to inspect the imported EMG recording an
 
 Note: All segmented files will be populated in the **'Recent Files'** panel for easy access.
 
+4. When performing decomposition on segmented files, uncheck the Use Threshold checkbox in the parameters
+
 
 #### Channel Viewer
 Channel Viewer provides an interactive interface for exploring and managing signal channels in the HD-EMG dataset.\
@@ -169,6 +210,45 @@ It provides you with the following features:
 
 <img src="./src/public/channel-viewer.jpg" alt="Manual Segment Selection" width="500" height="400">
 
+#### Session Handling
+Whenever a new dataset file is imported, the system creates a new session. This session keeps track of all work performed on the dataset. There is one session per dataset file. If a readin file is segmented, all segmented files are associated with the same session.
+
+Each file can progress through the app’s full workflow:
+
+readin → processed → decomposed → edited → analysed
+
+At every stage, the system records a log history. These logs capture:
+- All parameters used during decomposition
+- All edit actions performed in the MU Editing tab
+
+#### Export Session
+The Export Session button packages the entire session—including all associated files and their log histories—into a .zip file.
+
+Note:
+Before exporting, ensure that you use Save or Save As in the Editing tab. Any unsaved changes will not be included in the export.
+
+The current version of the app does not include files for the Analysis tab.
+
+#### Load Session
+The Load Session button imports a .zip archive previously created with the Export Session feature. When loaded:
+- All files are restored into the app
+- All parameters from the .json metadata file are applied
+
+Due to how the Editing tab handles importing, the edited files are not restored into the app.
+
+#### Logging file
+All application logs are written to:
+
+``` bash
+core/logs/app.log
+```
+Each log entry is tagged with its level:
+- INFO
+- DEBUG
+- WARNING
+- ERROR
+
+During development, developers may enable console output. This setting controls the minimum log level displayed (default is INFO) and can be adjusted as needed.
 
 ## Dockerized Application (CPU ONLY)
 
@@ -222,28 +302,37 @@ The Docker setup mounts a `data` directory from your host machine to `/app/data`
 
 ```
 pyMUEdit/
-├── data/                  # Data directory mounted into the container
-├── docs/                  # Documentation
-├── src/                   # Source code
-│   ├── app/               # Main application modules
+├── data/                     # Data directory mounted into the container
+├── docs/                     # Documentation
+├── src/                      # Source code
+│   ├── app/                  # Main application modules
+|   |   ├── muAnalysisFunctions/
+|   |   ├── muEditFunctions/
 │   │   ├── DecompositionApp.py
 │   │   ├── DownloadConfirmation.py
 │   │   ├── ExportConfirm.py
 │   │   ├── ExportResults.py
-│   │   ├── HDEMGDashboard.py
 │   │   ├── ImportDataWindow.py
 │   │   └── MUeditManual.py
-│   ├── core/              # Core functionality
-│   ├── public/            # Static resources
-│   ├── ui/                # UI components
-│   ├── workers/           # Background worker threads
-│   └── main.py            # Main entry point
-├── docker-compose.yml     # Docker Compose configuration
-├── Dockerfile             # Docker container definition
-├── requirements.txt       # Python dependencies
-├── run-hdemg.bat          # Windows run script
-├── run-hdemg.sh           # Linux/macOS run script
-└── supervisord.conf       # Supervisor configuration
+│   ├── assets/               # Static Assets and Resources
+│   ├── core/                 # Core functionality
+|   |   ├── database/         # Database utilities
+|   |   ├── muAnalysisCore/   # Analysis core algorithms
+|   |   ├── scd/              # Swarm Contrastive Decomposition
+|   |   ├── utils/            # Utility functions
+|   |   ├── EmgDecomposition.py
+|   |   ├── logger.py
+│   ├── public/               # Static resources
+│   ├── ui/                   # UI components
+│   ├── workers/              # Background worker threads
+│   └── main.py               # Main entry point
+├── tests/                    # Test Suite
+├── docker-compose.yml        # Docker Compose configuration
+├── Dockerfile                # Docker container definition
+├── requirements.txt          # Python dependencies
+├── run-hdemg.bat             # Windows run script
+├── run-hdemg.sh              # Linux/macOS run script
+└── supervisord.conf          # Supervisor configuration
 ```
 
 ### Stopping the Application
@@ -428,3 +517,5 @@ UNSW Capstone 2025 teams:
   - T11A-BANANA (import and decomposition tab)
   - T09A-ALMOND (manual decomposition tab)
   - W18A-BANANA (analysis tab)
+- Team 25t3:
+   - W14B-BANANA (ui consolidation, cross-tab integration, database, session management, logging system, openHDEMG integration and code organisation)

@@ -1,23 +1,18 @@
 import sys
-from PyQt5.QtWidgets import (
-    QApplication,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QLabel,
-    QFrame,
-    QComboBox,
-    QStyle,
-    QStackedWidget,
-)
+
+from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtWidgets import (QApplication, QComboBox, QFrame, QHBoxLayout,
+                             QLabel, QPushButton, QStackedWidget, QStyle,
+                             QVBoxLayout, QWidget)
+
+from core.logger import logger
 
 
 def get_icon(standard_icon):
     """Helper function to get standard icons."""
-    return QApplication.style().standardIcon(getattr(QStyle, standard_icon))  # type:ignore
+    return QApplication.style().standardIcon(
+        getattr(QStyle, standard_icon))  # type:ignore
 
 
 def setup_ui(window):
@@ -44,7 +39,8 @@ def setup_ui(window):
     # Add footer with last export info
     window.footer_label = QLabel("Last export: January 15, 2025 at 14:30")
     window.footer_label.setFont(QFont("Arial", 9))
-    window.footer_label.setStyleSheet(f"color: {window.colors['text_secondary']}; border: none; padding-top: 10px;")
+    window.footer_label.setStyleSheet(
+        f"color: {window.colors['text_secondary']}; border: none; padding-top: 10px;")
     window.footer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
     main_layout.addWidget(window.footer_label)
 
@@ -58,9 +54,11 @@ def add_title_section(window, main_layout):
     window.main_title_label.setFont(QFont("Arial", 16, QFont.Bold))
     window.main_title_label.setStyleSheet("color: #333333; border: none;")
 
-    window.main_subtitle_label = QLabel("Export your motor unit firing patterns data")
+    window.main_subtitle_label = QLabel(
+        "Export your motor unit firing patterns data")
     window.main_subtitle_label.setFont(QFont("Arial", 10))
-    window.main_subtitle_label.setStyleSheet("color: #777777; border: none; margin-bottom: 5px;")
+    window.main_subtitle_label.setStyleSheet(
+        "color: #777777; border: none; margin-bottom: 5px;")
 
     title_layout.addWidget(window.main_title_label)
     title_layout.addWidget(window.main_subtitle_label)
@@ -117,14 +115,16 @@ def create_export_setup_section(widget, colors):
     # Add format selection dropdown
     format_label = QLabel("Select File Format")
     format_label.setFont(QFont("Arial", 9, QFont.Bold))
-    format_label.setStyleSheet(f"color: {colors['text_primary']}; margin-bottom: -5px;")
+    format_label.setStyleSheet(
+        f"color: {colors['text_primary']}; margin-bottom: -5px;")
     card_layout.addWidget(format_label)
 
     format_combo = QComboBox()
     format_combo.setObjectName("formatCombo")
-    format_combo.addItems(
-        [".csv (Comma Separated Values)", ".mat (MATLAB)", ".xlsx (Excel Spreadsheet)", ".txt (Text File)"]
-    )
+    format_combo.addItems([".csv (Comma Separated Values)",
+                           ".mat (MATLAB)",
+                           ".xlsx (Excel Spreadsheet)",
+                           ".txt (Text File)"])
     format_combo.setPlaceholderText("Choose an export format...")
     format_combo.setCurrentIndex(-1)
     card_layout.addWidget(format_combo)
@@ -141,12 +141,23 @@ def create_export_setup_section(widget, colors):
     data_details_layout.addWidget(data_title_label)
 
     data_details_layout.addWidget(
-        create_info_item(widget, get_icon("SP_FileIcon"), "Motor Unit Firing Patterns", colors)
-    )
+        create_info_item(
+            widget,
+            get_icon("SP_FileIcon"),
+            "Motor Unit Firing Patterns",
+            colors))
     data_details_layout.addWidget(
-        create_info_item(widget, get_icon("SP_DialogApplyButton"), "Recording Duration: 120s", colors)
-    )
-    data_details_layout.addWidget(create_info_item(widget, get_icon("SP_ComputerIcon"), "Units Detected: 12", colors))
+        create_info_item(
+            widget,
+            get_icon("SP_DialogApplyButton"),
+            "Recording Duration: 120s",
+            colors))
+    data_details_layout.addWidget(
+        create_info_item(
+            widget,
+            get_icon("SP_ComputerIcon"),
+            "Units Detected: 12",
+            colors))
     card_layout.addWidget(data_details_frame)
 
     # Add export button
@@ -219,16 +230,19 @@ def create_recent_exports_section(widget, colors):
 
     if not recent_exports_data:
         no_exports_label = QLabel("No recent exports found.")
-        no_exports_label.setStyleSheet(f"color: {colors['text_secondary']}; font-style: italic; padding: 10px;")
+        no_exports_label.setStyleSheet(
+            f"color: {colors['text_secondary']}; font-style: italic; padding: 10px;")
         no_exports_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         card_layout.addWidget(no_exports_label)
     else:
         for export_data in recent_exports_data:
             card_layout.addWidget(
                 create_recent_export_item(
-                    widget, export_data["icon"], export_data["filename"], export_data["metadata"], colors
-                )
-            )
+                    widget,
+                    export_data["icon"],
+                    export_data["filename"],
+                    export_data["metadata"],
+                    colors))
 
     return recent_card
 
@@ -297,7 +311,8 @@ if __name__ == "__main__":
             super().__init__()
             # Add dummy handlers
             self.handle_export_request = lambda: print("Export requested")
-            self.handle_download_recent = lambda filename: print(f"Download: {filename}")
+            self.handle_download_recent = lambda filename: print(
+                f"Download: {filename}")
 
     test_widget = TestWidget()
     setup_ui(test_widget)
@@ -306,15 +321,19 @@ if __name__ == "__main__":
     test_widget.setup_view = create_export_setup_widget(test_widget)
 
     # Connect the export button manually
-    test_widget.setup_view.export_button.clicked.connect(test_widget.handle_export_request)
+    test_widget.setup_view.export_button.clicked.connect(
+        test_widget.handle_export_request)
 
     # Connect download buttons
-    recent_items = test_widget.setup_view.findChildren(QFrame, "recentItemSetup")
+    recent_items = test_widget.setup_view.findChildren(
+        QFrame, "recentItemSetup")
     for item in recent_items:
         download_btn = item.findChild(QPushButton, "downloadBtnSetup")
         if download_btn:
             filename = download_btn.property("filename")
-            download_btn.clicked.connect(lambda checked=False, fn=filename: test_widget.handle_download_recent(fn))
+            download_btn.clicked.connect(
+                lambda checked=False,
+                fn=filename: test_widget.handle_download_recent(fn))
 
     test_widget.stacked_widget.addWidget(test_widget.setup_view)
 

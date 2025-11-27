@@ -1,17 +1,18 @@
-from PyQt5.QtGui import QResizeEvent
-from PyQt5.QtWidgets import (
-    QWidget, QSlider, QHBoxLayout, QLabel, QStyleOptionSlider, QStyleOptionSlider, QStyle
-)
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QResizeEvent
+from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QSlider, QStyle,
+                             QStyleOptionSlider, QWidget)
+
 
 class GoodSlider(QWidget):
     """A styled horizontal slider with a value label display"""
+
     def __init__(self,
                  orientation=Qt.Horizontal,
                  minimum=0,
                  maximum=100,
                  default=50,
-                 display_value = True,
+                 display_value=True,
                  on_value_changed=None,
                  parent=None):
         """
@@ -40,7 +41,7 @@ class GoodSlider(QWidget):
             def keyPressEvent(self, event):
                 if event.key():
                     event.ignore()
-                    
+
         self.slider = NewSlider(orientation)
         self.slider.setMinimum(minimum)
         self.slider.setMaximum(maximum)
@@ -65,7 +66,7 @@ class GoodSlider(QWidget):
                 margin: 0 -3px;
             }
             QSlider::sub-page:horizontal {
-                background: #007bff;
+                background: #555555;
                 border-radius: 4px;
             }
             QSlider::add-page:horizontal {
@@ -91,8 +92,6 @@ class GoodSlider(QWidget):
                 border-color: #0056b3;
             }
         """)
-        
-
 
         layout.addWidget(self.slider)
         self.value_label = QLabel(f"{default}", self)
@@ -104,7 +103,7 @@ class GoodSlider(QWidget):
         self.value_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         layout.addWidget(self.value_label, alignment=Qt.AlignVCenter)
         self.value_label.setHidden(self.display_value)
-        
+
         self.setLayout(layout)
 
     def _on_value_changed(self, val):
@@ -112,19 +111,19 @@ class GoodSlider(QWidget):
 
         if callable(self.callback):
             self.callback(val)
-    
+
     def set_slider_value(self, val):
         self.slider.setValue(val)
-    
+
     def get_slider_value(self):
         return self.slider.value()
-    
+
     def slider_increase(self):
         self.slider.setValue(self.slider.value() + 1)
-    
+
     def slider_decrease(self):
         self.slider.setValue(self.slider.value() - 1)
-    
+
     # show or hide the slider value
     def display_value(self, display_value):
         self.value_label.setHidden(not display_value)

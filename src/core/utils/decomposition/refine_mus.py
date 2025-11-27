@@ -1,9 +1,9 @@
 import numpy as np
 import scipy
 from sklearn.cluster import KMeans
-from core.utils.decomposition.extend_emg import extend_emg
+from core.utils.preprocessing.extend_emg import extend_emg
 from core.utils.decomposition.get_spikes import maxk
-
+from core.logger import logger
 
 def refine_mus(signal, signal_mask, pulse_trains_n_1, discharge_times_n_1, fsamp):
     """
@@ -37,6 +37,6 @@ def refine_mus(signal, signal_mask, pulse_trains_n_1, discharge_times_n_1, fsamp
         spikes_ind = np.argmax(kmeans.cluster_centers_)
         discharge_times_n[mu] = peaks[np.where(kmeans.labels_ == spikes_ind)]
 
-    print(f"Refined {len(pulse_trains_n_1)} MUs")
+    logger.debug(f"Refined {len(pulse_trains_n_1)} MUs")
 
     return pulse_trains_n, discharge_times_n

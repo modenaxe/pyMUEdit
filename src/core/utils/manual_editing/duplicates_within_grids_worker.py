@@ -1,5 +1,6 @@
 from PyQt5.QtCore import QThread, pyqtSignal, QObject
-from core.utils.decomposition.remove_duplicates import remove_duplicates
+from core.utils.postprocessing.remove_duplicates import remove_duplicates
+from core.logger import logger
 import numpy as np
 
 class duplicates_within_grids_worker(QThread):
@@ -16,7 +17,7 @@ class duplicates_within_grids_worker(QThread):
 
     def cancel(self):
         self._cancelled = True
-        print("Click cancel")
+        logger.debug("Click cancel")
 
     def run(self):
         try:
@@ -36,7 +37,7 @@ class duplicates_within_grids_worker(QThread):
                     self.MUedition["edition"]["Dischargetimes"] = self.original_data[1]
                     self.MUedition["edition"]["silval"] = self.original_data[2]
                     self.MUedition["edition"]["silvalcon"] = self.original_data[3]
-                    print("Batch processing interruption!")
+                    logger.warning("Batch processing interruption!")
                     return
                 percent = int(array_idx / total_arrays * 100)
                 self.progress_changed.emit(
@@ -102,4 +103,5 @@ class duplicates_within_grids_worker(QThread):
             self.finished.emit()
 
         except Exception as e:
+            logger.exception("Error while removing duplicates within arrays")
             self.error.emit(str(e))

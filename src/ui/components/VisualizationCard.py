@@ -1,8 +1,12 @@
-from PyQt5.QtWidgets import QFrame, QVBoxLayout, QWidget, QLabel, QApplication, QSizePolicy, QGraphicsDropShadowEffect
-from PyQt5.QtGui import QFont, QIcon, QPixmap, QColor, QCursor
-from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtSvg import QSvgWidget
 import os
+
+from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QColor, QCursor, QFont, QIcon, QPixmap
+from PyQt5.QtSvg import QSvgWidget
+from PyQt5.QtWidgets import (QApplication, QFrame, QGraphicsDropShadowEffect,
+                             QLabel, QSizePolicy, QVBoxLayout, QWidget)
+
+from core.logger import logger
 
 from .CleanTheme import CleanTheme
 
@@ -77,7 +81,7 @@ class VisualizationCard(QFrame):
         if icon:
             icon = os.path.join("public", f"{icon}.svg")
             if not os.path.exists(icon):
-                print(f"Warning: Icon {icon} not found")
+                logger.warning(f"Icon {icon} not found")
                 icon = None
 
             icon_label = QLabel()
@@ -96,9 +100,10 @@ class VisualizationCard(QFrame):
                 else:
                     icon_label.setPixmap(
                         QPixmap(icon).scaled(
-                            32, 32, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
-                        )
-                    )
+                            32,
+                            32,
+                            Qt.AspectRatioMode.KeepAspectRatio,
+                            Qt.TransformationMode.SmoothTransformation))
                     icon_layout.addWidget(icon_label)
             elif isinstance(icon, int) or (hasattr(icon, "__int__") and not isinstance(icon, bool)):
                 std_icon = QApplication.style().standardIcon(icon)  # type:ignore
@@ -124,7 +129,8 @@ class VisualizationCard(QFrame):
         if title:
             self.title_label = QLabel(title)
             self.title_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
-            self.title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+            self.title_label.setStyleSheet(
+                f"color: {CleanTheme.TEXT_PRIMARY};")
             self.title_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
             self.layout.addWidget(self.title_label)
 
@@ -132,13 +138,14 @@ class VisualizationCard(QFrame):
         if date:
             self.date_label = QLabel(date)
             self.date_label.setFont(QFont("Segoe UI", 9))
-            self.date_label.setStyleSheet(f"color: {CleanTheme.TEXT_SECONDARY};")
+            self.date_label.setStyleSheet(
+                f"color: {CleanTheme.TEXT_SECONDARY};")
             self.date_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
             self.layout.addWidget(self.date_label)
 
         # Make card interactive
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        
+
         # Store original mousePressEvent and override
         self._original_mouse_press = self.mousePressEvent
         self.mousePressEvent = self.on_card_click
@@ -154,7 +161,7 @@ class VisualizationCard(QFrame):
         self.date = date
         if hasattr(self, 'date_label'):
             self.date_label.setText(date)
-            
+
     def set_state_path(self, state_path):
         """Set the state path for loading the visualization."""
         self.state_path = state_path
@@ -178,7 +185,9 @@ class VisualizationCard(QFrame):
                 # If we can't import HDEMGDashboard (likely due to circular imports)
                 # Just go up the parent chain
                 parent = parent.parent()
-        
+
         # Call original mousePressEvent if it exists
-        if hasattr(self, '_original_mouse_press') and callable(self._original_mouse_press):
+        if hasattr(
+                self, '_original_mouse_press') and callable(
+                self._original_mouse_press):
             self._original_mouse_press(event)

@@ -1,8 +1,9 @@
 import os
 
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, QCheckBox, QScrollArea
-from PyQt5.QtGui import QFont, QPixmap, QColor, QPainter, QPen
-from PyQt5.QtCore import Qt, QRectF
+from PyQt5.QtCore import QRectF, Qt
+from PyQt5.QtGui import QColor, QFont, QPainter, QPen, QPixmap
+from PyQt5.QtWidgets import (QCheckBox, QHBoxLayout, QLabel, QScrollArea,
+                             QSizePolicy, QVBoxLayout, QWidget)
 
 from ui.components.ActionButton import ActionButton
 from ui.components.CleanCard import CleanCard
@@ -13,21 +14,38 @@ from ui.components.FormDropdown import FormDropdown
 from ui.components.FormInput import FormInput
 from ui.components.FormSpinBox import FormSpinBox
 
+
 class InputPanel(CollapsiblePanel):
-    def __init__(self, title, gridname, musclename, checkbox_callback, parent=None):
+    def __init__(
+            self,
+            title,
+            gridname,
+            musclename,
+            checkbox_callback,
+            parent=None):
         self.checkbox = QCheckBox()
         self.checkbox_callback = checkbox_callback
         self.title = title
 
-        # connect the state change of the checkbox to the lamp colour change functionality
+        # connect the state change of the checkbox to the lamp colour change
+        # functionality
         self.checkbox.stateChanged.connect(self.checkbox_changed)
         super().__init__(title, checkbox=self.checkbox, parent=parent)
 
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
-        gridnames = ["GR04MM1305", "ELSCH064NM2", "GR08MM1305", "GR10MM0808", "Thin film", "4-wire needle", "Myomatrix Monopolar", "other"]
+        gridnames = [
+            "GR04MM1305",
+            "ELSCH064NM2",
+            "GR08MM1305",
+            "GR10MM0808",
+            "Thin film",
+            "4-wire needle",
+            "Myomatrix Monopolar",
+            "other"]
         self.gridname_dropdown = FormDropdown("Array Type", gridnames)
-        self.gridname_dropdown.dropdown.setCurrentIndex(gridnames.index(gridname))
+        self.gridname_dropdown.dropdown.setCurrentIndex(
+            gridnames.index(gridname))
         self.add_widget(self.gridname_dropdown)
 
         self.muscle_input = FormInput("Muscle Name")
@@ -41,7 +59,8 @@ class InputPanel(CollapsiblePanel):
         else:
             self.disable_panel()
 
-    # disable the Input Panel (but not the checkbox to make it still interactable)
+    # disable the Input Panel (but not the checkbox to make it still
+    # interactable)
     def disable_panel(self):
         for child in self.content_widget.findChildren(QWidget):
             child.setEnabled(False)
@@ -50,11 +69,13 @@ class InputPanel(CollapsiblePanel):
         for child in self.content_widget.findChildren(QWidget):
             child.setEnabled(True)
 
+
 class QuattrocentoVisualisation(QLabel):
     def __init__(self, image_path, parent=None):
         super().__init__(parent)
         self.pixmap = QPixmap(image_path)
-        self.pixmap = self.pixmap.scaled(700, 500, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.pixmap = self.pixmap.scaled(
+            700, 500, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.setPixmap(self.pixmap)
         self.setFixedSize(self.pixmap.size())
         self.setScaledContents(True)
@@ -84,6 +105,7 @@ class QuattrocentoVisualisation(QLabel):
             painter.drawRoundedRect(lamp[0], 10, 10)
 
         painter.end()
+
 
 class ConfigurationPanel(QWidget):
     def __init__(self, emg_obj, parent=None):
@@ -116,9 +138,17 @@ class ConfigurationPanel(QWidget):
         left_layout.setSpacing(15)
 
         # signal range dropdown panel
-        self.splitter1 = InputPanel("Splitter #1", "GR04MM1305", "", self.checkbox_state_change)
+        self.splitter1 = InputPanel(
+            "Splitter #1",
+            "GR04MM1305",
+            "",
+            self.checkbox_state_change)
         self.splitter1.disable_panel()
-        self.splitter2 = InputPanel("Splitter #2", "GR04MM1305", "", self.checkbox_state_change)
+        self.splitter2 = InputPanel(
+            "Splitter #2",
+            "GR04MM1305",
+            "",
+            self.checkbox_state_change)
         self.splitter2.disable_panel()
         left_layout.addWidget(self.splitter1)
         left_layout.addWidget(self.splitter2)
@@ -141,27 +171,42 @@ class ConfigurationPanel(QWidget):
         page_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         middle_container.layout.addWidget(page_title)
 
-        image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "Quattrocento.jpg")
+        image_path = os.path.join(
+            os.path.dirname(
+                os.path.realpath(__file__)),
+            "Quattrocento.jpg")
         if not os.path.exists(image_path):
             raise FileExistsError("Quattrocento diagram not found")
 
         # create the quattrocento visualisation
         self.quattrocento_label = QuattrocentoVisualisation(image_path)
         # Create lamps for splitters 1 and 2
-        self.quattrocento_label.add_lamp("Splitter #1",
-                                         QRectF(22, 75, 315, 65), QColor(255, 0, 0, 100))
-        self.quattrocento_label.add_lamp("Splitter #2",
-                                         QRectF(365, 75, 315, 65), QColor(255, 0, 0, 100))
+        self.quattrocento_label.add_lamp(
+            "Splitter #1", QRectF(
+                22, 75, 315, 65), QColor(
+                255, 0, 0, 100))
+        self.quattrocento_label.add_lamp(
+            "Splitter #2", QRectF(
+                365, 75, 315, 65), QColor(
+                255, 0, 0, 100))
 
         # Create lamps for mixed inputs 1-4
-        self.quattrocento_label.add_lamp("Multiple Inputs #1",
-                                         QRectF(14, 243, 155, 40), QColor(255, 0, 0, 100))
-        self.quattrocento_label.add_lamp("Multiple Inputs #2",
-                                         QRectF(183, 243, 155, 40), QColor(255, 0, 0, 100))
-        self.quattrocento_label.add_lamp("Multiple Inputs #3",
-                                         QRectF(351, 243, 155, 40), QColor(255, 0, 0, 100))
-        self.quattrocento_label.add_lamp("Multiple Inputs #4",
-                                         QRectF(520, 243, 155, 40), QColor(255, 0, 0, 100))
+        self.quattrocento_label.add_lamp(
+            "Multiple Inputs #1", QRectF(
+                14, 243, 155, 40), QColor(
+                255, 0, 0, 100))
+        self.quattrocento_label.add_lamp(
+            "Multiple Inputs #2", QRectF(
+                183, 243, 155, 40), QColor(
+                255, 0, 0, 100))
+        self.quattrocento_label.add_lamp(
+            "Multiple Inputs #3", QRectF(
+                351, 243, 155, 40), QColor(
+                255, 0, 0, 100))
+        self.quattrocento_label.add_lamp(
+            "Multiple Inputs #4", QRectF(
+                520, 243, 155, 40), QColor(
+                255, 0, 0, 100))
         middle_container.layout.addWidget(self.quattrocento_label)
 
         # add number of channels input box
@@ -229,15 +274,22 @@ class ConfigurationPanel(QWidget):
         self.config_callback = config_callback
 
     def doneClicked(self):
-        inputs = [self.splitter1, self.splitter2, self.mul_input_1, self.mul_input_2, self.mul_input_3, self.mul_input_4]
+        inputs = [
+            self.splitter1,
+            self.splitter2,
+            self.mul_input_1,
+            self.mul_input_2,
+            self.mul_input_3,
+            self.mul_input_4]
 
         ports = [input.checkbox.isChecked() for input in inputs]
 
-        self.emg_obj["ngrid"] = sum([1 for port in ports if port == True])
+        self.emg_obj["ngrid"] = sum([1 for port in ports if port])
         self.emg_obj["gridname"] = [""] * self.emg_obj["ngrid"]
         self.emg_obj["muscle"] = [""] * self.emg_obj["ngrid"]
 
-        grids = [input.gridname_dropdown.dropdown.currentText() for input in inputs]
+        grids = [input.gridname_dropdown.dropdown.currentText()
+                 for input in inputs]
         muscles = [input.muscle_input.input.text() for input in inputs]
 
         active_port_indexes = [i for i in range(0, 6) if ports[i]]

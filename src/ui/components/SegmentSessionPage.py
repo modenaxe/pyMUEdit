@@ -1,22 +1,35 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSizePolicy, QLabel
-from PyQt5.QtGui import QFont
+import os
+
+import matplotlib.cm as cm
 import numpy as np
 import pandas as pd
-from core.utils.config_and_input.segmenttargets import segmenttargets
 import pyqtgraph as pg
-import matplotlib.cm as cm
 import scipy.io as sio
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import (QFrame, QHBoxLayout, QLabel, QSizePolicy,
+                             QVBoxLayout, QWidget)
 
+from core.database.database import upsert_file_versions
+from core.utils.data_processing.segmenttargets import segmenttargets
+from core.utils.session.convert_h5 import save_as_h5
 from ui.components import ActionButton
 from ui.components.CleanTheme import CleanTheme
 from ui.components.CollapsiblePanel import CollapsiblePanel
 from ui.components.FormDoubleSpinBox import FormDoubleSpinBox
 from ui.components.FormDropdown import FormDropdown
 from ui.components.FormSpinBox import FormSpinBox
+
 from .VisualizationPanel import VisualizationPanel
 
+
 class SegmentSessionPage(QWidget):
-    def __init__(self, filename, on_new_segment, on_done_clicked, parent=None):
+    def __init__(
+            self,
+            filename,
+            on_new_segment,
+            on_done_clicked,
+            raw_fileid,
+            parent=None):
         super().__init__(parent)
         self.rois = []
         self.coordinates = []
@@ -27,13 +40,23 @@ class SegmentSessionPage(QWidget):
         self.on_new_segment = on_new_segment
         self.on_done_clicked = on_done_clicked
 
-        # left panel
-        left_container = QWidget()
-        left_container.setMinimumWidth(250)
-        left_container.setMaximumWidth(300)
+        self.raw_fileid = raw_fileid
 
-        left_layout = QVBoxLayout(left_container)
-        left_layout.setContentsMargins(0, 0, 0, 0)
+        # left panel
+        left_sidebar = QFrame()
+        left_sidebar.setObjectName("leftSidebar")
+        left_sidebar.setStyleSheet(f"""
+            #leftSidebar {{
+                background-color: {CleanTheme.BG_CARD};
+                border: 1px solid {CleanTheme.BORDER};
+                border-radius: 8px;
+            }}
+        """)
+        left_sidebar.setMinimumWidth(250)
+        left_sidebar.setMaximumWidth(300)
+
+        left_layout = QVBoxLayout(left_sidebar)
+        left_layout.setContentsMargins(10, 10, 10, 10)
         left_layout.setSpacing(15)
 
         # signal visualisation plot
@@ -47,25 +70,30 @@ class SegmentSessionPage(QWidget):
         vis_panel = VisualizationPanel(plot_widget=self.vis_plot)
         vis_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        # reference signal dropdown panel
-        reference_signal_panel = CollapsiblePanel("Reference Signal")
-        self.reference_dropdown = FormDropdown("Select Reference Signal", self.generate_signal_reference_options())
-        reference_signal_panel.add_widget(self.reference_dropdown)
-        reference_signal_panel.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-        self.reference_dropdown.dropdown.currentIndexChanged.connect(self.on_reference_signal_change)
+        # segmentation options side panel
+        left_sidebar_title = QLabel("Segmentation Options")
+        left_sidebar_title.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        left_sidebar_title.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+        left_layout.addWidget(left_sidebar_title)
 
-        # segmentation parameters dropdown panel
-        segmentation_param_panel = CollapsiblePanel("Segmentation Parameters")
-        self.threshold_dropdown = FormDoubleSpinBox("Threshold", 0, 0, 1, 0.1)
-        self.threshold_dropdown.spinbox.valueChanged.connect(self.threshold_edit_field_value_changed)
-        segmentation_param_panel.add_widget(self.threshold_dropdown)
-        self.windows_dropdown = FormSpinBox("Windows", 0, 0, 10)
-        self.windows_dropdown.spinbox.valueChanged.connect(self.windows_edit_field_value_changed)
-        segmentation_param_panel.add_widget(self.windows_dropdown)
-        segmentation_param_panel.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.reference_dropdown = FormDropdown(
+            "Select Reference Signal",
+            self.generate_signal_reference_options())
+        left_layout.addWidget(self.reference_dropdown)
+        self.reference_dropdown.dropdown.currentIndexChanged.connect(
+            self.on_reference_signal_change)
 
-        left_layout.addWidget(reference_signal_panel)
-        left_layout.addWidget(segmentation_param_panel)
+        self.threshold_dropdown = FormDoubleSpinBox(
+            "Automatic (Select Threshold)", 0, 0, 1, 0.1)
+        self.threshold_dropdown.spinbox.valueChanged.connect(
+            self.threshold_edit_field_value_changed)
+        left_layout.addWidget(self.threshold_dropdown)
+
+        self.windows_dropdown = FormSpinBox(
+            "Manual (Select Windows)", 0, 0, 10)
+        self.windows_dropdown.spinbox.valueChanged.connect(
+            self.windows_edit_field_value_changed)
+        left_layout.addWidget(self.windows_dropdown)
 
         # concatenate button
         self.concat_button = ActionButton("Concatenate", primary=False)
@@ -98,7 +126,7 @@ class SegmentSessionPage(QWidget):
 
         # combine panels in layout
         content_layout = QHBoxLayout()
-        content_layout.addWidget(left_container, stretch=0)
+        content_layout.addWidget(left_sidebar, stretch=0)
         content_layout.addWidget(vis_panel, stretch=1)
         main_layout.addLayout(content_layout)
         self.setLayout(main_layout)
@@ -110,16 +138,21 @@ class SegmentSessionPage(QWidget):
 
     # Create the dropdown signal reference options
     def generate_signal_reference_options(self):
-        options = ["EMG amplitude"]
-        for name in self.file["signal"]["auxiliaryname"][0, 0]:
-            options.append(name.strip())
-
-        return options
+        return [
+            "EMG amplitude",
+            "AUX force",
+            "Target",
+            "Path"
+        ]
 
     def on_reference_signal_change(self):
+        self.windows_dropdown.spinbox.setValue(0)
+        self.threshold_dropdown.spinbox.setValue(0)
+
         self.vis_plot.clear()
         if self.reference_dropdown.dropdown.currentText() == "EMG amplitude":
             self.threshold_dropdown.setEnabled(False)
+            self.windows_dropdown.setEnabled(True)
             data = self.file["signal"][0, 0]["data"]
             fsamp = self.file["signal"][0, 0]["fsamp"][0, 0]
 
@@ -129,31 +162,52 @@ class SegmentSessionPage(QWidget):
             for i in range(n_rows):
                 abs_signal = np.abs(data[i, :])
                 abs_df = pd.DataFrame(abs_signal)
-                tmp[i, :] = abs_df.rolling(window=fsamp).mean().to_numpy().flatten()
+                tmp[i, :] = abs_df.rolling(
+                    window=fsamp).mean().to_numpy().flatten()
 
             self.file["signal"][0, 0]["target"] = np.mean(tmp, axis=0)
             self.file["signal"][0, 0]["path"] = np.mean(tmp, axis=0)
 
             # Plot each row of the data
             for row in tmp:
-                self.vis_plot.plot(row, pen=pg.mkPen(color=(128, 128, 128), width=0.25))
+                self.vis_plot.plot(
+                    row,
+                    pen=pg.mkPen(
+                        color=(
+                            128,
+                            128,
+                            128),
+                        width=0.25))
 
             # Plot the mean/target
-            self.vis_plot.plot(self.file["signal"][0, 0]["target"], pen=pg.mkPen(color=(217, 84, 26), width=2))
+            self.vis_plot.plot(self.file["signal"][0, 0]["target"], pen=pg.mkPen(
+                color=(217, 84, 26), width=2))
         else:
             self.threshold_dropdown.setEnabled(True)
             index = 0
-            for i, name in enumerate(self.file["signal"][0, 0]["auxiliaryname"]):
-                # Find which auxiliary channel corresponding to the selected reference signal
+            for i, name in enumerate(
+                    self.file["signal"][0, 0]["auxiliaryname"]):
+                # Find which auxiliary channel corresponding to the selected
+                # reference signal
                 if self.reference_dropdown.dropdown.currentText() == name.strip():
                     index = i
 
-            self.file["signal"][0, 0]["target"] = self.file["signal"][0, 0]["auxiliary"][index, :]
+            self.file["signal"][0,
+                                0]["target"] = self.file["signal"][0,
+                                                                   0]["auxiliary"][index,
+                                                                                   :]
             # Plot the data
-            self.vis_plot.plot(self.file["signal"][0, 0]["target"], pen=pg.mkPen(color=(0.95, 0.95, 0.95), width=2))
+            self.vis_plot.plot(self.file["signal"][0, 0]["target"], pen=pg.mkPen(
+                color=(0.95, 0.95, 0.95), width=2))
 
     def threshold_edit_field_value_changed(self):
         threshold = self.threshold_dropdown.spinbox.value()
+
+        if threshold > 0:
+            self.windows_dropdown.setEnabled(False)
+        else:
+            self.windows_dropdown.setEnabled(True)
+
         target = self.file["signal"][0, 0]["target"]
         if self.reference_dropdown.dropdown.currentText() != "EMG amplitude":
             # Segment target using threshold
@@ -169,25 +223,47 @@ class SegmentSessionPage(QWidget):
 
             # Update plot
             self.vis_plot.clear()
-            self.vis_plot.plot(target, pen=pg.mkPen(color=(0.95, 0.95, 0.95), width=2))
+            self.vis_plot.plot(
+                target,
+                pen=pg.mkPen(
+                    color=(
+                        0.95,
+                        0.95,
+                        0.95),
+                    width=2))
 
             # Add vertical lines for segments
             for i in range(len(self.coordinates) // 2):
                 # Blue-ish hues
                 hue = 0.6 - (i / (len(self.coordinates) // 2) * 0.3)
                 colour = pg.hsvColor(hue, 0.8, 0.9)
-                self.vis_plot.addLine(x=self.coordinates[i * 2], pen=pg.mkPen(color=colour, width=2))
-                self.vis_plot.addLine(x=self.coordinates[i * 2 + 1], pen=pg.mkPen(color=colour, width=2))
+                self.vis_plot.addLine(
+                    x=self.coordinates[i * 2], pen=pg.mkPen(color=colour, width=2))
+                self.vis_plot.addLine(
+                    x=self.coordinates[i * 2 + 1], pen=pg.mkPen(color=colour, width=2))
 
             self.vis_plot.enableAutoRange(axis='y')
 
     def windows_edit_field_value_changed(self):
         num_windows = self.windows_dropdown.spinbox.value()
+
+        if num_windows > 0:
+            self.threshold_dropdown.setEnabled(False)
+        else:
+            self.threshold_dropdown.setEnabled(True)
+
         target = self.file["signal"][0, 0]["target"]
 
         # Update plot
         self.vis_plot.clear()
-        self.vis_plot.plot(target, pen=pg.mkPen(color=(0.95, 0.95, 0.95), width=2))
+        self.vis_plot.plot(
+            target,
+            pen=pg.mkPen(
+                color=(
+                    0.95,
+                    0.95,
+                    0.95),
+                width=2))
 
         self.rois = []
         self.coordinates = [0] * (num_windows * 2)
@@ -233,9 +309,12 @@ class SegmentSessionPage(QWidget):
         for i in range(num_segments):
             start = self.coordinates[i * 2]
             end = self.coordinates[i * 2 + 1]
-            self.data["data"].append(self.file["signal"][0, 0]["data"][:, start:end])
-            self.data["auxiliary"].append(self.file["signal"][0, 0]["auxiliary"][:, start:end])
-            self.data["target"].append(self.file["signal"][0, 0]["target"][start:end])
+            self.data["data"].append(
+                self.file["signal"][0, 0]["data"][:, start:end])
+            self.data["auxiliary"].append(
+                self.file["signal"][0, 0]["auxiliary"][:, start:end])
+            self.data["target"].append(
+                self.file["signal"][0, 0]["target"][start:end])
 
         self.data["data"] = np.hstack(self.data["data"])
         self.data["auxiliary"] = np.hstack(self.data["auxiliary"])
@@ -248,7 +327,8 @@ class SegmentSessionPage(QWidget):
 
         self.vis_plot.clear()
         # Update plot
-        self.vis_plot.plot(self.file["signal"][0, 0]["target"], pen=pg.mkPen(color=(0.95, 0.95, 0.95), width=2))
+        self.vis_plot.plot(self.file["signal"][0, 0]["target"], pen=pg.mkPen(
+            color=(0.95, 0.95, 0.95), width=2))
 
         # Disable split and concat buttons
         self.concat_button.setEnabled(False)
@@ -258,6 +338,17 @@ class SegmentSessionPage(QWidget):
         signal = self.file["signal"][0, 0]
         save_filename = f"{self.filename.split('.')[0]}_concatenated.mat"
         sio.savemat(save_filename, {"signal": signal}, do_compression=True)
+
+        # save as .h5 file
+        savename_h5 = f"{self.filename.split('.')[0]}_concatenated.h5"
+        save_as_h5(
+            {"signal": signal},
+            savename_h5,
+            raw_filepath=save_filename
+        )
+
+        versionid = upsert_file_versions(
+            savename_h5, self.raw_fileid, "segmented")
         self.on_new_segment(save_filename)
 
     def split_clicked(self):
@@ -268,31 +359,53 @@ class SegmentSessionPage(QWidget):
             end = self.coordinates[i * 2 + 1]
 
             # Extract segments
-            self.data["data"].append(self.file["signal"][0, 0]["data"][:, start:end])
-            self.data["auxiliary"].append(self.file["signal"][0, 0]["auxiliary"][:, start:end])
-            self.data["target"].append(self.file["signal"][0, 0]["target"][start:end])
+            self.data["data"].append(
+                self.file["signal"][0, 0]["data"][:, start:end])
+            self.data["auxiliary"].append(
+                self.file["signal"][0, 0]["auxiliary"][:, start:end])
+            self.data["target"].append(
+                self.file["signal"][0, 0]["target"][start:end])
             self.data["path"].append(self.file["signal"][0, 0]["target"][i])
 
         for i in range(num_segments):
             self.file["signal"][0, 0]["data"] = self.data["data"][i]
             self.file["signal"][0, 0]["auxiliary"] = self.data["auxiliary"][i]
             self.file["signal"][0, 0]["target"] = self.data["target"][i]
-            self.file["signal"][0, 0]["path"] = self.file["signal"][0, 0]["target"]
+            self.file["signal"][0,
+                                0]["path"] = self.file["signal"][0,
+                                                                 0]["target"]
 
             # Save the segment into a .mat file
             save_filename = f"{self.filename.split('.')[0]}_split_segment_{i + 1}.mat"
             signal = self.file["signal"][0, 0]
             sio.savemat(save_filename, {"signal": signal}, do_compression=True)
+
+            # save as .h5 file
+            savename_h5 = f"{self.filename.split('.')[0]}_split_segment_{i + 1}.h5"
+            save_as_h5(
+                {"signal": signal},
+                savename_h5,
+                raw_filepath=save_filename
+            )
+
+            versionid = upsert_file_versions(
+                savename_h5, self.raw_fileid, "segmented")
             self.on_new_segment(save_filename)
 
         self.vis_plot.clear()
         # Update plot to be the first segment
-        self.vis_plot.plot(self.data["target"][0], pen=pg.mkPen(color=(0.95, 0.95, 0.95), width=2))
+        self.vis_plot.plot(
+            self.data["target"][0],
+            pen=pg.mkPen(
+                color=(
+                    0.95,
+                    0.95,
+                    0.95),
+                width=2))
 
         # Disable split and concat buttons
         self.concat_button.setEnabled(False)
         self.split_button.setEnabled(False)
-
 
     def done_clicked(self):
         self.on_done_clicked()

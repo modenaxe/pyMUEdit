@@ -5,7 +5,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QFrame, QLabel, QVBoxLayout
 
-from core.utils.config_and_input.filesize_formatter import filesize_formatter
+from core.logger import logger
+from core.utils.io.filesize_formatter import filesize_formatter
 
 from .CleanTheme import CleanTheme
 from .DatasetItem import DatasetItem
@@ -39,10 +40,10 @@ class Sidebar(QFrame):
         self.setStyleSheet(
             f"""
             QFrame#cleanSidebar {{
-                background-color: {CleanTheme.BG_SIDEBAR};
+                background-color: {CleanTheme.BG_CARD};
                 border-right: 1px solid {CleanTheme.BORDER};
             }}
-        """
+            """
         )
 
         # Set up layout with more padding at the top
@@ -58,13 +59,16 @@ class Sidebar(QFrame):
         # App title
         app_title_label = QLabel(app_title)
         app_title_label.setFont(QFont("Segoe UI", 14, QFont.Bold))
-        app_title_label.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+        app_title_label.setStyleSheet(
+            f"background-color: {CleanTheme.BG_CARD}; color: {CleanTheme.TEXT_PRIMARY}")
         title_layout.addWidget(app_title_label)
 
         self.layout.addLayout(title_layout)
 
         # Container for navigation buttons with proper margins
         self.nav_container = QFrame()
+        self.nav_container.setStyleSheet(
+            f"background-color: {CleanTheme.BG_CARD}")
         self.nav_layout = QVBoxLayout(self.nav_container)
         self.nav_layout.setContentsMargins(5, 0, 5, 0)  # Reduced side margins
         self.nav_layout.setSpacing(5)  # Space between buttons
@@ -76,6 +80,7 @@ class Sidebar(QFrame):
         self.buttons = {}
 
         # Keep track of added sections for later cleanup
+        self.recent_sessions_section = None
         self.recent_files_section = None
 
     def add_button(self, key, text, icon_name=None, is_selected=False):
@@ -98,7 +103,7 @@ class Sidebar(QFrame):
             icon_path = ICONS_PATH / f"{icon_name}.svg"
             # If file doesn't exist, show a warning
             if not icon_path.exists():
-                print(f"Warning: Icon {icon_path} not found")
+                logger.warning(f"Warning: Icon {icon_path} not found")
                 icon_path = None
 
         # Create button with icon and text
@@ -122,6 +127,58 @@ class Sidebar(QFrame):
         for btn_key, button in self.buttons.items():
             button.set_selected(btn_key == key)
 
+    def add_recent_sessions_section(self, recent_sessions, on_file_clicked=None):
+        """
+        Add a Recent Sessions section to the sidebar
+
+        Args:
+            recent_sessions (list): List of recent sessions to display
+            on_file_clicked (function): Callback function when a file is clicked
+        """
+        # First remove any existing recent files section
+        self.clear_recent_sessions_section()
+
+        # Create container for recent files
+        self.recent_sessions_section = QFrame()
+        self.recent_sessions_section.setStyleSheet(
+            f"""background-color: {CleanTheme.BG_CARD};""")
+        self.recent_sessions_layout = QVBoxLayout(self.recent_sessions_section)
+        self.recent_sessions_layout.setContentsMargins(5, 10, 5, 0)
+        self.recent_sessions_layout.setSpacing(5)
+
+        # Add section header
+        session_header = SectionHeader("Recent Sessions")
+        session_header.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        session_header.setStyleSheet(
+            f"background-color: {CleanTheme.BG_CARD}; color: {CleanTheme.TEXT_PRIMARY}")
+        session_header.setContentsMargins(10, 15, 0, 0)
+        self.recent_sessions_layout.addWidget(session_header)
+
+        # Add recent sessions
+        from PyQt5.QtGui import QCursor
+
+        for session in recent_sessions:
+
+            filename = session["name"]
+
+            # Create dataset item
+            dataset_item = DatasetItem(filename, "", True)
+
+            # Make the dataset item clickable
+            dataset_item.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+            if on_file_clicked:
+                # Use a lambda with default argument to capture the current
+                # filename
+                dataset_item.mousePressEvent = lambda event, f=filename: on_file_clicked(
+                    f)  # type:ignore
+
+            self.recent_sessions_layout.addWidget(dataset_item)
+
+        self.layout.insertWidget(
+            self.layout.count() - 1,
+            self.recent_sessions_section
+        )
+
     def add_recent_files_section(self, recent_files, on_file_clicked=None):
         """
         Add a Recent Files section to the sidebar
@@ -135,16 +192,19 @@ class Sidebar(QFrame):
 
         # Create container for recent files
         self.recent_files_section = QFrame()
-        recent_files_layout = QVBoxLayout(self.recent_files_section)
-        recent_files_layout.setContentsMargins(5, 10, 5, 0)
-        recent_files_layout.setSpacing(5)
+        self.recent_files_section.setStyleSheet(
+            f"""background-color: {CleanTheme.BG_CARD};""")
+        self.recent_files_layout = QVBoxLayout(self.recent_files_section)
+        self.recent_files_layout.setContentsMargins(5, 10, 5, 0)
+        self.recent_files_layout.setSpacing(5)
 
         # Add section header
-        recent_header = SectionHeader("Recent Files")
+        recent_header = SectionHeader("Session Files")
         recent_header.setFont(QFont("Segoe UI", 14, QFont.Bold))
-        recent_header.setStyleSheet(f"color: {CleanTheme.TEXT_PRIMARY};")
+        recent_header.setStyleSheet(
+            f"background-color: {CleanTheme.BG_CARD}; color: {CleanTheme.TEXT_PRIMARY}")
         recent_header.setContentsMargins(10, 15, 0, 0)
-        recent_files_layout.addWidget(recent_header)
+        self.recent_files_layout.addWidget(recent_header)
 
         # Add recent files
         from PyQt5.QtGui import QCursor
@@ -164,7 +224,7 @@ class Sidebar(QFrame):
                 dataset_item.mousePressEvent = lambda event, f=filename: on_file_clicked(
                     f)  # type:ignore
 
-            recent_files_layout.addWidget(dataset_item)
+            self.recent_files_layout.addWidget(dataset_item)
 
         # Add the recent files section to the sidebar layout before the stretch
         self.layout.insertWidget(
@@ -179,3 +239,12 @@ class Sidebar(QFrame):
             # Schedule for deletion
             self.recent_files_section.deleteLater()
             self.recent_files_section = None
+
+    def clear_recent_sessions_section(self):
+        """Remove any existing recent sessions section from the sidebar"""
+        if self.recent_sessions_section:
+            # Remove from layout
+            self.layout.removeWidget(self.recent_sessions_section)
+            # Schedule for deletion
+            self.recent_sessions_section.deleteLater()
+            self.recent_sessions_section = None

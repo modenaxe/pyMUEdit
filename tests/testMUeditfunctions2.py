@@ -14,15 +14,15 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 from scipy.io import loadmat
-from core.utils.config_and_input.open_otb_plus import open_otb_plus
-from core.utils.decomposition.notch_filter import notch_filter
-from core.utils.decomposition.bandpass_filter import bandpass_filter
-from core.utils.decomposition.extend_emg import extend_emg
-from core.utils.decomposition.whiten_emg import whiten_emg
+from core.utils.io.open_otb_plus import open_otb_plus
+from core.utils.preprocessing.notch_filter import notch_filter
+from core.utils.preprocessing.bandpass_filter import bandpass_filter
+from core.utils.preprocessing.extend_emg import extend_emg
+from core.utils.preprocessing.whiten_emg import whiten_emg
 from core.utils.decomposition.fixed_point_alg import fixed_point_alg
 from core.utils.decomposition.get_spikes import get_spikes
 from core.utils.decomposition.min_cov_isi import min_cov_isi
-from core.utils.decomposition.get_silhouette import get_silhouette
+from core.utils.postprocessing.get_silhouette import get_silhouette
 from core.utils.decomposition.peel_off import peel_off
 from core.EmgDecomposition import offline_EMG
 
@@ -166,7 +166,7 @@ class Test20MVCfile(unittest.TestCase):
         print("/////////////////////////////////")
         emg.convul_sphering(0, 0, 0)
         print(emg.signal_dict)
-        #expected = loadmat(expOutFilterExtendWhiten).get("filteredsignal")
+        expected = loadmat(expOutFilterExtendWhiten).get("filteredsignal")
         
         output = notch_filter(expected.get("signal")[0][0][0], expected.get("signal")[0][0][3])
         try:

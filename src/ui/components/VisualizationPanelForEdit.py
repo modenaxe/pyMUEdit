@@ -1,7 +1,7 @@
-from PyQt5.QtWidgets import (
-    QFrame, QVBoxLayout, QWidget, QGraphicsDropShadowEffect, QSizePolicy
-)
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (QFrame, QGraphicsDropShadowEffect, QSizePolicy,
+                             QVBoxLayout, QWidget)
+
 from .CleanTheme import CleanTheme
 from .SectionHeaderForEdit import SectionHeaderForEdit
 
@@ -23,7 +23,8 @@ class VisualizationPanelForEdit(QWidget):
         self.card_frame = QFrame()
         self.card_frame.setObjectName("visualizationCard")
         self.card_frame.setFrameShape(QFrame.StyledPanel)
-        self.card_frame.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.card_frame.setSizePolicy(
+            QSizePolicy.Preferred, QSizePolicy.Preferred)
         self.card_frame.setStyleSheet(
             f"""
             QFrame#visualizationCard {{
@@ -50,7 +51,6 @@ class VisualizationPanelForEdit(QWidget):
 
         # Header
         self.header = SectionHeaderForEdit(title)
-        self.header.setStyleSheet(f"background-color: #f0f0f0;")
         card_layout.addWidget(self.header)
         self.title_label = self.header.title_label
 

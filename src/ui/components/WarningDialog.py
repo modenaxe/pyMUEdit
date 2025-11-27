@@ -1,19 +1,32 @@
-from PyQt5.QtWidgets import (
-    QDialog, QLabel, QPushButton, QVBoxLayout,
-    QHBoxLayout, QCheckBox, QToolButton, QStyle, QSizePolicy
-)
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap
 import os
 
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import (QCheckBox, QDialog, QHBoxLayout, QLabel,
+                             QPushButton, QSizePolicy, QStyle, QToolButton,
+                             QVBoxLayout)
+
+from core.logger import logger
+
+"""
+TODO: does this file need to exist?
+"""
+
+
 class WarningDialog(QDialog):
-    def __init__(self, title_label="Warning", text="This is a warning Pop-up box. "
-                         "Please change text.\n"
-                         "Are you sure you want to continue?", enableCheckBox=True, checkBoxText="Don't ask again",
-                         enableHelpButton=True, HelpButtonTip="Click for help"):
+    def __init__(
+        self,
+        title_label="Warning",
+        text="This is a warning Pop-up box. "
+        "Please change text.\n"
+        "Are you sure you want to continue?",
+        enableCheckBox=True,
+        checkBoxText="Don't ask again",
+        enableHelpButton=True,
+            HelpButtonTip="Click for help"):
         super().__init__()
         self.setWindowTitle("Warning")
-        #self.setFixedSize(350, 290)
+        # self.setFixedSize(350, 290)
         self.setMinimumWidth(350)
         self.setWindowFlags(Qt.Dialog | Qt.MSWindowsFixedSizeDialogHint)
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
@@ -25,8 +38,8 @@ class WarningDialog(QDialog):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
 
-        #add help button
-        if(enableHelpButton):
+        # add help button
+        if (enableHelpButton):
             help_row = QHBoxLayout()
             help_row.addStretch()
             help_button = QToolButton()
@@ -56,9 +69,14 @@ class WarningDialog(QDialog):
         if not os.path.exists(icon_path) or not pixmap or pixmap.isNull():
             icon = self.style().standardIcon(QStyle.SP_MessageBoxWarning)
             icon_label.setPixmap(icon.pixmap(48, 48))
-            print("⚠️ Image not found")
+            logger.warning("⚠️ Image not found")
         else:
-            icon_label.setPixmap(pixmap.scaled(48, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            icon_label.setPixmap(
+                pixmap.scaled(
+                    48,
+                    48,
+                    Qt.KeepAspectRatio,
+                    Qt.SmoothTransformation))
 
         icon_label.setAlignment(Qt.AlignHCenter)
         layout.addWidget(icon_label)
@@ -76,15 +94,16 @@ class WarningDialog(QDialog):
         message.setAlignment(Qt.AlignHCenter)
         layout.addWidget(message)
 
-        # Yes button
-        yes_button = QPushButton("Yes")
-        yes_button.setFixedHeight(30)
-        yes_button.setStyleSheet("background-color: #007aff; color: white; border-radius: 6px; font-weight: bold;")
-        yes_button.clicked.connect(self.handle_yes_clicked)
-        layout.addWidget(yes_button)
+        # Ok button
+        ok_button = QPushButton("Ok")
+        ok_button.setFixedHeight(30)
+        ok_button.setStyleSheet(
+            "background-color: #007aff; color: white; border-radius: 6px; font-weight: bold;")
+        ok_button.clicked.connect(self.handle_ok_clicked)
+        layout.addWidget(ok_button)
 
         # “Don't ask again” checkbox
-        if(enableCheckBox):
+        if (enableCheckBox):
             self.checkbox = QCheckBox(checkBoxText)
             checkbox_layout = QHBoxLayout()
             checkbox_layout.addStretch()
@@ -95,14 +114,10 @@ class WarningDialog(QDialog):
         self.setLayout(layout)
 
         self.exec_()
-    
-    def handle_yes_clicked(self):
+
+    def handle_ok_clicked(self):
         if self.enableCheckBox and self.checkbox.isChecked():
             self.checkbox_selected = True
         else:
             self.checkbox_selected = False
         self.accept()
-
-
-
-

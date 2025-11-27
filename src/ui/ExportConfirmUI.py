@@ -1,24 +1,18 @@
 import sys
-from PyQt5.QtWidgets import (
-    QApplication,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QLabel,
-    QFrame,
-    QSpacerItem,
-    QSizePolicy,
-    QStyle,
-    QGraphicsDropShadowEffect,
-)
-from PyQt5.QtGui import QFont, QColor
-from PyQt5.QtCore import Qt, QSize
+
+from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtGui import QColor, QFont
+from PyQt5.QtWidgets import (QApplication, QFrame, QGraphicsDropShadowEffect,
+                             QHBoxLayout, QLabel, QPushButton, QSizePolicy,
+                             QSpacerItem, QStyle, QVBoxLayout, QWidget)
+
+from core.logger import logger
 
 
 def get_icon(standard_icon):
     """Gets a standard Qt icon."""
-    return QApplication.style().standardIcon(getattr(QStyle, standard_icon))  # type:ignore
+    return QApplication.style().standardIcon(
+        getattr(QStyle, standard_icon))  # type:ignore
 
 
 def setup_ui(widget):
@@ -46,7 +40,8 @@ def setup_ui(widget):
     # --- Main Layout for THIS widget ---
     # Contains only the central card now
     main_layout = QVBoxLayout(widget)
-    main_layout.setContentsMargins(0, 0, 0, 0)  # No margins, card handles padding
+    # No margins, card handles padding
+    main_layout.setContentsMargins(0, 0, 0, 0)
 
     # --- Main Content Card ---
     widget.main_card = create_main_card(widget)
@@ -87,7 +82,12 @@ def create_main_card(widget):
     card_layout.addLayout(create_header(widget))
     card_layout.addLayout(create_format_selection(widget))
     card_layout.addWidget(create_file_details(widget))
-    card_layout.addSpacerItem(QSpacerItem(20, 15, QSizePolicy.Minimum, QSizePolicy.Expanding))
+    card_layout.addSpacerItem(
+        QSpacerItem(
+            20,
+            15,
+            QSizePolicy.Minimum,
+            QSizePolicy.Expanding))
     card_layout.addLayout(create_action_buttons(widget))
     return card
 
@@ -98,10 +98,12 @@ def create_header(widget):
     header_layout.setSpacing(4)
     title_label = QLabel("Confirm Export")
     title_label.setFont(QFont("Arial", 16, QFont.Bold))
-    title_label.setStyleSheet(f"color: {widget.colors['text_primary']}; border: none;")
+    title_label.setStyleSheet(
+        f"color: {widget.colors['text_primary']}; border: none;")
     subtitle_label = QLabel("Review the details before exporting.")
     subtitle_label.setFont(QFont("Arial", 10))
-    subtitle_label.setStyleSheet(f"color: {widget.colors['text_secondary']}; border: none;")
+    subtitle_label.setStyleSheet(
+        f"color: {widget.colors['text_secondary']}; border: none;")
     header_layout.addWidget(title_label)
     header_layout.addWidget(subtitle_label)
     return header_layout
@@ -113,9 +115,11 @@ def create_format_selection(widget):
     format_layout.setSpacing(5)
     format_label = QLabel("Selected File Format")
     format_label.setFont(QFont("Arial", 9))
-    format_label.setStyleSheet(f"color: {widget.colors['text_secondary']}; border: none;")
+    format_label.setStyleSheet(
+        f"color: {widget.colors['text_secondary']}; border: none;")
     # Use a QLabel here instead of QComboBox, as the format is already chosen
-    widget.format_display_label = QLabel("CSV (Comma Separated Values)")  # Placeholder
+    widget.format_display_label = QLabel(
+        "CSV (Comma Separated Values)")  # Placeholder
     widget.format_display_label.setFont(QFont("Arial", 10, QFont.Bold))
     widget.format_display_label.setMinimumHeight(38)
     widget.format_display_label.setStyleSheet(
@@ -160,24 +164,30 @@ def create_file_details(widget):
     icon_label.setStyleSheet("margin-top: 1px; border: none;")
     widget.filename_label = QLabel("motor_unit_patterns_2025.csv")
     widget.filename_label.setFont(QFont("Arial", 10, QFont.Bold))
-    widget.filename_label.setStyleSheet(f"color: {widget.colors['text_primary']}; border: none;")
+    widget.filename_label.setStyleSheet(
+        f"color: {widget.colors['text_primary']}; border: none;")
     filename_layout.addWidget(icon_label)
     filename_layout.addWidget(widget.filename_label)
     filename_layout.addStretch(1)
     details_layout.addLayout(filename_layout)
     include_label = QLabel("File will include:")
     include_label.setFont(QFont("Arial", 9))
-    include_label.setStyleSheet(f"color: {widget.colors['text_secondary']}; margin-top: 5px; border: none;")
+    include_label.setStyleSheet(
+        f"color: {widget.colors['text_secondary']}; margin-top: 5px; border: none;")
     details_layout.addWidget(include_label)
     list_layout = QVBoxLayout()
     list_layout.setSpacing(4)
     list_layout.setContentsMargins(10, 0, 0, 0)
-    items_to_include = ["Motor unit firing timestamps", "Pattern analysis data", "Recording metadata"]
+    items_to_include = [
+        "Motor unit firing timestamps",
+        "Pattern analysis data",
+        "Recording metadata"]
     widget.include_item_labels = []
     for item_text in items_to_include:
         item_label = QLabel(f"• {item_text}")
         item_label.setFont(QFont("Arial", 9))
-        item_label.setStyleSheet(f"color: {widget.colors['text_list_item']}; border: none;")
+        item_label.setStyleSheet(
+            f"color: {widget.colors['text_list_item']}; border: none;")
         list_layout.addWidget(item_label)
         widget.include_item_labels.append(item_label)
     details_layout.addLayout(list_layout)
