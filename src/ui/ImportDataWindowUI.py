@@ -5,8 +5,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QCursor, QFont
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
-                             QScrollArea, QSizePolicy, QSpacerItem,
-                             QStackedWidget, QVBoxLayout, QWidget)
+                             QScrollArea, QSizePolicy,
+                             QSpacerItem, QStackedWidget, QVBoxLayout, QWidget)
 
 from core.logger import logger
 # Import custom components
@@ -75,6 +75,8 @@ def setup_ui(import_window):
     import_window.main_layout.addWidget(
         import_window.central_stacked_widget, 1)
     import_window.update_sidebar_with_recent_files = lambda: update_sidebar_with_recent_files(
+        import_window)
+    import_window.update_sidebar_with_recent_sessions = lambda: update_sidebar_with_recent_sessions(
         import_window)
     import_window.restore_sidebar = lambda: restore_sidebar(import_window)
 
@@ -252,59 +254,6 @@ def create_configuration_section(import_window):
     config_group.addWidget(import_window.channel_view_button)
     return config_group
 
-
-'''
-def create_footer(import_window):
-    """Create the footer with file info and navigation buttons."""
-    footer = QFrame()
-    footer.setObjectName("footer")
-    footer.setStyleSheet(
-        f"""
-        #footer {{
-            background-color: {CleanTheme.BG_MAIN};
-            border-top: 1px solid {CleanTheme.BORDER};
-        }}
-    """
-    )
-    footer_layout = QHBoxLayout(footer)
-    footer_layout.setContentsMargins(20, 10, 20, 10)
-
-    # Create file info labels
-    import_window.footer_file_info = QLabel("No file selected")
-    import_window.footer_file_info.setStyleSheet(
-        f"color: {CleanTheme.TEXT_PRIMARY};")
-    import_window.size_info = QLabel("Size: --")
-    import_window.size_info.setStyleSheet(
-        f"color: {CleanTheme.TEXT_SECONDARY};")
-    import_window.format_info = QLabel("Format: --")
-    import_window.format_info.setStyleSheet(
-        f"color: {CleanTheme.TEXT_SECONDARY};")
-
-    # Add file info to layout
-    footer_layout.addWidget(import_window.footer_file_info)
-    footer_layout.addStretch(1)
-    footer_layout.addWidget(import_window.size_info)
-    footer_layout.addSpacing(10)
-    footer_layout.addWidget(import_window.format_info)
-    footer_layout.addSpacing(20)
-
-    # Create navigation buttons
-    # prev_btn = ActionButton("← Previous", primary=False)
-    # prev_btn.clicked.connect(import_window.go_back)
-
-    import_window.next_btn = ActionButton("Next →", primary=True)
-    import_window.next_btn.clicked.connect(
-        import_window.go_to_algorithm_screen)
-    import_window.next_btn.setEnabled(False)
-
-    # Add navigation buttons to layout
-    # footer_layout.addWidget(prev_btn)
-    footer_layout.addSpacing(10)
-    footer_layout.addWidget(import_window.next_btn)
-    return footer
-'''
-
-
 def find_sidebar(import_window):
     """Find the sidebar component in the application hierarchy."""
     if import_window.parent():
@@ -317,6 +266,13 @@ def find_sidebar(import_window):
             return sidebar
     return None
 
+def update_sidebar_with_recent_sessions(import_window):
+    """Update the sidebar to show recent sessions."""
+    sidebar = find_sidebar(import_window)
+    if sidebar and hasattr(sidebar, "add_recent_sessions_section"):
+        sidebar.add_recent_sessions_section(
+            import_window.sessions,
+            import_window.load_recent_session)
 
 def update_sidebar_with_recent_files(import_window):
     """Update the sidebar to show recent files."""
@@ -326,13 +282,11 @@ def update_sidebar_with_recent_files(import_window):
             import_window.recent_files,
             import_window.load_recent_file)
 
-
 def restore_sidebar(import_window):
     """Restore the sidebar to its default state."""
     sidebar = find_sidebar(import_window)
     if sidebar and hasattr(sidebar, "clear_recent_files_section"):
         sidebar.clear_recent_files_section()
-
 
 def create_placeholder_page(title, import_window):
     """Creates a placeholder page with a title and back button."""

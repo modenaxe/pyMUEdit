@@ -14,7 +14,7 @@ import pyqtgraph as pg
 from core.logger import logger
 
 # Import UI setup function
-from core.database.database import create_new_session, get_fileid_by_path, get_or_create_session_for_file, get_session_files, insert_files, upsert_file_versions
+from core.database.database import get_fileid_by_path, get_or_create_session_for_file, get_session_files, insert_files, upsert_file_versions
 from core.utils.io.filesize_formatter import filesize_formatter
 from core.utils.session.convert_h5 import load_from_h5, save_as_h5
 from core.utils.io.filesize_formatter import filesize_formatter
@@ -38,7 +38,7 @@ import sys
 import traceback
 import os
 import datetime
-from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QPushButton, QWidget, QVBoxLayout
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout
 from PyQt5.QtCore import Qt
 
 # Import for external windows/widgets
@@ -92,7 +92,10 @@ class ImportDataWindow(QMainWindow):
             os.makedirs(temp_dir)
         self.emg_obj = EMG_offline_EMG(save_dir=temp_dir, to_filter=True)
 
-        # Sample recent files list (could be loaded from settings/history)
+        # List of recent sessions that have been loaded
+        self.sessions = []
+
+        # List of files in the current session (could be loaded from settings/history)
         self.recent_files = []
 
         # Set up the UI using our improved UI setup
@@ -191,10 +194,21 @@ class ImportDataWindow(QMainWindow):
         else:
             logger.debug("Export cancelled")
 
-    def load_session(self):
-        file, _ = QFileDialog.getOpenFileName(
-            self, "Select session .zip File", "", "ZIP Files (*.zip)"
-        )
+    def load_recent_session(self, name):
+        try:
+            self.recent_files = []
+            session = next(item for item in self.sessions if item["name"] == name)
+            self.load_session(session["file"])
+
+        except Exception as e:
+            logger.error(f"{e}")
+            return
+
+    def load_session(self, file=None):
+        if not file:
+            file, _ = QFileDialog.getOpenFileName(
+                self, "Select session .zip File", "", "ZIP Files (*.zip)"
+            )
 
         zip_path = Path(file)
         zip_name = zip_path.stem
@@ -202,8 +216,18 @@ class ImportDataWindow(QMainWindow):
         extract_dir = Path("..") / "loaded_sessions" / zip_name
         extract_dir.mkdir(parents=True, exist_ok=True)
 
+        try:
+            session = next(item for item in self.sessions if item["file"] == file)
+            sessionid = session["sessionid"]
+            self.sessionid = sessionid
+        except:
+            sessionid = get_or_create_session_for_file(file)
+            self.sessionid = sessionid
+
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(extract_dir)
+
+            self.recent_files = []
 
             readin_name = None
             decomp_name = None
@@ -236,6 +260,19 @@ class ImportDataWindow(QMainWindow):
 
             logger.debug(f"Files extracted to: {extract_dir}")
 
+            session_name = zip_name.replace("Session_","")
+
+            if not any(d['name'] == session_name for d in self.sessions):
+                self.sessions.append(
+                    {
+                        "name": session_name,
+                        "file": file,
+                        "sessionid": sessionid
+                    }
+                )
+
+            self.update_recent_sessions()
+            self.update_recent_files()
 
     def select_file(self):
         """Open file dialog to select a file."""
@@ -245,6 +282,8 @@ class ImportDataWindow(QMainWindow):
 
         if not file:
             return
+
+        self.recent_files = []
 
         self.filename = os.path.basename(file)
         self.pathname = os.path.dirname(file) + "/"
@@ -269,7 +308,7 @@ class ImportDataWindow(QMainWindow):
     def load_recent_file(self, filename):
         """Load a file from the recent files list."""
         self.filename = os.path.basename(filename)
-        self.pathname = os.path.dirname(filename) + "/"
+        self.pathname = os.path.dirname(filename)
 
         # Update UI to show selected file
         self.file_info_label.setText(f"Selected: {self.filename}")
@@ -373,15 +412,33 @@ class ImportDataWindow(QMainWindow):
                 signal = self.emg_obj.signal_dict
                 self.imported_signal = signal
 
+                name = os.path.splitext(file)[0]
+
+                signal_dict = None
+                config_dict = None
+                decomp_name = None
+
+                if name.endswith("_readin"):
+                    h5_readin_savename = name
+                elif name.endswith("_decomp"):
+                    decomp_name = name
+                    h5_readin_savename = decomp_name
+                    decomp_path = os.path.join(path, file)
+                    signal_dict, raw_filepath, config_dict = load_from_h5(str(decomp_path))
+                else:
+                    self.show_import_data_view()
+
                 # Load file data into the plot
                 if "data" in signal and "fsamp" in signal:
                     try:
+                        self.show_import_data_view()
                         self.cur_electrode_preview_idx = 0
                         # Plot channels for previews
                         self.update_preview_plot()
                         self.update_buttons()
                     except Exception as e:
                         logger.exception(f"Error creating preview plot: {e}")
+
                 else:
                     logger.error("Error cannot display data")
 
@@ -423,15 +480,20 @@ class ImportDataWindow(QMainWindow):
                     "format": os.path.splitext(file)[1].upper().replace(".", "")
                 }
 
+                fileid = get_fileid_by_path(full_path)
+                if not fileid:
+                    fileid = insert_files(full_path, file, self.sessionid)
+
                 # Get or create session for this dataset
                 if ext != ".h5": # temporary dont create session with h5 for now due to using load_file for loading a session
                     sessionid = get_or_create_session_for_file(full_path)
                     self.sessionid = sessionid
-                    fileid = get_fileid_by_path(full_path)
-                    if not fileid:
-                        fileid = insert_files(full_path, file, sessionid)
-
                     upsert_file_versions(h5_readin_savename, fileid, "readin")
+                else:
+                    if decomp_name:
+                        upsert_file_versions(decomp_name, fileid, "decomposed")
+                    else:
+                        upsert_file_versions(h5_readin_savename, fileid, "readin")
 
                 self.raw_fileid = fileid
 
@@ -625,6 +687,8 @@ class ImportDataWindow(QMainWindow):
 
     def showEvent(self, event):
         """Event triggered when the widget is shown."""
+        if hasattr(self, "update_sidebar_with_recent_sessions"):
+            self.update_sidebar_with_recent_sessions()
         # Update sidebar with recent files section using UI function
         if hasattr(self, "update_sidebar_with_recent_files"):
             self.update_sidebar_with_recent_files()
@@ -726,6 +790,10 @@ class ImportDataWindow(QMainWindow):
     def update_recent_files(self):
         if hasattr(self, "update_sidebar_with_recent_files"):
             self.update_sidebar_with_recent_files()
+
+    def update_recent_sessions(self):
+        if hasattr(self, "update_sidebar_with_recent_sessions"):
+            self.update_sidebar_with_recent_sessions()
 
     def select_mu_edit_subpage(self, index:int):
         if hasattr(self, "mu_edit_stack"):
