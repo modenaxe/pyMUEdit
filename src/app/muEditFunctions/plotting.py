@@ -124,7 +124,7 @@ def update_spike_train_plot(
                     x_values.append(time_vector[local_max_idx])
                     y_values.append(pulse_train[local_max_idx])
 
-            brush_color = pg.mkColor(color if overlay else "#D95535")
+            brush_color = color if (color != "#D95535" or overlay) else "#D95535"
 
             scatter.addPoints(
                 x=x_values,
@@ -154,13 +154,15 @@ def update_dr_plot(self, discharge_times, color="#D95535", overlay=False):
         # Calculate discharge rates
         dr = 1.0 / (np.diff(discharge_times) / fsamp)
 
+        brush_color = color if (color != "#D95535" or overlay) else "#D95535"
+
         # Plot as scatter plot
         scatter_dr = pg.ScatterPlotItem()
         scatter_dr.addPoints(
             x=distime,
             y=dr,
             pen=None,
-            brush=pg.mkBrush(color if overlay else "#D95535"),
+            brush=pg.mkBrush(brush_color),
             size=10 if not overlay else 8
         )
         self.dr_plot.addItem(scatter_dr)
