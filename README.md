@@ -18,7 +18,7 @@ The original MATLAB application is based on [MUEdit](https://github.com/simonavr
 }
 ```
 
-The application also includes code derived by the [Swarm-Contrastive Decomposition algorithm](https://github.com/AgneGris/swarm-contrastive-decomposition) developed by Agnese Grison and using a CC BY-NC 4.0 license. Please cite the following article if you use this algorithm:
+The application also includes code from the [Swarm-Contrastive Decomposition algorithm](https://github.com/AgneGris/swarm-contrastive-decomposition) developed by Agnese Grison and using a CC BY-NC 4.0 license. Please cite the following article if you use this algorithm:
 
 ```
 @article{grison2024particle,
@@ -27,6 +27,19 @@ The application also includes code derived by the [Swarm-Contrastive Decompositi
   journal={IEEE Transactions on Biomedical Engineering},
   year={2024},
   publisher={IEEE}
+}
+```
+Finally, the Analysis tab of the application uses code from the [openhdemg](https://github.com/GiacomoValliPhD/openhdemg) package developed by Giacomo Valli. If you use those functions please cites the following paper:
+
+```
+@article{valli2024tutorial,
+  title={Tutorial: Analysis of central and peripheral motor unit properties from decomposed High-Density surface EMG signals with openhdemg},
+  author={Valli, Giacomo and Ritsche, Paul and Casolo, Andrea and Negro, Francesco and De Vito, Giuseppe},
+  journal={Journal of Electromyography and Kinesiology},
+  volume={74},
+  pages={102850},
+  year={2024},
+  publisher={Elsevier}
 }
 ```
 
