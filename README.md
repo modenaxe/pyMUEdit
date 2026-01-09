@@ -1,14 +1,34 @@
-# HDEMG Analysis Tool 🛑
+# ⚠️ HDEMG Analysis Tool ⚠️ 
 
 ⚠️ This project is a work in progress and should not be used for research until the first official release ⚠️
 
 A Python-based application for High-Density Electromyography (HDEMG) signal analysis with motor unit decomposition, visualization, and editing capabilities.
 
-Original matlab code the application is based off:
-https://github.com/simonavrillon/MUedit
-Drive containing data files used for testing:
-https://drive.google.com/drive/folders/1nIpH1ksYWE-vQplEtilz843h2BuCuDmy
+The original MATLAB application is based on [MUEdit](https://github.com/simonavrillon/MUedit) developed by Simon Avrillon. Please cite the following article if using the application:
 
+```
+@article{avrillon2024tutorial,
+  title={Tutorial on MUedit: An open-source software for identifying and analysing the discharge timing of motor units from electromyographic signals},
+  author={Avrillon, Simon and Hug, Fran{\c{c}}ois and Baker, Stuart N and Gibbs, Ciara and Farina, Dario},
+  journal={Journal of Electromyography and Kinesiology},
+  volume={77},
+  pages={102886},
+  year={2024},
+  publisher={Elsevier}
+}
+```
+
+The application also includes code derived by the [Swarm-Contrastive Decomposition algorithm](https://github.com/AgneGris/swarm-contrastive-decomposition) developed by Agnese Grison and using a CC BY-NC 4.0 license. Please cite the following article if you use this algorithm:
+
+```
+@article{grison2024particle,
+  title={A particle swarm optimised independence estimator for blind source separation of neurophysiological time series},
+  author={Grison, Agnese and Clarke, Alexander Kenneth and Muceli, Silvia and Ib{\'a}{\~n}ez, Jaime and Kundu, Aritra and Farina, Dario},
+  journal={IEEE Transactions on Biomedical Engineering},
+  year={2024},
+  publisher={IEEE}
+}
+```
 
 ### Prerequisites
 
