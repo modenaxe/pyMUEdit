@@ -20,7 +20,7 @@ The original MATLAB application is based on [MUEdit](https://github.com/simonavr
 
 The standard decomposition algorithm is based on the MUEdit Python version [https://github.com/ciaragibbs/MUEdit_Python] developed by Ciara Gibbs.
 
-The application also includes code from the [Swarm-Contrastive Decomposition algorithm](https://github.com/AgneGris/swarm-contrastive-decomposition) developed by Agnese Grison and using a CC BY-NC 4.0 license. Please cite the following article if you use this algorithm:
+The application also includes code from the [Swarm-Contrastive Decomposition algorithm](https://github.com/AgneGris/swarm-contrastive-decomposition) developed by Agnese Grison and using a CC BY-NC 4.0 license. Please cite the [following article](https://ieeexplore.ieee.org/abstract/document/10643350/) if you use this algorithm:
 
 ```
 @article{grison2024particle,
